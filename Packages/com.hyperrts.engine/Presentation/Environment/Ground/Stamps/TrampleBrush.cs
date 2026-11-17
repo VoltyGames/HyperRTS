@@ -26,6 +26,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private readonly int _trampleAmountPass;
         private readonly int _tracksPass;
         private readonly int _scarsPass;
+        private readonly int _scarRimsPass;
+        private readonly int _fillCapPass;
+        private readonly int _fillFloorPass;
         private readonly int _wakePass;
         private readonly int _stainPass;
         private readonly int _fadePass;
@@ -45,6 +48,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             _trampleAmountPass = FindPass("TrampleAmount");
             _tracksPass = FindPass("Tracks");
             _scarsPass = FindPass("Scars");
+            _scarRimsPass = FindPass("ScarRims");
+            _fillCapPass = FindPass("FillCap");
+            _fillFloorPass = FindPass("FillFloor");
             _wakePass = FindPass("Wake");
             _stainPass = FindPass("Stains");
             _fadePass = FindPass("Fade");
@@ -85,18 +91,22 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             DrawStamps(_trampleAmountPass, offset, stamps.Trample.Count);
             offset += stamps.Trample.Count;
 
-            // Scars (BA) never fade: they last the match.
+            // Scars (BA, and the ground level in A) never fade: they last the match.
             _commands.SetRenderTarget(surfaces.Tracks);
             Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / Levels);
             DrawStamps(_tracksPass, offset, stamps.Tracks.Count);
             offset += stamps.Tracks.Count;
             DrawStamps(_scarsPass, offset, stamps.Scars.Count);
+            DrawStamps(_scarRimsPass, offset, stamps.Scars.Count);
             offset += stamps.Scars.Count;
+            DrawFills(offset, stamps.Fills.Count);
+            offset += stamps.Fills.Count;
             DrawStains(surfaces, offset, stamps.Stains.Count);
             offset += stamps.Stains.Count;
 
             DrawWakes(surfaces, wakeSteps, offset, stamps.Wakes.Count);
             Graphics.ExecuteCommandBuffer(_commands);
+            stamps.Fills.Clear();
         }
 
         public void Dispose()
@@ -110,13 +120,14 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private void Upload(TrampleStamps stamps)
         {
             var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count +
-                stamps.Stains.Count + stamps.Wakes.Count, 1);
+                stamps.Fills.Count + stamps.Stains.Count + stamps.Wakes.Count, 1);
             _buffer.Reserve(needed);
 
             var offset = 0;
             Put(stamps.Trample, ref offset);
             Put(stamps.Tracks, ref offset);
             Put(stamps.Scars, ref offset);
+            Put(stamps.Fills, ref offset);
             Put(stamps.Stains, ref offset);
             Put(stamps.Wakes, ref offset);
         }
@@ -132,12 +143,19 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             _commands.SetRenderTarget(surfaces.Trample);
             _commands.ClearRenderTarget(false, true, TrampleSurfaces.TrampleClear);
             _commands.SetRenderTarget(surfaces.Tracks);
-            _commands.ClearRenderTarget(false, true, Color.clear);
+            _commands.ClearRenderTarget(false, true, TrampleSurfaces.TracksClear);
             _commands.SetRenderTarget(surfaces.Wake);
             _commands.ClearRenderTarget(false, true, Color.clear);
             _commands.SetRenderTarget(surfaces.Stains);
             _commands.ClearRenderTarget(false, true, Color.clear);
             _wakeFadedSteps = Levels;
+        }
+
+        // Bowls above the level are capped and rims below it raised back, so the ground is level where a building stands.
+        private void DrawFills(int offset, int count)
+        {
+            DrawStamps(_fillCapPass, offset, count);
+            DrawStamps(_fillFloorPass, offset, count);
         }
 
         // Stains never fade, so a frame without any leaves their map alone.

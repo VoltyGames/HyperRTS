@@ -64,9 +64,8 @@ graph, and `EffectGraphBuilder.ShaderErrors` compiles a built graph's shaders so
 
 A rig with `shake` above 0 shakes the camera when it bursts: the pool collects a `CameraJolt` (the burst point, the
 shake and the rig's own `shakeReach` and `shakeSeconds`, 0 for the camera's) in its `Jolts`, which the
-[camera](README.md#input) reads in the next frame. A rig with `whiteOut` above 0 also whites out the screen within
-`whiteOutReach`, through a `WhiteOutPulse` in the pool's `WhiteOuts`: a blast that blinds, such as a nuclear one. Its
-`maxDistance` must cover the same reach, or the rig never plays for a far camera. The pool plays what its callers
+[camera](README.md#input) reads in the next frame. A rig's `maxDistance` must cover its `shakeReach`, or the rig never plays for a far camera.
+The pool plays what its callers
 hand it, and every caller checks the local player's sight first: cue rigs by the cue, damage stages, spawn effects and
 section breaks by the ground they burst on. Give it to the bursts a player should feel, such as vehicle deaths, shells
 and collapses, never to small arms.

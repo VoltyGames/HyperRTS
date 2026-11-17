@@ -189,7 +189,7 @@ void Plant(uint3 id : SV_DispatchThreadID)
     }
 
     float2 xz = spot + field.across * across + field.along * along;
-    if (UnderBuilding(xz) || Channel(hash, CHANNEL_DROP) < BurntShare(xz))
+    if (NearBuilding(xz, Channel(hash, CHANNEL_SHADE)) || Channel(hash, CHANNEL_DROP) < BurntShare(xz))
     {
         return;
     }

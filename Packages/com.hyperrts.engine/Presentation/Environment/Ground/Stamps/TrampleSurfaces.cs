@@ -26,6 +26,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>No direction, standing plants.</summary>
         public static readonly Color TrampleClear = new(0.5f, 0.5f, 0f, 0f);
 
+        /// <summary>No ruts or scorch, and level ground in alpha.</summary>
+        public static readonly Color TracksClear = new(0f, 0f, 0f, TrampleStamps.GroundLevelBias);
+
         public readonly RenderTexture Trample;
         public readonly RenderTexture Tracks;
         public readonly RenderTexture Wake;

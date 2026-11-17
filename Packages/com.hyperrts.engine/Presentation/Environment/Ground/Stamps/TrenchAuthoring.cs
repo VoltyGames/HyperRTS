@@ -15,8 +15,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     [RequiresAuthoring(typeof(Simulation.Buildings.BuildingAuthoring), "a Building")]
     public class TrenchAuthoring : AuthoringBehaviour
     {
-        [Tooltip("Metres the ditch is dug into the ground, at most the trample maps' crater depth.")]
-        [Range(0.1f, TrampleStamps.MaxCraterDepth)]
+        [Tooltip("Metres the ditch is dug into the ground, at most the deepest crater the trample maps hold.")]
+        [Range(0.1f, TrampleStamps.MaxDepth)]
         public float depth = 0.5f;
 
         public class Baker : Baker<TrenchAuthoring>

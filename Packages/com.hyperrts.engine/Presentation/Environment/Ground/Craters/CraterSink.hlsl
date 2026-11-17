@@ -1,4 +1,4 @@
-// Crater depth from tracks alpha, shared by the dented terrain and everything that sinks into it. Needs
+// Crater depth and rim height from tracks alpha, shared by the dented terrain and everything that sinks into it. Needs
 // sampler_LinearClamp declared first.
 #ifndef HYPERRTS_CRATER_SINK_INCLUDED
 #define HYPERRTS_CRATER_SINK_INCLUDED
@@ -13,7 +13,7 @@ Texture2D<float> _HyperRTSUndentedHeights;
 float4 _HyperRTSUndentedArea;
 float4 _HyperRTSUndentedScale;
 
-// Metres the drawn ground sank at positionXZ; none off the maps, where CraterTerrainSystem dents nothing.
+// Metres the drawn ground sank at positionXZ, negative on a rim; none off the maps, where CraterTerrainSystem dents nothing.
 float CraterDepth(float2 positionXZ)
 {
     float2 uv = TrampleUV(positionXZ);
@@ -21,7 +21,7 @@ float CraterDepth(float2 positionXZ)
     UNITY_BRANCH
     if (OnTrampleMaps(uv))
     {
-        depth = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a * HYPERRTS_MAX_CRATER_DEPTH;
+        depth = GroundSunk(SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0).a);
     }
 
     return depth;
@@ -41,7 +41,7 @@ float UndentedGroundHeight(float2 positionXZ)
     return ground;
 }
 
-// The whole object drops by the depth at its origin, so it keeps its shape; raised objects drop less or not at all.
+// The whole object drops by the depth at its origin (rises on a rim), so it keeps its shape; raised objects move less or not at all.
 float CraterSink(float3 originWS)
 {
     float above = originWS.y - UndentedGroundHeight(originWS.xz);

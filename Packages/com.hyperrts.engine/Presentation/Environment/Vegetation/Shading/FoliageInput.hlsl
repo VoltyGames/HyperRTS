@@ -6,6 +6,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wind.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BurntPlants.hlsl"
 
 TEXTURE2D(_BaseMap);
 SAMPLER(sampler_BaseMap);
@@ -130,11 +131,29 @@ float3 SwayFoliage(Attributes input, float4x4 objectToWorld, float3 placed, floa
 #endif
 }
 
+// Burnt away where ash lies at the plant's root: a tree sheds its leaf cards one by one, a modelled shrub goes whole.
+// Scattered grass is already culled by Grass.compute.
+bool FoliageBurntAway(Attributes input, float3 origin)
+{
+#if defined(_GRASS_INSTANCES)
+    return false;
+#else
+    #if defined(_TREE_WIND)
+    float3 seed = float3(input.uv3.y, input.uv4.xy) + 31.0;
+    #else
+    float3 seed = float3(origin.x, 31.0, origin.z);
+    #endif
+    return Random(seed) < BurntShare(origin.xz);
+#endif
+}
+
 // Grass ignores the object matrix: its instances are placed in world space.
+// A burnt-away card collapses onto the root, so it draws nothing in any pass.
 float3 FoliagePosition(Attributes input, WindFrame frame, float4x4 objectToWorld, out float3 origin)
 {
     float3 placed = PlaceFoliage(input, objectToWorld, origin);
-    return SwayFoliage(input, objectToWorld, placed, origin, frame);
+    float3 swayed = SwayFoliage(input, objectToWorld, placed, origin, frame);
+    return FoliageBurntAway(input, origin) ? origin : swayed;
 }
 
 #endif

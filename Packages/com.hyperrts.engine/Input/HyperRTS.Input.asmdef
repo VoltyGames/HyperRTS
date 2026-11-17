@@ -8,8 +8,7 @@
         "Unity.Mathematics",
         "Unity.Collections",
         "Unity.Transforms",
-        "Unity.InputSystem",
-        "Unity.RenderPipelines.Core.Runtime"
+        "Unity.InputSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

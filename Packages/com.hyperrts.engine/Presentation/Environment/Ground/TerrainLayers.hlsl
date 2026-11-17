@@ -28,17 +28,6 @@ struct TerrainBlend
     float grass;
 };
 
-struct TerrainSurface
-{
-    half3 albedo;
-    half3 normalTS;    // terrain tangent space: x east, y north, z along the terrain normal
-    half smoothness;
-    half occlusion;
-    half height;
-    half tintStrength;
-    half grass;
-};
-
 // The layer's hex-tiled albedo, with the far sample at st mixed in by camera distance.
 half4 LayerAlbedo(inout TerrainHex hex, float2 st, float2 dx, float2 dy, half far)
 {

@@ -33,6 +33,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
             _mark.scar.craterDepth = 1f;
             _mark.scar.scorch = 1f;
+            _mark.scar.burnReach = 1.5f;
         }
 
         [TearDown]
@@ -63,13 +64,14 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         [Test]
         public void Scars_OutlastTheFade_WhileRutsFade()
         {
+            Assert.AreEqual(TrampleStamps.GroundLevelBias, Sample(_surfaces.Tracks, Alpha)[0], 1e-3f, "cleared ground is not level");
             var stamps = new TrampleStamps();
             stamps.AddScar(new float2(50f, 120f), _mark.scar, 6f * 0.5f);
             Draw(stamps, 0, 0);
 
             Draw(new TrampleStamps(), TrampleBrush.Levels, TrampleBrush.Levels);
 
-            Assert.Greater(Sample(_surfaces.Tracks, Alpha)[0], 0.4f, "the crater bowl faded");
+            Assert.Greater(Sample(_surfaces.Tracks, Alpha)[0], TrampleStamps.GroundLevelBias + 0.1f, "the crater bowl faded");
             Assert.Greater(Sample(_surfaces.Tracks, Blue)[0], 0.9f, "the scorch faded");
         }
 

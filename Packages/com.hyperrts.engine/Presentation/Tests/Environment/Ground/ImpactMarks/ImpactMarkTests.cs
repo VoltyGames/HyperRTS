@@ -148,6 +148,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.ImpactMarks
         public void AshMark_LeavesAStain_OnTheGroundOnly()
         {
             _mark.scar.ash = 0.6f;
+            _mark.scar.burnReach = TrampleStamps.RimReach;
             _mark.scar.rubble = 0.1f;
             Land(new float3(5f, 0f, -2f));
             Land(new float3(9f, 0f, 0f), ImpactSurface.Water);

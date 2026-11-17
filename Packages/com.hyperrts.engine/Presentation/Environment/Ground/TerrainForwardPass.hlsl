@@ -19,7 +19,6 @@
 #define CRATER_DAMPNESS 0.2
 #define CRATER_OCCLUSION 0.35
 #define CRATER_PUDDLE 0.6
-#define SCORCH_CHAR 0.9
 
 struct TerrainForwardVaryings
 {
@@ -67,7 +66,7 @@ half ApplyTrample(inout TerrainSurface surface, float2 positionXZ)
 
     TrackSample tracks = ReadTracks(positionXZ);
     half flatten = ReadTrample(positionXZ).flatten;
-    half bowl = (half)saturate(tracks.crater / CRATER_FULL_DEPTH);
+    half bowl = (half)saturate(max(tracks.crater, 0.0) / CRATER_FULL_DEPTH);
     half3 earth = surface.albedo * half3(0.62, 0.5, 0.4);
     surface.albedo = lerp(surface.albedo, earth, SOIL_TINT * max(tracks.churn, bowl));
     surface.albedo *= (1.0 - RUT_DARKENING * tracks.depth) * (1.0 - FLATTEN_DARKENING * flatten) *
@@ -75,9 +74,7 @@ half ApplyTrample(inout TerrainSurface surface, float2 positionXZ)
     surface.smoothness = saturate(surface.smoothness + CRATER_DAMPNESS * bowl);
     surface.occlusion *= 1.0 - CRATER_OCCLUSION * bowl;
 
-    // Scorch is the same char a burnt field leaves (TerrainStains.hlsl).
-    surface.albedo = lerp(surface.albedo, _StainCharColor.rgb, SCORCH_CHAR * tracks.scorch);
-    surface.smoothness = lerp(surface.smoothness, CHAR_SMOOTHNESS, tracks.scorch);
+    ApplyScorch(surface, tracks.scorch);
 
     half2 slope = (half2)(tracks.slope * RUT_DEPTH + tracks.craterSlope * CRATER_RELIEF);
     surface.normalTS = normalize(half3(surface.normalTS.xy + slope, surface.normalTS.z));

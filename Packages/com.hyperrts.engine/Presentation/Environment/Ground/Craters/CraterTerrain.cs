@@ -10,7 +10,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Ground.Craters
 {
     /// <summary>
-    /// A Unity Terrain dented on the GPU by the crater bowls in the tracks map, with a copy of its heights from before
+    /// A Unity Terrain dented and raised on the GPU by the crater bowls and rims in the tracks map, with a copy of its heights from before
     /// the match to put back. Visual only: the simulation's ground never reads it.
     /// </summary>
     public sealed class CraterTerrain : IDisposable
@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
 
         /// <summary>
         /// Redraws the heights under a world XZ box: the originals levelled under the buildings, less the tracks map's
-        /// crater depth.
+        /// signed ground depth.
         /// </summary>
         public void Dent(float2 min, float2 max)
         {

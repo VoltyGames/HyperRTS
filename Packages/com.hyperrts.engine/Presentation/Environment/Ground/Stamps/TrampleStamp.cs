@@ -18,8 +18,14 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Half the quad's size in metres: x across, y along <see cref="Forward"/>.</summary>
         public float2 HalfSize;
 
-        /// <summary>Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Stains: (rubble, ash, fuel, wet mud).</summary>
+        /// <summary>
+        /// Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Stains: (rubble, ash, fuel, wet mud).
+        /// Scars: (depth, scorch, bowl share of the stamp, churn), with a negative share for a trench. Fills: (inner half width, inner half length, skirt, unused).
+        /// </summary>
         public float4 Value;
+
+        /// <summary>Scars: the bowl's lip height as a share of <see cref="TrampleStamps.GroundRange"/>; 0 for none.</summary>
+        public float Rim;
 
         /// <summary>Half the size of the world-axis box round the turned quad.</summary>
         public readonly float2 Extent => math.abs(new float2(Forward.y, -Forward.x)) * HalfSize.x + math.abs(Forward) * HalfSize.y;

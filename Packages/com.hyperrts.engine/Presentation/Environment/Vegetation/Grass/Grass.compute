@@ -143,7 +143,8 @@ void Scatter(uint3 id : SV_DispatchThreadID)
 
     float2 dither = (float2(Channel(hash, CHANNEL_DITHER), Channel(hash, CHANNEL_DITHER + 1u)) - 0.5) * COVERAGE_DITHER;
     float painted = Coverage(xz + dither, job.id);
-    if (Channel(hash, CHANNEL_COVERAGE) >= Clumped(painted, plant, xz) * (1.0 - BurntShare(xz)) || UnderBuilding(xz))
+    float standing = Clumped(painted, plant, xz) * (1.0 - BurntShare(xz));
+    if (Channel(hash, CHANNEL_COVERAGE) >= standing || NearBuilding(xz, Channel(hash, CHANNEL_ASPECT)))
     {
         return;
     }

@@ -14,6 +14,11 @@
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/SurfaceType.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wind.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BurntPlants.hlsl"
+
+// Terrain.shader's char colour is a per-material colour, not a global, so bark keeps its own in linear light.
+#define BARK_CHAR half3(0.0023, 0.002, 0.0018)
+#define BARK_CHAR_SMOOTHNESS_LOSS 0.6 // a burnt trunk is matt
 
 CBUFFER_START(UnityPerMaterial)
 float4 _BaseMap_ST;
@@ -49,7 +54,9 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
 {
     outSurfaceData = (SurfaceData)0;
     half4 albedo = SampleBaseMap(uv) * GetBaseColor();
-    outSurfaceData.albedo = albedo.rgb;
+    // Ash at the trunk's root, so a tree chars with the ground it stands on.
+    half burnt = BurntShare(UNITY_MATRIX_M._m03_m23);
+    outSurfaceData.albedo = lerp(albedo.rgb, BARK_CHAR, burnt);
     outSurfaceData.alpha = 1.0;
     outSurfaceData.specular = half3(0.0, 0.0, 0.0);
     outSurfaceData.normalTS = SampleNormal(uv);
@@ -64,6 +71,7 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
     outSurfaceData.smoothness = _Smoothness;
     outSurfaceData.occlusion = 1.0;
 #endif
+    outSurfaceData.smoothness *= 1.0 - BARK_CHAR_SMOOTHNESS_LOSS * burnt;
 }
 
 #endif

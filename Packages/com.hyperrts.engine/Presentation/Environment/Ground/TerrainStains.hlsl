@@ -1,9 +1,11 @@
 // HyperRTS/Terrain stains: the rubble, ash, fuel and wet mud a match leaves (_HyperRTSStains), over the layered
-// ground. Rubble, ash and mud are tiled textures (albedo, normal, mask map with G occlusion and A smoothness).
+// ground or a road. Rubble, ash and mud are tiled textures (albedo, normal, mask map with G occlusion and A smoothness).
+// The includer declares _NoiseMap and the _Stain* tiles, smoothnesses and _StainCharColor.
 #ifndef HYPERRTS_TERRAIN_STAINS_INCLUDED
 #define HYPERRTS_TERRAIN_STAINS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/HexGrid.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainSurface.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 
@@ -19,6 +21,7 @@
 #define CHAR_PATCH_SIZE 11.0 // metres over which the char shades lighter or darker
 #define CHAR_DARKENING 0.6   // share of the ash stain's brightness char keeps
 #define CHAR_SMOOTHNESS 0.08
+#define SCORCH_CHAR 0.9     // share of the char colour full scorch burns in
 
 TEXTURE2D(_StainRubbleAlbedo);
 TEXTURE2D(_StainRubbleNormal);
@@ -90,6 +93,13 @@ void ApplyChar(inout TerrainSurface surface, TerrainPixel pixel, half ash, half 
     half charred = smoothstep(CHAR_START, 1.0, ash) * cover;
     surface.albedo *= lerp(1.0h, darkening, charred);
     surface.smoothness = lerp(surface.smoothness, CHAR_SMOOTHNESS, charred);
+}
+
+// Scorch is the same char a burnt field leaves.
+void ApplyScorch(inout TerrainSurface surface, half scorch)
+{
+    surface.albedo = lerp(surface.albedo, _StainCharColor.rgb, SCORCH_CHAR * scorch);
+    surface.smoothness = lerp(surface.smoothness, CHAR_SMOOTHNESS, scorch);
 }
 
 // Returns the wet mud's cover, where puddles gather too.

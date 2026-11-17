@@ -13,7 +13,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Ground.Craters
 {
     /// <summary>
-    /// Dents the active terrain under stamped crater bowls and trenches and levels it under finished buildings, and restores it on a replay seek or map change.
+    /// Dents the active terrain under stamped crater bowls and trenches, raises it under their rims and levels it under finished buildings, and restores it on a replay seek or map change.
     /// Visual only: the simulation's ground never changes.
     /// </summary>
     // Before TrampleStampSystem clears last frame's stamps, which TrampleMap has drawn by now.
@@ -53,7 +53,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             var min = new float2(float.MaxValue);
             var max = new float2(float.MinValue);
             AddBowls(stamps, ref min, ref max);
-            if (_levels.Replace(WantedLevels(), ref min, ref max))
+            _levels.TakeFilled(ref min, ref max);
+            if (_levels.Replace(WantedLevels(), stamps, ref min, ref max))
             {
                 _crater.SetBuildings(_levels.All);
             }
@@ -92,12 +93,13 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             return true;
         }
 
+        // Bowls, trenches and rims move the ground; a pure scorch does not.
         private static void AddBowls(TrampleStamps stamps, ref float2 min, ref float2 max)
         {
             foreach (var scar in stamps.Scars)
             {
-                var bowl = scar.Value.x > 0f;
-                if (bowl)
+                var shaped = scar.Value.x > 0f || scar.Rim > 0f;
+                if (shaped)
                 {
                     min = math.min(min, scar.Center - scar.Extent);
                     max = math.max(max, scar.Center + scar.Extent);

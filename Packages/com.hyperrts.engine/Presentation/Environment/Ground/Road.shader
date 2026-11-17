@@ -1,6 +1,7 @@
 // Road on a ribbon mesh over the terrain: U across (0..1), V along in metres, vertex alpha fading ends and junctions.
 // No depth write, so decals, SSAO and the fog of war see the terrain underneath and cover the road too.
-// Needs mesh normals and tangents.
+// Needs mesh normals and tangents. Follows craters and rims in the trample maps, breaks where a bowl is deep, and takes
+// the scorch, ash and rubble stains the terrain does (TerrainStains.hlsl), so the _Stain* properties are set like the terrain's.
 Shader "HyperRTS/Road"
 {
     Properties
@@ -25,6 +26,22 @@ Shader "HyperRTS/Road"
         _RutWidth ("Rut Width (U)", Range(0.01, 0.25)) = 0.06
         _RutPuddles ("Rut Puddles", Range(0, 1)) = 0.6
         _EdgePuddles ("Edge Puddles", Range(0, 1)) = 0.4
+        [NoScaleOffset] _StainRubbleAlbedo ("Stain Rubble Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainRubbleNormal ("Stain Rubble Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainRubbleMask ("Stain Rubble Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainRubbleTile ("Stain Rubble Tile (m)", Float) = 2
+        _StainRubbleSmoothness ("Stain Rubble Smoothness (x mask A)", Range(0, 1)) = 0.5
+        [NoScaleOffset] _StainAshAlbedo ("Stain Ash Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainAshNormal ("Stain Ash Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainAshMask ("Stain Ash Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainAshTile ("Stain Ash Tile (m)", Float) = 3
+        _StainAshSmoothness ("Stain Ash Smoothness (x mask A)", Range(0, 1)) = 0.3
+        _StainCharColor ("Char Colour (scorch under blasts)", Color) = (0.03, 0.027, 0.024, 1)
+        [NoScaleOffset] _StainMudAlbedo ("Stain Mud Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainMudNormal ("Stain Mud Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainMudMask ("Stain Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainMudTile ("Stain Mud Tile (m)", Float) = 3
+        _StainMudSmoothness ("Stain Mud Smoothness (x mask A)", Range(0, 1)) = 0.5
     }
 
     SubShader
@@ -67,6 +84,13 @@ Shader "HyperRTS/Road"
             half _RutWidth;
             half _RutPuddles;
             half _EdgePuddles;
+            float _StainRubbleTile;
+            half _StainRubbleSmoothness;
+            float _StainAshTile;
+            half _StainAshSmoothness;
+            half4 _StainCharColor;
+            float _StainMudTile;
+            half _StainMudSmoothness;
         CBUFFER_END
         ENDHLSL
 
@@ -91,7 +115,13 @@ Shader "HyperRTS/Road"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStains.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
+
+            // A bowl this deep breaks the road: it is gone by the far depth.
+            #define ROAD_BREAK_NEAR 0.2
+            #define ROAD_BREAK_FAR 0.4
 
             struct Attributes
             {
@@ -124,8 +154,11 @@ Shader "HyperRTS/Road"
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
                 VertexPositionInputs position = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normals = GetVertexNormalInputs(input.normalOS, input.tangentOS);
-                output.positionCS = position.positionCS;
-                output.positionWS = position.positionWS;
+                // The ribbon spans many craters, so each vertex follows the ground at its own spot.
+                float3 positionWS = position.positionWS;
+                positionWS.y -= CraterDepth(positionWS.xz);
+                output.positionCS = TransformWorldToHClip(positionWS);
+                output.positionWS = positionWS;
                 output.uv = input.uv;
                 output.normalWS = normals.normalWS;
                 output.tangentWS = half4(normals.tangentWS, input.tangentOS.w * GetOddNegativeScale());
@@ -140,12 +173,13 @@ Shader "HyperRTS/Road"
             // never draws where a building stands, so it can't show through a yard, a pit or a silo.
             half Coverage(Varyings input, half albedoAlpha)
             {
+                half unbroken = 1.0 - smoothstep(ROAD_BREAK_NEAR, ROAD_BREAK_FAR, CraterDepth(input.positionWS.xz));
                 half yard = 1.0 - smoothstep(0.3, 0.7, BuildingCover(input.positionWS.xz));
                 half inside = 1.0 - abs(input.uv.x * 2.0 - 1.0);
                 half fade = saturate(inside / _EdgeWidth);
                 half noise = SAMPLE_TEXTURE2D(_NoiseMap, sampler_NoiseMap, input.positionWS.xz / _NoiseSize).r;
                 half crumble = saturate(fade * (1.0 + _EdgeNoise) - noise * _EdgeNoise);
-                return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacity * yard;
+                return smoothstep(0.0, 1.0, crumble) * albedoAlpha * input.opacity * yard * unbroken;
             }
 
             // How readily water stands here: in the wheel ruts and along the edges, broken up by world noise.
@@ -173,6 +207,31 @@ Shader "HyperRTS/Road"
                 Wet(surface.albedo, surface.smoothness, surface.normalTS, _HyperRTSWetness, _WetDarkening, _WetSmoothness);
                 half puddles = PuddleCoverage(PuddleCollect(input, st, dx, dy), _PuddleCoverage);
                 Puddle(surface.albedo, surface.smoothness, surface.normalTS, puddles, _PuddleSmoothness);
+            }
+
+            // The terrain's scorch and stains, over the road's own surface.
+            void ApplyScars(inout SurfaceData surface, Varyings input)
+            {
+                TerrainSurface ground = (TerrainSurface)0;
+                ground.albedo = surface.albedo;
+                ground.normalTS = surface.normalTS;
+                ground.smoothness = surface.smoothness;
+                ground.occlusion = surface.occlusion;
+
+                TerrainPixel pixel = (TerrainPixel)0;
+                pixel.positionWS = input.positionWS;
+                pixel.xz = input.positionWS.xz;
+                pixel.dx = ddx(pixel.xz);
+                pixel.dy = ddy(pixel.xz);
+                half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
+                pixel.frame = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);
+
+                ApplyScorch(ground, SampleScorch(pixel.xz));
+                ApplyStains(ground, pixel);
+                surface.albedo = ground.albedo;
+                surface.normalTS = ground.normalTS;
+                surface.smoothness = ground.smoothness;
+                surface.occlusion = ground.occlusion;
             }
 
             InputData Inputs(Varyings input, half3 normalTS)
@@ -207,6 +266,7 @@ Shader "HyperRTS/Road"
                 surface.normalTS = UnpackNormalScale(SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, uv), _BumpScale);
                 surface.occlusion = mask.g;
                 surface.smoothness = mask.a * _Smoothness;
+                ApplyScars(surface, input);
                 ApplyRain(surface, input);
 
                 InputData inputData = Inputs(input, surface.normalTS);

@@ -7,6 +7,7 @@
 
 #define TRAMPLE_MAX_BEND 1.4
 #define CRATER_TAP_TEXELS 1.5
+#define CRATER_MIN_SLOPE_DEPTH 0.01 // metres: under a quarter of one 8-bit step, so level ground skips the taps
 
 struct TrampleSample
 {
@@ -21,7 +22,7 @@ struct TrackSample
     half churn;
     float2 slope;
     half scorch;
-    float crater; // metres
+    float crater; // metres the ground sank, negative on a rim
     float2 craterSlope;
 };
 
@@ -61,11 +62,12 @@ TrackSample ReadTracks(float2 positionXZ)
 {
     float2 uv = TrampleUV(positionXZ);
     TrackSample s;
-    half4 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0);
+    // Full precision: the ground level sits at a bias that half would blur.
+    float4 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0);
     s.depth = RutCoverage(tracks.r);
     s.churn = tracks.g;
     s.scorch = tracks.b;
-    s.crater = tracks.a * HYPERRTS_MAX_CRATER_DEPTH;
+    s.crater = GroundSunk(tracks.a);
     s.craterSlope = 0.0;
 
     // Gather order: x (u0, v1), y (u1, v1), z (u1, v0), w (u0, v0).
@@ -77,7 +79,7 @@ TrackSample ReadTracks(float2 positionXZ)
 
     // A bowl spans many texels, so a wide central difference keeps its slope smooth.
     UNITY_BRANCH
-    if (tracks.a > 0.0)
+    if (abs(s.crater) > CRATER_MIN_SLOPE_DEPTH)
     {
         float2 step = CRATER_TAP_TEXELS / max(_HyperRTSTracksTexel.xy, 1.0);
         float east = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv + float2(step.x, 0.0), 0).a;
@@ -85,9 +87,21 @@ TrackSample ReadTracks(float2 positionXZ)
         float north = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv + float2(0.0, step.y), 0).a;
         float south = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv - float2(0.0, step.y), 0).a;
         float2 span = 2.0 * CRATER_TAP_TEXELS * max(_HyperRTSTracksTexel.zw, 1e-4);
-        s.craterSlope = float2(east - west, north - south) * HYPERRTS_MAX_CRATER_DEPTH / span;
+        s.craterSlope = float2(east - west, north - south) * HYPERRTS_GROUND_RANGE / span;
     }
     return s;
+}
+
+// Guarded: none off the maps.
+half SampleScorch(float2 positionXZ)
+{
+    half scorch = 0.0;
+    UNITY_BRANCH
+    if (TrampleMapsOn())
+    {
+        scorch = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, TrampleUV(positionXZ), 0).b;
+    }
+    return scorch;
 }
 
 half SampleWake(float3 positionWS)

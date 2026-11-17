@@ -29,6 +29,7 @@ Shader "Hidden/HyperRTS/Trample Brush"
             nointerpolation float4 value : TEXCOORD1;
             nointerpolation float2 forward : TEXCOORD2;
             nointerpolation float phase : TEXCOORD3;
+            nointerpolation float rim : TEXCOORD4;
         };
 
         // On top-origin APIs the texture's first row is clip y = +1.
@@ -59,6 +60,7 @@ Shader "Hidden/HyperRTS/Trample Brush"
             output.value = stamp.Value;
             output.forward = stamp.Forward;
             output.phase = Random(float3(stamp.Center, 0.0)) * TWO_PI;
+            output.rim = stamp.Rim;
             return output;
         }
 
@@ -92,28 +94,95 @@ Shader "Hidden/HyperRTS/Trample Brush"
             return half4(input.value.x * ramp, input.value.y * Footprint(input, 0.6), 0.0, 0.0);
         }
 
-        // A ragged rim keeps hundreds of scars from reading as stamped circles. A scar without a bowl is a footprint.
+        // The bowl's floor is flat out to this share of its radius, then the wall climbs steeply to the ground.
+        #define BOWL_FLOOR 0.2
+        // The lip rises from the bowl's edge, peaks just outside it and is gone by RIM_END, in bowl radii.
+        #define RIM_START 0.95
+        #define RIM_PEAK 1.1
+        #define RIM_END 1.3
+
+        // Wobble round the edge, so hundreds of scars don't read as stamped circles.
+        float Ragged(StampVaryings input)
+        {
+            float angle = atan2(input.local.y, input.local.x);
+            return 1.0 + 0.08 * sin(5.0 * angle + input.phase) + 0.05 * sin(3.0 * angle - 2.0 * input.phase);
+        }
+
+        // Distance from the centre in bowl radii, ragged like the scorch.
+        float BowlReach(StampVaryings input)
+        {
+            return length(input.local) * Ragged(input) / input.value.z;
+        }
+
+        // Smooth lumps from -1 to 1 over the bowl, so a floor and a lip are never machined.
+        float Lumps(StampVaryings input, float perRadius)
+        {
+            float2 p = input.local / input.value.z * perRadius + input.phase;
+            return sin(p.x * 1.7 + sin(p.y * 2.3)) * sin(p.y * 1.9 + sin(p.x * 2.9));
+        }
+
+        // A scar without a bowl is a footprint. Alpha is the ground level: the bias plus the depth, so Max keeps the deepest.
         half4 ScarsFragment(StampVaryings input) : SV_Target
         {
             // A negative bowl radius is a trench: flat floor, steep sides, open ends so segments join.
             if (input.value.z < 0.0)
             {
                 float wall = 1.0 - smoothstep(0.85, 1.0, abs(input.local.x));
-                return half4(0.0, input.value.w * wall, 0.0, input.value.x * wall);
+                return half4(0.0, input.value.w * wall, 0.0, HYPERRTS_GROUND_LEVEL_BIAS + input.value.x * wall);
             }
 
-            float angle = atan2(input.local.y, input.local.x);
-            float ragged = 1.0 + 0.08 * sin(5.0 * angle + input.phase) + 0.05 * sin(3.0 * angle - 2.0 * input.phase);
+            float ragged = Ragged(input);
             if (input.value.z <= 0.0)
             {
                 float burnt = 1.0 - smoothstep(0.85, 1.0, max(abs(input.local.x), abs(input.local.y)) * ragged);
                 return half4(0.0, input.value.w * burnt, input.value.y * burnt, 0.0);
             }
 
-            float reach = length(input.local) * ragged;
-            float bowl = saturate(1.0 - Sq(reach / input.value.z));
-            float scorch = 1.0 - smoothstep(0.55, 1.0, reach);
-            return half4(0.0, input.value.w * saturate(bowl * 3.0), input.value.y * scorch, input.value.x * bowl * bowl);
+            float floorShare = 1.0 - smoothstep(BOWL_FLOOR, 1.0, BowlReach(input));
+            float scorch = 1.0 - smoothstep(0.55, 1.0, length(input.local) * ragged);
+            return half4(0.0, input.value.w * saturate(floorShare * 3.0), input.value.y * scorch,
+                HYPERRTS_GROUND_LEVEL_BIAS + input.value.x * floorShare * (1.0 + 0.2 * Lumps(input, 5.0) + 0.1 * Lumps(input, 13.0)));
+        }
+
+        // The lip of the same scars, drawn with Min so it also buries part of an older bowl under it.
+        half4 ScarRimsFragment(StampVaryings input) : SV_Target
+        {
+            if (input.value.z <= 0.0 || input.rim <= 0.0)
+            {
+                discard;
+            }
+
+            float reach = BowlReach(input);
+            float lip = smoothstep(RIM_START, RIM_PEAK, reach) * (1.0 - smoothstep(RIM_PEAK, RIM_END, reach));
+            if (lip <= 0.0)
+            {
+                discard;
+            }
+
+            // Thrown earth piles higher on some sides than others.
+            float pile = saturate(0.7 + 0.3 * Lumps(input, 2.5) + 0.2 * Lumps(input, 9.0));
+            return half4(0.0, 0.0, 0.0, HYPERRTS_GROUND_LEVEL_BIAS - input.rim * lip * pile);
+        }
+
+        // How level a building's footprint makes the ground here: 1 inside, easing to 0 over the skirt.
+        float FillWeight(StampVaryings input)
+        {
+            float2 offset = input.local * float2(input.value.x + input.value.z, input.value.y + input.value.z);
+            float gap = length(max(abs(offset) - input.value.xy, 0.0));
+            float t = saturate(1.0 - gap / input.value.z);
+            return t * t * (3.0 - 2.0 * t);
+        }
+
+        // Min caps a bowl at the level; the cap rises to the top of the range at the skirt's outer edge.
+        half4 FillCapFragment(StampVaryings input) : SV_Target
+        {
+            return half4(0.0, 0.0, 0.0, 1.0 - FillWeight(input) * (1.0 - HYPERRTS_GROUND_LEVEL_BIAS));
+        }
+
+        // Max raises a rim to the level.
+        half4 FillFloorFragment(StampVaryings input) : SV_Target
+        {
+            return half4(0.0, 0.0, 0.0, FillWeight(input) * HYPERRTS_GROUND_LEVEL_BIAS);
         }
 
         // Brightest along the edges, where the bow wave breaks.
@@ -193,6 +262,42 @@ Shader "Hidden/HyperRTS/Trample Brush"
             HLSLPROGRAM
             #pragma vertex StampVertex
             #pragma fragment ScarsFragment
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "ScarRims"
+            ColorMask A
+            BlendOp Min
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment ScarRimsFragment
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "FillCap"
+            ColorMask A
+            BlendOp Min
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment FillCapFragment
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "FillFloor"
+            ColorMask A
+            BlendOp Max
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment FillFloorFragment
             ENDHLSL
         }
 

@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Presentation.Environment.Weather;
@@ -13,13 +14,18 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
     public class TrampleTests
     {
         private const float Reach = 25f;
+        private const float BurnReach = 1.5f;
 
         private static readonly TrackMarks Tank = new() { Width = 0.6f, Gauge = 2.8f, RutDepth = 1f };
 
         private ImpactMark _mark;
 
         [SetUp]
-        public void SetUp() => _mark = ScriptableObject.CreateInstance<ImpactMark>();
+        public void SetUp()
+        {
+            _mark = ScriptableObject.CreateInstance<ImpactMark>();
+            _mark.scar.burnReach = BurnReach;
+        }
 
         [TearDown]
         public void TearDown() => Object.DestroyImmediate(_mark);
@@ -100,10 +106,10 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             stamps.AddScar(new float2(1f, 2f), _mark.scar, 4f * 0.5f);
 
             var scar = stamps.Scars[0];
-            Assert.AreEqual(new float2(2f * TrampleStamps.ScorchReach), scar.HalfSize);
-            Assert.AreEqual(0.8f / TrampleStamps.MaxCraterDepth, scar.Value.x, 1e-5f);
+            Assert.AreEqual(new float2(2f * BurnReach), scar.HalfSize);
+            Assert.AreEqual(0.8f / TrampleStamps.GroundRange, scar.Value.x, 1e-5f);
             Assert.AreEqual(0.6f, scar.Value.y, 1e-5f);
-            Assert.AreEqual(1f / TrampleStamps.ScorchReach, scar.Value.z, 1e-5f, "bowl share of the stamp");
+            Assert.AreEqual(1f / BurnReach, scar.Value.z, 1e-5f, "bowl share of the stamp");
             Assert.AreEqual(scar.HalfSize, stamps.Trample[0].HalfSize, "plants flattened over the whole scar");
             Assert.AreEqual(1f, stamps.Trample[0].Value.w, "round");
             Assert.IsEmpty(stamps.Tracks, "scars stay out of the fading channels' stamps");
@@ -112,13 +118,51 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         [Test]
         public void AddScar_WithoutScorch_IsJustTheBowl_AndDeepCratersClip()
         {
-            _mark.scar.craterDepth = 5f;
+            _mark.scar.craterDepth = 9f;
             var stamps = new TrampleStamps();
 
             stamps.AddScar(float2.zero, _mark.scar, 6f * 0.5f);
 
             Assert.AreEqual(new float2(3f), stamps.Scars[0].HalfSize);
-            Assert.AreEqual(new float4(1f, 0f, 1f, 1f), stamps.Scars[0].Value);
+            Assert.AreEqual(new float4(TrampleStamps.MaxDepth / TrampleStamps.GroundRange, 0f, 1f, 1f), stamps.Scars[0].Value);
+            Assert.AreEqual(0f, stamps.Scars[0].Rim);
+        }
+
+        [Test]
+        public void AddScar_RimStandsAboveTheGround_AndNeedsRoomOutsideTheBowl()
+        {
+            _mark.scar.craterDepth = 1f;
+            _mark.scar.rimHeight = 3f;
+            var stamps = new TrampleStamps();
+
+            stamps.AddScar(float2.zero, _mark.scar, 2f);
+
+            var scar = stamps.Scars[0];
+            Assert.AreEqual(TrampleStamps.MaxRim / TrampleStamps.GroundRange, scar.Rim, 1e-5f, "the rim clips at its top");
+            Assert.AreEqual(2f * TrampleStamps.RimReach, scar.HalfSize.x, 1e-5f, "the stamp has room for the lip");
+            Assert.GreaterOrEqual(TrampleStamps.GroundLevelBias - scar.Rim, 0f, "the tallest rim fits under the bias");
+        }
+
+        [Test]
+        public void AddScar_ScorchWithoutABurnReach_FailsLoudly()
+        {
+            _mark.scar.scorch = 0.5f;
+            _mark.scar.burnReach = 1f;
+
+            Assert.Throws<System.ArgumentException>(() => new TrampleStamps().AddScar(float2.zero, _mark.scar, 2f));
+        }
+
+        [Test]
+        public void AddFill_SurvivesTheFrameClear_UntilTheBrushDrawsIt()
+        {
+            var stamps = new TrampleStamps();
+
+            stamps.AddFill(new TurnedRect(new float2(5f, 6f), new float2(1f, 0f), new float2(8f, 4f)), 2.5f);
+            stamps.Clear();
+
+            var fill = stamps.Fills[0];
+            Assert.AreEqual(new float2(6.5f, 4.5f), fill.HalfSize);
+            Assert.AreEqual(new float4(4f, 2f, 2.5f, 0f), fill.Value);
         }
 
         [Test]
@@ -131,7 +175,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             stamps.AddScar(new float2(1f, 2f), _mark.scar, 4f * 0.5f);
 
             Assert.AreEqual(1, stamps.Stains.Count);
-            Assert.AreEqual(new float2(2f * TrampleStamps.ScorchReach), stamps.Stains[0].HalfSize);
+            Assert.AreEqual(new float2(2f * BurnReach), stamps.Stains[0].HalfSize);
             Assert.AreEqual(new float4(0.2f, 0.7f, 0f, 0f), stamps.Stains[0].Value);
             Assert.IsEmpty(stamps.Scars, "no bowl or scorch, so the soil is not churned");
             Assert.IsEmpty(stamps.Trample);

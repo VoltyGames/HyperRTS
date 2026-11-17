@@ -12,6 +12,7 @@ struct TrampleStamp
     float2 Forward;
     float2 HalfSize;
     float4 Value;
+    float Rim;
 };
 
 

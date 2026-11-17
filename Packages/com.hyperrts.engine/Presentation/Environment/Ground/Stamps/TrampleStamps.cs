@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Cues.Effects;
+using System;
 using System.Collections.Generic;
 using Unity.Mathematics;
 
@@ -7,11 +8,19 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     /// <summary>One frame's stamps for the trample maps.</summary>
     public sealed class TrampleStamps
     {
-        /// <summary>Scorch disc reach as a multiple of the bowl radius.</summary>
-        public const float ScorchReach = 1.25f;
+        /// <summary>Metres across the tracks map's alpha, from 0 to 1. Matches HYPERRTS_GROUND_RANGE in TrampleGlobals.hlsl.</summary>
+        public const float GroundRange = 8f;
 
-        /// <summary>Metres at full scale in a scar's depth channel; deeper craters clip. Matches HYPERRTS_MAX_CRATER_DEPTH in TrampleGlobals.hlsl.</summary>
-        public const float MaxCraterDepth = 2f;
+        /// <summary>Alpha of untouched ground: above it the ground sank, below it a rim lifted it. Matches HYPERRTS_GROUND_LEVEL_BIAS.</summary>
+        public const float GroundLevelBias = 64f / 255f;
+
+        /// <summary>Deepest bowl or trench and highest rim the alpha holds; more clips.</summary>
+        public const float MaxDepth = 6f;
+
+        public const float MaxRim = 2f;
+
+        /// <summary>A rim fades out by this multiple of the bowl radius, so a stamp holding one reaches that far.</summary>
+        public const float RimReach = 1.3f;
 
         public const float FullWakeSpeed = 8f;
         public const float WakeReachSeconds = 0.5f;
@@ -26,6 +35,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
 
         public readonly List<TrampleStamp> Scars = new();
 
+        /// <summary>Ground levelled under buildings, drawn once and then dropped.</summary>
+        public readonly List<TrampleStamp> Fills = new();
+
         public readonly List<TrampleStamp> Stains = new();
 
         public readonly List<TrampleStamp> Wakes = new();
@@ -33,28 +45,40 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Clear every map before drawing: a replay sought back past the scars.</summary>
         public bool Reset;
 
-        /// <summary>Scar value: (depth / max, scorch, bowl radius / stamp radius, churn). The stain covers the scorch's reach.</summary>
+        /// <summary>Scar value: (depth / range, scorch, bowl radius / stamp radius, churn), with the rim in <see cref="TrampleStamp.Rim"/>. The stain covers the burn reach.</summary>
         public void AddScar(float2 center, in GroundScar scar, float radius)
         {
-            if (scar.LeavesStain)
+            if ((scar.scorch > 0f || scar.LeavesStain) && scar.burnReach < RimReach)
             {
-                AddStain(center, radius * ScorchReach, scar.Stain);
+                throw new ArgumentException($"HyperRTS: a ground scar with scorch or a stain needs a burn reach of at least {RimReach}, got {scar.burnReach}.");
             }
 
-            if (scar.craterDepth <= 0f && scar.scorch <= 0f)
+            if (scar.LeavesStain)
+            {
+                AddStain(center, radius * scar.burnReach, scar.Stain);
+            }
+
+            var rim = math.min(scar.rimHeight, MaxRim);
+            if (scar.craterDepth <= 0f && scar.scorch <= 0f && rim <= 0f)
             {
                 return;
             }
 
-            var reach = scar.scorch > 0f ? radius * ScorchReach : radius;
+            var reach = radius * ScarReach(scar, rim);
             Trample.Add(Disc(center, reach, new float4(1f, 1f, 0f, 1f)));
-            var depth = math.saturate(scar.craterDepth / MaxCraterDepth);
-            Scars.Add(Disc(center, reach, new float4(depth, math.saturate(scar.scorch), radius / reach, 1f)));
+            var depth = math.min(scar.craterDepth, MaxDepth) / GroundRange;
+            var stamp = Disc(center, reach, new float4(depth, math.saturate(scar.scorch), radius / reach, 1f));
+            stamp.Rim = rim / GroundRange;
+            Scars.Add(stamp);
         }
 
         /// <summary>A ditch <paramref name="depth"/> metres deep along <paramref name="forward"/>, sloping up at its sides; a negative bowl value marks it.</summary>
         public void AddTrench(float2 center, float2 forward, float2 halfSize, float depth) =>
-            Scars.Add(Stamp(center, forward, halfSize, new float4(math.saturate(depth / MaxCraterDepth), 0f, -1f, 1f)));
+            Scars.Add(Stamp(center, forward, halfSize, new float4(math.min(depth, MaxDepth) / GroundRange, 0f, -1f, 1f)));
+
+        /// <summary>Ground level again under a building: no bowl or rim stays inside <paramref name="area"/>, easing out over <paramref name="skirt"/> metres.</summary>
+        public void AddFill(in TurnedRect area, float skirt) =>
+            Fills.Add(Stamp(area.Center, area.Forward, area.Half + skirt, new float4(area.Half, skirt, 0f)));
 
         /// <summary>A footprint scorched and churned to <paramref name="share"/>: square, with no bowl.</summary>
         public void AddFootprintScar(float2 center, float2 forward, float2 size, float share) =>
@@ -122,6 +146,17 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Stains.Clear();
             Wakes.Clear();
             Reset = false;
+        }
+
+        // Scorch and the stain set how far a scar reaches; a bare bowl with a lip needs room for the lip.
+        private static float ScarReach(in GroundScar scar, float rim)
+        {
+            if (scar.scorch > 0f)
+            {
+                return scar.burnReach;
+            }
+
+            return rim > 0f ? RimReach : 1f;
         }
 
         private static TrampleStamp Stamp(float2 center, float2 forward, float2 halfSize, float4 value) =>

@@ -137,7 +137,7 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
             var ground = new float3(point.x, terrain.Height(point), point.y);
             var normal = ImpactMarkMath.GroundNormal(terrain, point, math.max(diameter * 0.25f, 0.5f));
             var rotation = ImpactMarkMath.Facing(normal, _random.NextFloat(2f * math.PI));
-            Decals(mark).Place(now, decal, ground, rotation, diameter, _random.NextBool());
+            Decals(mark).Place(now, decal, ground, rotation, diameter * mark.decalReach, _random.NextBool());
         }
 
         private ImpactMarkDecals Decals(ImpactMark mark)

@@ -70,8 +70,9 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
         {
             StampCrater();
 
-            Assert.AreEqual(CraterDepth, Sunk(CraterX, CraterZ), 0.05f, "the bowl's floor is not the stamped depth");
-            Assert.That(Sunk(CraterX + 2, CraterZ), Is.InRange(0.35f, 0.75f), "the bowl wall is off");
+            // The floor is lumpy by up to 30 % of the depth.
+            Assert.AreEqual(CraterDepth, Sunk(CraterX, CraterZ), CraterDepth * 0.3f + 0.05f, "the bowl's floor is not the stamped depth");
+            Assert.That(Sunk(CraterX + 2, CraterZ), Is.InRange(0.35f, 0.9f), "the bowl wall is off");
             Assert.AreEqual(0f, Sunk(CraterX + 6, CraterZ), 1e-3f, "the ground past the rim sank");
             Assert.AreEqual(0f, Sunk(CraterX, 64 - CraterZ), 1e-3f, "the bowl shows up mirrored across the map");
         }

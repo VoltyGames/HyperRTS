@@ -5,6 +5,9 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/PlantShading.hlsl"
 
+// Leaves still standing in a burnt patch are scorched, from green to dark brown as the ash share rises.
+#define SCORCH_TINT half3(1.3, 0.45, 0.4)
+
 // Each leaf cluster of a tree a little lighter or darker, and a few drier, so a crown reads as many clumps.
 half3 ClusterTint(Attributes input)
 {
@@ -30,6 +33,9 @@ half4 FoliageTint(Attributes input, float3 origin)
 #endif
     half dry = saturate(DryPatch(origin.xz) * 0.65 + random * 0.35);
     half3 tint = PlantTint(dry, random) * ClusterTint(input);
+#if !defined(_GRASS_INSTANCES)
+    tint *= lerp(half3(1.0, 1.0, 1.0), SCORCH_TINT, BurntShare(origin.xz));
+#endif
     half occlusion = lerp(1.0, input.color.r, _VertexOcclusion);
 #if defined(_GRASS_INSTANCES)
     tint *= lerp(_GrassHealthy.rgb, _GrassDry.rgb, dry) * grass.ground;

@@ -64,9 +64,6 @@ namespace HyperRTS.Input.Cameras
         [Header("Shake")]
         public CameraShake shake = new();
 
-        [Header("White-out")]
-        public CameraWhiteOut whiteOut = new();
-
         [Header("Tree Fade")]
         public CameraTreeFade treeFade = new();
 
@@ -147,9 +144,8 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
-            // Game time, as the bursts that cause them run on, so a slow or paused frame never skips a shake or a flash.
+            // Game time, as the bursts that cause them run on, so a slow or paused frame never skips a shake.
             shake.Step(_focus, _height / zoom.min, Time.deltaTime);
-            whiteOut.Step(_focus, Time.deltaTime);
 
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             var camera = _actions.Camera;

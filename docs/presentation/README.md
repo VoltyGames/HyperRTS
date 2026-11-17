@@ -42,10 +42,6 @@ smooth wobble of a few sines under an envelope that dies in `shake.duration` (or
 as far at any zoom, however many bursts stack. The offset goes on top of the pose,
 so the focus and edge scrolling never see it and the next frame starts from the steady pose. `shake.enabled` turns it off, a player setting.
 
-`CameraWhiteOut` weights its `volume`, whose profile is the full white-out (overexposure and bloom), by the brightest
-`WhiteOutPulse` near the focus. It rises at once and fades over about `whiteOut.recoverySeconds`, slowly at first.
-`whiteOut.enabled` turns it off, a player setting.
-
 At close heights the camera also dithers away tree pixels (Bark, and Foliage with Tree Wind) within
 `treeFade.cameraRadius` of the camera, within `treeFade.lineRadius` of the line from it to the focus and on
 `treeFade.beyondFocus` past it, so squads behind and under trees show. The fade is full at or below

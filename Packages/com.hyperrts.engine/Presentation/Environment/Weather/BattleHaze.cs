@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         public const float Spread = 0.2f;
 
         /// <summary>The thickest haze, in multiples of the weather's own fog density.</summary>
-        public const float Most = 4f;
+        public const float Most = 2f;
 
         private readonly CellGrid _grid;
         private readonly int2 _roll;

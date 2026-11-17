@@ -17,7 +17,7 @@ material, spacing, random scale, turn and lean, and two LOD distances. Its field
 - Plants cost their triangles in every pass, so `thinStart`, `farShare` and `farScale` are the lever on far fields.
 - `height` shades roots toward `_CanopyShade`, which is the crop's ambient occlusion, so keep `_ScreenOcclusion` low.
 
-Trampled plants bend or vanish, and none grow under a building footprint.
+Trampled plants bend or vanish, and none grow under a building footprint or in the 2 m yard around it.
 
 ## Scatter host
 

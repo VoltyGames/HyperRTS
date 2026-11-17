@@ -155,7 +155,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
         }
 
         [Test]
-        public void FootprintMask_MarksTheCellsUnderATurnedBuilding()
+        public void FootprintMask_CoversATurnedBuildingAndFadesAcrossTheMargin()
         {
             using var kit = FootprintWorld(out var system);
             Building(kit.EntityManager, float3.zero, math.PI / 4f, new float2(10f, 2f));
@@ -163,10 +163,14 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
             system.Update();
 
             var mask = system.Mask;
-            Assert.IsTrue(mask.IsMarked(float2.zero), "under its middle");
-            Assert.IsTrue(mask.IsMarked(new float2(3f, -3f)), "along its turned length");
-            Assert.IsFalse(mask.IsMarked(new float2(3f, 3f)), "off its side, inside its world box");
-            Assert.IsFalse(mask.IsMarked(new float2(20f, 20f)), "open ground");
+            Assert.AreEqual(1f, mask.Cover(float2.zero), 1e-3f, "under its middle");
+            Assert.AreEqual(1f, mask.Cover(new float2(3f, -3f)), 1e-3f, "along its turned length");
+            Assert.AreEqual(0f, mask.Cover(new float2(3f, 3f)), "off its side, inside its world box");
+            Assert.AreEqual(0f, mask.Cover(new float2(20f, 20f)), "open ground");
+            var past = new float2(1f, 1f) / math.sqrt(2f) * 2f;
+            // A texel centre lies up to 0.35 m from the point asked for.
+            Assert.AreEqual(0.5f, mask.Cover(past), 0.2f, "a metre past the wall");
+            Assert.AreEqual(0f, mask.Cover(new float2(1f, 1f) / math.sqrt(2f) * 3.5f), "beyond the margin");
         }
 
         [Test]
@@ -182,7 +186,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
             kit.EntityManager.DestroyEntity(building);
             system.Update();
 
-            Assert.IsFalse(system.Mask.IsMarked(new float2(10f, 10f)));
+            Assert.AreEqual(0f, system.Mask.Cover(new float2(10f, 10f)));
             Assert.AreNotEqual(drawn, BuildingFootprintMask.Version, "scattered plants regrow");
         }
 

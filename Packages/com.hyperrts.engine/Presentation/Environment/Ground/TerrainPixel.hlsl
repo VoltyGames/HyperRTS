@@ -3,23 +3,7 @@
 #define HYPERRTS_TERRAIN_PIXEL_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/Triplanar.hlsl"
-
-struct TerrainPixel
-{
-    float2 xz;
-    float2 dx;
-    float2 dy;
-    float3 positionWS;
-    float3 dPdx;
-    float3 dPdy;
-    half3x3 frame;     // TerrainFrame of the terrain's own normal
-    float distance;    // to the camera
-    half far;          // the far sample's share of albedo
-    half relief;       // share of the layers' normal detail kept at this distance
-    half side;         // the side projections' share for triplanar layers
-    half2 sideWeights; // x and z projections' split of that share
-    float2 rowTurn;    // (cos, sin) that lays u along this pixel's crop rows
-};
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainSurface.hlsl"
 
 // The row map holds the rows' direction (x east, y north); u then runs along it. Unturned off the fields.
 float2 RowTurn(float2 uv)

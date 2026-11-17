@@ -26,6 +26,10 @@ namespace HyperRTS.Simulation.Cues.Effects
         [Min(0.1f)]
         public float depth = 1f;
 
+        [Tooltip("Decal diameter as a multiple of the mark's, for a decal that also draws what the blast threw beyond its bowl.")]
+        [Min(1f)]
+        public float decalReach = 1f;
+
         [Tooltip("What the mark leaves in the ground for the rest of the match, over a disc a little wider than the mark.")]
         public GroundScar scar;
 

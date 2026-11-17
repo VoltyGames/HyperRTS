@@ -13,15 +13,19 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 {
     /// <summary>
-    /// Where buildings stand, as an R8 picture over the map at nav-cell resolution, published as
-    /// <c>_HyperRTSFootprints</c> so grass and row crops skip those spots whatever the trample-map quality.
+    /// How much each spot is a building's yard, as an R8 picture over the map: 1 inside a turned box, falling to 0
+    /// across <see cref="Margin"/> outside it. Published as <c>_HyperRTSFootprints</c> so grass and row crops keep
+    /// clear whatever the trample-map quality.
     /// </summary>
     public sealed partial class BuildingFootprintMask : IDisposable
     {
         private static readonly MapTextureGlobal Global = new("_HyperRTSFootprints", "_HyperRTSFootprintRect");
 
-        // Cells within half a cell of a wall count, so plants at its foot stay hidden too.
-        private const float Inset = 0.5f;
+        /// <summary>Metres from a wall over which the cover falls from 1 to 0, so plants thin out towards it.</summary>
+        public const float Margin = 2f;
+
+        // Fine enough that a turned wall's edge is not a staircase.
+        public const float TexelSize = 0.5f;
 
         private readonly Texture2D _texture;
         private readonly byte[] _cells;
@@ -31,7 +35,9 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         public BuildingFootprintMask(in MapSettings map)
         {
             _map = map;
-            _grid = map.NavGrid();
+            var nav = map.NavGrid();
+            var size = (int2)math.ceil((float2)nav.Size * nav.CellSize / TexelSize);
+            _grid = new CellGrid(nav.Min, TexelSize, size);
             _cells = new byte[_grid.Count];
             _texture = new Texture2D(_grid.Size.x, _grid.Size.y, TextureFormat.R8, false, true)
             {
@@ -63,10 +69,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
             Version++;
         }
 
-        public bool IsMarked(float2 position)
+        /// <summary>The cover stored under a point, 0 off the map.</summary>
+        public float Cover(float2 position)
         {
             var cell = _grid.Cell(position);
-            return _grid.Contains(cell) && _cells[_grid.Index(cell)] != 0;
+            return _grid.Contains(cell) ? _cells[_grid.Index(cell)] / 255f : 0f;
         }
 
         public void Dispose()
@@ -81,14 +88,12 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
 
         private void Stamp(in NavBox box)
         {
-            var inset = _grid.CellSize * Inset;
-            var reach = box.Extents + inset;
+            var reach = box.Extents + Margin;
             foreach (var cell in _grid.Cells(_grid.Cell(box.Center - reach), _grid.Cell(box.Center + reach)))
             {
-                if (box.Gap(_grid.Center(cell)) <= inset)
-                {
-                    _cells[_grid.Index(cell)] = byte.MaxValue;
-                }
+                var cover = math.saturate(1f - box.Gap(_grid.Center(cell)) / Margin);
+                var index = _grid.Index(cell);
+                _cells[index] = (byte)math.max(_cells[index], (int)math.round(cover * 255f));
             }
         }
     }
