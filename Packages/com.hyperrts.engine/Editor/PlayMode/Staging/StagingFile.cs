@@ -5,25 +5,21 @@ using System.Linq;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
-    /// <summary>A scripted Play check read from a hand-written JSON file: a scene, an optional fog switch and timed steps.</summary>
+    /// <summary>A scripted Play check read from a hand-written JSON file: a scene and timed steps.</summary>
     internal sealed class StagingFile
     {
         public const string Root = "Logs/Stagings";
 
-        private StagingFile(string name, string scene, bool? fog, List<StagingStep> steps)
+        private StagingFile(string name, string scene, List<StagingStep> steps)
         {
             Name = name;
             Scene = scene;
-            Fog = fog;
             Steps = steps;
         }
 
         public string Name { get; }
 
         public string Scene { get; }
-
-        /// <summary>Fog of war when the match is live; null leaves the map's own setting.</summary>
-        public bool? Fog { get; }
 
         /// <summary>In run order: by time, and in file order at the same time.</summary>
         public IReadOnlyList<StagingStep> Steps { get; }
@@ -46,7 +42,6 @@ namespace HyperRTS.Editor.PlayMode.Staging
             var root = StagingObject.Parse(json, source);
             var name = root.Text("name");
             var scene = root.Text("scene");
-            bool? fog = root.Has("fog") ? root.Flag("fog") : null;
             var steps = root.Items("steps").Select(StagingStep.Read).OrderBy(step => step.At).ToList();
             root.Finish();
             if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
@@ -55,7 +50,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             }
 
             Check(steps, source);
-            return new StagingFile(name, scene, fog, steps);
+            return new StagingFile(name, scene, steps);
         }
 
         // Every group a step uses is made by a step that runs before it; no group or output is made twice.

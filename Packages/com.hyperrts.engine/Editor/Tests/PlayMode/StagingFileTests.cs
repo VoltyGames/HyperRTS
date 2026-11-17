@@ -10,8 +10,9 @@ namespace HyperRTS.Editor.Tests.PlayMode
     public class StagingFileTests
     {
         private const string Good = @"{
-            ""name"": ""check"", ""scene"": ""Assets/X.unity"", ""fog"": false,
+            ""name"": ""check"", ""scene"": ""Assets/X.unity"",
             ""steps"": [
+                { ""at"": 0, ""fog"": false },
                 { ""at"": 2, ""order"": { ""units"": ""blue"", ""attack"": ""red"" } },
                 { ""at"": 0, ""spawn"": { ""as"": ""blue"", ""prefab"": ""A"", ""owner"": 1, ""count"": 2, ""at"": [1, 2], ""spacing"": 8, ""yaw"": 90 } },
                 { ""at"": 0, ""spawn"": { ""as"": ""red"", ""prefab"": ""B"", ""owner"": 2, ""count"": 1, ""at"": [5, 2], ""yaw"": 270 } },
@@ -25,9 +26,8 @@ namespace HyperRTS.Editor.Tests.PlayMode
         {
             var file = StagingFile.Parse(Good, "good.json");
 
-            Assert.That(file.Steps.Select(step => step.Kind), Is.EqualTo(new[] { "spawn", "spawn", "camera", "order", "shot" }));
+            Assert.That(file.Steps.Select(step => step.Kind), Is.EqualTo(new[] { "fog", "spawn", "spawn", "camera", "order", "shot" }));
             Assert.That(file.Steps.Select(step => step.Defines).Where(label => label != null), Is.EqualTo(new[] { "blue", "red" }));
-            Assert.That(file.Fog, Is.False);
         }
 
         [Test]
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Tests.PlayMode
 
             var error = Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(json, "typo.json"));
 
-            StringAssert.Contains("steps[1].spawn", error.Message);
+            StringAssert.Contains("steps[2].spawn", error.Message);
             StringAssert.Contains("spacng", error.Message);
         }
 

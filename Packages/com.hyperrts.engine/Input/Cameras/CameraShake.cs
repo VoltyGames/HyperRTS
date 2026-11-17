@@ -21,7 +21,7 @@ namespace HyperRTS.Input.Cameras
         [Tooltip("Effect bursts near the focus shake the camera; a player setting.")]
         public bool enabled = true;
 
-        [Tooltip("Most the shake moves the camera, however many bursts stack.")]
+        [Tooltip("Most the shake moves the camera at its lowest zoom, however many bursts stack; it moves further in step with height.")]
         [Unit("m")]
         [Min(0.01f)]
         public float maxOffset = 0.15f;
@@ -42,12 +42,16 @@ namespace HyperRTS.Input.Cameras
         // x is a jolt's amplitude in metres as it was taken, y its age in seconds.
         private readonly List<Vector2> _jolts = new();
         private float _time;
+        private float _zoomOut = 1f;
 
         /// <summary>This frame's offset, applied on top of the camera's pose.</summary>
         public Pose Offset { get; private set; } = Pose.identity;
 
-        /// <summary>Takes the presented world's new jolts, then advances; while not <see cref="enabled"/> it drops them all.</summary>
-        public void Step(Vector3 focus, float closeness, float deltaTime)
+        /// <summary>
+        /// Takes the presented world's new jolts, then advances; while not <see cref="enabled"/> it drops them all.
+        /// <paramref name="zoomOut"/> is the camera's height over its lowest.
+        /// </summary>
+        public void Step(Vector3 focus, float zoomOut, float deltaTime)
         {
             if (!enabled)
             {
@@ -56,11 +60,14 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
+            // A jolt weakens with the square root of the height, so a blast is still felt at working zoom, while its
+            // offset grows with the height, so it moves the picture as far at any zoom.
+            _zoomOut = zoomOut;
             if (TryGetWorldJolts(out var jolts))
             {
                 foreach (var jolt in jolts)
                 {
-                    Add(jolt, focus, closeness);
+                    Add(jolt, focus, 1f / Mathf.Sqrt(zoomOut));
                 }
             }
 
@@ -101,7 +108,7 @@ namespace HyperRTS.Input.Cameras
             }
 
             var share = Mathf.Min(amplitude, maxOffset) / maxOffset;
-            Offset = new Pose(Wobble(0f) * (share * maxOffset), Quaternion.Euler(Wobble(10f) * (share * maxAngle)));
+            Offset = new Pose(Wobble(0f) * (share * maxOffset * _zoomOut), Quaternion.Euler(Wobble(10f) * (share * maxAngle)));
         }
 
         /// <summary>A smooth direction no longer than 1, from three phase-shifted waves.</summary>

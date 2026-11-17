@@ -87,8 +87,9 @@ run goes on, except a `spawn`, whose failure ends the run with its message (a wr
 
 ```json
 {
-  "name": "muzzle_cannon", "scene": "Assets/Maps/X.unity", "fog": false,
+  "name": "muzzle_cannon", "scene": "Assets/Maps/X.unity",
   "steps": [
+    { "at": 0, "fog": false },
     { "at": 0, "spawn": { "as": "blue", "prefab": "Tank", "owner": 1, "count": 2, "at": [120, -40], "spacing": 8, "yaw": 90 } },
     { "at": 0, "spawn": { "as": "red", "prefab": "Truck", "owner": 2, "count": 1, "at": [160, -40], "yaw": 270 } },
     { "at": 0.5, "camera": { "on": "blue", "height": 15, "yaw": 0 } },
@@ -100,7 +101,7 @@ run goes on, except a `spawn`, whose failure ends the run with its message (a wr
 }
 ```
 
-`name`, `scene` and `steps` are required; `fog` switches fog when the match is live. Positions are `[x, z]` on the
+`name`, `scene` and `steps` are required. Positions are `[x, z]` on the
 map. An unknown key, a wrong type, a step with two kinds or two order actions, or a group no earlier step spawns fails
 the file, naming its path. Steps run by `at`, and in file order at the same time.
 

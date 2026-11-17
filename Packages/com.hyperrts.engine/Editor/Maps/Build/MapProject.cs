@@ -24,6 +24,7 @@ namespace HyperRTS.Editor.Maps.Build
             Paths = new MapPaths(specPath, spec.name);
             _library = library;
             Palette = library.Palette();
+            Decks = MapDecks.Read(Palette);
             Rules = library.Rules();
             Climate = library.Climate(spec.climate, specPath);
         }
@@ -33,6 +34,9 @@ namespace HyperRTS.Editor.Maps.Build
         public MapPaths Paths { get; }
 
         public MapPalette Palette { get; }
+
+        /// <summary>The palette's bridge decks, read here on the main thread for planning on any thread.</summary>
+        public MapDecks Decks { get; }
 
         public MapRules Rules { get; }
 

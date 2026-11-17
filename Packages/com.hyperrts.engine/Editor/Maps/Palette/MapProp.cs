@@ -76,18 +76,6 @@ namespace HyperRTS.Editor.Maps.Palette
         public bool HasDeck =>
             prefab != null && prefab.TryGetComponent<NavAreaAuthoring>(out var area) && area.kind == NavAreaKind.Deck;
 
-        /// <summary>A bridge's roadway, set by <see cref="ReadDeck"/>.</summary>
-        public MapDeck Deck { get; private set; }
-
-        /// <summary>Reads a bridge's <see cref="Deck"/> from its prefab. Call on the main thread before planning.</summary>
-        public void ReadDeck()
-        {
-            if (HasDeck)
-            {
-                Deck = MapDeck.Read(prefab);
-            }
-        }
-
         /// <summary>A resource node. Looked up on the live prefab each time, so edits to it show on the next build.</summary>
         public bool IsResource => prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
 

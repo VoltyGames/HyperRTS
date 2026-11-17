@@ -24,47 +24,39 @@ namespace HyperRTS.Editor.PlayMode.Staging
         {
             _units = json.Text("units");
             var action = json.Choose(Actions);
-            _type = action switch
+            switch (action)
             {
-                "move" => CommandType.Move,
-                "attack" => CommandType.Attack,
-                "attackGround" => CommandType.FireMission,
-                "stop" => CommandType.Stop,
-                "ability" => CommandType.UseAbility,
-                _ => ReadCommand(json),
-            };
-            if (action is "move" or "attackGround")
-            {
-                _point = json.Point(action);
+                case "move":
+                    _type = CommandType.Move;
+                    _point = json.Point(action);
+                    return;
+                case "attackGround":
+                    _type = CommandType.FireMission;
+                    _point = json.Point(action);
+                    return;
+                case "attack":
+                    _type = CommandType.Attack;
+                    _target = json.Text(action);
+                    return;
+                case "stop":
+                    _type = json.Flag(action) ? CommandType.Stop : throw json.Problem("has 'stop' false; leave the key out instead");
+                    return;
             }
 
-            if (action == "attack")
+            // Abilities go by the hash of their name, as the command card sends them.
+            var ability = action == "ability";
+            _type = ability ? CommandType.UseAbility : ReadCommand(json);
+            if (ability)
             {
-                _target = json.Text("attack");
+                _argument = EntityInfo.TypeIdFromName(json.Text("ability"));
+            }
+            else if (json.Has("argument"))
+            {
+                _argument = json.Whole("argument");
             }
 
-            if (action == "stop" && !json.Flag("stop"))
-            {
-                throw json.Problem("has 'stop' false; leave the key out instead");
-            }
-
-            if (action is "command" or "ability")
-            {
-                _point = json.Has("at") ? json.Point("at") : null;
-                _target = json.Has("target") ? json.Text("target") : null;
-                _argument = Argument(json, action);
-            }
-        }
-
-        // Abilities go by the hash of their name, as the command card sends them.
-        private static int Argument(StagingObject json, string action)
-        {
-            if (action == "ability")
-            {
-                return EntityInfo.TypeIdFromName(json.Text("ability"));
-            }
-
-            return json.Has("argument") ? json.Whole("argument") : 0;
+            _point = json.PointOrNull("at");
+            _target = json.TextOrNull("target");
         }
 
         public override string Kind => "order";

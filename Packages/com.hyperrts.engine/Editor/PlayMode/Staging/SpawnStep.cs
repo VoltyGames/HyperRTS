@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             _owner = (byte)Math.Clamp(json.Whole("owner"), 0, byte.MaxValue);
             _count = json.Whole("count");
             _point = json.Point("at");
-            _spacing = json.Has("spacing") ? json.Number("spacing") : 0f;
+            _spacing = json.NumberOrNull("spacing") ?? 0f;
             _yaw = json.Number("yaw");
             if (_count < 1)
             {

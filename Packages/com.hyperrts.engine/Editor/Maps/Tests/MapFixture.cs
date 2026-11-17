@@ -128,14 +128,17 @@ namespace HyperRTS.Editor.Maps.Tests
         }
 
         public static MapShapes Shapes(MapLayout layout, MapClimate climate) =>
-            new(layout, Item<MapPalette>("Palette"), climate);
+            Shapes(layout, Item<MapPalette>("Palette"), climate);
+
+        public static MapShapes Shapes(MapLayout layout, MapPalette palette, MapClimate climate) =>
+            new(layout, palette, MapDecks.Read(palette), climate);
 
         public static MapPlanContext Context(MapSpec spec, MapClimate climate, MapIssues issues)
         {
             var layout = Layout(spec);
             var palette = Item<MapPalette>("Palette");
             palette.baseRadius = 15f;
-            var shapes = new MapShapes(layout, palette, climate);
+            var shapes = Shapes(layout, palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
             var placements = MapPropPlacer.Place(layout, shapes, palette, climate, issues);
             Assert.IsFalse(issues.HasErrors, issues.ToString());

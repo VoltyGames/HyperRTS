@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             _on = target == "on" ? json.Text("on") : null;
             _point = target == "at" ? json.Point("at") : default;
             _height = json.Number("height");
-            _yaw = json.Has("yaw") ? json.Number("yaw") : null;
+            _yaw = json.NumberOrNull("yaw");
             _follow = json.Has("follow") && json.Flag("follow");
             if (_follow && _on == null)
             {

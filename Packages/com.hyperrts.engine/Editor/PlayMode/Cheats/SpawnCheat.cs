@@ -36,20 +36,12 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         {
             PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
             var center = ViewCenter(entityManager, terrain);
-            var building = IsBuilding(entityManager, prefab);
-            var placement = building ? new Placement(entityManager, prefab) : default;
-            var rotation = entityManager.GetComponentData<LocalTransform>(prefab).Rotation;
             var side = (int)math.ceil(math.sqrt(count));
             var blocked = 0;
             for (var i = 0; i < count; i++)
             {
                 var spot = center.xz + (new float2(i % side, i / side) - (side - 1) * 0.5f) * Spacing;
-                var position = new float3(spot.x, terrain.Height(spot), spot.y);
-                if (!building)
-                {
-                    entityManager.Spawn(prefab, position, rotation, owner);
-                }
-                else if (placement.TrySpawn(entityManager, prefab, owner, position, 0f) == Entity.Null)
+                if (SpawnAt(entityManager, prefab, owner, spot, 0f) == Entity.Null)
                 {
                     blocked++;
                 }
@@ -70,18 +62,15 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         {
             PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
             var position = new float3(spot.x, terrain.Height(spot), spot.y);
-            if (IsBuilding(entityManager, prefab))
+            var building = entityManager.HasComponent<BuildingTag>(prefab) && entityManager.HasComponent<NavObstacle>(prefab);
+            if (building)
             {
-                return new Placement(entityManager, prefab).TrySpawn(entityManager, prefab, owner, position, yaw);
+                return TryPlace(entityManager, prefab, owner, position, yaw);
             }
 
             var rotation = math.mul(quaternion.RotateY(yaw), entityManager.GetComponentData<LocalTransform>(prefab).Rotation);
             return entityManager.Spawn(prefab, position, rotation, owner);
         }
-
-        // Placement rules apply to buildings that block ground.
-        private static bool IsBuilding(EntityManager entityManager, Entity prefab) =>
-            entityManager.HasComponent<BuildingTag>(prefab) && entityManager.HasComponent<NavObstacle>(prefab);
 
         // Where the game camera looks on the ground, or the map centre without a camera.
         private static float3 ViewCenter(EntityManager entityManager, in TerrainHeight terrain)
@@ -101,44 +90,29 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             return new float3(center.x, terrain.Height(center), center.y);
         }
 
-        /// <summary>The placement rule a player's buildings follow, with the sites spawned so far.</summary>
-        private readonly struct Placement
+        // The placement rule a player's buildings follow, over every building standing, so a batch never overlaps
+        // itself. Null for a blocked spot. The building rises as a finished site, so SiteClearingSystem removes the
+        // open scenery under it before ConstructionSystem completes it.
+        private static Entity TryPlace(EntityManager entityManager, Entity prefab, byte owner, float3 position, float yaw)
         {
-            private readonly MapSettings _map;
-            private readonly NavGrid _grid;
-            private readonly float2 _footprint;
-            private readonly PlacementSurface _surface;
-            private readonly NativeList<PlacedFootprint> _sites;
-
-            public Placement(EntityManager entityManager, Entity prefab)
+            PlayWorld.TryGetSingleton(entityManager, out MapSettings map);
+            PlayWorld.TryGetSingleton(entityManager, out NavGrid grid);
+            var footprint = entityManager.GetComponentData<NavObstacle>(prefab).Size;
+            var surface = BuildingPlacement.GetSurface(entityManager, prefab);
+            var spot = new BuildingSpot(position, yaw, footprint, surface).Snap(map).Grounded(grid);
+            using var obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
+                .Build(entityManager);
+            using var sites = PlacedFootprint.Read(entityManager, obstacles);
+            if (!spot.CanPlace(map, grid, sites.AsArray(), entityManager.HasComponent<LinePlacement>(prefab)))
             {
-                PlayWorld.TryGetSingleton(entityManager, out _map);
-                PlayWorld.TryGetSingleton(entityManager, out _grid);
-                _footprint = entityManager.GetComponentData<NavObstacle>(prefab).Size;
-                _surface = BuildingPlacement.GetSurface(entityManager, prefab);
-                using var obstacles = new EntityQueryBuilder(Allocator.Temp).WithAll<NavObstacle, LocalTransform>()
-                    .Build(entityManager);
-                _sites = PlacedFootprint.Read(entityManager, obstacles);
+                return Entity.Null;
             }
 
-            // Null for a blocked spot. The building rises as a finished site, so SiteClearingSystem removes the open
-            // scenery under it before ConstructionSystem completes it.
-            public Entity TrySpawn(EntityManager entityManager, Entity prefab, byte owner, float3 position, float yaw)
-            {
-                var spot = new BuildingSpot(position, yaw, _footprint, _surface).Snap(_map).Grounded(_grid);
-                var inLine = entityManager.HasComponent<LinePlacement>(prefab);
-                if (!spot.CanPlace(_map, _grid, _sites.AsArray(), inLine))
-                {
-                    return Entity.Null;
-                }
-
-                var facing = math.mul(spot.Rotation, entityManager.GetComponentData<LocalTransform>(prefab).Rotation);
-                var building = entityManager.Spawn(prefab, spot.Center, facing, owner);
-                entityManager.SetComponentData(building, new ConstructionProgress { Value = 1f });
-                entityManager.SetComponentEnabled<ConstructionProgress>(building, true);
-                _sites.Add(new PlacedFootprint(spot.Box, inLine));
-                return building;
-            }
+            var facing = math.mul(spot.Rotation, entityManager.GetComponentData<LocalTransform>(prefab).Rotation);
+            var building = entityManager.Spawn(prefab, spot.Center, facing, owner);
+            entityManager.SetComponentData(building, new ConstructionProgress { Value = 1f });
+            entityManager.SetComponentEnabled<ConstructionProgress>(building, true);
+            return building;
         }
     }
 }

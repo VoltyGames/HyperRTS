@@ -170,7 +170,7 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
             palette.entries.Add(MapFixture.Item<MapProp>("Pumpjack", i => { i.size = new Vector2(8f, 16f); i.pad = "Dirt"; }));
             var issues = new MapIssues();
 
-            MapPropPlacer.Place(layout, new MapShapes(layout, palette, climate), palette, climate, issues);
+            MapPropPlacer.Place(layout, MapFixture.Shapes(layout, palette, climate), palette, climate, issues);
 
             Assert.AreEqual(onRoad, issues.HasErrors, issues.ToString());
             Assert.AreEqual(onRoad, issues.ToString().Contains("'Pumpjack' at (1, -40) stands on a road"));

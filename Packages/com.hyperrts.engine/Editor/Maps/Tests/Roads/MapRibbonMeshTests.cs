@@ -5,7 +5,6 @@ using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Meshes;
-using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
 using NUnit.Framework;
 using Unity.Scripting.LifecycleManagement;
@@ -204,7 +203,7 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
             });
             var layout = MapSymmetryCopier.Expand(spec, new MapIssues());
             var climate = MapFixture.Item<MapClimate>("Climate", i => { i.fordShallowsWidth = 6f; i.fordRapidsLength = 10f; });
-            var shapes = new MapShapes(layout, MapFixture.Item<MapPalette>("Palette"), climate);
+            var shapes = MapFixture.Shapes(layout, climate);
             Assert.IsNotEmpty(shapes.Crossings);
             return (MapWaterMesh.Build(shapes, climate, layout.WaterHeight, layout.TerrainBounds), shapes);
         }

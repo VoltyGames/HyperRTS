@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Maps.Build
             Project = project;
             Layout = layout;
             _issues = issues;
-            Shapes = new MapShapes(layout, project.Palette, project.Climate);
+            Shapes = new MapShapes(layout, project.Palette, project.Decks, project.Climate);
         }
 
         public MapProject Project { get; }
@@ -75,8 +75,6 @@ namespace HyperRTS.Editor.Maps.Build
         /// <summary>Asset and spec checks. They read prefabs, so they run on the main thread.</summary>
         public static bool Check(MapProject project, MapIssues issues)
         {
-            // Planning may run on a worker thread, which cannot read a bridge's prefab.
-            project.Palette.entries.ForEach(entry => entry.ReadDeck());
             MapAssetCheck.Check(project.Climate, project.Palette, issues);
             MapSpecCheck.Check(project.Spec, project.Climate, project.Palette, project.Rules, issues);
             return !issues.HasErrors;

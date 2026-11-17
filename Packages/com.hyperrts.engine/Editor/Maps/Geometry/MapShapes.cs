@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         private const float FordBanks = 8f;
 
-        public MapShapes(MapLayout layout, MapPalette palette, MapClimate climate)
+        public MapShapes(MapLayout layout, MapPalette palette, MapDecks decks, MapClimate climate)
         {
             Layout = layout;
             Palette = palette;
@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Maps.Geometry
                 Rivers.Add(river);
                 foreach (var crossing in spec.crossings)
                 {
-                    AddCrossing(river, authored, crossing, water, palette);
+                    AddCrossing(river, authored, crossing, water, decks);
                 }
             }
 
@@ -188,7 +188,7 @@ namespace HyperRTS.Editor.Maps.Geometry
 
         /// <summary>Crossing positions are fractions of the authored river, before it was run on past the edge.</summary>
         private void AddCrossing(MapRiver river, List<Vector2> authored, MapCrossingSpec spec, float water,
-            MapPalette palette)
+            MapDecks decks)
         {
             var position = MapGeometry.PointAlong(authored, spec.along * MapGeometry.Length(authored), out var direction);
             river.Pin(position);
@@ -214,16 +214,16 @@ namespace HyperRTS.Editor.Maps.Geometry
                 return;
             }
 
-            var entry = palette.Entry(spec.prop);
+            var deck = decks.Find(spec.prop);
             Crossings.Add(new MapCrossing
             {
                 Kind = spec.kind,
                 Prop = spec.prop,
                 Position = position,
                 Across = across,
-                Width = entry.Deck.Size.x,
-                Span = entry.Deck.Size.y,
-                Landing = entry.Deck.Landing,
+                Width = deck.Size.x,
+                Span = deck.Size.y,
+                Landing = deck.Landing,
                 Height = water + DeckClearance,
             });
         }

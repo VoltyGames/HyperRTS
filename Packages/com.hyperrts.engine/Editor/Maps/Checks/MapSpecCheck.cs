@@ -132,7 +132,7 @@ namespace HyperRTS.Editor.Maps.Checks
                 return;
             }
 
-            var length = entry.Deck.Size.y;
+            var length = MapDeck.Read(entry.prefab).Size.y;
             Require(length >= river.width + BridgeOverhang,
                 $"{name}: bridge '{crossing.prop}' ({length} m deck) is too short for a {river.width} m river.");
         }

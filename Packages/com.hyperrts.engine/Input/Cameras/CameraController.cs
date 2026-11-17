@@ -145,8 +145,7 @@ namespace HyperRTS.Input.Cameras
             }
 
             // Game time, as the bursts that cause it run on, so a slow or paused frame never skips a shake.
-            // The square root keeps a blast felt at working heights: a linear share is a fifth at five times zoom.min.
-            shake.Step(_focus, Mathf.Sqrt(zoom.min / _height), Time.deltaTime);
+            shake.Step(_focus, _height / zoom.min, Time.deltaTime);
 
             // A disabled Point reads (0, 0), the bottom-left corner, and would edge scroll behind a menu.
             var camera = _actions.Camera;
@@ -223,9 +222,7 @@ namespace HyperRTS.Input.Cameras
             _height = height;
             var view = ViewAt(focus, height, _yaw);
             view.position.y = ClearedHeight(view.position.y, GroundAt(view.position), terrainClearance);
-            // The offset grows with height, so a jolt moves the picture as far at any zoom as its turn does.
-            var jolt = shake.Offset.position * (height / zoom.min);
-            transform.SetPositionAndRotation(view.position + jolt, view.rotation * shake.Offset.rotation);
+            transform.SetPositionAndRotation(view.position + shake.Offset.position, view.rotation * shake.Offset.rotation);
             treeFade.Share(transform.position, _focus, _height);
         }
 

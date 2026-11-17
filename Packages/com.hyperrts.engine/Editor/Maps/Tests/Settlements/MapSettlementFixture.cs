@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Checks;
 using HyperRTS.Editor.Maps.Climate;
-using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Heights;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
@@ -103,7 +102,7 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             var layout = MapSymmetryCopier.Expand(spec, issues);
             Palette = MakePalette(edit);
             var climate = MakeClimate();
-            var shapes = new MapShapes(layout, Palette, climate);
+            var shapes = MapFixture.Shapes(layout, Palette, climate);
             var heights = MapHeightShaper.Shape(layout, shapes);
             var placements = MapPropPlacer.Place(layout, shapes, Palette, climate, issues);
             Context = new MapPlanContext(shapes, heights, placements, issues);

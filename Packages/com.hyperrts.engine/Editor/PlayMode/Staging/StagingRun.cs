@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using HyperRTS.Editor.PlayMode.Cheats;
 using HyperRTS.Input.Cameras;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
@@ -159,13 +158,6 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 }
 
                 Directory.CreateDirectory(Folder);
-                Camera = UnityEngine.Camera.main;
-                Controller = Camera.GetComponent<CameraController>();
-                if (_file.Fog.HasValue)
-                {
-                    MatchCheats.SetFog(World, _file.Fog.Value);
-                }
-
                 return true;
             }
 
@@ -178,7 +170,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
         }
 
         // The first thing the match still lacks, or null once it is live.
-        private static string WaitingFor()
+        // Keeps the match camera once it is found.
+        private string WaitingFor()
         {
             if (!PlayWorld.TryGetAuthoritative(out var entityManager))
             {
@@ -198,8 +191,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 return "a local player";
             }
 
-            var camera = UnityEngine.Camera.main;
-            return camera != null && camera.GetComponent<CameraController>() != null ? null : "the match camera";
+            Camera = UnityEngine.Camera.main;
+            Controller = Camera != null ? Camera.GetComponent<CameraController>() : null;
+            return Controller != null ? null : "the match camera";
         }
 
         private void RunDueSteps()

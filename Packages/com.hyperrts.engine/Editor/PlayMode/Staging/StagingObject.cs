@@ -46,6 +46,12 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public bool Flag(string key) => (bool)Read(key, JTokenType.Boolean);
 
+        public string TextOrNull(string key) => Has(key) ? Text(key) : null;
+
+        public float? NumberOrNull(string key) => Has(key) ? Number(key) : null;
+
+        public float2? PointOrNull(string key) => Has(key) ? Point(key) : null;
+
         /// <summary>A number or a string, as the key allows both.</summary>
         public JToken Either(string key) => Read(key, JTokenType.Integer, JTokenType.Float, JTokenType.String);
 
