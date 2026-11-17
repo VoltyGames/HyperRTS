@@ -217,7 +217,9 @@ namespace HyperRTS.Input.Cameras
             _height = height;
             var view = ViewAt(focus, height, _yaw);
             view.position.y = ClearedHeight(view.position.y, GroundAt(view.position), terrainClearance);
-            transform.SetPositionAndRotation(view.position + shake.Offset.position, view.rotation * shake.Offset.rotation);
+            // The offset grows with height, so a jolt moves the picture as far at any zoom as its turn does.
+            var jolt = shake.Offset.position * (height / zoom.min);
+            transform.SetPositionAndRotation(view.position + jolt, view.rotation * shake.Offset.rotation);
             treeFade.Share(transform.position, _focus, _height);
         }
 

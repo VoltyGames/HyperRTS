@@ -37,8 +37,9 @@ Delete and Page Down turn it at `turnSpeed`, a middle-button drag yaws it, and H
 
 Effect rigs with a `shake` jolt the camera ([effects](effects.md#pools-and-playback)). `CameraShake` sums the jolts
 of the bursts within `shake.reach` of the focus, weaker with distance and with height (full at `zoom.min`), into a
-smooth wobble of a few sines under an envelope that dies in `shake.duration`. It moves the camera at most
-`shake.maxOffset` and turns it at most `shake.maxAngle` however many bursts stack. The offset goes on top of the pose,
+smooth wobble of a few sines under an envelope that dies in `shake.duration`. It turns the camera at most
+`shake.maxAngle` and moves it at most `shake.maxOffset` at `zoom.min`, more in step with height so the picture moves
+as far at any zoom, however many bursts stack. The offset goes on top of the pose,
 so the focus and edge scrolling never see it and the next frame starts from the steady pose. `shake.enabled` turns it off, a player setting.
 
 At close heights the camera also dithers away tree pixels (Bark, and Foliage with Tree Wind) within
