@@ -156,7 +156,8 @@ run only in the full pass. Closed SubScenes are not checked. A new rule needs a 
 There are two severities, error (what must hold) and warning; a hint belongs in the field's tooltip. An error or
 warning can carry a quick fix, one undo step. The Validate page groups issues by rule, errors first, then by asset, and
 shows an issue shared by a base prefab and its variants once, on the base. The toolbar has error and warning filters, a
-search field, **Fix all** (one undo step) and **Selection only**.
+search field, **Fix all** (one undo step) and **Selection only**. A run checks every prefab and takes seconds, so the
+page runs only when **Validate** is pressed and keeps the last results while it closes and opens again.
 
 ## Scenes from code
 

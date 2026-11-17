@@ -95,11 +95,34 @@ namespace HyperRTS.Editor.Common
             var scripts = new HashSet<string>(MonoImporter.GetAllRuntimeMonoScripts()
                 .Where(script => uses(script.GetClass()))
                 .Select(AssetDatabase.GetAssetPath));
-
+            var known = new Dictionary<string, bool>();
             return AssetDatabase.FindAssets("t:Prefab", folders)
                 .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => AssetDatabase.GetDependencies(path, true).Any(scripts.Contains))
+                .Where(path => Uses(path, scripts, known))
                 .ToList();
+        }
+
+        // Scripts reach a prefab only through itself and the prefabs and assets it references, so the walk follows those
+        // and skips meshes, materials and textures, which a full recursive dependency list spends nearly all its time on.
+        private static bool Uses(string path, HashSet<string> scripts, Dictionary<string, bool> known)
+        {
+            if (known.TryGetValue(path, out var uses))
+            {
+                return uses;
+            }
+
+            known[path] = false;
+            foreach (var dependency in AssetDatabase.GetDependencies(path, false))
+            {
+                var followed = dependency != path && (dependency.EndsWith(".prefab") || dependency.EndsWith(".asset"));
+                if (scripts.Contains(dependency) || (followed && Uses(dependency, scripts, known)))
+                {
+                    known[path] = true;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static bool IsAuthoring(System.Type type) => type != null && typeof(AuthoringBehaviour).IsAssignableFrom(type);

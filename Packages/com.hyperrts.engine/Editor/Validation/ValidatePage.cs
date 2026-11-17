@@ -4,6 +4,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.HUD;
+using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
@@ -16,6 +17,11 @@ namespace HyperRTS.Editor.Validation
     public class ValidatePage : HubPage
     {
         private const string NoProblems = "No problems found. Closed SubScenes aren't checked: open them to include their content.";
+        private const string NotRun = "Press Validate to check the project; it takes a few seconds.";
+
+        // The last run, kept while the page closes and opens again: a run checks every prefab and takes seconds.
+        [NoAutoStaticsCleanup]
+        private static IssueGroups _last;
 
         private IssueGroups _groups = new();
         private IssueGroups _shown = new();
@@ -65,7 +71,8 @@ namespace HyperRTS.Editor.Validation
             root.Require<ToolbarToggle>("selection-only").RegisterValueChangedCallback(change => Show(change.newValue));
             root.WhileAttached(() => Selection.selectionChanged += OnSelectionChanged,
                 () => Selection.selectionChanged -= OnSelectionChanged);
-            Refresh();
+            _groups = _last ?? new IssueGroups();
+            Show(SelectionOnly);
             return root;
         }
 
@@ -73,7 +80,7 @@ namespace HyperRTS.Editor.Validation
 
         private void Refresh()
         {
-            _groups = ProjectValidator.Run().GroupVariants();
+            _groups = _last = ProjectValidator.Run().GroupVariants();
             Show(SelectionOnly);
         }
 
@@ -114,6 +121,11 @@ namespace HyperRTS.Editor.Validation
 
         private string EmptyText(bool selectionOnly)
         {
+            if (_last == null)
+            {
+                return NotRun;
+            }
+
             if (_groups.Count == 0)
             {
                 return NoProblems;
