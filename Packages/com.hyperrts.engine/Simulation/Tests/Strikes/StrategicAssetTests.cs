@@ -17,9 +17,9 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Tests.Airdrops
+namespace HyperRTS.Simulation.Tests.Strikes
 {
-    /// <summary>The strategic asset's map-wide charge, the bomber it sends and how air defence cuts its bombs.</summary>
+    /// <summary>The strategic asset's map-wide charge, the bomber strike it fires and how air defence cuts its bombs.</summary>
     public class StrategicAssetTests : SimulationFixture
     {
         private const float Charge = 10f;
@@ -43,7 +43,8 @@ namespace HyperRTS.Simulation.Tests.Airdrops
                 Id = Strike, Name = "Strike", Target = AbilityTarget.Point, Cooldown = Charge,
             }, Charge);
             var writer = World.Writer(_asset);
-            writer.Add(new StrategicAsset
+            writer.Add(new StrategicAsset { AbilityId = Strike });
+            writer.Add(new BomberStrike
             {
                 AbilityId = Strike,
                 Aircraft = bomber,
@@ -52,7 +53,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
                 Bombs = new BombLoad
                 {
                     Prefab = World.ProjectilePrefab(), Count = Bombs,
-                    Damage = new DamageProfile { Amount = 100f, Radius = 3f, EdgeFactor = 0.5f }, Speed = 60f, ZoneRadius = 20f, MaxReduction = 0.5f,
+                    Damage = new DamageProfile { Amount = 100f, SplashRadius = 3f, EdgeFactor = 0.5f }, Speed = 60f, ZoneRadius = 20f, MaxReduction = 0.5f,
                 },
             });
         }
@@ -157,7 +158,7 @@ namespace HyperRTS.Simulation.Tests.Airdrops
         [Test]
         public void Bombs_LeaveFromTheBombersBay()
         {
-            var bomber = World.Get<StrategicAsset>(_asset).Aircraft;
+            var bomber = World.Get<BomberStrike>(_asset).Aircraft;
             World.Set(bomber, new DropRun { ReleasePoint = new float3(0f, -1.5f, 0f) });
             Fire();
             var flight = Bombers()[0];

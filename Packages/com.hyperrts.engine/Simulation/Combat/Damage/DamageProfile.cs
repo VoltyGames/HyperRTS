@@ -24,7 +24,10 @@ namespace HyperRTS.Simulation.Combat.Damage
         public float Suppression;
 
         /// <summary>Splash radius round the impact; 0 hits only the target.</summary>
-        public float Radius;
+        public float SplashRadius;
+
+        /// <summary>Radius inside which splash deals full damage before it falls off, as in a blast's core.</summary>
+        public float CoreRadius;
 
         /// <summary>Fraction of <see cref="Amount"/> dealt at the splash edge, 1 = no falloff.</summary>
         public float EdgeFactor;
@@ -39,9 +42,9 @@ namespace HyperRTS.Simulation.Combat.Damage
             CoverPiercing = DamageType.Piercing(type),
         };
 
-        /// <summary>Linear falloff from full damage at the centre to <see cref="EdgeFactor"/> at <see cref="Radius"/>.</summary>
+        /// <summary>Full damage out to <see cref="CoreRadius"/>, then a linear falloff to <see cref="EdgeFactor"/> at <see cref="SplashRadius"/>.</summary>
         public readonly float SplashFactor(float gap) =>
-            math.lerp(1f, EdgeFactor, math.saturate(gap / math.max(Radius, 1e-4f)));
+            math.lerp(1f, EdgeFactor, math.saturate((gap - CoreRadius) / math.max(SplashRadius - CoreRadius, 1e-4f)));
 
         /// <summary>The hit on <paramref name="target"/> at <paramref name="position"/>, its splash reaching <paramref name="layers"/>.</summary>
         public readonly DamageEvent Hit(Entity source, byte owner, float3 origin, Entity target, float3 position,

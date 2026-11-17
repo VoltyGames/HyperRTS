@@ -30,6 +30,9 @@ namespace HyperRTS.Simulation.Cues.Sounds
         [Tooltip("When it uses an ability.")]
         public SoundCue ability;
 
+        [Tooltip("When a strike it launches is on its way, heard by every player (a launch alert or siren).")]
+        public SoundCue warning;
+
         [Tooltip("Each shot of the extra weapons, in order; one without an entry fires silently.")]
         public List<SoundCue> mountFire = new();
 
@@ -104,6 +107,7 @@ namespace HyperRTS.Simulation.Cues.Sounds
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Impact, authoring.impact);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Death, authoring.death);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Ability, authoring.ability);
+                EntitySoundsAuthoring.Set(sounds, CueSlot.Warning, authoring.warning);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Ready, authoring.ready);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Select, authoring.select);
                 EntitySoundsAuthoring.Set(sounds, CueSlot.Move, authoring.move);

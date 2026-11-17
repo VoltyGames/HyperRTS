@@ -33,13 +33,13 @@ namespace HyperRTS.Editor.Tests.Tools
             var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
             var serialized = new SerializedObject(weapon);
             bool IsMet(string field) => ConditionalFields.IsMet(serialized.FindProperty(Stat(field)));
-            Assert.IsFalse(IsMet(Hit(nameof(DamageSettings.radius))));
+            Assert.IsFalse(IsMet(Hit(nameof(DamageSettings.splashRadius))));
             Assert.IsFalse(IsMet(nameof(WeaponStats.projectilePrefab)));
 
-            weapon.stats.hit.radius = 2f;
+            weapon.stats.hit.splashRadius = 2f;
             weapon.stats.projectilePrefab = weapon.gameObject;
             serialized.Update();
-            Assert.IsTrue(IsMet(Hit(nameof(DamageSettings.radius))));
+            Assert.IsTrue(IsMet(Hit(nameof(DamageSettings.splashRadius))));
             Assert.IsTrue(IsMet(nameof(WeaponStats.projectilePrefab)));
             Assert.Throws<ArgumentException>(() => IsMet(nameof(WeaponStats.targets)));
         }
@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void ShowIfReadsSiblingsInsideNestedStats() =>
             CollectionAssert.Contains(ConditionalFields.Conditions(typeof(WeaponAuthoring)).ToList(),
-                (Stat(Hit(nameof(DamageSettings.edgeFactor))), Stat(Hit(nameof(DamageSettings.radius)))));
+                (Stat(Hit(nameof(DamageSettings.edgeFactor))), Stat(Hit(nameof(DamageSettings.splashRadius)))));
 
         [Test]
         public void SummariesListRoleModulesStatsAndTime()

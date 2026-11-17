@@ -51,7 +51,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 return hit.AimedMember;
             }
 
-            if (hit.Profile.Radius <= 0f || !_members.TryGetBuffer(hit.Target, out var members)
+            if (hit.Profile.SplashRadius <= 0f || !_members.TryGetBuffer(hit.Target, out var members)
                 || !_transforms.TryGetComponent(hit.Target, out var squad))
             {
                 return -1;
@@ -101,7 +101,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 return;
             }
 
-            var blast = hit.Profile.Radius > 0f;
+            var blast = hit.Profile.SplashRadius > 0f;
             member.Death = blast ? DeathCause.Blast : DeathCause.Shot;
             member.BlastHeading = blast ? SquadMember.PackHeading(hit.Position.xz - member.Position(squad).xz) : (byte)0;
             members[index] = member;

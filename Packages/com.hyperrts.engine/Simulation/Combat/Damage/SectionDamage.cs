@@ -62,7 +62,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 }
 
                 var gap = section.Gap(position);
-                if (i != entry && (hit.Profile.Radius <= 0f || gap > hit.Profile.Radius))
+                if (i != entry && (hit.Profile.SplashRadius <= 0f || gap > hit.Profile.SplashRadius))
                 {
                     continue;
                 }

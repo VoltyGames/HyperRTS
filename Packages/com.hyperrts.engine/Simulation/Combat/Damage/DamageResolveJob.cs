@@ -50,7 +50,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                     Member = Squads.Nearest(hit),
                     Suppression = hit.Profile.Suppression,
                 });
-                if (hit.Profile.Radius > 0f)
+                if (hit.Profile.SplashRadius > 0f)
                 {
                     Splash(hit, struck, victims);
                 }
@@ -68,7 +68,7 @@ namespace HyperRTS.Simulation.Combat.Damage
         {
             victims.Clear();
             var collector = new SplashCollector { Victims = victims };
-            Index.Query(hit.Position, hit.Profile.Radius + math.max(Squad.MaxSpread, Squad.WorkSpread), ref collector);
+            Index.Query(hit.Position, hit.Profile.SplashRadius + math.max(Squad.MaxSpread, Squad.WorkSpread), ref collector);
 
             foreach (var victim in victims)
             {
@@ -84,7 +84,7 @@ namespace HyperRTS.Simulation.Combat.Damage
                 }
 
                 var gap = EntityRadius.EdgeDistance(victim.Position, victim.Radius, hit.Position, 0f);
-                if (victim.Entity != hit.Target && gap <= hit.Profile.Radius)
+                if (victim.Entity != hit.Target && gap <= hit.Profile.SplashRadius)
                 {
                     Apply(victim.Entity, hit, new Blow
                     {
@@ -215,7 +215,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             passing.Target = Entity.Null;
             passing.Origin = from;
             passing.Profile.Amount = shelter.Passing(hit, amount, Buildings.Intact(target, health));
-            passing.Profile.Radius = 0f;
+            passing.Profile.SplashRadius = 0f;
             if (passing.Profile.Amount > 0f)
             {
                 ShelterHits[target].Add(new ShelterHit { Hit = passing });
@@ -230,7 +230,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             {
                 var member = members[i];
                 var gap = EntityRadius.EdgeDistance(member.Position(squad.Position), SquadMember.Radius, hit.Position, 0f);
-                if (i != struck && member.Alive && gap <= hit.Profile.Radius)
+                if (i != struck && member.Alive && gap <= hit.Profile.SplashRadius)
                 {
                     var factor = hit.Profile.SplashFactor(gap);
                     Apply(squad.Entity, hit, new Blow

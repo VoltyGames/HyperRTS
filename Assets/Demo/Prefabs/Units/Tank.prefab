@@ -95,7 +95,7 @@ MonoBehaviour:
     hit:
       damage: 40
       damageType: {fileID: 11400000, guid: d304c0168082f434cacb505892279d33, type: 2}
-      radius: 0
+      splashRadius: 0
       edgeFactor: 0.5
       friendlyFire: 0
     cooldown: 2

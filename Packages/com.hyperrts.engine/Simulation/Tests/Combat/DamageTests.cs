@@ -32,6 +32,23 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
+        public void Splash_DealsFullDamageInsideItsCore()
+        {
+            var core = World.SpawnUnit(2, new float3(2f, 0f, 0f), new TestUnit { Radius = 0f });
+            var falloff = World.SpawnUnit(2, new float3(6f, 0f, 0f), new TestUnit { Radius = 0f });
+            World.Tick();
+
+            var blast = Blast(float3.zero, 10f);
+            blast.Profile.CoreRadius = 2f;
+            blast.Profile.EdgeFactor = 0f;
+            World.QueueDamage(blast);
+            World.Tick();
+
+            Assert.AreEqual(60f, World.GetHealth(core), 1e-3f, "full damage to the core's edge");
+            Assert.AreEqual(80f, World.GetHealth(falloff), 1e-3f, "half way from core to edge");
+        }
+
+        [Test]
         public void FriendlyFire_HurtsAllies()
         {
             var friend = World.SpawnUnit(1, float3.zero, new TestUnit { Radius = 0f });
@@ -93,7 +110,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             var writer = World.Writer(gun);
             var weapon = new Weapon
             {
-                Range = 8f, Damage = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 1f }, Cooldown = 100f,
+                Range = 8f, Damage = new DamageProfile { Amount = 30f, SplashRadius = 3f, EdgeFactor = 1f }, Cooldown = 100f,
                 Targets = WeaponTargets.Surface,
             };
             WeaponSetup.Add(writer, new[] { WeaponMount.Create(weapon, default) }, CombatStance.Create(Stance.Aggressive, float3.zero));
@@ -115,7 +132,7 @@ namespace HyperRTS.Simulation.Tests.Combat
             Origin = position,
             Layers = WeaponTargets.Surface,
             SourceOwner = 1,
-            Profile = new DamageProfile { Amount = 40f, Radius = radius, EdgeFactor = 0.5f, FriendlyFire = friendlyFire },
+            Profile = new DamageProfile { Amount = 40f, SplashRadius = radius, EdgeFactor = 0.5f, FriendlyFire = friendlyFire },
         };
     }
 }

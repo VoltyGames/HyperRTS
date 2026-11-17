@@ -40,7 +40,7 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>The source's sight layer, so a cue reaches whoever could see the source.</summary>
         public SightLayer Layer;
 
-        /// <summary>An impact's splash radius; bigger blasts leave bigger marks.</summary>
+        /// <summary>An impact's or a warning's splash radius; bigger blasts leave bigger marks.</summary>
         public float Radius;
 
         /// <summary>What an impact struck, set by <c>ImpactSurfaceSystem</c>.</summary>

@@ -75,6 +75,7 @@ file is named after the component it marks.
 | Atmosphere | delapouite/sun-cloud | Delapouite |
 | AuraAuthoring | lorc/aura | Lorc |
 | BlockerAuthoring | delapouite/barricade | Delapouite |
+| BomberStrikeAuthoring | skoll/nuclear-bomb | Skoll |
 | BoneAnimatedAuthoring | skoll/skeleton | Skoll |
 | BuildLimitAuthoring | lorc/padlock | Lorc |
 | BuilderAuthoring | lorc/claw-hammer | Lorc |
@@ -125,6 +126,7 @@ file is named after the component it marks.
 | MatchAuthoring | lorc/trophy | Lorc |
 | MatchStateAuthoring | delapouite/podium | Delapouite |
 | MinimapImage | lorc/world | Lorc |
+| MissileStrikeAuthoring | lorc/rocket | Lorc |
 | ModelVariantsAuthoring | lorc/cubes | Lorc |
 | MotionDustAuthoring | lorc/windy-stripes | Lorc |
 | MotionRigAuthoring | lorc/gears | Lorc |
@@ -155,7 +157,6 @@ file is named after the component it marks.
 | SquadFiguresAuthoring | delapouite/private | Delapouite |
 | StatusEffectAuthoring | lorc/poison-gas | Lorc |
 | StealthAuthoring | lorc/ninja-mask | Lorc |
-| StrategicAssetAuthoring | skoll/nuclear-bomb | Skoll |
 | StretchPartsAuthoring | delapouite/resize | Delapouite |
 | TeamStripAuthoring | delapouite/vertical-banner | Delapouite |
 | TerrainHeightAuthoring | lorc/mountains | Lorc |

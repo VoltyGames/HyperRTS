@@ -65,8 +65,10 @@ namespace HyperRTS.Editor.Tests.Validation
             });
             yield return Row<AirdropReceiverRule>("no aircraft prefab", f =>
                 f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
-            yield return Row<StrategicAssetRule>("no aircraft prefab", f =>
-                f.Add<StrategicAssetAuthoring>(EntityTemplates.Building()));
+            yield return Row<BomberStrikeRule>("no aircraft prefab", f =>
+                f.Add<BomberStrikeAuthoring>(EntityTemplates.Building()));
+            yield return Row<MissileStrikeRule>("no missile prefab", f =>
+                f.Add<MissileStrikeAuthoring>(EntityTemplates.Building()));
             yield return Row<AircraftRemainsRule>("don't fall", f =>
             {
                 var aircraft = f.Track(EntityTemplates.Aircraft()).GetComponent<UnitAuthoring>();

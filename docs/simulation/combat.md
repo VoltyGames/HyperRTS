@@ -20,7 +20,7 @@ sections that hits already broke.
 | `WeaponAuthoring` | The primary's `stats`, turreted, acquire range, leash, stance and `extraWeapons` |
 | `WeaponStats` | One weapon: its hit, cooldown, projectile and trajectory, muzzles, aim, range, minimum range, `WeaponTargets` (Ground, Naval, Air, Projectile), needs deploy, firing arc, ammo, salvo, spread. The primary and each extra weapon carry one |
 | `WeaponMount` | One weapon at runtime. `WeaponMounts` wraps the buffer: its `Primary` comes first, then the extras. Server only |
-| `DamageProfile` | What a hit deals: amount, `DamageType`, garrison factor, cover piercing, suppression, splash. `DamageSettings` is its inspector block |
+| `DamageProfile` | What a hit deals: amount, `DamageType`, garrison factor, cover piercing, suppression, splash. Splash deals full damage inside `CoreRadius`, then falls off to `EdgeFactor` at `SplashRadius`. `DamageSettings` is its inspector block |
 | `DeployableAuthoring` | Deploy and pack-up times for a unit that deploys to fire |
 | `ArmorAuthoring` | Multiplier per `DamageType`, plus front, side and rear |
 | `DamageEvent` | A queued hit, written through `EventWriter<DamageEvent>`. A negative amount heals. `Direct` and `Typed` build the hits that have no weapon: repair, crushing, falling floors, auras, status damage |

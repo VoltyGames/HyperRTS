@@ -167,7 +167,7 @@ namespace HyperRTS.Simulation.Tests.Common
                 Position = pose.Position,
                 SourceOwner = 1,
                 Layers = WeaponTargets.Surface,
-                Profile = new DamageProfile { Amount = 100f, Radius = 2f, EdgeFactor = 1f },
+                Profile = new DamageProfile { Amount = 100f, SplashRadius = 2f, EdgeFactor = 1f },
             });
             var spawned = Single(TickUntilSpawned(5, ComponentType.ReadOnly<LocalTransform>(),
                 ComponentType.Exclude<Health>()));

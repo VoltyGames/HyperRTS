@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string Atmosphere = Dir + "Atmosphere.png";
         public const string AuraAuthoring = Dir + "AuraAuthoring.png";
         public const string BlockerAuthoring = Dir + "BlockerAuthoring.png";
+        public const string BomberStrikeAuthoring = Dir + "BomberStrikeAuthoring.png";
         public const string BoneAnimatedAuthoring = Dir + "BoneAnimatedAuthoring.png";
         public const string BuildLimitAuthoring = Dir + "BuildLimitAuthoring.png";
         public const string BuilderAuthoring = Dir + "BuilderAuthoring.png";
@@ -65,6 +66,7 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string MatchAuthoring = Dir + "MatchAuthoring.png";
         public const string MatchStateAuthoring = Dir + "MatchStateAuthoring.png";
         public const string MinimapImage = Dir + "MinimapImage.png";
+        public const string MissileStrikeAuthoring = Dir + "MissileStrikeAuthoring.png";
         public const string ModelVariantsAuthoring = Dir + "ModelVariantsAuthoring.png";
         public const string MotionDustAuthoring = Dir + "MotionDustAuthoring.png";
         public const string MotionRigAuthoring = Dir + "MotionRigAuthoring.png";
@@ -95,7 +97,6 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string SquadFiguresAuthoring = Dir + "SquadFiguresAuthoring.png";
         public const string StatusEffectAuthoring = Dir + "StatusEffectAuthoring.png";
         public const string StealthAuthoring = Dir + "StealthAuthoring.png";
-        public const string StrategicAssetAuthoring = Dir + "StrategicAssetAuthoring.png";
         public const string StretchPartsAuthoring = Dir + "StretchPartsAuthoring.png";
         public const string TeamStripAuthoring = Dir + "TeamStripAuthoring.png";
         public const string TerrainHeightAuthoring = Dir + "TerrainHeightAuthoring.png";

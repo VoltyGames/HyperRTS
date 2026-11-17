@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Combat.Damage
             cues.Add(new CueEvent
             {
                 TypeId = typeId, Slot = CueSlot.Impact, Owner = SourceOwner, Position = Position,
-                Direction = direction, Radius = Profile.Radius, Target = Target,
+                Direction = direction, Radius = Profile.SplashRadius, Target = Target,
             });
     }
 

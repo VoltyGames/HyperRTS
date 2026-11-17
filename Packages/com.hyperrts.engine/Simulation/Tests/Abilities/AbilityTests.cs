@@ -28,7 +28,7 @@ namespace HyperRTS.Simulation.Tests.Abilities
             Filter = AbilityTargetFilter.Hostile,
             Range = range,
             Cooldown = cooldown,
-            Damage = new DamageProfile { Amount = damage, Radius = radius, EdgeFactor = 1f },
+            Damage = new DamageProfile { Amount = damage, SplashRadius = radius, EdgeFactor = 1f },
         };
 
         private Entity Give(Entity entity, Ability ability, float cooldownRemaining = 0f) =>

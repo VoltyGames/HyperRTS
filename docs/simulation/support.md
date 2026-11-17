@@ -94,8 +94,8 @@ A cue is a one-off event to hear or see: a shot, an impact, a death. Simulation 
 into one queue. Sounds, effects and impact marks all read it, and the network and replays carry it.
 
 - A cue is only queued if its source has a sound or effect for the slot.
-- Voices, production done and announcements reach their owner. Other cues reach whoever can see the source.
-  `CueRules` holds this rule.
+- Voices, production done and announcements reach their owner, strike warnings reach every player, and other cues
+  reach whoever can see the source. `CueRules` holds this rule.
 - Games append cues before the lifecycle phase ends. The queue is emptied each frame.
 
 ## Replays
@@ -108,17 +108,34 @@ Replays record what happened, not the commands, because the simulation is not de
 
 ## Strategic assets
 
-Part of `Airdrops`. `StrategicAssetAuthoring` on a building turns one of its `AbilityAuthoring` entries, named by
-`ability`, into a strategic asset. That entry targets a point, has range 0 and starts on cooldown: the cooldown is the
-charge. The owner fires it from the command card like any building ability.
+Part of `Strikes`. A strike is a building ability that sends something at a point: `BomberStrikeAuthoring` flies a
+bomber in, `MissileStrikeAuthoring` launches a missile from the building. Each names one of its `AbilityAuthoring`
+entries in `ability`; that entry targets a point, has range 0 and starts on cooldown. With `strategic` ticked the
+cooldown is the owner's strategic asset charge, which every player sees; unticked, the strike is an ordinary ability
+with its own cooldown, such as a tactical strike.
 
 - The charge pauses while the building is offline and restarts for a new owner. `MatchRules.StrategicAssets` (set by
-  `MatchSetup.StrategicAssets`, on by default) switches the whole feature.
+  `MatchSetup.StrategicAssets`, on by default) holds every strike ability on cooldown while it is off.
 - Each player's `StrategicCharge` replicates on the player ghost, so every client shows the map-wide countdown. Losing
   the building clears it.
-- Firing sends the `aircraft` in from the owner's map edge on a `DropRoute`. It carries `StealthAuthoring` and loses
-  its stealth `revealSeconds` before the drop, so fighters and SAMs can engage it. Shot down first, the strike is lost.
-- Over the target it drops a `BombLoad` from its release point, as an [airdrop](economy.md#airdrops) does:
-  `count` guided bombs from the `bomb` prefab that seek enemy structures within `zoneRadius`, nearest first, or fall in
-  a line along the run when there are none. Each enemy weapon that can hit air and reaches the target removes one
-  bomb, down to `maxReduction` of the stick.
+- A strike's building plays its `Warning` cue at the target, sized by the blast, and every player gets it through fog
+  (`CueRules`): the marker and the launch alert. A missile warns at launch, a bomber when it is revealed.
+- Strike impacts play the building's `Impact` cue, so the building's type picks the blast's effect, sound and marks.
+
+### Bomber strike
+
+Firing sends the `aircraft` in from the owner's map edge on a `DropRoute`. It carries `StealthAuthoring` and loses its
+stealth `revealSeconds` before the drop, so fighters and SAMs can engage it. Shot down first, the strike is lost.
+
+Over the target it drops a `BombLoad` from its release point, as an [airdrop](economy.md#airdrops) does: `count` guided
+bombs from the `bomb` prefab that seek enemy structures within `zoneRadius`, nearest first, or fall in a line along the
+run when there are none. Each enemy weapon that can hit air and reaches the target removes one bomb, down to
+`maxReduction` of the stick. A `zoneRadius` of 0 and one bomb make a single heavy drop.
+
+### Missile strike
+
+Firing launches the `missile` prefab from `launchPoint` on the `Lofted` course: straight up to `apex`, over, and
+straight down onto the point, landing `flightSeconds` later. Its projectile kind is none, so interceptor kill rolls
+never stop it. Instead each enemy weapon that can hit air or intercept missiles and reaches the target at launch cuts
+the blast's radii by `cutPerDefence`, to at most `maxCut`; its damage stays. The `blast` is a splash with a full-damage
+core (`coreRadius`) that falls off to `splashRadius`, so sectioned buildings at the edge lose sections, not everything.

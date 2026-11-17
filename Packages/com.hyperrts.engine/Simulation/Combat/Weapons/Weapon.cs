@@ -124,8 +124,19 @@ namespace HyperRTS.Simulation.Combat.Weapons
 
         public readonly bool Engages(ProjectileKind kind) => (InterceptKinds & kind) != ProjectileKind.None;
 
+        /// <summary>Reaches <paramref name="point"/> from <paramref name="from"/> and shoots at aircraft there, or at projectiles of <paramref name="kind"/>.</summary>
+        public readonly bool Defends(float3 from, float3 point, ProjectileKind kind)
+        {
+            if (!CanHit(Targets, NavLayer.Air) && !Engages(kind))
+            {
+                return false;
+            }
+
+            return ReachesPoint(from, point);
+        }
+
         /// <summary>The radius one salvo covers round its aim point: the spread plus the splash radius.</summary>
-        public readonly float Blast => Spread + Damage.Radius;
+        public readonly float Blast => Spread + Damage.SplashRadius;
 
         /// <summary>Whether its shots need a clear line to the target; lobbed shells don't.</summary>
         public readonly bool NeedsLineOfFire => Aim.Course.NeedsLineOfFire;

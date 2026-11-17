@@ -22,15 +22,20 @@ namespace HyperRTS.Simulation.Combat.Damage
 
         [Tooltip("Radius around the impact that also takes damage; 0 hits only the target.")]
         [Min(0f)]
-        public float radius;
+        public float splashRadius;
+
+        [Tooltip("Radius inside which the splash deals full damage; it falls off from here to the edge. A blast's core.")]
+        [Min(0f)]
+        [ShowIf(nameof(splashRadius))]
+        public float coreRadius;
 
         [Tooltip("Fraction of the damage dealt at the splash edge (1 = no falloff).")]
         [Range(0f, 1f)]
-        [ShowIf(nameof(radius))]
+        [ShowIf(nameof(splashRadius))]
         public float edgeFactor = 0.5f;
 
         [Tooltip("Splash also hurts the source's own and allied units.")]
-        [ShowIf(nameof(radius))]
+        [ShowIf(nameof(splashRadius))]
         public bool friendlyFire;
 
         public DamageProfile Bake() => new()
@@ -40,7 +45,8 @@ namespace HyperRTS.Simulation.Combat.Damage
             GarrisonFactor = DamageType.Garrison(damageType),
             CoverPiercing = DamageType.Piercing(damageType),
             Suppression = suppression,
-            Radius = radius,
+            SplashRadius = splashRadius,
+            CoreRadius = coreRadius,
             EdgeFactor = edgeFactor,
             FriendlyFire = friendlyFire,
         };

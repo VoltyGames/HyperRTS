@@ -131,7 +131,7 @@ namespace HyperRTS.Simulation.Tests.AI
             });
             World.SetFiresOnOrder(launcher);
             var weapon = World.Primary(launcher);
-            weapon.Damage.Radius = 4f;
+            weapon.Damage.SplashRadius = 4f;
             World.SetPrimary(launcher, weapon);
             World.SpawnUnit(1, new float3(0f, 0f, 15f), new TestUnit { Speed = 0f });
             World.SpawnUnit(1, new float3(30f, 0f, 0f), new TestUnit { Speed = 0f });
@@ -208,7 +208,7 @@ namespace HyperRTS.Simulation.Tests.AI
             {
                 Id = EntityInfo.TypeIdFromName(name), Name = name, Target = target,
                 Filter = AbilityTargetFilter.Hostile, Range = range, Cooldown = 30f,
-                Damage = new DamageProfile { Amount = damage, Radius = radius, EdgeFactor = 1f },
+                Damage = new DamageProfile { Amount = damage, SplashRadius = radius, EdgeFactor = 1f },
             });
             return entity;
         }

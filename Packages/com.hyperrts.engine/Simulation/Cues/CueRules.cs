@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Cues
             IsVoice(slot) || slot is CueSlot.Announce or CueSlot.ProductionDone;
 
         /// <summary>
-        /// Owner-only cues reach their owner; everything else reaches whoever could see its source there, by the same
+        /// Owner-only cues reach their owner, warnings reach everyone; everything else reaches whoever could see its source there, by the same
         /// fog and cover rule as entities. Without a fog grid every non-voice cue does.
         /// </summary>
         public static bool IsVisible(in CueEvent cue, byte viewer, in FogOfWar fog, in OwnerRelations relations)
@@ -27,7 +27,7 @@ namespace HyperRTS.Simulation.Cues
                 return cue.Owner == viewer;
             }
 
-            if (!fog.IsCreated)
+            if (cue.Slot == CueSlot.Warning || !fog.IsCreated)
             {
                 return true;
             }

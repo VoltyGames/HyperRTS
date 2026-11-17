@@ -8,7 +8,7 @@ using UnityEngine;
 
 namespace HyperRTS.Simulation.Cues.Effects
 {
-    /// <summary>Effect rigs a unit or building plays when it fires, dies or uses an ability.</summary>
+    /// <summary>Effect rigs a unit or building plays when it fires, dies, uses an ability or warns of a strike.</summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Effects/Entity Effects")]
     [Icon(HyperRTSIcons.EntityEffectsAuthoring)]
     [HelpURL(HyperRTSDocs.Effects)]
@@ -27,6 +27,9 @@ namespace HyperRTS.Simulation.Cues.Effects
 
         [Tooltip("When it uses an ability, at the aim point.")]
         public GameObject ability;
+
+        [Tooltip("When a strike it launches is on its way, at the target, seen by every player (a marker sized by the blast).")]
+        public GameObject warning;
 
         [Tooltip("Each shot of the extra weapons, in order; one without an entry shows nothing.")]
         public List<MountFire> mountFire = new();
@@ -65,6 +68,7 @@ namespace HyperRTS.Simulation.Cues.Effects
                 Set(effects, CueSlot.Fire, authoring.fire, muzzle);
                 Set(effects, CueSlot.Death, authoring.death, default);
                 Set(effects, CueSlot.Ability, authoring.ability, default);
+                Set(effects, CueSlot.Warning, authoring.warning, default);
                 for (var i = 0; i < authoring.mountFire.Count; i++)
                 {
                     var mount = authoring.mountFire[i];

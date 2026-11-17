@@ -48,7 +48,7 @@ namespace HyperRTS.Simulation.Tests
                 Layers = WeaponTargets.Surface,
                 Profile = new DamageProfile
                 {
-                    Amount = hit.Amount, Radius = hit.Radius, EdgeFactor = hit.Edge, Suppression = hit.Suppression,
+                    Amount = hit.Amount, SplashRadius = hit.Radius, EdgeFactor = hit.Edge, Suppression = hit.Suppression,
                     CoverPiercing = hit.Piercing,
                 },
             });

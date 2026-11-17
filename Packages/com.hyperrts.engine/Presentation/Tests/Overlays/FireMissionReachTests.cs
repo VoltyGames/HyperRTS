@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
         public void BlastAddsTheSpreadToTheSplash()
         {
             var weapon = new Weapon { Range = 50f, Spread = 6f };
-            weapon.Damage.Radius = 4f;
+            weapon.Damage.SplashRadius = 4f;
 
             Assert.AreEqual(10f, new FireMissionReach(weapon).Blast);
         }

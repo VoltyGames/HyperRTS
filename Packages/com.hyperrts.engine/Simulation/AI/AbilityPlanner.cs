@@ -110,7 +110,7 @@ namespace HyperRTS.Simulation.AI
             if (ability.Target == AbilityTarget.None)
             {
                 var triggerRange = state.EntityManager.GetComponentData<AIPlayer>(turn.Player).SelfAbilityTriggerRange;
-                return HostileWithin(turn.Owner, caster.From, math.max(ability.Damage.Radius, triggerRange), snapshot);
+                return HostileWithin(turn.Owner, caster.From, math.max(ability.Damage.SplashRadius, triggerRange), snapshot);
             }
 
             var index = BestTarget(ref state, snapshot, ability, caster, turn.Owner);

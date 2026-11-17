@@ -95,7 +95,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 Position = at,
                 SourceOwner = 2,
                 Layers = WeaponTargets.Surface,
-                Profile = new DamageProfile { Amount = amount, Type = type, Radius = radius, EdgeFactor = 0.5f },
+                Profile = new DamageProfile { Amount = amount, Type = type, SplashRadius = radius, EdgeFactor = 0.5f },
             });
 
         [Test]
@@ -125,12 +125,12 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 Origin = new float3(30f, 1.5f, 0f),
                 SourceOwner = 2,
                 Layers = WeaponTargets.Surface,
-                Profile = new DamageProfile { Amount = 30f, Radius = 3f, EdgeFactor = 0.5f },
+                Profile = new DamageProfile { Amount = 30f, SplashRadius = 3f, EdgeFactor = 0.5f },
             });
             World.Tick();
 
             var right = HouseSection(house, Right);
-            var expected = 30f * new DamageProfile { Radius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
+            var expected = 30f * new DamageProfile { SplashRadius = 3f, EdgeFactor = 0.5f }.SplashFactor(right.Gap(centre));
             Assert.AreEqual(100f - expected, right.Health, 1e-3f);
             Assert.Less(HouseSection(house, Roof).Health, 100f, "the roof's edge is in reach");
             Assert.Greater(HouseSection(house, Roof).Health, right.Health, "and farther, so it takes less");

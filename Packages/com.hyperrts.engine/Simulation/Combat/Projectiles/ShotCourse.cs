@@ -36,6 +36,9 @@ namespace HyperRTS.Simulation.Combat.Projectiles
         /// <summary>A steep climb then a guided dive: control points over the launch and the aim.</summary>
         public static ShotCourse Rocket => new() { Homes = true, Curves = true, NeedsLineOfFire = true, Lift = 1f };
 
+        /// <summary>A climb straight up, then a dive straight down onto the point aimed at launch (a ballistic missile).</summary>
+        public static ShotCourse Lofted => new() { Curves = true, Lift = 1f };
+
         public static ShotCourse From(Trajectory trajectory) => trajectory switch
         {
             Trajectory.Direct => Direct,

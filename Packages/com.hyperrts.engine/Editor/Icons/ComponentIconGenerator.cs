@@ -52,10 +52,11 @@ namespace HyperRTS.Editor.Icons
         // Combat
         (new Color(0.85f, 0.25f, 0.22f), new[]
         {
-            "AbilityAuthoring", "ArmorAuthoring", "AuraAuthoring", "CoverSpotAuthoring", "DamageStagesAuthoring",
-            "DeathStainAuthoring", "DecayAuthoring", "DeployableAuthoring", "DestructibleAuthoring",
-            "ReinforcePointAuthoring", "RetreatPointAuthoring", "SectionsAuthoring",
-            "SpawnEffectAuthoring", "StatusEffectAuthoring", "StrategicAssetAuthoring", "StretchPartsAuthoring",
+            "AbilityAuthoring", "ArmorAuthoring", "AuraAuthoring", "BomberStrikeAuthoring", "CoverSpotAuthoring",
+            "DamageStagesAuthoring", "DeathStainAuthoring", "DecayAuthoring", "DeployableAuthoring",
+            "DestructibleAuthoring",
+            "MissileStrikeAuthoring", "ReinforcePointAuthoring", "RetreatPointAuthoring", "SectionsAuthoring",
+            "SpawnEffectAuthoring", "StatusEffectAuthoring", "StretchPartsAuthoring",
             "ToppleAuthoring", "TossedTurretAuthoring", "TurretTossAuthoring", "VeterancyAuthoring",
             "WeaponAuthoring",
         }),

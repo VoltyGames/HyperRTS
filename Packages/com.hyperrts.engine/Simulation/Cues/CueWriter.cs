@@ -120,6 +120,14 @@ namespace HyperRTS.Simulation.Cues
             return true;
         }
 
+        /// <summary>Queues the strike warning of type <paramref name="typeId"/> over a blast of <paramref name="radius"/> at <paramref name="target"/>.</summary>
+        public bool Warn(int typeId, byte owner, float3 target, float radius) =>
+            Add(new CueEvent
+            {
+                TypeId = typeId, Slot = CueSlot.Warning, Owner = owner, Position = target, Direction = math.up(),
+                Radius = radius,
+            });
+
         /// <summary>
         /// Queues an announcer alert for <paramref name="owner"/>'s player. It needs no sound on the source, since
         /// the listener's announcer picks the line; <paramref name="typeId"/> names the subject, 0 for none.

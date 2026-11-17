@@ -7,11 +7,9 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Movement;
 using Unity.Burst;
 using Unity.Collections;
@@ -22,8 +20,9 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Strikes
 {
     /// <summary>
-    /// Flies each <see cref="BombingFlight"/>: it drops its <see cref="Stealth"/> <c>RevealSeconds</c> before the drop,
-    /// releases its bombs over the target, less one per enemy anti-air weapon covering it, then flies off the map.
+    /// Flies each <see cref="BombingFlight"/>: it drops its <see cref="Stealth"/> and warns of the strike
+    /// <c>RevealSeconds</c> before the drop, releases its bombs over the target, less one per enemy anti-air weapon
+    /// covering it, then flies off the map.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup))]
@@ -32,6 +31,7 @@ namespace HyperRTS.Simulation.Strikes
     {
         private PrefabSpawner _spawner;
         private CueWriter _cues;
+        private StrikeDefences _defences;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
@@ -42,6 +42,7 @@ namespace HyperRTS.Simulation.Strikes
             state.RequireForUpdate<EndSimulationEntityCommandBufferSystem.Singleton>();
             _spawner = new PrefabSpawner(ref state);
             _cues = new CueWriter(ref state);
+            _defences = new StrikeDefences(ref state);
         }
 
         [BurstCompile]
@@ -54,7 +55,7 @@ namespace HyperRTS.Simulation.Strikes
                 .CreateCommandBuffer(state.WorldUnmanaged);
             var drops = new NativeList<Entity>(Allocator.Temp);
             foreach (var (flight, strike, run, destination, transform, speed, entity) in SystemAPI
-                         .Query<RefRW<DropFlight>, RefRO<BombingFlight>, RefRW<DropRun>, RefRW<MoveDestination>,
+                         .Query<RefRW<DropFlight>, RefRW<BombingFlight>, RefRW<DropRun>, RefRW<MoveDestination>,
                              RefRO<LocalTransform>, RefRO<MovementSpeed>>()
                          .WithPresent<MoveDestination>().WithEntityAccess())
             {
@@ -72,11 +73,10 @@ namespace HyperRTS.Simulation.Strikes
                 }
 
                 ecb.SetComponentEnabled<MoveDestination>(entity, true);
-                var reveal = strike.ValueRO.RevealSeconds;
-                if (approaching && flight.ValueRO.IsWithin(reveal, speed.ValueRO.Value)
-                    && SystemAPI.HasComponent<Stealth>(entity))
+                var revealed = flight.ValueRO.IsWithin(strike.ValueRO.RevealSeconds, speed.ValueRO.Value);
+                if (approaching && revealed && !strike.ValueRO.Warned)
                 {
-                    ecb.SetComponentEnabled<Stealth>(entity, false);
+                    Reveal(ref state, entity, ref strike.ValueRW, flight.ValueRO.Route.Target, ecb);
                 }
             }
 
@@ -86,17 +86,29 @@ namespace HyperRTS.Simulation.Strikes
             }
         }
 
+        private void Reveal(ref SystemState state, Entity bomber, ref BombingFlight strike, float3 target,
+            EntityCommandBuffer ecb)
+        {
+            strike.Warned = true;
+            var owner = SystemAPI.GetComponent<Owner>(bomber).Value;
+            _cues.Warn(strike.WarningTypeId, owner, target, strike.Bombs.Damage.SplashRadius + strike.Bombs.ZoneRadius);
+            if (SystemAPI.HasComponent<Stealth>(bomber))
+            {
+                ecb.SetComponentEnabled<Stealth>(bomber, false);
+            }
+        }
+
         private void Drop(ref SystemState state, Entity bomber, EntityCommandBuffer ecb)
         {
             var route = SystemAPI.GetComponent<DropFlight>(bomber).Route;
-            var load = SystemAPI.GetComponent<BombingFlight>(bomber).Bombs;
+            var strike = SystemAPI.GetComponent<BombingFlight>(bomber);
+            var load = strike.Bombs;
             var owner = SystemAPI.GetComponent<Owner>(bomber).Value;
             var transform = SystemAPI.GetComponent<LocalTransform>(bomber);
             var origin = transform.TransformPoint(SystemAPI.GetComponent<DropRun>(bomber).ReleasePoint);
             var relations = SystemAPI.GetSingleton<OwnerRelations>();
-            var count = load.CountAfter(Defences(ref state, route.Target, owner, relations));
+            var count = load.CountAfter(_defences.Count(ref state, route.Target, owner, relations, ProjectileKind.None));
             var targets = Structures(ref state, route.Target, load.ZoneRadius, owner, relations);
-            var impact = _cues.TypeIdFor(bomber, CueSlot.Impact);
             for (var i = 0; i < count; i++)
             {
                 var target = targets.Length > 0 ? targets[i % targets.Length].Entity : Entity.Null;
@@ -108,44 +120,12 @@ namespace HyperRTS.Simulation.Strikes
                 ecb.AddComponent(bomb, new Projectile
                 {
                     Speed = load.Speed,
-                    ImpactTypeId = impact,
+                    ImpactTypeId = strike.ImpactTypeId,
                     Hit = load.Damage.Hit(bomber, owner, origin, target, aim, WeaponTargets.Surface),
                     Course = ShotCourse.Direct,
                     Start = origin,
                 });
             }
-        }
-
-        /// <summary>Enemy anti-air weapons that are working and reach the target point; interceptors don't count.</summary>
-        private int Defences(ref SystemState state, float3 point, byte owner, in OwnerRelations relations)
-        {
-            var count = 0;
-            foreach (var (mounts, transform, targetOwner) in SystemAPI
-                         .Query<DynamicBuffer<WeaponMount>, RefRO<LocalTransform>, RefRO<Owner>>()
-                         .WithNone<Offline>())
-            {
-                if (!relations.IsHostile(owner, targetOwner.ValueRO.Value))
-                {
-                    continue;
-                }
-
-                foreach (var mount in mounts)
-                {
-                    count += Covers(mount, transform.ValueRO.Position, point) ? 1 : 0;
-                }
-            }
-
-            return count;
-        }
-
-        private static bool Covers(in WeaponMount mount, float3 from, float3 point)
-        {
-            if (!Weapon.CanHit(mount.Weapon.Targets, NavLayer.Air))
-            {
-                return false;
-            }
-
-            return mount.Weapon.ReachesPoint(from, point);
         }
 
         /// <summary>Enemy structures in the zone, nearest the aim point first.</summary>

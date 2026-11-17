@@ -53,6 +53,9 @@ namespace HyperRTS.Simulation.Cues
         /// <summary>A squad gets a dead member back.</summary>
         Reinforced = 18,
 
+        /// <summary>A strike on its way, at its target with its blast radius; every player sees it through fog.</summary>
+        Warning = 19,
+
         /// <summary>First value a game may use for its own slots; the engine never defines one from here up.</summary>
         GameFirst = 128,
     }
