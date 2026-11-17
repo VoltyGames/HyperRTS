@@ -33,7 +33,10 @@ shared through `InputActionsProvider` (`Suspend` and `Resume`). Each input syste
 `zoom.pitchAtMin` to `zoom.pitchAtMax`. The camera never sits closer than `terrainClearance` to the ground beneath it.
 Delete and Page Down turn it at `turnSpeed`, a middle-button drag yaws it, and Home returns to `defaultYaw` and
 `defaultHeight` over the same focus. A match opens on `startFocus`, then on the local player's buildings once found.
-`CameraController.View` is the one pose rule, which map view captures share.
+`CameraController.View` is the one pose rule, which map view captures share. `CinematicCamera` plays a scripted
+`ICameraPath` over the player's view for cutscenes and recordings: added to the camera, it places it in `LateUpdate`
+while its `Path` is set, keeps the controller's shake and the terrain clearance, and runs before the sound listener so
+sound follows the shot. Trees stay drawn rather than fading.
 
 Effect rigs with a `shake` jolt the camera ([effects](effects.md#pools-and-playback)). `CameraShake` sums the jolts
 of the bursts within `shake.reach` of the focus (or the rig's own reach), weaker with distance and with height (full at `zoom.min`), into a

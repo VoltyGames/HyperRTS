@@ -1,10 +1,11 @@
 using System.Collections.Generic;
+using HyperRTS.Input.Cameras;
 using Unity.Mathematics;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
-    /// <summary>Points the match camera at a group's centre or a map point; it may keep following the group.</summary>
+    /// <summary>Points the match camera at a group's centre or a map point, taking it back from a glide; it may keep following the group.</summary>
     internal sealed class CameraStep : StagingStep
     {
         private readonly string _on;
@@ -35,6 +36,11 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public override void Run(StagingRun run)
         {
+            if (run.Camera.TryGetComponent(out CinematicCamera cinematic))
+            {
+                cinematic.Path = null;
+            }
+
             var centre = _on == null ? _point : run.GroupCentre(_on);
             run.Controller.LookAt(new Vector3(centre.x, 0f, centre.y), _height, _yaw);
             run.Follow = _follow ? _on : null;

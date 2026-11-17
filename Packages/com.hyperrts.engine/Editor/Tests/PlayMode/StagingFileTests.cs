@@ -3,6 +3,8 @@ using System.Linq;
 using HyperRTS.Editor.PlayMode.Staging;
 using NUnit.Framework;
 using Unity.Mathematics;
+using UnityEngine;
+using UnityEngine.TestTools.Utils;
 
 namespace HyperRTS.Editor.Tests.PlayMode
 {
@@ -67,6 +69,29 @@ namespace HyperRTS.Editor.Tests.PlayMode
             var json = Good.Replace("{ \"at\": 2, \"order\"", "{ \"at\": 0.5, \"order\"").Replace("\"at\": 0, \"spawn\": { \"as\": \"red\"", "\"at\": 1, \"spawn\": { \"as\": \"red\"");
 
             Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(json, "late.json"));
+        }
+
+        [Test]
+        public void ParseReadsTheResolutionInWholePixelsOnly()
+        {
+            var sized = Good.Replace("\"scene\": \"Assets/X.unity\",", "\"scene\": \"Assets/X.unity\", \"resolution\": [1280, 720],");
+            var half = sized.Replace("[1280, 720]", "[1280.5, 720]");
+
+            Assert.That(StagingFile.Parse(sized, "sized.json").Resolution, Is.EqualTo(new Vector2Int(1280, 720)));
+            Assert.That(StagingFile.Parse(Good, "good.json").Resolution, Is.EqualTo(Vector2Int.zero));
+            StringAssert.Contains("resolution", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(half, "half.json")).Message);
+        }
+
+        [Test]
+        public void GlideEasesFromItsStartAimToItsEndAndHoldsThere()
+        {
+            var from = new CameraAim(new float2(0f, 0f), 2f, 10f, 0f, 0f);
+            var to = new CameraAim(new float2(0f, 0f), 2f, 20f, 0f, 90f);
+            var glide = new GlidePath(from, to, 5f, 4f, _ => 1f, null);
+
+            Assert.That(glide.ViewAt(5f).position, Is.EqualTo(new Vector3(0f, 3f, -10f)).Using(Vector3EqualityComparer.Instance));
+            Assert.That(glide.ViewAt(7f).position, Is.EqualTo(new Vector3(-15f * math.SQRT2 / 2f, 3f, -15f * math.SQRT2 / 2f)).Using(Vector3EqualityComparer.Instance));
+            Assert.That(glide.ViewAt(20f).position, Is.EqualTo(new Vector3(-20f, 3f, 0f)).Using(Vector3EqualityComparer.Instance));
         }
 
         [Test]

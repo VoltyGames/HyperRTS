@@ -18,6 +18,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public List<Issue> consoleErrors = new();
         public List<string> shots = new();
         public List<string> frames = new();
+        public List<string> clips = new();
         public List<Sample> samples = new();
 
         /// <summary>The contact sheet, empty when the run made no image.</summary>

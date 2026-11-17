@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         {
             var folder = $"{run.Folder}/.{_name}";
             var path = $"{run.Folder}/{_name}.png";
-            run.Start(new CaptureActivity(new FrameCapture(folder, Seconds, Fps), frames =>
+            run.Start(new CaptureActivity(new FrameCapture(folder, Seconds, Fps) { Size = run.Resolution }, frames =>
             {
                 File.Delete(path);
                 File.Move(frames[^1], path);

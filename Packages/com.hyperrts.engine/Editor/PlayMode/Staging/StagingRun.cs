@@ -40,6 +40,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public string Folder => _file.Folder;
 
+        public Vector2Int Resolution => _file.Resolution;
+
         public Camera Camera { get; private set; }
 
         public CameraController Controller { get; private set; }

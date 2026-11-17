@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
@@ -10,16 +12,20 @@ namespace HyperRTS.Editor.PlayMode.Staging
     {
         public const string Root = "Logs/Stagings";
 
-        private StagingFile(string name, string scene, List<StagingStep> steps)
+        private StagingFile(string name, string scene, Vector2Int resolution, List<StagingStep> steps)
         {
             Name = name;
             Scene = scene;
+            Resolution = resolution;
             Steps = steps;
         }
 
         public string Name { get; }
 
         public string Scene { get; }
+
+        /// <summary>The Game view size every capture records at, in pixels; zero keeps the Game view's own.</summary>
+        public Vector2Int Resolution { get; }
 
         /// <summary>In run order: by time, and in file order at the same time.</summary>
         public IReadOnlyList<StagingStep> Steps { get; }
@@ -42,6 +48,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             var root = StagingObject.Parse(json, source);
             var name = root.Text("name");
             var scene = root.Text("scene");
+            var resolution = ReadResolution(root);
             var steps = root.Items("steps").Select(StagingStep.Read).OrderBy(step => step.At).ToList();
             root.Finish();
             if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
@@ -50,7 +57,19 @@ namespace HyperRTS.Editor.PlayMode.Staging
             }
 
             Check(steps, source);
-            return new StagingFile(name, scene, steps);
+            return new StagingFile(name, scene, resolution, steps);
+        }
+
+        private static Vector2Int ReadResolution(StagingObject root)
+        {
+            var size = root.PointOrNull("resolution") ?? float2.zero;
+            var pixels = new Vector2Int((int)size.x, (int)size.y);
+            if (pixels.x < 0 || pixels.y < 0 || pixels.x != size.x || pixels.y != size.y)
+            {
+                throw root.Problem($"has a 'resolution' of {size} that is not [width, height] in whole pixels");
+            }
+
+            return pixels;
         }
 
         // Every group a step uses is made by a step that runs before it; no group or output is made twice.

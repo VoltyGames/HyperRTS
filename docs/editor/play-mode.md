@@ -87,7 +87,8 @@ tagged instance waits up to 60 s in Play for that file, then calls `GameLauncher
 
 ## Stagings
 
-A staging is a JSON file that scripts a whole Play check, so an agent makes one call instead of many evals. `play
+A staging is a JSON file that scripts a whole Play check or a filmed scene, so an agent makes one call instead of many
+evals. `play
 stage <file>` (`StagingJob`) opens the file's scene, enters Play, waits until the match is live (world, streamed
 SubScene entities, a local player, the match camera), runs the steps at their game-time seconds, leaves Play and
 reopens the scene that was open before. It returns at once; poll `play stage_status`. The run fails with a message
@@ -116,29 +117,33 @@ run goes on, except a `spawn`, whose failure ends the run with its message (a wr
 }
 ```
 
-`name`, `scene` and `steps` are required. Positions are `[x, z]` on the
-map. An unknown key, a wrong type, a step with two kinds or two order actions, or a group no earlier step spawns fails
+`name`, `scene` and `steps` are required; `resolution` (`[width, height]`) sets the Game view size every shot, burst
+and clip records at. Positions are `[x, z]` on the map. An unknown key, a wrong type, a step with two kinds or two order actions, or a group no earlier step spawns fails
 the file, naming its path. Steps run by `at`, and in file order at the same time.
 
 | Step key | Keys inside | Does |
 | --- | --- | --- |
 | `spawn` | `as`, `prefab`, `owner`, `count`, `at`, `yaw`; `spacing` for more than one; `ground`, `radius` | Spawns a row across the facing (`yaw` degrees clockwise from +Z) under the group label `as`. `prefab` is the picker's display name. `ground` is a `SurfaceMaterial` name; the row moves to the nearest such cell within `radius` metres. With a `radius`, a building whose ground is blocked takes the nearest free spot within it |
 | `order` | `units`, and one of `move` `[x, z]`, `attack` (group), `attackGround` `[x, z]`, `stop` true, `ability` (its name), `command` | Sends a `PlayerCommand` for the group's player. `attack` gives each unit a target of the other group in turn; `attackGround` is a fire mission. `ability` uses the group's ability of that name and `command` is a `CommandType` name or a game command number with an optional `argument`; both take an optional `at` or `target` (group) |
-| `camera` | `on` (group) or `at`, `height`; `yaw`, `follow` | Frames the group's centre or a point; the height is clamped to the camera's zoom range. `follow` keeps the group centred each frame until the next camera step |
+| `camera` | `on` (group) or `at`, `height`; `yaw`, `follow` | Frames the group's centre or a point; the height is clamped to the camera's zoom range. `follow` keeps the group centred each frame until the next camera step. It also ends a glide |
+| `glide` | `on` (group) or `at`, `lift`, `from` and optional `to` (each `distance`, `pitch`, `yaw`, and in `to` also `at` and `lift`), `seconds`; `fov` | A cinematic move through `CinematicCamera`, free of the zoom range: aims `lift` metres above the ground at the point (or the group's centre, followed as it moves) from `distance` metres, `pitch` degrees down and `yaw` degrees clockwise from +Z, and eases to the `to` aim over `seconds`. What `to` leaves out stays as in `from`; yaw turns the way its numbers run, so 0 to 270 turns three quarters. The view holds at the end until the next `glide` or `camera` step |
 | `shot` | a name | One Game view PNG, `<name>.png`, through the Recorder |
 | `frames` | `name`, `seconds`, `fps` | A burst through `FrameCapture` into `<name>/`; the Recorder fixes the time step, so game time runs at `fps` during it |
+| `clip` | `name`, `seconds`, `fps` | An H.264 `<name>.mp4` with the game's sound through `FrameCapture`, timed like a burst; the Recorder renders the sound beside each frame, so it stays in step however slowly frames come |
 | `sample` | `what` (`camera` or a group), `seconds` | Writes `<what>.tsv`, a row per rendered frame: camera pose, or each unit's position and health |
 | `destroy` | a group | Kills it through the damage system |
 | `damage` | `units`, `amount` | Damages it through the damage system |
 | `ready` | a group | Ends its ability cooldowns, so a power that charges for minutes, such as a strategic asset, fires at once |
 | `speed` | a number | Game speed of a single-player match |
 | `fog` | true or false | Fog of war |
+| `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |
 
 To add a step kind, subclass `StagingStep` with a static `Read` that takes the step's `StagingObject`, run it in `Run`
 (long work becomes a `StagingActivity` handed to `run.Start`), and list its key in `StagingStep.Readers`. A group
 label it makes is `Defines`, labels it needs are `Uses`, and a file it writes is `Output`.
 
-- One frame capture runs at a time: space `shot` and `frames` steps apart.
+- One recording runs at a time: space `shot`, `frames` and `clip` steps apart, and cut between `glide` steps inside
+  one clip.
 - `destroy` and `damage` go through unit health, so a sectioned building stands; shoot it with a group instead.
 - A staging that never reaches Play is ended as failed by the next `play stage` or `play stage_status` after 3 minutes.
 - Orders and spawns write the authoritative world, so a staging needs a map with a local player.

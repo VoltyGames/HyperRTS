@@ -27,7 +27,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public override void Run(StagingRun run)
         {
             var folder = $"{run.Folder}/{_name}";
-            run.Start(new CaptureActivity(new FrameCapture(folder, _seconds, _fps), _ => run.Report.frames.Add(folder)));
+            var capture = new FrameCapture(folder, _seconds, _fps) { Size = run.Resolution };
+            run.Start(new CaptureActivity(capture, _ => run.Report.frames.Add(folder)));
         }
     }
 }

@@ -4,16 +4,23 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEditor.Recorder;
+using UnityEditor.Recorder.Encoder;
 using UnityEditor.Recorder.Input;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>One recording of the Game view in Play as a PNG sequence at a fixed frame rate, to catch glitches that last a few frames.</summary>
+    /// <summary>
+    /// One recording of the Game view in Play at a fixed frame rate: a PNG sequence to catch glitches that last a few
+    /// frames, or an MP4 movie with the game's sound.
+    /// </summary>
     public sealed class FrameCapture
     {
         public const string Root = "Logs/FrameCaptures";
-        private const double TimeoutSeconds = 120.0;
+
+        // A minute to start, then a second a frame, as a 4K frame of a busy scene can take that long.
+        private const double StartSeconds = 60.0;
+        private const double FrameSeconds = 1.0;
 
         private readonly int _fps;
         private readonly int _frames;
@@ -34,10 +41,16 @@ namespace HyperRTS.Editor.PlayMode
             _frames = Mathf.CeilToInt(seconds * fps);
         }
 
-        /// <summary>Project-relative folder the PNGs land in.</summary>
+        /// <summary>Project-relative folder the PNGs land in; a movie is this path with <c>.mp4</c> added.</summary>
         public string Folder { get; }
 
-        /// <summary>Records into <see cref="Folder"/>, replacing an earlier capture there; returns the PNG paths.</summary>
+        /// <summary>The Game view size to record at, in pixels; zero keeps the Game view's own.</summary>
+        public Vector2Int Size { get; set; }
+
+        /// <summary>Records one MP4 with the game's sound instead of PNG frames.</summary>
+        public bool Movie { get; set; }
+
+        /// <summary>Records into <see cref="Folder"/>, replacing an earlier capture there; returns the PNG paths, or the movie's.</summary>
         public async Task<string[]> Record()
         {
             if (!EditorApplication.isPlaying)
@@ -45,52 +58,101 @@ namespace HyperRTS.Editor.PlayMode
                 throw new InvalidOperationException("HyperRTS: frame capture needs Play mode; enter Play first.");
             }
 
-            if (Directory.Exists(Folder))
-            {
-                Directory.Delete(Folder, true);
-            }
-
+            Clear();
             var controls = ScriptableObject.CreateInstance<RecorderControllerSettings>();
-            var images = ScriptableObject.CreateInstance<ImageRecorderSettings>();
+            RecorderSettings output = Movie ? MovieOutput() : ImageOutput();
             try
             {
-                Configure(controls, images);
-                var controller = new RecorderController(controls);
-                controller.PrepareRecording();
-                if (!controller.StartRecording())
-                {
-                    throw new InvalidOperationException("HyperRTS: the Recorder did not start; see the Console.");
-                }
-
-                _start = Time.frameCount;
-                _deadline = EditorApplication.timeSinceStartup + TimeoutSeconds;
-                EditorApplication.update += Poll;
-                await _done.Task;
-                controller.StopRecording();
+                Configure(controls, output);
+                await Run(controls);
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(images);
+                UnityEngine.Object.DestroyImmediate(output);
                 UnityEngine.Object.DestroyImmediate(controls);
+            }
+
+            if (Movie)
+            {
+                return new[] { Folder + ".mp4" };
             }
 
             return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();
         }
 
-        private void Configure(RecorderControllerSettings controls, ImageRecorderSettings images)
+        private void Clear()
+        {
+            if (Directory.Exists(Folder))
+            {
+                Directory.Delete(Folder, true);
+            }
+
+            File.Delete(Folder + ".mp4");
+        }
+
+        private async Task Run(RecorderControllerSettings controls)
+        {
+            var controller = new RecorderController(controls);
+            controller.PrepareRecording();
+            if (!controller.StartRecording())
+            {
+                throw new InvalidOperationException("HyperRTS: the Recorder did not start; see the Console.");
+            }
+
+            _start = Time.frameCount;
+            _deadline = EditorApplication.timeSinceStartup + StartSeconds + _frames * FrameSeconds;
+            EditorApplication.update += Poll;
+            await _done.Task;
+            controller.StopRecording();
+        }
+
+        private void Configure(RecorderControllerSettings controls, RecorderSettings output)
         {
             controls.SetRecordModeToManual();
             controls.FrameRate = _fps;
             controls.FrameRatePlayback = FrameRatePlayback.Constant;
             controls.CapFrameRate = true;
             controls.ExitPlayMode = false;
+            output.FileNameGenerator.Root = OutputPath.Root.Project;
+            controls.AddRecorderSettings(output);
+        }
 
+        private ImageRecorderSettings ImageOutput()
+        {
+            var images = ScriptableObject.CreateInstance<ImageRecorderSettings>();
             images.OutputFormat = ImageRecorderSettings.ImageRecorderOutputFormat.PNG;
-            images.imageInputSettings = new GameViewInputSettings();
-            images.FileNameGenerator.Root = OutputPath.Root.Project;
+            images.imageInputSettings = GameView();
             images.FileNameGenerator.Leaf = Folder;
             images.FileNameGenerator.FileName = "frame_" + DefaultWildcard.Frame;
-            controls.AddRecorderSettings(images);
+            return images;
+        }
+
+        // The Recorder renders the sound offline beside each frame, so it stays in step however slowly frames come.
+        private MovieRecorderSettings MovieOutput()
+        {
+            var movie = ScriptableObject.CreateInstance<MovieRecorderSettings>();
+            movie.EncoderSettings = new CoreEncoderSettings
+            {
+                Codec = CoreEncoderSettings.OutputCodec.MP4,
+                EncodingQuality = CoreEncoderSettings.VideoEncodingQuality.High,
+            };
+            movie.CaptureAudio = true;
+            movie.ImageInputSettings = GameView();
+            movie.FileNameGenerator.Leaf = Path.GetDirectoryName(Folder)?.Replace('\\', '/');
+            movie.FileNameGenerator.FileName = Path.GetFileName(Folder);
+            return movie;
+        }
+
+        private GameViewInputSettings GameView()
+        {
+            var view = new GameViewInputSettings();
+            if (Size != Vector2Int.zero)
+            {
+                view.OutputWidth = Size.x;
+                view.OutputHeight = Size.y;
+            }
+
+            return view;
         }
 
         // The Recorder sets a fixed time step, so each editor frame in Play is one captured frame.
@@ -111,7 +173,7 @@ namespace HyperRTS.Editor.PlayMode
                 return;
             }
 
-            _done.SetException(new TimeoutException($"HyperRTS: frame capture saw {seen} of {_frames} frames before Play ended or {TimeoutSeconds:0} s passed."));
+            _done.SetException(new TimeoutException($"HyperRTS: frame capture saw {seen} of {_frames} frames before Play ended or its time ran out."));
         }
     }
 }
