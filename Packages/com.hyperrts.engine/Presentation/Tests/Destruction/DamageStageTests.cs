@@ -92,6 +92,33 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
+        public void StageSharingTheFirstModel_KeepsItShown_AndCopiesNothing()
+        {
+            // Like a wreck, whose second stage only plays an effect on the same hull.
+            var wreck = _em.CreateEntity();
+            _em.AddComponentData(wreck, new LocalToWorld { Value = float4x4.identity });
+            _em.AddComponentData(wreck, new Health { Current = 260f, Max = 260f });
+            _em.AddComponentData(wreck, new ShownDamageStage { Index = -1 });
+            var hull = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+            _em.AddComponentData(hull, new Parent { Value = wreck });
+            _em.AddBuffer<DamageStage>(wreck).AddRange(new NativeArray<DamageStage>(new[]
+            {
+                new DamageStage { Below = 1f, Visual = hull }, new DamageStage { Below = 0.5f, Visual = hull },
+            }, Allocator.Temp));
+            _em.AddBuffer<LinkedEntityGroup>(wreck).AddRange(
+                new NativeArray<Entity>(new[] { wreck, hull }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            _em.AddBuffer<ModelCopy>(wreck);
+            _stages.Update();
+
+            SetHealth(wreck, 100f);
+            _stages.Update();
+
+            Assert.AreEqual(1, _em.GetComponentData<ShownDamageStage>(wreck).Index);
+            Assert.AreEqual(0, _em.GetBuffer<ModelCopy>(wreck).Length, "the hull is no prefab to copy");
+            Assert.AreEqual(default(HideReason), _em.GetComponentData<HiddenBy>(hull).Reasons, "the hull stays shown");
+        }
+
+        [Test]
         public void Copy_TakesEveryPaintOfTheTree()
         {
             var tree = Tree(260f, out var models);

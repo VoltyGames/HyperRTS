@@ -51,12 +51,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 }
 
                 shown.ValueRW.Index = index;
-                // A stage without a model switches nothing and leaves the shown one.
-                _switch.SetBranch(entity, stages[0].Visual, HideReason.Stage, index != 0);
-                for (var i = 1; i < stages.Length; i++)
-                {
-                    copies.Set(entity, stages[i].Visual, i == index);
-                }
+                Show(entity, stages, index, ref copies);
 
                 // The first frame only sets the look; a spawned or loaded wreck doesn't replay its damage.
                 if (previous >= 0 && index > previous && stages[index].Effect.IsValid()
@@ -67,6 +62,33 @@ namespace HyperRTS.Presentation.Rendering.Parts
             }
 
             copies.Apply(EntityManager);
+        }
+
+        private void Show(Entity entity, DynamicBuffer<DamageStage> stages, int index, ref ModelCopies copies)
+        {
+            var first = stages[0].Visual;
+            var model = ShownModel(stages, index);
+            _switch.SetBranch(entity, first, HideReason.Stage, model != first);
+            for (var i = 1; i < stages.Length; i++)
+            {
+                // Only a later stage's own model was baked as a prefab to copy.
+                var visual = stages[i].Visual;
+                if (visual != first && visual != entity)
+                {
+                    copies.Set(entity, visual, visual == model);
+                }
+            }
+        }
+
+        // A stage without a model keeps the one of the nearest stage above it.
+        private static Entity ShownModel(DynamicBuffer<DamageStage> stages, int index)
+        {
+            while (index > 0 && stages[index].Visual == Entity.Null)
+            {
+                index--;
+            }
+
+            return stages[index].Visual;
         }
     }
 }
