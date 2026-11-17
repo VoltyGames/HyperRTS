@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
@@ -179,31 +180,20 @@ namespace HyperRTS.Simulation.Squads
             private readonly float Spread(Entity entity, DynamicBuffer<SquadMember> members)
             {
                 var spread = WorkLookup.HasEnabled(entity) ? Rules.WorkSpread : Rules.MaxSpread;
-                foreach (var member in members)
-                {
-                    spread = member.Alive ? math.max(spread, math.length(member.Offset)) : spread;
-                }
-
-                return spread;
+                return math.max(spread, new SquadRoster(members).Spread());
             }
 
             private readonly float2 FormationSlot(Entity entity, int rank, int living, float2 squadVelocity, float2 squad)
             {
                 if (WorkLookup.HasEnabled(entity))
                 {
-                    return ClampSpread(WorkLookup[entity].Position(rank, living, squad) - squad, Rules.WorkSpread);
+                    return Planar.ClampLength(WorkLookup[entity].Position(rank, living, squad) - squad, Rules.WorkSpread);
                 }
 
                 var heading = math.normalizesafe(squadVelocity);
                 var moving = SquadMember.IsMoving(squadVelocity);
                 var slot = moving ? Rules.WedgeSlot(rank, living, heading) : Rules.SpreadSlot(rank, living);
-                return ClampSpread(slot, Rules.MaxSpread);
-            }
-
-            private static float2 ClampSpread(float2 slot, float farthest)
-            {
-                var length = math.length(slot);
-                return length > farthest ? slot / length * farthest : slot;
+                return Planar.ClampLength(slot, Rules.MaxSpread);
             }
         }
     }

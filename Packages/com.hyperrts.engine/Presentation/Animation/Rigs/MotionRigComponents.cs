@@ -100,8 +100,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
         private static float HullGround(in NavGrid grid, float3 point, float3 center)
         {
             var ground = grid.Terrain.Height(point.xz);
-            var floor = grid.TryDeckHeight(center.xz, out var standing) ? standing : ground;
-            return grid.TryDeckHeight(point.xz, out var deck) ? deck : math.max(ground, floor);
+            var floor = grid.TryDeckHeight(center.xz, out var standing) ? math.max(ground, standing) : ground;
+            return grid.TryDeckHeight(point.xz, out var deck) ? deck : floor;
         }
 
         /// <summary>

@@ -44,8 +44,13 @@ namespace HyperRTS.Simulation.Movement
             {
                 var clears = entry.IsVehicle && entry.IsMoving && rule.Yields(unit, entry);
                 var step = clears ? rule.Lane.StepAside(entry, unit) : float2.zero;
-                WayOut += unit.IsVehicle ? step : float2.zero;
-                return unit.IsVehicle ? float2.zero : step;
+                if (!unit.IsVehicle)
+                {
+                    return step;
+                }
+
+                WayOut += step;
+                return float2.zero;
             }
 
             if (!rule.Lane.Holds(unit, entry))

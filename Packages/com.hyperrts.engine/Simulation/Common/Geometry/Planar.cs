@@ -23,6 +23,13 @@ namespace HyperRTS.Simulation.Common.Geometry
         public static float2 Rotate(float2 direction, float sin, float cos) =>
             new(direction.x * cos - direction.y * sin, direction.x * sin + direction.y * cos);
 
+        /// <summary><paramref name="vector"/> shortened to at most <paramref name="maxLength"/>.</summary>
+        public static float2 ClampLength(float2 vector, float maxLength)
+        {
+            var length = math.length(vector);
+            return length > maxLength ? vector * (maxLength / length) : vector;
+        }
+
         /// <summary><paramref name="from"/> turned toward <paramref name="to"/> by at most <paramref name="maxAngle"/> radians.</summary>
         public static float2 TurnToward(float2 from, float2 to, float maxAngle)
         {

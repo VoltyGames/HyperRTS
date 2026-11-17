@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -96,6 +97,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                 MovingLookup = SystemAPI.GetComponentLookup<MoveDestination>(true),
                 ArrivalLookup = SystemAPI.GetComponentLookup<Arrival>(true),
                 VelocityLookup = SystemAPI.GetComponentLookup<Velocity>(true),
+                MembersLookup = SystemAPI.GetBufferLookup<SquadMember>(true),
             }.ScheduleBatch(count, BatchSize, listed);
             state.Dependency = new SpatialSortJob { Index = index, Snapshots = _snapshots.AsArray() }
                 .Schedule(state.Dependency);
@@ -114,6 +116,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
             [ReadOnly] public ComponentLookup<MoveDestination> MovingLookup;
             [ReadOnly] public ComponentLookup<Arrival> ArrivalLookup;
             [ReadOnly] public ComponentLookup<Velocity> VelocityLookup;
+            [ReadOnly] public BufferLookup<SquadMember> MembersLookup;
 
             // Per batch, not per unit, so the marker costs little and the profiler stays readable.
             public void Execute(int startIndex, int count)
@@ -158,6 +161,7 @@ namespace HyperRTS.Simulation.Navigation.Spatial
                     SegmentAxis = facing * agent.HalfSegment,
                     Spacing = agent.Spacing,
                     Mass = agent.Mass,
+                    Spread = MembersLookup.TryGetBuffer(entity, out var members) ? new SquadRoster(members).Spread() : 0f,
                     IsVehicle = agent.IsVehicle,
                 };
                 entry.FixReach();

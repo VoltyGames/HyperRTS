@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -24,6 +25,7 @@ namespace HyperRTS.Simulation.Movement
         private ComponentTypeHandle<Arrival> _arrivals;
         private ComponentTypeHandle<Velocity> _velocities;
         private ComponentTypeHandle<FacingGoal> _aims;
+        [ReadOnly] private BufferTypeHandle<SquadMember> _members;
         private ComponentTypeHandle<LocomotionState> _drives;
 
         public MoverHandles(ref SystemState state)
@@ -40,6 +42,7 @@ namespace HyperRTS.Simulation.Movement
             _arrivals = state.GetComponentTypeHandle<Arrival>();
             _velocities = state.GetComponentTypeHandle<Velocity>();
             _aims = state.GetComponentTypeHandle<FacingGoal>();
+            _members = state.GetBufferTypeHandle<SquadMember>(true);
             _drives = state.GetComponentTypeHandle<LocomotionState>();
         }
 
@@ -58,6 +61,7 @@ namespace HyperRTS.Simulation.Movement
             _arrivals.Update(ref state);
             _velocities.Update(ref state);
             _aims.Update(ref state);
+            _members.Update(ref state);
             _drives.Update(ref state);
         }
 
@@ -89,6 +93,7 @@ namespace HyperRTS.Simulation.Movement
                 MovingMask = chunk.GetEnabledMask(ref _destinations),
                 ArrivedMask = chunk.GetEnabledMask(ref _arrivals),
                 AimingMask = chunk.GetEnabledMask(ref _aims),
+                Members = chunk.GetBufferAccessorRO(ref _members),
                 Drives = remembers ? chunk.GetNativeArray(ref _drives) : default,
                 Remembers = remembers,
             };

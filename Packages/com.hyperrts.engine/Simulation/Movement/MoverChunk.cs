@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Paths;
@@ -29,6 +30,7 @@ namespace HyperRTS.Simulation.Movement
         public EnabledMask MovingMask;
         public EnabledMask ArrivedMask;
         public EnabledMask AimingMask;
+        public BufferAccessor<SquadMember> Members;
         public NativeArray<LocomotionState> Drives;
         // Infantry have no LocomotionState and start each frame from rest.
         public bool Remembers;
@@ -58,6 +60,7 @@ namespace HyperRTS.Simulation.Movement
                 SegmentAxis = facing * agent.HalfSegment,
                 Spacing = agent.Spacing,
                 Mass = agent.Mass,
+                Spread = Members.Length > 0 ? new SquadRoster(Members[index]).Spread() : 0f,
                 IsVehicle = agent.IsVehicle,
             };
             entry.FixReach();

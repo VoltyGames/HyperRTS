@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Entities;
@@ -24,18 +23,15 @@ namespace HyperRTS.Simulation.Movement
         private const float Rolling = 0.1f;
 
         [ReadOnly] private ComponentLookup<Locomotion> _handling;
-        [ReadOnly] private BufferLookup<SquadMember> _members;
 
         public VehicleLane(ref SystemState state)
         {
             _handling = state.GetComponentLookup<Locomotion>(true);
-            _members = state.GetBufferLookup<SquadMember>(true);
         }
 
         public void Update(ref SystemState state)
         {
             _handling.Update(ref state);
-            _members.Update(ref state);
         }
 
         /// <summary>Whether <paramref name="unit"/> stands in the lane ahead of <paramref name="vehicle"/>.</summary>
@@ -68,7 +64,7 @@ namespace HyperRTS.Simulation.Movement
             }
 
             var offset = unit.Position.xz - vehicle.Position.xz;
-            var reach = unit.Radius + math.length(unit.SegmentAxis) + Spread(unit.Entity);
+            var reach = unit.Radius + math.length(unit.SegmentAxis) + unit.Spread;
             var along = math.dot(offset, travel);
             var length = vehicle.HullReach + math.min(Ahead(vehicle), vehicle.GoalDistance);
             if (along <= 0f || along > length + reach)
@@ -79,10 +75,6 @@ namespace HyperRTS.Simulation.Movement
             var halfWidth = vehicle.Radius + reach + math.max(vehicle.Spacing, unit.Spacing);
             return halfWidth - math.abs(Planar.Cross(travel, offset));
         }
-
-        // How far a squad's living members stand from its centre; zero for a single figure.
-        private readonly float Spread(Entity unit) =>
-            _members.TryGetBuffer(unit, out var members) ? new SquadRoster(members).Spread() : 0f;
 
         private static float2 Travel(in SpatialEntry vehicle)
         {

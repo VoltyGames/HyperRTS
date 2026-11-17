@@ -59,6 +59,9 @@ namespace HyperRTS.Simulation.Navigation.Spatial
         /// <summary>The <see cref="NavAgent.Mass"/> in tonnes; zero for entities without an agent.</summary>
         public float Mass;
 
+        /// <summary>How far a squad's living members stand from its centre; zero for a single figure.</summary>
+        public float Spread;
+
         /// <summary>A <see cref="NavAgent.IsVehicle"/>: the crowd's push never moves it and allied foot units make way.</summary>
         public bool IsVehicle;
 

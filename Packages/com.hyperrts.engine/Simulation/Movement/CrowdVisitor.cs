@@ -1,5 +1,6 @@
-using Unity.Collections;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Navigation.Agents;
+using Unity.Collections;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Entities;
@@ -187,7 +188,7 @@ namespace HyperRTS.Simulation.Movement
             InGoalArea && Unit.Group != 0 && entry.Group == Unit.Group && entry.IsArrived && !entry.IsMoving;
 
         /// <summary>The overlap push, no longer than one frame's step.</summary>
-        public readonly float2 PushWithin(float maxStep) => Shortened(Push, maxStep);
+        public readonly float2 PushWithin(float maxStep) => Planar.ClampLength(Push, maxStep);
 
         /// <summary>
         /// The move with the push added. A foot unit's stays within one frame's step, so one stepping out of a lane
@@ -196,13 +197,7 @@ namespace HyperRTS.Simulation.Movement
         public readonly float2 Pushed(float2 move, float maxStep)
         {
             var pushed = move + PushWithin(maxStep);
-            return Unit.IsVehicle ? pushed : Shortened(pushed, maxStep);
-        }
-
-        private static float2 Shortened(float2 move, float maxLength)
-        {
-            var length = math.length(move);
-            return length > maxLength ? move * (maxLength / length) : move;
+            return Unit.IsVehicle ? pushed : Planar.ClampLength(pushed, maxStep);
         }
 
         private void Separate(in SpatialEntry entry, float2 direction, float distance, float reach, int precedence,
