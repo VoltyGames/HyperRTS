@@ -21,18 +21,15 @@ namespace HyperRTS.Presentation.Construction
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateBefore(typeof(EntitiesGraphicsSystem))]
-    public partial class ConstructionSiteSystem : SystemBase
+    public partial class ConstructionSiteSystem : EffectStreamSystem
     {
-        private EffectStreams _streams;
-        private EffectPool _pool;
         private RenderSwitch _switch;
         private float _reach;
         private float _deltaTime;
 
         protected override void OnCreate()
         {
-            _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
-            _streams = new EffectStreams(_pool);
+            base.OnCreate();
             _switch = new RenderSwitch(ref CheckedStateRef);
             RequireForUpdate(SystemAPI.QueryBuilder().WithPresent<ConstructionWatch>().Build());
         }
@@ -65,7 +62,7 @@ namespace HyperRTS.Presentation.Construction
 
                 if (completed && site.ValueRO.CompleteEffect.IsValid())
                 {
-                    _pool.Play(site.ValueRO.CompleteEffect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
+                    Pool.Play(site.ValueRO.CompleteEffect.Value, place.ValueRO.Position, place.ValueRO.Rotation);
                 }
 
                 if (watch.ValueRO.IsWorking(now) && site.ValueRO.WorkRig.IsValid())
@@ -74,7 +71,7 @@ namespace HyperRTS.Presentation.Construction
                 }
             }
 
-            _streams.EndFrame();
+            Streams.EndFrame();
         }
 
         private void BeginFrame()
@@ -87,7 +84,7 @@ namespace HyperRTS.Presentation.Construction
                 watching.ValueRW = true;
             }
 
-            _streams.BeginFrame();
+            Streams.BeginFrame();
         }
 
         private void Stream(Entity entity, in ConstructionSite site, DynamicBuffer<ConstructionWorkPoint> points,
@@ -96,7 +93,7 @@ namespace HyperRTS.Presentation.Construction
             for (var i = 0; i < points.Length; i++)
             {
                 var socket = math.transform(place.Value, points[i].Socket);
-                var state = _streams.Step(site.WorkRig.Value, entity, i, socket, _reach);
+                var state = Streams.Step(site.WorkRig.Value, entity, i, socket, _reach);
                 state?.EmitLoop(place.Rotation, _deltaTime, 1f);
             }
         }

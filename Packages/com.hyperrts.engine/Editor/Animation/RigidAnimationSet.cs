@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Animation
                 throw new InvalidOperationException($"Rigid set '{name}' needs {pieces.pieces.Count} x {rows} texels, over the {MaxTextureSize} texture limit.");
             }
 
-            var poses = RigidPoses.Sample(motion, TakeOf(motion), pieces, rows);
+            var poses = RigidPoses.Sample(motion, SingleTake(motion), pieces, rows);
             var positionsPath = TexturePath(positions, "Pos");
             var rotationsPath = TexturePath(rotations, "Rot");
             positions = WriteTexture(poses.Positions(), positionsPath);
@@ -79,7 +79,7 @@ namespace HyperRTS.Editor.Animation
             }
         }
 
-        private static AnimationClip TakeOf(GameObject motionModel)
+        private static AnimationClip SingleTake(GameObject motionModel)
         {
             var path = AssetDatabase.GetAssetPath(motionModel);
             var takes = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()

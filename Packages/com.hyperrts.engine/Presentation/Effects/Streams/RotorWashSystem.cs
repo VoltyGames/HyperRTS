@@ -18,20 +18,14 @@ namespace HyperRTS.Presentation.Effects.Streams
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public partial class RotorWashSystem : SystemBase
+    public partial class RotorWashSystem : EffectStreamSystem
     {
-        private EffectStreams _streams;
-        private EffectPool _pool;
 
         protected override void OnCreate()
         {
-            _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
-            _streams = new EffectStreams(_pool);
+            base.OnCreate();
             RequireForUpdate<RotorWash>();
         }
-
-        protected override void OnStopRunning() => _streams.StopAll();
-
         protected override void OnUpdate()
         {
             CompleteDependency();
@@ -39,7 +33,7 @@ namespace HyperRTS.Presentation.Effects.Streams
             var hasGround = SystemAPI.TryGetSingleton(out GroundMaterials ground);
             // No terrain is a flat world at height 0 (TerrainHeight's default).
             SystemAPI.TryGetSingleton(out TerrainHeight terrain);
-            _streams.BeginFrame();
+            Streams.BeginFrame();
             foreach (var (wash, spin, place, entity) in SystemAPI
                          .Query<RefRO<RotorWash>, RefRO<RotorSpin>, RefRO<LocalToWorld>>()
                          .WithNone<FogHidden, Inside>().WithEntityAccess())
@@ -52,11 +46,11 @@ namespace HyperRTS.Presentation.Effects.Streams
                     continue;
                 }
 
-                var state = _streams.StepOnGround(wash.ValueRO.Effects, hasGround, ground, entity, 0, below);
+                var state = Streams.StepOnGround(wash.ValueRO.Effects, hasGround, ground, entity, 0, below);
                 state?.Emit(Quaternion.identity, deltaTime, strength);
             }
 
-            _streams.EndFrame();
+            Streams.EndFrame();
         }
     }
 }

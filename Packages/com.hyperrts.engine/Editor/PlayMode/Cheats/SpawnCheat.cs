@@ -36,7 +36,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         {
             PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
             var center = ViewCenter(entityManager, terrain);
-            var building = entityManager.HasComponent<BuildingTag>(prefab) && entityManager.HasComponent<NavObstacle>(prefab);
+            var building = IsBuilding(entityManager, prefab);
             var placement = building ? new Placement(entityManager, prefab) : default;
             var rotation = entityManager.GetComponentData<LocalTransform>(prefab).Rotation;
             var side = (int)math.ceil(math.sqrt(count));
@@ -70,8 +70,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         {
             PlayWorld.TryGetSingleton(entityManager, out TerrainHeight terrain);
             var position = new float3(spot.x, terrain.Height(spot), spot.y);
-            var building = entityManager.HasComponent<BuildingTag>(prefab) && entityManager.HasComponent<NavObstacle>(prefab);
-            if (building)
+            if (IsBuilding(entityManager, prefab))
             {
                 return new Placement(entityManager, prefab).TrySpawn(entityManager, prefab, owner, position, yaw);
             }
@@ -79,6 +78,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             var rotation = math.mul(quaternion.RotateY(yaw), entityManager.GetComponentData<LocalTransform>(prefab).Rotation);
             return entityManager.Spawn(prefab, position, rotation, owner);
         }
+
+        // Placement rules apply to buildings that block ground.
+        private static bool IsBuilding(EntityManager entityManager, Entity prefab) =>
+            entityManager.HasComponent<BuildingTag>(prefab) && entityManager.HasComponent<NavObstacle>(prefab);
 
         // Where the game camera looks on the ground, or the map centre without a camera.
         private static float3 ViewCenter(EntityManager entityManager, in TerrainHeight terrain)

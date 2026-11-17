@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Effects.Graph
             [CliArg("layer", "A layer name; empty shows every layer")] string layer = "")
         {
             var editor = new RecipeEditor(recipe);
-            return editor.Layers(layer).SelectMany(found => new LayerSummary(found, editor.IndexOf(found)).Lines()).ToList();
+            return editor.Layers(layer).SelectMany(found => new LayerSummary(found, editor.LayerIndex(found)).Lines()).ToList();
         }
 
         [CliCommand("effect", "set", "Set fields of one recipe layer, save the recipe and rebuild its graph: returns each change as layer.field: before -> after.", Tags = new[] { "hyperrts/effects" })]

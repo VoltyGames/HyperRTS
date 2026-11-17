@@ -30,7 +30,7 @@ namespace HyperRTS.Simulation.Tests
 
         public int Region(int2 cell) => _access.Region(cell);
 
-        public float ClearOf(int2 cell) => _access.Distance(cell);
+        public float Clearance(int2 cell) => _access.Distance(cell);
 
         public int2 Cell(float3 position) => _grid.Grid.Cell(position);
 

@@ -106,12 +106,9 @@ namespace HyperRTS.Editor.Effects.Preview
             }
 
             // A paused step still sends the stream its Play event, which waits for a frame after the start.
-            if (!Paused)
-            {
-                SincePlay += deltaTime;
-            }
-
-            MoveStream(Paused ? 0f : deltaTime);
+            var step = Paused ? 0f : deltaTime;
+            SincePlay += step;
+            MoveStream(step);
 
             _rig.Tick();
         }

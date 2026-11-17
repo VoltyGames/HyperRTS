@@ -104,7 +104,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             return query.ToEntityArray(Allocator.Temp);
         }
 
-        /// <summary>Heals <paramref name="units"/> to full through the damage system.</summary>
+        /// <summary>Heals <paramref name="units"/> to full through the damage system, as a negative hit of full health.</summary>
         public static void Repair(EntityManager entityManager, NativeArray<Entity> units) =>
             Hit(entityManager, units, unit => -entityManager.GetComponentData<Health>(unit).Max);
 
@@ -116,7 +116,6 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         public static void Damage(EntityManager entityManager, NativeArray<Entity> units, float amount) =>
             Hit(entityManager, units, _ => amount);
 
-        // A heal is a negative hit of the unit's full health.
         private static void Hit(EntityManager entityManager, NativeArray<Entity> units, Func<Entity, float> amount)
         {
             using var queue = entityManager.CreateEntityQuery(typeof(DamageQueue));

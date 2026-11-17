@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.PlayMode.Cheats;
 using Unity.Collections;
@@ -21,13 +20,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public override void Run(StagingRun run)
         {
-            var units = run.FindGroup(_units).Alive(run.World);
-            if (units.Count == 0)
-            {
-                throw new InvalidOperationException($"group '{_units}' has no live units to destroy");
-            }
-
-            using var listed = new NativeArray<Entity>(units.ToArray(), Allocator.Temp);
+            using var listed = new NativeArray<Entity>(run.LiveUnits(_units, "destroy").ToArray(), Allocator.Temp);
             MatchCheats.Destroy(run.World, listed);
         }
     }

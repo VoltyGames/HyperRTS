@@ -76,11 +76,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public override void Run(StagingRun run)
         {
             var entityManager = run.World;
-            var units = run.FindGroup(_units).Alive(entityManager);
-            if (units.Count == 0)
-            {
-                throw new InvalidOperationException($"group '{_units}' has no live units to order");
-            }
+            var units = run.LiveUnits(_units, "order");
 
             var player = run.FindPlayer(run.FindGroup(_units).Owner);
             var command = new PlayerCommand { Type = _type, Argument = _argument };
@@ -98,11 +94,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 return;
             }
 
-            var targets = run.FindGroup(_target).Alive(entityManager);
-            if (targets.Count == 0)
-            {
-                throw new InvalidOperationException($"group '{_target}' has no live units to target");
-            }
+            var targets = run.LiveUnits(_target, "target");
 
             for (var i = 0; i < units.Count; i++)
             {

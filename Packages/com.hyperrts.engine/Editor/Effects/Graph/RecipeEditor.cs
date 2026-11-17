@@ -26,12 +26,12 @@ namespace HyperRTS.Editor.Effects.Graph
         public IEnumerable<EffectLayer> Layers(string name) =>
             string.IsNullOrEmpty(name) ? _recipe.layers : new[] { Layer(name) };
 
-        public int IndexOf(EffectLayer layer) => _recipe.layers.IndexOf(layer);
+        public int LayerIndex(EffectLayer layer) => _recipe.layers.IndexOf(layer);
 
         /// <summary>Applies the edits to the named layer and returns each change as <c>layer.field: before -> after</c>; the asset is dirty after.</summary>
         public List<string> Set(string layer, IEnumerable<RecipeEdit> edits)
         {
-            var element = _serialized.FindProperty("layers").GetArrayElementAtIndex(_recipe.layers.IndexOf(Layer(layer)));
+            var element = _serialized.FindProperty("layers").GetArrayElementAtIndex(LayerIndex(Layer(layer)));
             var changes = new List<string>();
             foreach (var edit in edits)
             {

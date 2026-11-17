@@ -62,6 +62,13 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public StagingGroup FindGroup(string name) =>
             _groups.TryGetValue(name, out var group) ? group : throw new InvalidOperationException($"group '{name}' was never spawned");
 
+        /// <summary>The group's live units, failing the step named by <paramref name="verb"/> when none are left.</summary>
+        public List<Entity> LiveUnits(string name, string verb)
+        {
+            var units = FindGroup(name).Alive(World);
+            return units.Count > 0 ? units : throw new InvalidOperationException($"group '{name}' has no live units to {verb}");
+        }
+
         public float2 GroupCentre(string name) =>
             FindGroup(name).TryGetCentre(World, out var centre) ? centre : throw new InvalidOperationException($"group '{name}' has no live units");
 

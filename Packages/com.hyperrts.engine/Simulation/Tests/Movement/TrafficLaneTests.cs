@@ -129,7 +129,7 @@ namespace HyperRTS.Simulation.Tests.Movement
             {
                 var offset = random.NextFloat2(-half - 20f, half + 20f);
                 var cell = open.Cell(new float3(offset.x, 0f, offset.y));
-                if (open.IsOpen(cell) && open.Region(cell) == region && open.ClearOf(cell) >= 3f)
+                if (open.IsOpen(cell) && open.Region(cell) == region && open.Clearance(cell) >= 3f)
                 {
                     return open.Point(cell);
                 }

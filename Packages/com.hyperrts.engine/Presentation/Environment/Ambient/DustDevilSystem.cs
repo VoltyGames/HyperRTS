@@ -20,13 +20,11 @@ namespace HyperRTS.Presentation.Environment.Ambient
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public partial class DustDevilSystem : SystemBase
+    public partial class DustDevilSystem : EffectStreamSystem
     {
         private const float Reach = 120f;
 
         private readonly List<DustDevil> _devils = new();
-        private EffectStreams _streams;
-        private EffectPool _pool;
         private Camera _camera;
         private AmbientLife _life;
         private Random _random = new(0x2545F491u);
@@ -35,8 +33,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
 
         protected override void OnCreate()
         {
-            _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
-            _streams = new EffectStreams(_pool);
+            base.OnCreate();
             RequireForUpdate<TerrainHeight>();
             RequireForUpdate<GroundMaterials>();
         }
@@ -110,7 +107,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
             // No Wind in the scene means still air.
             SystemAPI.TryGetSingleton(out WindState wind);
             var downwind = math.normalizesafe(wind.Downwind.xz);
-            _streams.BeginFrame();
+            Streams.BeginFrame();
             for (var i = _devils.Count - 1; i >= 0; i--)
             {
                 var devil = _devils[i];
@@ -121,11 +118,11 @@ namespace HyperRTS.Presentation.Environment.Ambient
                     continue;
                 }
 
-                var state = _streams.Step(_life.dustDevilRig, Entity.Null, devil.Id, devil.Position);
+                var state = Streams.Step(_life.dustDevilRig, Entity.Null, devil.Id, devil.Position);
                 state?.Emit(Quaternion.identity, deltaTime, devil.Strength);
             }
 
-            _streams.EndFrame();
+            Streams.EndFrame();
         }
 
         private float NextInterval() => _random.NextFloat(_life.dustDevilInterval.x, _life.dustDevilInterval.y);

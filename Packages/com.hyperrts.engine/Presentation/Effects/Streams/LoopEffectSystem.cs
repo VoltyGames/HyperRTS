@@ -22,15 +22,13 @@ namespace HyperRTS.Presentation.Effects.Streams
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
-    public partial class LoopEffectSystem : SystemBase
+    public partial class LoopEffectSystem : EffectStreamSystem
     {
-        private EffectStreams _streams;
         private readonly Dictionary<Entity, double> _firstSeen = new();
         private readonly List<Entity> _gone = new();
         private readonly SmokeShadows _smoke = new();
         private GameObject _lightsRoot;
         private LoopLights _lights;
-        private EffectPool _pool;
         private EntityQuery _loops;
         private int _loopsVersion;
         private float _reach;
@@ -38,8 +36,7 @@ namespace HyperRTS.Presentation.Effects.Streams
 
         protected override void OnCreate()
         {
-            _pool = World.GetOrCreateSystemManaged<EffectPoolSystem>().Pool;
-            _streams = new EffectStreams(_pool);
+            base.OnCreate();
             _loops = GetEntityQuery(ComponentType.ReadOnly<LoopEffect>());
             RequireForUpdate(_loops);
             _lightsRoot = new GameObject("HyperRTS Loop Lights") { hideFlags = HideFlags.DontSave };
@@ -51,7 +48,7 @@ namespace HyperRTS.Presentation.Effects.Streams
         // The last loop is gone, so put out its light and shadow.
         protected override void OnStopRunning()
         {
-            _streams.StopAll();
+            base.OnStopRunning();
             ShowLightsAndShadows(0f);
         }
 
@@ -63,7 +60,7 @@ namespace HyperRTS.Presentation.Effects.Streams
             _reach = PresentationQuality.Current.Effects == DetailLevel.Low ? 0.5f : 1f;
             var health = SystemAPI.GetComponentLookup<Health>(true);
             var decays = SystemAPI.GetComponentLookup<Decay>(true);
-            _streams.BeginFrame();
+            Streams.BeginFrame();
             foreach (var (loops, place, entity) in SystemAPI.Query<DynamicBuffer<LoopEffect>, RefRO<LocalToWorld>>()
                          .WithNone<FogHidden, Inside, ConstructionProgress>().WithEntityAccess())
             {
@@ -80,7 +77,7 @@ namespace HyperRTS.Presentation.Effects.Streams
                 }
             }
 
-            _streams.EndFrame();
+            Streams.EndFrame();
             ShowLightsAndShadows((float)now);
             Prune();
         }
@@ -96,7 +93,7 @@ namespace HyperRTS.Presentation.Effects.Streams
             }
 
             var socket = math.transform(place.Value, loop.Socket);
-            var state = _streams.Step(loop.Rig.Value, entity, index, socket, _reach);
+            var state = Streams.Step(loop.Rig.Value, entity, index, socket, _reach);
             if (state == null)
             {
                 return;
@@ -129,7 +126,7 @@ namespace HyperRTS.Presentation.Effects.Streams
 
         private void ShowLightsAndShadows(float time)
         {
-            var eye = _pool.Eye;
+            var eye = Pool.Eye;
             _lights.Show(eye, PresentationQuality.Current.Effects, time);
             _smoke.Show(eye, PresentationQuality.Current.Effects);
         }

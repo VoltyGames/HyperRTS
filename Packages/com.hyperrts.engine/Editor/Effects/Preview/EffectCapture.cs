@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Effects.Preview
         {
             _prefab = FindRig(rig);
             _settings = settings;
-            Times = ParseTimes(string.IsNullOrWhiteSpace(settings.Times) ? EffectCaptureSettings.DefaultTimes : settings.Times);
+            Times = ParseTimes(settings.Times);
             if (Times.Count == 0)
             {
                 throw new ArgumentException("HyperRTS: no capture times given.");
