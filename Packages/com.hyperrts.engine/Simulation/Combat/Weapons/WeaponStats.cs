@@ -203,23 +203,25 @@ namespace HyperRTS.Simulation.Combat.Weapons
                 Strategic = strategic,
                 Role = BakeRole(root),
                 FiringArc = math.radians(firingArc),
-                Aim = new WeaponAim
-                {
-                    TraverseRate = math.radians(traverseSpeed),
-                    ElevationRate = math.radians(elevationSpeed),
-                    MinPitch = math.radians(minElevation),
-                    MaxPitch = math.radians(maxElevation),
-                    DeployedPitch = math.radians(math.clamp(deployedElevation, minElevation, maxElevation)),
-                    AimTolerance = math.radians(aimTolerance),
-                    ProjectileHeight = projectileHeight,
-                    Course = ShotCourse.From(trajectory),
-                    ArcHeight = arcHeight,
-                },
+                Aim = BakeAim(),
             };
             weapon.Aim.BakeSockets(baker, root, muzzle, turret, barrel);
             BakeMuzzles(baker, root, muzzles, ref weapon);
             return weapon;
         }
+
+        private WeaponAim BakeAim() => new()
+        {
+            TraverseRate = math.radians(traverseSpeed),
+            ElevationRate = math.radians(elevationSpeed),
+            MinPitch = math.radians(minElevation),
+            MaxPitch = math.radians(maxElevation),
+            DeployedPitch = math.radians(math.clamp(deployedElevation, minElevation, maxElevation)),
+            AimTolerance = math.radians(aimTolerance),
+            ProjectileHeight = projectileHeight,
+            Course = ShotCourse.From(trajectory),
+            ArcHeight = arcHeight,
+        };
 
         private WeaponRole BakeRole(Transform root)
         {
