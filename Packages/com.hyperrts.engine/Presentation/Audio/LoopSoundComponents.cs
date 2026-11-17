@@ -23,6 +23,9 @@ namespace HyperRTS.Presentation.Audio
 
         /// <summary>Always while shown, such as a generator hum.</summary>
         Ambient = 5,
+
+        /// <summary>While one of its machines eases between stopped and running, such as a silo door opening.</summary>
+        Machine = 6,
     }
 
     /// <summary>One loop per slot; a slot without an entry is silent.</summary>

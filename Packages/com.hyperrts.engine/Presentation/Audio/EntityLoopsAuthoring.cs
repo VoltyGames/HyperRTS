@@ -44,6 +44,9 @@ namespace HyperRTS.Presentation.Audio
         [Tooltip("Always while shown, such as a generator hum.")]
         public SoundCue ambient;
 
+        [Tooltip("While one of its machines opens or closes, such as a silo door; a clip as long as the machine's ramp never repeats.")]
+        public SoundCue machine;
+
         public static DynamicBuffer<EntityLoopSound> Add(EntityWriter writer, float fullSpeed, float pitchRise)
         {
             writer.Add(new LoopSoundTuning { FullSpeed = fullSpeed, PitchRise = pitchRise });
@@ -71,6 +74,7 @@ namespace HyperRTS.Presentation.Audio
                 EntityLoopsAuthoring.Set(loops, LoopSlot.TurretTraverse, authoring.turretTraverse);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.Working, authoring.working);
                 EntityLoopsAuthoring.Set(loops, LoopSlot.Ambient, authoring.ambient);
+                EntityLoopsAuthoring.Set(loops, LoopSlot.Machine, authoring.machine);
             }
         }
     }

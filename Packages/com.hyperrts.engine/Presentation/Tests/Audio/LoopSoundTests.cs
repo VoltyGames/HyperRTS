@@ -42,8 +42,8 @@ namespace HyperRTS.Presentation.Tests.Audio
         {
             var state = Ran(3f, speed);
 
-            Assert.AreEqual(idle, state.Level(LoopSlot.EngineIdle, Tuning, false), 0.02f);
-            Assert.AreEqual(move, state.Level(LoopSlot.EngineMove, Tuning, false), 0.02f);
+            Assert.AreEqual(idle, state.Level(LoopSlot.EngineIdle, Tuning, false, false), 0.02f);
+            Assert.AreEqual(move, state.Level(LoopSlot.EngineMove, Tuning, false, false), 0.02f);
             Assert.AreEqual(pitch, state.PitchScale(LoopSlot.EngineMove, Tuning), 0.01f);
         }
 
@@ -51,15 +51,15 @@ namespace HyperRTS.Presentation.Tests.Audio
         public void Rotor_FollowsTheBladesSpin()
         {
             var state = Ran(0.1f, 0f, rotor: 0.5f);
-            Assert.AreEqual(0.5f, state.Level(LoopSlot.Rotor, Tuning, false));
+            Assert.AreEqual(0.5f, state.Level(LoopSlot.Rotor, Tuning, false, false));
             Assert.AreEqual(0.8f, state.PitchScale(LoopSlot.Rotor, Tuning), 1e-5f);
 
             Run(ref state, 0.1f, 0.1f, 0f, rotor: 1f);
-            Assert.AreEqual(1f, state.Level(LoopSlot.Rotor, Tuning, false));
+            Assert.AreEqual(1f, state.Level(LoopSlot.Rotor, Tuning, false, false));
             Assert.AreEqual(1f, state.PitchScale(LoopSlot.Rotor, Tuning));
 
             Run(ref state, 0.2f, 0.1f, 0f);
-            Assert.AreEqual(0f, state.Level(LoopSlot.Rotor, Tuning, false));
+            Assert.AreEqual(0f, state.Level(LoopSlot.Rotor, Tuning, false, false));
         }
 
         [Test]
@@ -68,10 +68,10 @@ namespace HyperRTS.Presentation.Tests.Audio
             var state = new LoopSoundState();
             Run(ref state, 0f, Frame, 0f);
             Run(ref state, Frame, 9f * Frame, 0f, aim: 5);
-            Assert.AreEqual(1f, state.Level(LoopSlot.TurretTraverse, Tuning, false), "still turning between updates");
+            Assert.AreEqual(1f, state.Level(LoopSlot.TurretTraverse, Tuning, false, false), "still turning between updates");
 
             Run(ref state, 10f * Frame, 1f, 0f, aim: 5);
-            Assert.AreEqual(0f, state.Level(LoopSlot.TurretTraverse, Tuning, false));
+            Assert.AreEqual(0f, state.Level(LoopSlot.TurretTraverse, Tuning, false, false));
         }
 
         [Test]
@@ -189,6 +189,15 @@ namespace HyperRTS.Presentation.Tests.Audio
             Assert.AreEqual(LoopSlot.Ambient, loops[1].Slot);
             Assert.AreEqual(0.15f, world.EntityManager.GetComponentData<LoopSoundTuning>(entity).PitchRise);
             Object.DestroyImmediate(cue);
+        }
+
+        [Test]
+        public void MachineLoop_PlaysOnlyWhileAMachineMoves()
+        {
+            var state = new LoopSoundState();
+
+            Assert.AreEqual(1f, state.Level(LoopSlot.Machine, Tuning, false, true));
+            Assert.AreEqual(0f, state.Level(LoopSlot.Machine, Tuning, false, false));
         }
     }
 }

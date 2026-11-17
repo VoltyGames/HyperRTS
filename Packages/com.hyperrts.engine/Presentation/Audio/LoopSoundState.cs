@@ -50,13 +50,14 @@ namespace HyperRTS.Presentation.Audio
         public readonly float Throttle(in LoopSoundTuning tuning) => math.saturate(Speed / tuning.FullSpeed);
 
         /// <summary>How loud the slot plays, 0 to 1.</summary>
-        public readonly float Level(LoopSlot slot, in LoopSoundTuning tuning, bool working) => slot switch
+        public readonly float Level(LoopSlot slot, in LoopSoundTuning tuning, bool working, bool machineMoving) => slot switch
         {
             LoopSlot.EngineIdle => 1f - Throttle(tuning),
             LoopSlot.EngineMove => Throttle(tuning),
             LoopSlot.Rotor => Rotor,
             LoopSlot.TurretTraverse => Traverse,
             LoopSlot.Working => working ? 1f : 0f,
+            LoopSlot.Machine => machineMoving ? 1f : 0f,
             _ => 1f,
         };
 

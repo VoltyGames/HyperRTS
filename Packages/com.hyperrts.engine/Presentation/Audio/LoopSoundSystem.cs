@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Cues.Sounds;
@@ -27,6 +28,7 @@ namespace HyperRTS.Presentation.Audio
         private readonly LoopMixer _mixer = new(Voices);
         private readonly Dictionary<Entity, LoopSoundState> _states = new();
         private readonly List<Entity> _gone = new();
+        private readonly HashSet<Entity> _machinesMoving = new();
         private readonly float[] _baseVolume = new float[Voices];
         private readonly float[] _basePitch = new float[Voices];
         private readonly VoiceBank _voices = new("HyperRTS Loops", Voices, loop: true);
@@ -67,6 +69,7 @@ namespace HyperRTS.Presentation.Audio
             var sites = SystemAPI.GetComponentLookup<ConstructionProgress>(true);
             var producers = SystemAPI.GetComponentLookup<Producer>(true);
             var poses = SystemAPI.GetBufferLookup<WeaponPose>(true);
+            FindMovingMachines();
             foreach (var (loops, tuning, place, entity) in SystemAPI
                          .Query<DynamicBuffer<EntityLoopSound>, RefRO<LoopSoundTuning>, RefRO<LocalToWorld>>()
                          .WithNone<FogHidden, Inside>().WithEntityAccess())
@@ -85,9 +88,24 @@ namespace HyperRTS.Presentation.Audio
                     _mixer.Offer(new LoopCandidate
                     {
                         Entity = entity, Slot = loop.Slot, Cue = loop.Cue.Value, Position = position,
-                        DistanceSq = distanceSq, Level = state.Level(loop.Slot, tuning.ValueRO, building || producing),
+                        DistanceSq = distanceSq, Level = state.Level(loop.Slot, tuning.ValueRO, building || producing,
+                            _machinesMoving.Contains(entity)),
                         PitchScale = state.PitchScale(loop.Slot, tuning.ValueRO),
                     });
+                }
+            }
+        }
+
+        // Machines nested in a model name the game entity as their owner.
+        private void FindMovingMachines()
+        {
+            _machinesMoving.Clear();
+            foreach (var clock in SystemAPI.Query<RefRO<MachineClock>>())
+            {
+                var ramp = clock.ValueRO.Ramp;
+                if (ramp > 0f && ramp < 1f)
+                {
+                    _machinesMoving.Add(clock.ValueRO.Owner);
                 }
             }
         }
