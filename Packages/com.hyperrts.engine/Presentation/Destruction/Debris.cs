@@ -1,4 +1,5 @@
 using Unity.Entities;
+using HyperRTS.Simulation.Cues.Effects;
 
 namespace HyperRTS.Presentation.Destruction
 {

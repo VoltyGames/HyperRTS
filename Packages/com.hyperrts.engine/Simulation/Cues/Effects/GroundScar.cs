@@ -8,18 +8,21 @@ namespace HyperRTS.Simulation.Cues.Effects
     [Serializable]
     public struct GroundScar
     {
-        [Tooltip("Metres deep the crater bowl dents the ground, half the mark's size across; 0 for none. Clipped at 6 m.")]
-        [Range(0f, 6f)]
+        [Tooltip("Metres deep the crater bowl dents the ground, half the mark's size across; 0 for none. Clipped at 8 m.")]
+        [Range(0f, 8f)]
         public float craterDepth;
 
-        [Tooltip("Metres the lip of earth round the bowl stands above the ground, peaking just outside the bowl radius; 0 for none. Clipped at 2 m.")]
-        [Range(0f, 2f)]
+        [Tooltip("Metres the lip of earth round the bowl stands above the ground, peaking just outside the bowl radius; 0 for none. Clipped at 1.5 m.")]
+        [Range(0f, 1.5f)]
         public float rimHeight;
 
         [Tooltip("How far scorch and the stain reach, as a multiple of the bowl radius, at least 1.3 so the lip fits inside. " +
                  "A small deep bowl in a wide burn takes a large value.")]
         [Min(1.3f)]
         public float burnReach;
+
+        [Tooltip("Burns out everything to the burn reach at once, so no field fire lights or spreads there afterwards: a strike, not a shell.")]
+        public bool burnsOut;
 
         [Tooltip("How black the ground is burnt, out to the burn reach: 0 none, 1 soot black.")]
         [Range(0f, 1f)]

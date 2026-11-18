@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Destruction
+namespace HyperRTS.Simulation.Cues.Effects
 {
     /// <summary>
     /// Pieces a broken prop throws on the client, such as planks, hay clumps, sandbags or rubble: meshes drawn with

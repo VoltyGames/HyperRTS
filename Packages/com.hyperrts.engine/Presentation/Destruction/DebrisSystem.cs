@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -31,7 +32,7 @@ namespace HyperRTS.Presentation.Destruction
                          .Query<RefRO<Debris>, EnabledRefRW<Debris>, RefRO<LocalToWorld>>())
             {
                 pending.ValueRW = false;
-                Throw(debris.ValueRO, place.ValueRO.Position, float3.zero);
+                Throw(debris.ValueRO.Set.Value, place.ValueRO.Position, float3.zero, debris.ValueRO.Radius, 0);
             }
 
             KeepCapForDetail();
@@ -47,14 +48,16 @@ namespace HyperRTS.Presentation.Destruction
             Field.Draw();
         }
 
-        /// <summary>Throws <paramref name="debris"/> from <paramref name="center"/>, leaning toward <paramref name="outward"/>.</summary>
-        public void Throw(in Debris debris, float3 center, float3 outward)
+        /// <summary>
+        /// Throws <paramref name="set"/> from within <paramref name="radius"/> of <paramref name="center"/>, leaning toward
+        /// <paramref name="outward"/>. <paramref name="order"/> tells apart sets thrown from one spot, so they fly apart.
+        /// </summary>
+        public void Throw(DebrisSet set, float3 center, float3 outward, float radius, int order)
         {
-            var set = debris.Set.Value;
             var count = PieceCount(set.count, PresentationQuality.Current.Effects);
             if (count > 0)
             {
-                Field.Throw(set, center, outward, debris.Radius, count, math.hash(center));
+                Field.Throw(set, center, outward, radius, count, math.hash(new float4(center, order)));
             }
         }
 

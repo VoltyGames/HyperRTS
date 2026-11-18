@@ -7,7 +7,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainWetness.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStains.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainCraterGround.hlsl"
 
 #define RUT_DEPTH 0.12
 #define RUT_DARKENING 0.4
@@ -135,6 +135,7 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
     half rut = ApplyTrample(surface, input.positionWS.xz);
     half mud = ApplyStains(surface, pixel, 1.0h);
+    ApplyCraterGround(surface, pixel);
     ApplyWetness(surface, dampness, max(rut, mud), input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);

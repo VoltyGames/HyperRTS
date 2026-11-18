@@ -60,8 +60,8 @@ Vehicles leave ruts, shells leave craters and scorch, units in water leave wakes
 | `_HyperRTSWake` | R foam, which fades in seconds |
 | `_HyperRTSStains` | R rubble, G ash, B fuel, A wet mud; last the match |
 
-Alpha holds a level round a bias: `TrampleStamps.GroundLevelBias` (alpha 64 of 255) is untouched ground, above it is
-depth and below it lift, over `GroundRange` (8 m) across 0 to 1, so up to 6 m deep and 2 m raised. Every shader decodes it
+Alpha holds a level round a bias: `TrampleStamps.GroundLevelBias` (alpha 40 of 255) is untouched ground, above it is
+depth and below it lift, over `GroundRange` (10 m) across 0 to 1, so up to 8 m deep and 1.5 m raised. Every shader decodes it
 with `GroundSunk` in `TrampleGlobals.hlsl`: metres the ground sank, negative on a rim. Clears and resets set alpha to the
 bias, and the fade passes leave it alone.
 
@@ -73,12 +73,22 @@ burn reach, scorch, rubble, ash, fuel, mud) stamp the maps. Other sources, such 
 Shaders read the maps through `Trample.hlsl`. Grass and row crops keep clear of buildings, and road ribbons hide under them, through
 the `_HyperRTSFootprints` mask (`BuildingFootprints.hlsl`), so a road under a yard or a silo never shows through it. The terrain tiles the rubble, ash and mud textures over the stains with
 the same hex tiling as its layers (`TerrainStains.hlsl`), so a burnt field never shows its tile. Ash lies in drifts
-(`AshDrift`): noise thins its cover in patches, so the char and soil under a wide burn show through it.
+(`AshDrift`): noise thins its cover in patches, so the char and soil under a wide burn show through it. Ash and rubble
+slide off slopes steeper than about 32 degrees and are gone past about 53, so a crater wall never shows them stretched.
 
-**Craters dent and raise the drawn ground.** A scar stamp draws a bowl with a flat floor and a steep ragged wall, deepest
-kept (Max), then the same stamps again as a lip that peaks just outside the bowl radius and is gone by 1.3 times it,
-drawn with Min on alpha only, so a new lip also buries part of an older bowl. `GroundScar.burnReach` sets how far scorch
-and stains reach, as a multiple of the bowl radius, so a small deep bowl can sit in a wide burn.
+**Craters dent and raise the drawn ground.** A scar stamp draws a blast bowl (`ScarShape.hlsl`): a flat floor and a wall
+that eases up to the crest, no steeper than the heightmap draws cleanly, with slumped earth part way up and lumpy
+value noise over it, deepest kept (Max). The same
+stamps then draw the lip, with Min on alpha only, so a new lip also buries part of an older bowl: a sharp crest just
+outside the bowl that thins with the cube of the distance, as thrown earth does, gone by twice the bowl radius or the
+stamp's edge, whichever is nearer (1.3 times for a bare bowl). The lip and the outer scorch break into radial rays.
+`GroundScar.burnReach` sets how far scorch and stains reach, as a multiple of the bowl radius, so a small deep bowl can
+sit in a wide burn, and a wide burn leaves room for a long lip.
+
+**Craters show dug earth.** Wherever a scar dented the ground, `TerrainCraterGround.hlsl` lays the material's
+`_StainCrater*` texture set over the char and ash, darker where the ground was scorched; lips keep the burn's char and rays. It is hex tiled from above and
+projected from the sides on steep ground, so a bowl wall keeps its texel size. An `ImpactMark`'s `debris` sets are thrown
+from across the bowl through `DebrisSystem` and stay where they land; their LitTeam material sinks them into the bowl.
 `CraterTerrainSystem` lowers the active Unity Terrain's heights under each new bowl and raises them under its rim,
 without touching the `TerrainData` asset. `CraterSink.hlsl` moves objects by the same signed depth in the LitTeam, Foliage,
 Bark and RowCrop vertex stages: down in a bowl, up on a rim. The terrain darkens only where the ground sank. A LitTeam material's `_CraterSink` scales it: 0 for a model that brings its own dent, such as
@@ -103,7 +113,7 @@ Release puts back the `TerrainData` holes and the original material, so none are
 
 **Roads follow the craters.** `Road.shader` moves each vertex by the signed ground level at its own world position, since
 a ribbon spans many craters, and fades out where a bowl is deeper than about 0.3 m, so a crater breaks the road. It chars
-with the tracks map's scorch and takes the ash, rubble and mud stains through `TerrainStains.hlsl`, as the terrain does
+with the tracks map's scorch and takes the ash, rubble and mud stains and the crater earth through `TerrainCraterGround.hlsl`, as the terrain does
 but with less than half the ash (`ROAD_ASH`), so it still reads as a road through a burn,
 guarded like the terrain by whether the maps are published. A road material sets the same `_Stain*` properties as the terrain's.
 
@@ -124,7 +134,8 @@ Shells that land on dry fields set them alight, as client visuals only. A `Field
 per climate, names the fire rig, the dry terrain layers and the limits on ignition, spread and fire count. Without one,
 or without an active terrain, `FieldFireSystem` idles.
 
-- `FieldFires` is a 1 m grid. Roads, water, bare soil and ground near buildings stay bare.
+- `FieldFires` is a 1 m grid. Roads, water, bare soil and ground near buildings stay bare, and so does the burn reach of
+  an `ImpactMark` whose `GroundScar.burnsOut` is set: a strike leaves nothing to burn in its crater.
 - A seen impact lights the dry cell it hit when it is big enough and the `GroundWetness` singleton is low. Burning cells light their
   neighbours, faster downwind, and a front dies out by itself.
 - Fires show only on ground the local player sees (`CueVisibility.IsSeen`), so they never reveal where enemy shells land.

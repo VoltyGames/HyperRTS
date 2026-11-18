@@ -7,3 +7,5 @@ half _StainAshSmoothness;
 half4 _StainCharColor;
 float _StainMudTile;
 half _StainMudSmoothness;
+float _StainCraterTile;
+half _StainCraterSmoothness;

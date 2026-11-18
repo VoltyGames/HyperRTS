@@ -277,7 +277,8 @@ namespace HyperRTS.Presentation.Destruction
 
             if (SystemAPI.HasComponent<Debris>(at.Entity))
             {
-                _debris.Throw(SystemAPI.GetComponent<Debris>(at.Entity), position, math.rotate(at.Place.Rotation, outward));
+                var debris = SystemAPI.GetComponent<Debris>(at.Entity);
+                _debris.Throw(debris.Set.Value, position, math.rotate(at.Place.Rotation, outward), debris.Radius, 0);
             }
         }
 

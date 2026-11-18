@@ -33,6 +33,9 @@ namespace HyperRTS.Simulation.Cues.Effects
         [Tooltip("What the mark leaves in the ground for the rest of the match, over a disc a little wider than the mark.")]
         public GroundScar scar;
 
+        [Tooltip("Debris the blast throws out of the bowl and leaves lying for the match, such as clods and stones.")]
+        public DebrisSet[] debris = { };
+
         [Tooltip("Seconds the decal stays at full strength; 0 keeps it until newer marks of this kind reuse it. The " +
                  "crater, scorch and stain outlast it.")]
         [Min(0f)]

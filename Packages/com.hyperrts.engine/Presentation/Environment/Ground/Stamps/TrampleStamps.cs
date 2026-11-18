@@ -9,15 +9,15 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     public sealed class TrampleStamps
     {
         /// <summary>Metres across the tracks map's alpha, from 0 to 1. Matches HYPERRTS_GROUND_RANGE in TrampleGlobals.hlsl.</summary>
-        public const float GroundRange = 8f;
+        public const float GroundRange = 10f;
 
         /// <summary>Alpha of untouched ground: above it the ground sank, below it a rim lifted it. Matches HYPERRTS_GROUND_LEVEL_BIAS.</summary>
-        public const float GroundLevelBias = 64f / 255f;
+        public const float GroundLevelBias = 40f / 255f;
 
         /// <summary>Deepest bowl or trench and highest rim the alpha holds; more clips.</summary>
-        public const float MaxDepth = 6f;
+        public const float MaxDepth = 8f;
 
-        public const float MaxRim = 2f;
+        public const float MaxRim = 1.5f;
 
         /// <summary>A rim fades out by this multiple of the bowl radius, so a stamp holding one reaches that far.</summary>
         public const float RimReach = 1.3f;

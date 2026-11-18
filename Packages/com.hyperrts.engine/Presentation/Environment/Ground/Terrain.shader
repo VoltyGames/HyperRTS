@@ -16,7 +16,8 @@
 //   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
 //                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
 //   _MicroMap     TerrainMicroTexture's tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
-//   _Stain*       rubble, ash and wet mud tiled over what _HyperRTSStains covers (TerrainStains.hlsl); fuel is untextured
+//   _Stain*       rubble, ash and wet mud tiled over what _HyperRTSStains covers (TerrainStains.hlsl), fuel untextured, and
+//                 the earth craters dig up (TerrainCraterGround.hlsl)
 // One pass binds every layer, so the terrain needs no add-pass or basemap shaders.
 // TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture), _TERRAIN_NO_FAR (hex, no far sample) or
 // _TERRAIN_NO_PARALLAX (everything but parallax).
@@ -85,6 +86,11 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _StainMudMask ("Stain Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}
         _StainMudTile ("Stain Mud Tile (m)", Float) = 3
         _StainMudSmoothness ("Stain Mud Smoothness (x mask A)", Range(0, 1)) = 0.5
+        [NoScaleOffset] _StainCraterAlbedo ("Stain Crater Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainCraterNormal ("Stain Crater Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainCraterMask ("Stain Crater Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainCraterTile ("Stain Crater Tile (m)", Float) = 4
+        _StainCraterSmoothness ("Stain Crater Smoothness (x mask A)", Range(0, 1)) = 0.3
         [HideInInspector] _TerrainHolesTexture ("Holes Map (RGB)", 2D) = "white" {}
     }
 

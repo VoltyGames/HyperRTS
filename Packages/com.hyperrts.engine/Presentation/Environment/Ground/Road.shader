@@ -42,6 +42,11 @@ Shader "HyperRTS/Road"
         [NoScaleOffset] _StainMudMask ("Stain Mud Mask (G occlusion, A smoothness)", 2D) = "white" {}
         _StainMudTile ("Stain Mud Tile (m)", Float) = 3
         _StainMudSmoothness ("Stain Mud Smoothness (x mask A)", Range(0, 1)) = 0.5
+        [NoScaleOffset] _StainCraterAlbedo ("Stain Crater Albedo", 2D) = "grey" {}
+        [NoScaleOffset][Normal] _StainCraterNormal ("Stain Crater Normal", 2D) = "bump" {}
+        [NoScaleOffset] _StainCraterMask ("Stain Crater Mask (G occlusion, A smoothness)", 2D) = "white" {}
+        _StainCraterTile ("Stain Crater Tile (m)", Float) = 4
+        _StainCraterSmoothness ("Stain Crater Smoothness (x mask A)", Range(0, 1)) = 0.3
     }
 
     SubShader
@@ -110,7 +115,7 @@ Shader "HyperRTS/Road"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStains.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainCraterGround.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
 
             // A bowl this deep breaks the road: it is gone by the far depth.
@@ -220,11 +225,14 @@ Shader "HyperRTS/Road"
                 pixel.xz = input.positionWS.xz;
                 pixel.dx = ddx(pixel.xz);
                 pixel.dy = ddy(pixel.xz);
+                pixel.dPdx = ddx(input.positionWS);
+                pixel.dPdy = ddy(input.positionWS);
                 half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
                 pixel.frame = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);
 
                 ApplyScorch(ground, tracks.b);
                 ApplyStains(ground, pixel, ROAD_ASH);
+                ApplyCraterGround(ground, pixel);
                 surface.albedo = ground.albedo;
                 surface.normalTS = ground.normalTS;
                 surface.smoothness = ground.smoothness;

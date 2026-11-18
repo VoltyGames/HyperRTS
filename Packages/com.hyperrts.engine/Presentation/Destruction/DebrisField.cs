@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using HyperRTS.Simulation.Cues.Effects;
 
 namespace HyperRTS.Presentation.Destruction
 {

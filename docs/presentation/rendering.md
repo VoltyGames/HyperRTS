@@ -93,7 +93,8 @@ A copy takes the root's hide reasons and the values painters put on its meshes (
 progress, grime), and the root's `LinkedEntityGroup` lists it, so the root is destroyed whole.
 
 **Debris.** `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with
-breakable parts it throws them from each part that breaks. `DebrisSystem` flies them on the client and lays them flat.
+breakable parts it throws them from each part that breaks, and an `ImpactMark` throws its `debris` sets out of its
+crater. `DebrisSystem` flies them on the client and lays them flat.
 The set's material needs GPU instancing (checked at bake).
 
 A piece at rest moves to `LastingDebris` and stays for the match, up to `LastingDebris.CapAt` per quality level; past the

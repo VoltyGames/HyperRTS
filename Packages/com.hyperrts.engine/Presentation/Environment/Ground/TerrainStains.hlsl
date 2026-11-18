@@ -26,6 +26,8 @@
 #define ASH_DRIFT_DETAIL 4.3 // metres across the smaller breaks in a drift
 #define ASH_BARE 0.38        // drift noise below which the ash lies thin
 #define ASH_THIN 0.2         // share of its cover thin ash keeps, so the burnt ground under it shows
+#define SLIDE_START 0.85     // normal y below which ash and rubble start to slide off a slope, about 32 degrees
+#define SLIDE_FULL 0.6       // and from which none stays, about 53 degrees
 
 TEXTURE2D(_StainRubbleAlbedo);
 TEXTURE2D(_StainRubbleNormal);
@@ -62,10 +64,16 @@ void BlendStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, fl
     MixStain(surface, cover, smoothness, albedo, normal, mask);
 }
 
-// Hex tiled like the layers, for a stain that spreads over fields.
-void BlendHexStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, float tile, half smoothness,
-    TEXTURE2D_PARAM(albedoMap, albedoSampler), TEXTURE2D_PARAM(normalMap, normalSampler),
-    TEXTURE2D_PARAM(maskMap, maskSampler))
+struct StainSample
+{
+    half3 albedo;
+    half3 normal;
+    half4 mask;
+};
+
+// Hex tiled like the layers from above, for a stain that spreads over fields.
+StainSample SampleHexStain(TerrainPixel pixel, float tile, TEXTURE2D_PARAM(albedoMap, albedoSampler),
+    TEXTURE2D_PARAM(normalMap, normalSampler), TEXTURE2D_PARAM(maskMap, maskSampler))
 {
     float2 st = pixel.xz / tile;
     float2 dx = pixel.dx / tile;
@@ -89,7 +97,20 @@ void BlendHexStain(inout TerrainSurface surface, TerrainPixel pixel, half cover,
 
     // Skipped cells leave the weights short of one.
     half total = max(dot(half3(hex.weights), half3(hex.weights > HEX_MIN_WEIGHT)), 1e-3h);
-    MixStain(surface, cover, smoothness, albedo / total, normal, mask / total);
+    StainSample stain;
+    stain.albedo = albedo / total;
+    stain.normal = normalize(normal);
+    stain.mask = mask / total;
+    return stain;
+}
+
+void BlendHexStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, float tile, half smoothness,
+    TEXTURE2D_PARAM(albedoMap, albedoSampler), TEXTURE2D_PARAM(normalMap, normalSampler),
+    TEXTURE2D_PARAM(maskMap, maskSampler))
+{
+    StainSample stain = SampleHexStain(pixel, tile, TEXTURE2D_ARGS(albedoMap, albedoSampler),
+        TEXTURE2D_ARGS(normalMap, normalSampler), TEXTURE2D_ARGS(maskMap, maskSampler));
+    MixStain(surface, cover, smoothness, stain.albedo, stain.normal, stain.mask);
 }
 
 // A thin film's colours shift with the view angle and the slick's thickness, faintly and mostly at grazing angles.
@@ -154,6 +175,7 @@ half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel, half ashShare
     half edge = noise * STAIN_EDGE;
     half4 cover = smoothstep(edge, edge + STAIN_FRINGE, stains);
     cover.g *= ashShare;
+    cover.rg *= smoothstep(SLIDE_FULL, SLIDE_START, pixel.frame[2].y);
 
     UNITY_BRANCH
     if (cover.a > 0.0)

@@ -65,6 +65,9 @@ namespace HyperRTS.Presentation.Environment.Fire
 
         protected override void OnStopRunning() => Clear();
 
+        /// <summary>Leaves nothing to burn within <paramref name="radius"/> of <paramref name="centre"/>, so no field fire lights or spreads there.</summary>
+        public void BurnOut(float2 centre, float radius) => _fires?.MarkBare(centre, radius);
+
         protected override void OnUpdate()
         {
             var settings = SystemAPI.TryGetSingleton(out FieldFireSource source) ? source.Settings.Value : null;

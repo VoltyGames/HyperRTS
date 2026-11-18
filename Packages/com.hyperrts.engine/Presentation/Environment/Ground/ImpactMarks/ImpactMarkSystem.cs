@@ -1,3 +1,5 @@
+using HyperRTS.Presentation.Destruction;
+using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Cues.Effects;
@@ -20,15 +22,18 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
     /// Lays impact <see cref="CueEvent"/>s on open ground as pooled decal <see cref="ImpactMark"/>s that fade with age. Skips
     /// impacts the local player can't see.
     /// </summary>
-    // After TrampleStampSystem, which clears the stamps craters join.
+    // After TrampleStampSystem, which clears the stamps craters join; before FieldFireSystem, so a burnt-out blast lights nothing.
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateAfter(typeof(TrampleStampSystem))]
+    [UpdateBefore(typeof(FieldFireSystem))]
     public partial class ImpactMarkSystem : SystemBase
     {
         private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = new();
         private TypeCatalog<ImpactMark[]> _catalog;
         private CueVisibility _visibility;
+        private DebrisSystem _debris;
+        private FieldFireSystem _fires;
         private GameObject _root;
         private float _clock = float.NegativeInfinity;
         private Unity.Mathematics.Random _random = new(0x9E3779B9u);
@@ -51,6 +56,8 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
             _catalog = new TypeCatalog<ImpactMark[]>(SystemAPI.QueryBuilder().WithAll<EntityInfo, EntityImpactMark>()
                 .WithOptions(EntityQueryOptions.IncludePrefab).Build(), ReadMarks);
             _visibility = new CueVisibility(ref CheckedStateRef);
+            _debris = World.GetOrCreateSystemManaged<DebrisSystem>();
+            _fires = World.GetOrCreateSystemManaged<FieldFireSystem>();
             RequireForUpdate<CueQueue>();
             RequireForUpdate<PrefabRegistry>();
         }
@@ -129,6 +136,12 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
                 scars.AddScar(point, mark.scar, diameter * 0.5f);
             }
 
+            ThrowDebris(mark, new float3(point.x, terrain.Height(point), point.y), diameter * 0.5f);
+            if (mark.scar.burnsOut)
+            {
+                _fires.BurnOut(point, diameter * 0.5f * mark.scar.burnReach);
+            }
+
             if (decal == null)
             {
                 return;
@@ -140,6 +153,15 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
             var normal = ImpactMarkMath.GroundNormal(terrain, point, math.max(width * 0.5f, 0.5f));
             var rotation = ImpactMarkMath.Facing(normal, _random.NextFloat(2f * math.PI));
             Decals(mark).Place(now, decal, ground, rotation, width, _random.NextBool());
+        }
+
+        // Out of the bowl, from anywhere across it.
+        private void ThrowDebris(ImpactMark mark, float3 ground, float radius)
+        {
+            for (var i = 0; i < mark.debris.Length; i++)
+            {
+                _debris.Throw(mark.debris[i], ground, float3.zero, radius, i);
+            }
         }
 
         private ImpactMarkDecals Decals(ImpactMark mark)

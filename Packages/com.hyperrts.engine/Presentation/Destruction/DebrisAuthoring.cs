@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System;
 using Unity.Entities;
 using UnityEngine;
+using HyperRTS.Simulation.Cues.Effects;
 
 namespace HyperRTS.Presentation.Destruction
 {

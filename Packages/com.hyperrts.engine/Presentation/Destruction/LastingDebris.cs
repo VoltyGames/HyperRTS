@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues.Effects;
 
 namespace HyperRTS.Presentation.Destruction
 {

@@ -5,6 +5,7 @@ using HyperRTS.Simulation.Navigation.Agents;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEngine;
+using HyperRTS.Simulation.Cues.Effects;
 
 namespace HyperRTS.Presentation.Tests.Destruction
 {

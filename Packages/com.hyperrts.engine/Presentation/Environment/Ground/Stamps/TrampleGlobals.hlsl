@@ -7,8 +7,8 @@
 
 // The tracks alpha is the ground's level: HYPERRTS_GROUND_LEVEL_BIAS is untouched ground, above it the ground sank
 // and below it a rim lifted it, HYPERRTS_GROUND_RANGE metres across 0 to 1. Match TrampleStamps.GroundLevelBias and GroundRange.
-#define HYPERRTS_GROUND_RANGE 8.0
-#define HYPERRTS_GROUND_LEVEL_BIAS (64.0 / 255.0)
+#define HYPERRTS_GROUND_RANGE 10.0
+#define HYPERRTS_GROUND_LEVEL_BIAS (40.0 / 255.0)
 
 // The rut ramp the brush stamps rises by RUT_RAMP across the rut; the ground reads it as rut from RUT_EDGE and fully
 // dark from RUT_FULL, so the edge sits at 1 - RUT_EDGE / RUT_RAMP of the half width.
