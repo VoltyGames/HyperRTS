@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             ["clean"] = CleanStep.Read,
             ["shot"] = ShotStep.Read,
             ["frames"] = FramesStep.Read,
-            ["clip"] = ClipStep.Read,
+            ["clip"] = FramesStep.ReadClip,
             ["sample"] = SampleStep.Read,
             ["destroy"] = DestroyStep.Read,
             ["damage"] = DamageStep.Read,

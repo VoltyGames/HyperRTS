@@ -27,11 +27,12 @@ namespace HyperRTS.Editor.PlayMode.Staging
             _on = target == "on" ? json.Text("on") : null;
             var look = target == "at" ? json.Point("at") : float2.zero;
             _from = Aim(json.Child("from"), look, json.NumberOrNull("lift") ?? 0f, null);
-            _to = json.Has("to") ? Aim(json.Child("to"), look, _from.Lift, _from) : _from;
-            _seconds = json.Has("to") ? json.Number("seconds") : 0f;
+            var moves = json.Has("to");
+            _to = moves ? Aim(json.Child("to"), look, _from.Lift, _from) : _from;
+            _seconds = moves ? json.Number("seconds") : 0f;
             _fov = json.NumberOrNull("fov");
             _sun = json.Has("sun") && json.Flag("sun");
-            if (json.Has("to") && _seconds <= 0f)
+            if (moves && _seconds <= 0f)
             {
                 throw json.Problem($"needs 'seconds' above 0 to move, got {_seconds}");
             }

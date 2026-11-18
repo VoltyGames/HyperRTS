@@ -32,20 +32,19 @@ namespace HyperRTS.Editor.PlayMode.Staging
         /// <summary>The middle of the live units on the ground plane; false when none is left.</summary>
         public bool TryGetCentre(EntityManager entityManager, out float2 centre)
         {
-            var alive = Alive(entityManager);
             centre = default;
-            if (alive.Count == 0)
+            var count = 0;
+            foreach (var unit in _units)
             {
-                return false;
+                if (IsAlive(entityManager, unit))
+                {
+                    centre += entityManager.GetComponentData<LocalTransform>(unit).Position.xz;
+                    count++;
+                }
             }
 
-            foreach (var unit in alive)
-            {
-                centre += entityManager.GetComponentData<LocalTransform>(unit).Position.xz;
-            }
-
-            centre /= alive.Count;
-            return true;
+            centre /= math.max(count, 1);
+            return count > 0;
         }
 
         private static bool IsAlive(EntityManager entityManager, Entity unit)
