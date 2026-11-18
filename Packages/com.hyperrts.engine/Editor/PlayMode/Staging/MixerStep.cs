@@ -30,8 +30,14 @@ namespace HyperRTS.Editor.PlayMode.Staging
             var mixers = Resources.FindObjectsOfTypeAll<AudioMixer>();
             foreach (var (name, value) in _values)
             {
-                // SetFloat answers false on a mixer that doesn't expose the name.
-                if (mixers.Count(mixer => mixer.SetFloat(name, value)) == 0)
+                // Every mixer that exposes the name takes the value; SetFloat answers false on the rest.
+                var exposed = false;
+                foreach (var mixer in mixers)
+                {
+                    exposed |= mixer.SetFloat(name, value);
+                }
+
+                if (!exposed)
                 {
                     throw new InvalidOperationException($"HyperRTS: no loaded audio mixer exposes '{name}'.");
                 }

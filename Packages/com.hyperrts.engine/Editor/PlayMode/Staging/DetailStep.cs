@@ -1,13 +1,14 @@
 using System.Linq;
 using HyperRTS.Presentation.Quality;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
     /// <summary>
-    /// Raises render detail past what the play camera needs, for footage shot from far off: shadow reach, full
-    /// vegetation out to longer distances and finer model levels. The run puts every setting back when it ends.
+    /// Raises render detail past what the play camera needs, for footage shot from far off: shadow reach, plants
+    /// included, full vegetation out to longer distances and finer model levels. The run puts every setting back when it ends.
     /// </summary>
     internal sealed class DetailStep : StagingStep
     {
@@ -55,7 +56,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 });
             }
 
-            if (_grass != null || _crops != null)
+            if (_shadows != null || _grass != null || _crops != null)
             {
                 RaiseVegetation(run);
             }
@@ -70,6 +71,13 @@ namespace HyperRTS.Editor.PlayMode.Staging
             raised.CloseDetail = 1f;
             raised.GrassDistance = _grass ?? before.GrassDistance;
             raised.CropDistance = _crops ?? before.CropDistance;
+            if (_shadows is { } shadows)
+            {
+                // Plants keep their own shadow reach, so without this they stop casting a few dozen metres out.
+                raised.GrassShadowDistance = math.min(shadows, raised.GrassDistance);
+                raised.CropShadowDistance = math.min(shadows, raised.CropDistance);
+            }
+
             PresentationQuality.Apply(raised);
             run.Undo(() => PresentationQuality.Apply(before));
         }
