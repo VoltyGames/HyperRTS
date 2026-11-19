@@ -1,5 +1,5 @@
-// URP Lit (minus GBuffer, so Forward or Forward+; opaque or alpha tested, metallic workflow, no UV-mapped detail maps or
-// parallax) with the albedo repainted in _TeamColor.
+// URP Lit (minus GBuffer, so Forward or Forward+; opaque, alpha tested or glass, metallic workflow, no UV-mapped detail
+// maps or parallax) with the albedo repainted in _TeamColor.
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -80,6 +80,7 @@ Shader "HyperRTS/LitTeam"
         _InteriorAtlas("Interior Atlas (columns, rows, cell margin)", Vector) = (4, 3, 0.04, 0)
 
         [ToggleUI] _Transparent("Transparent (glass: base alpha fades the diffuse, reflections stay whole)", Float) = 0
+        [ToggleUI] _ReceiveFog("Receive Fog (transparent: the volumetric fog in front of it shows)", Float) = 1
         [HideInInspector] _Blend("__blend", Float) = 0
         [HideInInspector] _SrcBlend("__src", Float) = 1
         [HideInInspector] _DstBlend("__dst", Float) = 0
@@ -124,9 +125,7 @@ Shader "HyperRTS/LitTeam"
             #pragma vertex DisplacedLitVertex
             #pragma fragment LitTeamPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
-
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamForwardKeywords.hlsl"
-
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamForwardPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamPasses.hlsl"
             ENDHLSL
@@ -211,13 +210,7 @@ Shader "HyperRTS/LitTeam"
             ZWrite Off
             ColorMask 0
             Cull[_Cull]
-            Stencil
-            {
-                Ref 128
-                WriteMask 128
-                Comp Always
-                Pass Replace
-            }
+            Stencil { Ref 128 WriteMask 128 Comp Always Pass Replace }
 
             HLSLPROGRAM
             #pragma target 2.0
@@ -240,14 +233,7 @@ Shader "HyperRTS/LitTeam"
             ZTest Greater
             ZWrite Off
             Cull[_Cull]
-            Stencil
-            {
-                Ref 0
-                ReadMask 192
-                WriteMask 128
-                Comp Equal
-                Pass Invert
-            }
+            Stencil { Ref 0 ReadMask 192 WriteMask 128 Comp Equal Pass Invert }
 
             HLSLPROGRAM
             #pragma target 2.0
@@ -260,7 +246,7 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // Lightmap baking only.
+        // Surface Cache GI and lightmap baking only.
         Pass
         {
             Name "Meta"
