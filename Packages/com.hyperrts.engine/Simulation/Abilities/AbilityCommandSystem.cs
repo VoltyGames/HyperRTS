@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
-using HyperRTS.Simulation.Match;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;

@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Projectiles;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -57,7 +58,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Holds fire until its unit is <see cref="Deployable"/> and deployed.</summary>
         public bool NeedsDeploy;
 
-        /// <summary>Never fires while <see cref="Match.MatchRules.StrategicAssets"/> is off; its rounds stay as they are.</summary>
+        /// <summary>Never fires while <see cref="MatchRules.StrategicAssets"/> is off; its rounds stay as they are.</summary>
         public bool Strategic;
 
         public WeaponRole Role;

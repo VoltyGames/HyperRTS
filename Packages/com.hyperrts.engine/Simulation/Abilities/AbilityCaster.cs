@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Status;
 using Unity.Collections;
 using Unity.Entities;

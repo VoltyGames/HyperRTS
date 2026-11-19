@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Simulation.Match;
+using HyperRTS.Simulation.Common;
 using Unity.Burst;
 using Unity.Entities;
 using Unity.Mathematics;

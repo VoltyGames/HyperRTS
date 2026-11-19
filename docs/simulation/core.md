@@ -72,7 +72,7 @@ spawn point, and its build order. A side the Match doesn't list is an error.
 | Type | Role |
 | --- | --- |
 | `MatchState` | Replicated phase, winning team, and `Started` once every human joined |
-| `MatchRules` | Low-power production rate, sell refund, experience per cost, replays, join timeout |
+| `MatchRules` | Low-power production rate, sell refund, experience per cost, join timeout and whether strategic assets run. The Match bakes it, but it sits in `Common` since modules of every gameplay tier read it |
 | `MatchSetup` | Lobby configuration. `NetworkSession` writes it into every world of the session before the map loads |
 | `GameSpeed` | Single-player pause and speed, applied to `Time.timeScale` by `GameSpeedSystem`, which resets it when the local world goes |
 | `VictoryCritical` | A player who loses all of these is defeated |

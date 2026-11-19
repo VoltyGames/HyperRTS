@@ -1,6 +1,6 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Match
+namespace HyperRTS.Simulation.Common
 {
     /// <summary>Match-wide tuning on the match singleton, baked by <c>MatchAuthoring</c>; systems that read it require it.</summary>
     public struct MatchRules : IComponentData

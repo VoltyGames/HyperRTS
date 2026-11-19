@@ -7,7 +7,6 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Death;
-using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Strikes;
 using NUnit.Framework;
