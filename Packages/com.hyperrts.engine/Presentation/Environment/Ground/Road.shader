@@ -233,7 +233,7 @@ Shader "HyperRTS/Road"
 
                 ApplyScorch(ground, tracks.b);
                 ApplyStains(ground, pixel, ROAD_ASH);
-                ApplyCraterGround(ground, pixel);
+                ApplyCraterGround(ground, pixel, GroundSunk(tracks.a), tracks.b);
                 surface.albedo = ground.albedo;
                 surface.normalTS = ground.normalTS;
                 surface.smoothness = ground.smoothness;

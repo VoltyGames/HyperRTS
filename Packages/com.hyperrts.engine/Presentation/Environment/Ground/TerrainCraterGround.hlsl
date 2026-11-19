@@ -20,12 +20,11 @@ StainSample SampleCraterSide(TerrainPixel pixel, uint axis, half3 normalWS)
 {
     half3 axisSign = (half3)(normalWS >= 0.0) * 2.0 - 1.0;
     half sign = axis == 0 ? axisSign.x : -axisSign.z;
-    float3 p = pixel.positionWS / _StainCraterTile;
-    float3 dx = pixel.dPdx / _StainCraterTile;
-    float3 dy = pixel.dPdy / _StainCraterTile;
-    float2 uv = axis == 0 ? float2(p.z * sign, p.y) : float2(p.x * sign, p.y);
-    float2 uvDx = axis == 0 ? float2(dx.z * sign, dx.y) : float2(dx.x * sign, dx.y);
-    float2 uvDy = axis == 0 ? float2(dy.z * sign, dy.y) : float2(dy.x * sign, dy.y);
+    // The side's plane: its across axis flipped by the facing, then up.
+    float3x2 plane = axis == 0 ? float3x2(0.0, 0.0, 0.0, 1.0, sign, 0.0) : float3x2(sign, 0.0, 0.0, 1.0, 0.0, 0.0);
+    float2 uv = mul(pixel.positionWS / _StainCraterTile, plane);
+    float2 uvDx = mul(pixel.dPdx / _StainCraterTile, plane);
+    float2 uvDy = mul(pixel.dPdy / _StainCraterTile, plane);
 
     StainSample side;
     side.albedo = SAMPLE_TEXTURE2D_GRAD(_StainCraterAlbedo, sampler_LinearRepeat, uv, uvDx, uvDy).rgb;
@@ -42,14 +41,17 @@ StainSample SampleCraterSide(TerrainPixel pixel, uint axis, half3 normalWS)
 // The earth from above, hex tiled, with the two sides mixed in by how steep the ground is. Normal in tangent space.
 StainSample SampleCraterGround(TerrainPixel pixel)
 {
-    StainSample top = SampleHexStain(pixel, _StainCraterTile, TEXTURE2D_ARGS(_StainCraterAlbedo, sampler_LinearRepeat),
-        TEXTURE2D_ARGS(_StainCraterNormal, sampler_LinearRepeat), TEXTURE2D_ARGS(_StainCraterMask, sampler_LinearRepeat));
     half3 normalWS = pixel.frame[2];
     half3 weights = TriplanarWeights(normalWS);
-    StainSample ground = top;
-    ground.albedo *= weights.y;
-    ground.mask *= weights.y;
-    ground.normal *= weights.y;
+    StainSample ground = (StainSample)0;
+    [branch] if (weights.y > HEX_MIN_WEIGHT)
+    {
+        StainSample top = SampleHexStain(pixel, _StainCraterTile, TEXTURE2D_ARGS(_StainCraterAlbedo, sampler_LinearRepeat),
+            TEXTURE2D_ARGS(_StainCraterNormal, sampler_LinearRepeat), TEXTURE2D_ARGS(_StainCraterMask, sampler_LinearRepeat));
+        ground.albedo = weights.y * top.albedo;
+        ground.mask = weights.y * top.mask;
+        ground.normal = weights.y * top.normal;
+    }
     [unroll] for (uint axis = 0; axis < 3; axis += 2)
     {
         [branch] if (weights[axis] > HEX_MIN_WEIGHT)
@@ -66,18 +68,17 @@ StainSample SampleCraterGround(TerrainPixel pixel)
 }
 
 // Dug earth over the char and ash in the bowls scars dented, darker where the blast scorched them; the thrown-earth
-// lips keep the burn's char and rays.
-void ApplyCraterGround(inout TerrainSurface surface, TerrainPixel pixel)
+// lips keep the burn's char and rays. Takes the metres sunk and the scorch from the tracks map the caller read.
+void ApplyCraterGround(inout TerrainSurface surface, TerrainPixel pixel, float sunk, half scorch)
 {
     UNITY_BRANCH
-    if (!TrampleMapsOn())
+    if (sunk <= 0.0)
     {
         return;
     }
 
-    float4 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, TrampleUV(pixel.xz), 0);
     half noise = CharNoise(pixel, STAIN_NOISE_SIZE);
-    half cover = smoothstep(CRATER_GROUND_START, CRATER_GROUND_FULL, max(GroundSunk(tracks.a), 0.0) * (0.6h + 0.8h * noise));
+    half cover = smoothstep(CRATER_GROUND_START, CRATER_GROUND_FULL, sunk * (0.6h + 0.8h * noise));
     UNITY_BRANCH
     if (cover <= 0.0)
     {
@@ -85,7 +86,7 @@ void ApplyCraterGround(inout TerrainSurface surface, TerrainPixel pixel)
     }
 
     StainSample ground = SampleCraterGround(pixel);
-    ground.albedo *= 1.0h - CRATER_GROUND_CHAR * (half)tracks.b;
+    ground.albedo *= 1.0h - CRATER_GROUND_CHAR * scorch;
     MixStain(surface, cover * CRATER_GROUND_COVER, _StainCraterSmoothness, ground.albedo, ground.normal, ground.mask);
 }
 

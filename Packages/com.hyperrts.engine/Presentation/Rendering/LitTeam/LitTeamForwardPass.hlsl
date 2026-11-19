@@ -71,8 +71,8 @@ void LitTeamPassFragment(
         UseEnvironmentReflections());
     color.rgb = ClampExposed(inputData.preExposureMultiplier * BlendDistanceFog(color.rgb, input.positionCS));
 #if defined(_TRANSPARENT_RECEIVE_FOG)
-    if (transparent)
-        color.rgb = MixVolumetricFog(color.rgb, color.a, _Blend, UseAlphaPremultiply(), input.positionCS);
+    // Transparent LitTeam always blends premultiplied, so the blend mode argument is unused.
+    color.rgb = MixVolumetricFog(color.rgb, color.a, 1.0, true, input.positionCS);
 #endif
     color.a = OutputAlpha(color.a, transparent);
 

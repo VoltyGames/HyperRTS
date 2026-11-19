@@ -56,16 +56,17 @@ TerrainForwardVaryings TerrainForwardVertex(TerrainAttributes input)
     return output;
 }
 
-// Returns where puddles gather.
-half ApplyTrample(inout TerrainSurface surface, float2 positionXZ)
+// Returns where puddles gather, and the tracks it read, zero without maps.
+half ApplyTrample(inout TerrainSurface surface, float2 positionXZ, out TrackSample tracks)
 {
+    tracks = (TrackSample)0;
     UNITY_BRANCH
     if (!TrampleMapsOn())
     {
         return 0.0;
     }
 
-    TrackSample tracks = ReadTracks(positionXZ);
+    tracks = ReadTracks(positionXZ);
     half flatten = ReadTrample(positionXZ).flatten;
     half bowl = (half)saturate(max(tracks.crater, 0.0) / CRATER_FULL_DEPTH);
     half3 earth = surface.albedo * half3(0.62, 0.5, 0.4);
@@ -136,9 +137,10 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
         ApplyMicro(surface, pixel);
     #endif
     half dampness = ApplyGroundTint(surface, input.uv, input.positionWS.xz);
-    half rut = ApplyTrample(surface, input.positionWS.xz);
+    TrackSample tracks;
+    half rut = ApplyTrample(surface, input.positionWS.xz, tracks);
     half mud = ApplyStains(surface, pixel, 1.0h);
-    ApplyCraterGround(surface, pixel);
+    ApplyCraterGround(surface, pixel, tracks.crater, tracks.scorch);
     ApplyWetness(surface, dampness, max(rut, mud), input.positionWS.xz);
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);

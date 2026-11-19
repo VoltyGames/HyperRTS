@@ -81,7 +81,6 @@ Shader "HyperRTS/LitTeam"
 
         [ToggleUI] _Transparent("Transparent (glass: base alpha fades the diffuse, reflections stay whole)", Float) = 0
         [ToggleUI] _ReceiveFog("Receive Fog (transparent: the volumetric fog in front of it shows)", Float) = 1
-        [HideInInspector] _Blend("__blend", Float) = 0
         [HideInInspector] _SrcBlend("__src", Float) = 1
         [HideInInspector] _DstBlend("__dst", Float) = 0
         [HideInInspector] _ZWrite("__zw", Float) = 1
