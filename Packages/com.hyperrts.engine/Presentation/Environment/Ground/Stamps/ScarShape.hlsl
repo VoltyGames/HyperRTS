@@ -2,6 +2,8 @@
 #ifndef HYPERRTS_SCAR_SHAPE_INCLUDED
 #define HYPERRTS_SCAR_SHAPE_INCLUDED
 
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+
 // The floor is flat out to this share of the radius, then the wall eases up to the crest: no steeper than the
 // terrain's heightmap can draw without stepping.
 #define BOWL_FLOOR 0.2
@@ -22,22 +24,10 @@ struct ScarPoint
     float phase;  // per scar, 0 to 2 pi
 };
 
-float ScarHash(float2 p)
-{
-    float3 q = frac(p.xyx * 0.1031);
-    q += dot(q, q.yzx + 33.33);
-    return frac((q.x + q.y) * q.z);
-}
-
 // Smooth value noise from -1 to 1.
 float ScarNoise(float2 p)
 {
-    float2 cell = floor(p);
-    float2 f = frac(p);
-    float2 u = f * f * (3.0 - 2.0 * f);
-    float bottom = lerp(ScarHash(cell), ScarHash(cell + float2(1.0, 0.0)), u.x);
-    float top = lerp(ScarHash(cell + float2(0.0, 1.0)), ScarHash(cell + 1.0), u.x);
-    return lerp(bottom, top, u.y) * 2.0 - 1.0;
+    return ValueNoise(p) * 2.0 - 1.0;
 }
 
 // About perTurn bumps round the scar, read on the unit circle so there is no seam where angles wrap.

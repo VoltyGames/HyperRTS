@@ -19,14 +19,13 @@ struct TerrainSides
 TerrainSides GetSides(TerrainPixel pixel, TerrainLayerParams params, float slice)
 {
     TerrainSides sides;
-    sides.axisSign = (half3)(pixel.frame[2] >= 0.0) * 2.0 - 1.0;
-    float2 flip = float2(sides.axisSign.x, -sides.axisSign.z);
-    sides.uv[0] = float2(pixel.positionWS.z * flip.x, pixel.positionWS.y) * params.tiling;
-    sides.dx[0] = float2(pixel.dPdx.z * flip.x, pixel.dPdx.y) * params.tiling;
-    sides.dy[0] = float2(pixel.dPdy.z * flip.x, pixel.dPdy.y) * params.tiling;
-    sides.uv[1] = float2(pixel.positionWS.x * flip.y, pixel.positionWS.y) * params.tiling;
-    sides.dx[1] = float2(pixel.dPdx.x * flip.y, pixel.dPdx.y) * params.tiling;
-    sides.dy[1] = float2(pixel.dPdy.x * flip.y, pixel.dPdy.y) * params.tiling;
+    sides.axisSign = AxisSigns(pixel.frame[2]);
+    [unroll] for (uint i = 0; i < 2; i++)
+    {
+        sides.uv[i] = SideProjection(pixel.positionWS, i, sides.axisSign) * params.tiling;
+        sides.dx[i] = SideProjection(pixel.dPdx, i, sides.axisSign) * params.tiling;
+        sides.dy[i] = SideProjection(pixel.dPdy, i, sides.axisSign) * params.tiling;
+    }
     #ifdef TERRAIN_TRIPLANAR
         sides.weights = pixel.side * params.triplanar * pixel.sideWeights;
     #else
@@ -55,24 +54,15 @@ half4 SampleSides(TEXTURE2D_ARRAY_PARAM(layers, samplerLayers), TerrainSides sid
 // The sides' weighted normals in terrain tangent space.
 half3 SampleSideNormals(TerrainSides sides, TerrainPixel pixel, half strength)
 {
-    half3 normalWS = pixel.frame[2];
     half3 world = 0.0;
-    [branch] if (sides.weights.x > HEX_MIN_WEIGHT)
+    [unroll] for (uint i = 0; i < 2; i++)
     {
-        half3 t = UnpackNormalScale(SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, sides.uv[0],
-            sides.slice, sides.dx[0], sides.dy[0]), strength);
-        t.x *= sides.axisSign.x;
-        t = half3(t.xy + normalWS.zy, abs(t.z) * normalWS.x);
-        world += sides.weights.x * normalize(t.zyx);
-    }
-
-    [branch] if (sides.weights.y > HEX_MIN_WEIGHT)
-    {
-        half3 t = UnpackNormalScale(SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, sides.uv[1],
-            sides.slice, sides.dx[1], sides.dy[1]), strength);
-        t.x *= -sides.axisSign.z;
-        t = half3(t.xy + normalWS.xy, abs(t.z) * normalWS.z);
-        world += sides.weights.y * normalize(t);
+        [branch] if (sides.weights[i] > HEX_MIN_WEIGHT)
+        {
+            half3 t = UnpackNormalScale(SAMPLE_TEXTURE2D_ARRAY_GRAD(_NormalArray, sampler_AlbedoArray, sides.uv[i],
+                sides.slice, sides.dx[i], sides.dy[i]), strength);
+            world += sides.weights[i] * SideNormal(t, i, sides.axisSign, pixel.frame[2]);
+        }
     }
 
     return mul(pixel.frame, world);

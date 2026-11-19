@@ -15,27 +15,20 @@ TEXTURE2D(_StainCraterAlbedo);
 TEXTURE2D(_StainCraterNormal);
 TEXTURE2D(_StainCraterMask);
 
-// One side projection: axis 0 looks along x onto (z, y), axis 2 along z onto (x, y). Returns its normal in world space.
-StainSample SampleCraterSide(TerrainPixel pixel, uint axis, half3 normalWS)
+// One side projection (SideProjection's side 0 or 1). Returns its normal in world space.
+StainSample SampleCraterSide(TerrainPixel pixel, uint side, half3 normalWS)
 {
-    half3 axisSign = (half3)(normalWS >= 0.0) * 2.0 - 1.0;
-    half sign = axis == 0 ? axisSign.x : -axisSign.z;
-    // The side's plane: its across axis flipped by the facing, then up.
-    float3x2 plane = axis == 0 ? float3x2(0.0, 0.0, 0.0, 1.0, sign, 0.0) : float3x2(sign, 0.0, 0.0, 1.0, 0.0, 0.0);
-    float2 uv = mul(pixel.positionWS / _StainCraterTile, plane);
-    float2 uvDx = mul(pixel.dPdx / _StainCraterTile, plane);
-    float2 uvDy = mul(pixel.dPdy / _StainCraterTile, plane);
+    half3 axisSigns = AxisSigns(normalWS);
+    float2 uv = SideProjection(pixel.positionWS, side, axisSigns) / _StainCraterTile;
+    float2 uvDx = SideProjection(pixel.dPdx, side, axisSigns) / _StainCraterTile;
+    float2 uvDy = SideProjection(pixel.dPdy, side, axisSigns) / _StainCraterTile;
 
-    StainSample side;
-    side.albedo = SAMPLE_TEXTURE2D_GRAD(_StainCraterAlbedo, sampler_LinearRepeat, uv, uvDx, uvDy).rgb;
-    side.mask = SAMPLE_TEXTURE2D_GRAD(_StainCraterMask, sampler_LinearRepeat, uv, uvDx, uvDy);
+    StainSample projected;
+    projected.albedo = SAMPLE_TEXTURE2D_GRAD(_StainCraterAlbedo, sampler_LinearRepeat, uv, uvDx, uvDy).rgb;
+    projected.mask = SAMPLE_TEXTURE2D_GRAD(_StainCraterMask, sampler_LinearRepeat, uv, uvDx, uvDy);
     half3 t = UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_StainCraterNormal, sampler_LinearRepeat, uv, uvDx, uvDy));
-    t.x *= sign;
-    // Whiteout blend onto the surface normal, as TerrainTriplanar.hlsl does for the slope layer.
-    side.normal = axis == 0
-        ? normalize(half3(t.xy + normalWS.zy, abs(t.z) * normalWS.x).zyx)
-        : normalize(half3(t.xy + normalWS.xy, abs(t.z) * normalWS.z));
-    return side;
+    projected.normal = SideNormal(t, side, axisSigns, normalWS);
+    return projected;
 }
 
 // The earth from above, hex tiled, with the two sides mixed in by how steep the ground is. Normal in tangent space.
@@ -52,14 +45,16 @@ StainSample SampleCraterGround(TerrainPixel pixel)
         ground.mask = weights.y * top.mask;
         ground.normal = weights.y * top.normal;
     }
-    [unroll] for (uint axis = 0; axis < 3; axis += 2)
+
+    half2 sideWeights = weights.xz;
+    [unroll] for (uint i = 0; i < 2; i++)
     {
-        [branch] if (weights[axis] > HEX_MIN_WEIGHT)
+        [branch] if (sideWeights[i] > HEX_MIN_WEIGHT)
         {
-            StainSample side = SampleCraterSide(pixel, axis, normalWS);
-            ground.albedo += weights[axis] * side.albedo;
-            ground.mask += weights[axis] * side.mask;
-            ground.normal += weights[axis] * mul(pixel.frame, side.normal);
+            StainSample side = SampleCraterSide(pixel, i, normalWS);
+            ground.albedo += sideWeights[i] * side.albedo;
+            ground.mask += sideWeights[i] * side.mask;
+            ground.normal += sideWeights[i] * mul(pixel.frame, side.normal);
         }
     }
 
