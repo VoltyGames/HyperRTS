@@ -119,7 +119,7 @@ half3 PlantAdditionalLights(ForwardVaryings input, half3 normal, half3 view, hal
 half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
 {
     half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
-    Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
+    Light sun = SunLight(input.positionWS, input.normalWS);
     // Shadow and cookie only: culling attenuation isn't set for indirect draws.
     half3 direct = sun.color * sun.shadowAttenuation;
     half canopy = input.tint.a;
@@ -127,7 +127,8 @@ half3 PlantLight(half3 albedo, ForwardVaryings input, half3 normal, half root)
     // Screen AO reads dense blades as a crevice the canopy term already darkens, so each material takes only its share.
     half occlusion = canopy;
     #if defined(_SCREEN_SPACE_OCCLUSION)
-        half screen = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS)).indirectAmbientOcclusion;
+        const bool isSurfaceTypeTransparent = false;
+        half screen = GetScreenSpaceAmbientOcclusion(GetNormalizedScreenSpaceUV(input.positionCS), isSurfaceTypeTransparent).indirectAmbientOcclusion;
         occlusion *= lerp(1.0, screen, _ScreenOcclusion);
     #endif
 

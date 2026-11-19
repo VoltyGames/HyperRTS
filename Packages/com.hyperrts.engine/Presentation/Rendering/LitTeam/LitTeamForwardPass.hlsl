@@ -59,11 +59,22 @@ void LitTeamPassFragment(
 
     InitializeBakedGIData(input, inputData);
 
+    bool transparent = IsSurfaceTypeTransparent();
+    bool clearCoat = UseClearCoat() || UseClearCoatMap();
     URP_LIGHT_ACCUM4 color = UniversalFragmentPBR(inputData, surfaceData,
-        IsSpecularSetup(), UseSpecularHighlights(), UseAlphaPremultiply(),
-        UseClearCoat() || UseClearCoatMap(), ReceiveShadows(), IsSurfaceTypeTransparent(), UseEnvironmentReflections(), input.normalWS.xyz);
+        IsSpecularSetup(),
+        UseSpecularHighlights(),
+        UseAlphaPremultiply(),
+        clearCoat,
+        ReceiveShadows(),
+        transparent,
+        UseEnvironmentReflections());
     color.rgb = ClampExposed(inputData.preExposureMultiplier * BlendDistanceFog(color.rgb, input.positionCS));
-    color.a = OutputAlpha(color.a, IsSurfaceTypeTransparent());
+#if defined(_TRANSPARENT_RECEIVE_FOG)
+    if (transparent)
+        color.rgb = MixVolumetricFog(color.rgb, color.a, _Blend, UseAlphaPremultiply(), input.positionCS);
+#endif
+    color.a = OutputAlpha(color.a, transparent);
 
     outColor = color;
 

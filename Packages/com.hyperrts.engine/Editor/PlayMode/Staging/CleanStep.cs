@@ -18,12 +18,12 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public override void Run(StagingRun run)
         {
-            foreach (var panel in Object.FindObjectsByType<PanelRenderer>(FindObjectsSortMode.None))
+            foreach (var panel in Object.FindObjectsByType<PanelRenderer>())
             {
                 panel.enabled = !_clean;
             }
 
-            foreach (var overlays in Object.FindObjectsByType<OverlayRenderer>(FindObjectsSortMode.None))
+            foreach (var overlays in Object.FindObjectsByType<OverlayRenderer>())
             {
                 overlays.enabled = !_clean;
             }

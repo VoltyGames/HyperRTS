@@ -38,7 +38,7 @@ half SixWayResponse(half3 direction, SixWayMaps maps)
 
 half3 SixWayMainLight(float3 positionWS, half3x3 basis, SixWayMaps maps)
 {
-    Light sun = GetMainLight(TransformWorldToShadowCoord(positionWS), positionWS, half4(1.0h, 1.0h, 1.0h, 1.0h));
+    Light sun = SunLight(positionWS, float3(0.0, 0.0, 0.0));
     half visible = sun.shadowAttenuation * sun.distanceAttenuation;
     return sun.color * (visible * SixWayResponse(mul(basis, sun.direction), maps));
 }

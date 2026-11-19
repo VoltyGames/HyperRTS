@@ -76,6 +76,7 @@ float _DetailFadeEnd;
 float4 _InteriorAtlas;
 half _LightsOn;
 half _Cutoff;
+half _Blend;
 half _Smoothness;
 half _Metallic;
 half _BumpScale;

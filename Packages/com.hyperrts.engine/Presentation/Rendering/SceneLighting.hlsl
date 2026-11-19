@@ -1,4 +1,4 @@
-// Ambient and clustered-light setup shared by the custom lit shaders. Needs URP Lighting.hlsl first.
+// Ambient, sun, clustered-light and PBR setup shared by the custom lit shaders. Needs URP Lighting.hlsl first.
 #ifndef HYPERRTS_SCENE_LIGHTING_INCLUDED
 #define HYPERRTS_SCENE_LIGHTING_INCLUDED
 
@@ -23,6 +23,36 @@ InputData LightLoopInput(float3 positionWS, float2 normalizedScreenSpaceUV)
     inputData.positionWS = positionWS;
     inputData.normalizedScreenSpaceUV = normalizedScreenSpaceUV;
     return inputData;
+}
+
+// The sun's shadow and cookie at a point, with no baked shadow mask. The normal pushes the shadow lookup off the
+// surface; billboards pass zero, having no surface to push along.
+Light SunLight(float3 positionWS, float3 geometricNormalWS)
+{
+    const bool receiveShadows = true;
+    const bool isSurfaceTypeTransparent = false;
+    float4 shadowCoord = TransformWorldToShadowCoord(positionWS, isSurfaceTypeTransparent, geometricNormalWS);
+    return GetMainLight(shadowCoord, positionWS, half4(1.0, 1.0, 1.0, 1.0), receiveShadows, isSurfaceTypeTransparent);
+}
+
+// URP's PBR for the opaque ground and its decals: metallic workflow, no clear coat, shadows and reflections on.
+URP_LIGHT_ACCUM4 GroundFragmentPBR(InputData inputData, SurfaceData surfaceData)
+{
+    const bool isSpecularSetup = false;
+    const bool useSpecularHighlights = true;
+    const bool useAlphaPremultiply = false;
+    const bool useClearCoat = false;
+    const bool receiveShadows = true;
+    const bool isSurfaceTypeTransparent = false;
+    const bool useEnvironmentReflections = true;
+    return UniversalFragmentPBR(inputData, surfaceData,
+        isSpecularSetup,
+        useSpecularHighlights,
+        useAlphaPremultiply,
+        useClearCoat,
+        receiveShadows,
+        isSurfaceTypeTransparent,
+        useEnvironmentReflections);
 }
 
 #endif

@@ -133,6 +133,11 @@ structured buffer the shader reads as `_Instances[SV_InstanceID]`.
   and VFX Graphs take no pragmas, so the includes they pull in must also compile under FXC.
 - URP keyword lists shared across passes live in `Presentation/Rendering/Keywords/` and are pulled in with
   `#include_with_pragmas`. An include holds only lines identical in every pass that uses it.
+- Custom lit shaders take the sun from `SunLight` and the ground's PBR from `GroundFragmentPBR` in
+  `Rendering/SceneLighting.hlsl`. Both pass the surface normal that URP's shadow receiver normal bias and soft (PCSS)
+  shadows read, so those URP asset settings work on our shaders too. Flags passed to a URP function are named locals.
+- A Meta pass feeds Surface Cache GI and lightmaps through `Rendering/MetaPass.hlsl`. A cutout shader defines
+  `META_ALPHA_CLIP` and `MetaAlpha` so its holes stay out of the GI.
 - Shaders that move vertices share prepasses through `Rendering/DisplacedPasses.hlsl`: write one `Displace` hook and get
   the shadow, depth, depth-normals and motion vector entries, so plants reproject under TAA.
 - A transparent shader applies both fogs with `ApplySceneFog` from `SceneFog.hlsl` and needs

@@ -113,6 +113,7 @@ Shader "HyperRTS/Road"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainCraterGround.hlsl"
@@ -248,7 +249,9 @@ Shader "HyperRTS/Road"
                 data.tangentToWorld = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);
                 data.normalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, data.tangentToWorld));
                 data.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
-                data.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+                data.geometricNormalWS = input.normalWS;
+                const bool isSurfaceTypeTransparent = false;
+                data.shadowCoord = TransformWorldToShadowCoord(input.positionWS, isSurfaceTypeTransparent, data.geometricNormalWS);
                 data.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
                 data.bakedGI = SampleSH(data.normalWS);
                 data.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
@@ -277,9 +280,10 @@ Shader "HyperRTS/Road"
 
                 InputData inputData = Inputs(input, surface.normalTS);
                 #if defined(_DBUFFER)
-                    ApplyDecalToSurfaceData(input.positionCS, surface, inputData);
+                    const bool isSpecularSetup = false;
+                    ApplyDecalToSurfaceData(input.positionCS, surface, inputData, isSpecularSetup);
                 #endif
-                half4 color = UniversalFragmentPBR(inputData, surface);
+                half4 color = GroundFragmentPBR(inputData, surface);
                 return half4(color.rgb, surface.alpha);
             }
             ENDHLSL

@@ -79,6 +79,7 @@ Shader "HyperRTS/Water"
             #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
@@ -157,7 +158,7 @@ Shader "HyperRTS/Water"
                 half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), bedFog);
 
                 // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
-                Light sun = GetMainLight(TransformWorldToShadowCoord(input.positionWS), input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
+                Light sun = SunLight(input.positionWS, input.normalWS);
                 bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
 
                 // Light through the water loses red first, so the bed fades into the silt-green the water scatters.
@@ -169,7 +170,8 @@ Shader "HyperRTS/Water"
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
                 half smoothness = DistantSmoothness(cameraDistance);
-                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0);
+                const bool useEnvironmentReflections = true;
+                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, useEnvironmentReflections);
                 // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
                 half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
                 half4 scene = half4(0.0, 0.0, 0.0, 0.0);

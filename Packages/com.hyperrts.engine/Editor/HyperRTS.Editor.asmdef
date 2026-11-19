@@ -17,6 +17,7 @@
         "Unity.Pipeline.Attributes",
         "Unity.Recorder",
         "Unity.Recorder.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
         "Unity.RenderPipelines.Universal.Runtime",
         "Unity.InputSystem",
         "Unity.Scenes",

@@ -2,6 +2,7 @@ using System.Linq;
 using HyperRTS.Presentation.Quality;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.PlayMode.Staging
@@ -12,6 +13,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
     /// </summary>
     internal sealed class DetailStep : StagingStep
     {
+        private const float ShadowReachPriority = 1000f;
+
         private readonly float? _shadows;
         private readonly float? _grass;
         private readonly float? _crops;
@@ -37,10 +40,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         {
             if (_shadows is { } shadows)
             {
-                var pipeline = UniversalRenderPipeline.asset;
-                var reach = pipeline.shadowDistance;
-                pipeline.shadowDistance = shadows;
-                run.Undo(() => pipeline.shadowDistance = reach);
+                RaiseShadowReach(run, shadows);
             }
 
             if (_lod is { } lod)
@@ -60,6 +60,22 @@ namespace HyperRTS.Editor.PlayMode.Staging
             {
                 RaiseVegetation(run);
             }
+        }
+
+        // A global volume above the scene's and the quality level's, so no asset changes.
+        private static void RaiseShadowReach(StagingRun run, float shadows)
+        {
+            var profile = ScriptableObject.CreateInstance<VolumeProfile>();
+            profile.Add<ShadowsVolumeOverride>().maxShadowDistance.Override(shadows);
+            var volume = new GameObject("Staging Shadow Reach").AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = ShadowReachPriority;
+            volume.sharedProfile = profile;
+            run.Undo(() =>
+            {
+                Object.Destroy(volume.gameObject);
+                Object.Destroy(profile);
+            });
         }
 
         private void RaiseVegetation(StagingRun run)

@@ -56,7 +56,8 @@ half3 FlagAmbient(Varyings input, half3 normal)
 
     #if defined(_SCREEN_SPACE_OCCLUSION)
         float2 screenUV = GetNormalizedScreenSpaceUV(input.positionCS);
-        ambient *= GetScreenSpaceAmbientOcclusion(screenUV).indirectAmbientOcclusion;
+        const bool isSurfaceTypeTransparent = false;
+        ambient *= GetScreenSpaceAmbientOcclusion(screenUV, isSurfaceTypeTransparent).indirectAmbientOcclusion;
     #endif
     return ambient;
 }
@@ -66,8 +67,7 @@ half4 Frag(Varyings input, FRONT_FACE_TYPE face : FRONT_FACE_SEMANTIC) : SV_Targ
     UNITY_SETUP_INSTANCE_ID(input);
     half3 albedo = FlagAlbedo(input.uv);
     half3 normal = normalize(input.normalWS) * IS_FRONT_VFACE(face, 1.0, -1.0);
-    float4 shadowCoord = TransformWorldToShadowCoord(input.positionWS);
-    Light sun = GetMainLight(shadowCoord, input.positionWS, half4(1.0, 1.0, 1.0, 1.0));
+    Light sun = SunLight(input.positionWS, input.normalWS);
     half3 lit = sun.color * (sun.shadowAttenuation * FlagFacing(normal, sun.direction));
     lit += FlagAdditionalLights(input, normal);
     return half4(albedo * (lit + FlagAmbient(input, normal)), 1.0);

@@ -54,7 +54,7 @@ namespace HyperRTS.Network.Session
             _sentKbps.Add((float)((sent - _lastSent) * 8 / 1000.0 / interval));
             _lastSent = sent;
             _connections.Add(Connections(entityManager));
-            _entities.Add(entityManager.UniversalQuery.CalculateEntityCount());
+            _entities.Add(SimulationEntities.Query(entityManager).CalculateEntityCount());
         }
 
         public void Summarize(ServerReport report)

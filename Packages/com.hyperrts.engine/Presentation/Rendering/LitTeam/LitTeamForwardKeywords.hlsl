@@ -1,9 +1,13 @@
-// HyperRTS/LitTeam ForwardLit keywords: material features, lighting, lightmaps, LOD cross-fade and instancing.
+// HyperRTS/LitTeam ForwardLit keywords: material features, fog on transparents, lighting, lightmaps, LOD
+// cross-fade and instancing.
 #pragma shader_feature_local _NORMALMAP
 #pragma shader_feature_local_fragment _ALPHATEST_ON
 #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
 #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
 #pragma shader_feature_local_fragment _EMISSION
+#pragma shader_feature_local_fragment _TRANSPARENT_RECEIVE_FOG
+// Which fog a transparent surface mixes in; opaque ones get theirs from the full-screen fog pass.
+#pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
 #pragma shader_feature_local_fragment _OCCLUSIONMAP
 #pragma shader_feature_local_fragment _DETAIL

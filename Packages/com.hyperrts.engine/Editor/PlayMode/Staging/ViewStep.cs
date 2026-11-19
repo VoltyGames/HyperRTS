@@ -66,7 +66,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         // The heading the brightest directional light shines along, as a camera yaw.
         private static float SunHeading()
         {
-            var sun = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsSortMode.None)
+            var sun = UnityEngine.Object.FindObjectsByType<Light>()
                 .Where(light => light.type == LightType.Directional && light.isActiveAndEnabled)
                 .OrderByDescending(light => light.intensity)
                 .FirstOrDefault();

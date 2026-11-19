@@ -3,6 +3,7 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainInput.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
@@ -88,12 +89,14 @@ InputData TerrainInputData(TerrainForwardVaryings input, TerrainPixel pixel, hal
     inputData.positionCS = input.positionCS;
     inputData.tangentToWorld = pixel.frame;
     inputData.normalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, inputData.tangentToWorld));
+    inputData.geometricNormalWS = pixel.frame[2];
     inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
         inputData.shadowCoord = input.shadowCoord;
     #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
-        inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS);
+        const bool isSurfaceTypeTransparent = false;
+        inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS, isSurfaceTypeTransparent, inputData.geometricNormalWS);
     #endif
 
     inputData.vertexLighting = input.vertexLight;
@@ -140,10 +143,11 @@ void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : S
     InputData inputData = TerrainInputData(input, pixel, surface.normalTS);
     SurfaceData surfaceData = TerrainSurfaceData(surface);
     #ifdef _DBUFFER
-        ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData);
+        const bool isSpecularSetup = false;
+        ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData, isSpecularSetup);
     #endif
 
-    half4 color = UniversalFragmentPBR(inputData, surfaceData);
+    half4 color = GroundFragmentPBR(inputData, surfaceData);
     outColor = half4(color.rgb, 1.0);
     #ifdef _WRITE_RENDERING_LAYERS
         outRenderingLayers = EncodeMeshRenderingLayer();

@@ -1,11 +1,16 @@
 // Meta pass for hand-written shaders without URP Lit's inputs. The including pass defines half3 MetaAlbedo(float2 uv0).
 // Surface Cache GI draws it over a unit quad to bake the material's albedo in UV0 space, so no wind or world-space terms.
+// A cutout shader defines META_ALPHA_CLIP and half MetaAlpha(float2 uv0) too, with _Cutoff declared first, so its
+// holes stay out of the bake.
 #ifndef HYPERRTS_META_PASS_INCLUDED
 #define HYPERRTS_META_PASS_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"
 
 half3 MetaAlbedo(float2 uv0);
+#if defined(META_ALPHA_CLIP)
+half MetaAlpha(float2 uv0);
+#endif
 
 struct MetaAttributes
 {
@@ -31,6 +36,9 @@ MetaVaryings MetaPassVertex(MetaAttributes input)
 
 half4 MetaPassFragment(MetaVaryings input) : SV_Target
 {
+#if defined(META_ALPHA_CLIP)
+    clip(MetaAlpha(input.uv) - _Cutoff);
+#endif
     UnityMetaInput meta = (UnityMetaInput)0;
     meta.Albedo = MetaAlbedo(input.uv);
     return UnityMetaFragment(meta);

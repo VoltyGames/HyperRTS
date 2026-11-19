@@ -80,6 +80,7 @@ Shader "HyperRTS/LitTeam"
         _InteriorAtlas("Interior Atlas (columns, rows, cell margin)", Vector) = (4, 3, 0.04, 0)
 
         [ToggleUI] _Transparent("Transparent (glass: base alpha fades the diffuse, reflections stay whole)", Float) = 0
+        [HideInInspector] _Blend("__blend", Float) = 0
         [HideInInspector] _SrcBlend("__src", Float) = 1
         [HideInInspector] _DstBlend("__dst", Float) = 0
         [HideInInspector] _ZWrite("__zw", Float) = 1
@@ -271,10 +272,11 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex UniversalVertexMeta
             #pragma fragment UniversalFragmentMetaLit
-            #pragma shader_feature_local_fragment _EMISSION
             #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #pragma shader_feature EDITOR_VISUALIZATION
+            // GI extraction gates emission by the material's GI flags, not this keyword.
+            #define _EMISSION 1
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitMetaPass.hlsl"
             ENDHLSL

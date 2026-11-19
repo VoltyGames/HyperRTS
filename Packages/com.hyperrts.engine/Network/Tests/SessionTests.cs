@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Network.Session;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
 using Unity.Networking.Transport.Relay;
@@ -40,6 +41,24 @@ namespace HyperRTS.Network.Tests
             NetworkSession.EndSessionWithPlay();
 
             Assert.IsFalse(host.IsCreated);
+        }
+
+        [Test]
+        public void SimulationEntities_LeaveOutGameObjects()
+        {
+            var gameObject = new GameObject(nameof(SimulationEntities_LeaveOutGameObjects));
+            try
+            {
+                Entity entity = gameObject.GetEntityId();
+                var entityManager = World.DefaultGameObjectInjectionWorld.EntityManager;
+                Assume.That(entityManager.Exists(entity), "Unity gives every GameObject an entity.");
+                using var entities = SimulationEntities.Query(entityManager).ToEntityArray(Allocator.Temp);
+                Assert.IsFalse(entities.Contains(entity));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(gameObject);
+            }
         }
 
         private static LaunchOptions Parse(string line) => LaunchOptions.Parse(line.Split(' '));

@@ -144,13 +144,24 @@ Shader "HyperRTS/Foliage"
             HLSLPROGRAM
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
+            #define META_ALPHA_CLIP
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageInput.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+
+            half4 MetaTexel(float2 uv0)
+            {
+                return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, TRANSFORM_TEX(uv0, _BaseMap));
+            }
 
             // Per-plant tint and root ground colour are per vertex, so only the texture and material tint reach GI.
             half3 MetaAlbedo(float2 uv0)
             {
-                return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, TRANSFORM_TEX(uv0, _BaseMap)).rgb * _BaseColor.rgb;
+                return MetaTexel(uv0).rgb * _BaseColor.rgb;
+            }
+
+            half MetaAlpha(float2 uv0)
+            {
+                return MetaTexel(uv0).a * _BaseColor.a;
             }
             ENDHLSL
         }

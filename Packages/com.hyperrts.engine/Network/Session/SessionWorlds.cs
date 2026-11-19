@@ -265,7 +265,7 @@ namespace HyperRTS.Network.Session
         {
             ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
             world.DestroyAllSystemsAndLogException(out _);
-            world.EntityManager.DestroyEntity(world.EntityManager.UniversalQuery);
+            world.EntityManager.DestroyEntity(SimulationEntities.Query(world.EntityManager));
             _base = world;
         }
     }
