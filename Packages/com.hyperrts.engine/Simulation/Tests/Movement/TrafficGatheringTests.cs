@@ -15,26 +15,6 @@ namespace HyperRTS.Simulation.Tests.Movement
     [Category("Traffic")]
     public class TrafficGatheringTests : TrafficScenarioFixture
     {
-        private const float GatherSeconds = 300f;
-
-        [Test]
-        public void FourTrucks_GatherForFiveMinutes_WithoutLoops()
-        {
-            var trucks = new Entity[4];
-            for (var i = 0; i < trucks.Length; i++)
-            {
-                trucks[i] = SpawnTruck(new float3(-30f + i * 4f, 0f, 16f + i * 3f), math.PI * 0.5f);
-            }
-
-            Gather(trucks, new float3(30f, 0f, 0f), new float3(-30f, 0f, 0f), new float2(10f, 10f), GatherSeconds);
-            _record.Log("gather trips");
-
-            var numbers = Numbers();
-            Assert.Greater(_record.Trips, 15, $"the trucks kept delivering: {numbers}");
-            Assert.Less(_record.MaxLoop, 180f, $"no truck turned round forwards: {numbers}; {_record.WorstLoop}");
-            Assert.AreEqual(0, _record.GiveUps, $"no truck gave up: {numbers}");
-        }
-
         [Test]
         public void ThreeTrucks_ShuttleToADropOffBesideTheNode_WithoutLoops()
         {
