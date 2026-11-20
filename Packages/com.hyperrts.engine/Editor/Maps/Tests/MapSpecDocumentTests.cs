@@ -52,7 +52,7 @@ namespace HyperRTS.Editor.Maps.Tests
 
             Assert.AreEqual(0, hill.Index);
             Assert.AreEqual(Formatted(Original.TrimEnd('}') + ", \"hills\": [{\"pos\": {\"x\": 10, \"z\": 20}}]}"), Saved());
-            Assert.IsTrue(MapSpecJson.SameContent(_document.Spec, MapSpecJson.Read(Saved())));
+            Assert.AreEqual(JsonUtility.ToJson(_document.Spec), JsonUtility.ToJson(MapSpecJson.Read(Saved())));
         }
 
         [Test]

@@ -31,7 +31,7 @@ front-lit ground.
 The spec is flat: one array per feature type, points as `{ "x", "z" }` objects. Units are metres. The origin is the
 map centre, X points east, Z points north, and angles run clockwise from north. Files are saved in one fixed layout
 (`JsonFormat`) so they diff cleanly, and a field the spec doesn't read fails the load with its path, such as
-`hills[1].raduis`. `MapSpecSchema` writes a JSON Schema for editors.
+`hills[1].raduis`.
 
 | Header field | Holds |
 | --- | --- |
@@ -165,7 +165,6 @@ key that names no item and a link to a deleted asset, on the Validate page and f
 | `MapPreview.Run`, `MapBuilder.Build`, `MapViewCapture.Capture` | The same from editor code |
 | `MapBuildRunner.Build(spec)`, `.BuildAll()` | Builds as the editor does, saving and reopening scenes; with `ask: false` unsaved scenes throw instead |
 | `MapKeyReference.Write(path, MapLibrary.Load())` | A Markdown list of every `kind` a spec may name |
-| `MapSpecSchema.Write(path, MapLibrary.Load())` | The JSON Schema of `.map.json`; `[MapKey]` fields list the library's keys |
 | `MapPaths.Find(map)` | The spec for a map name or spec path, as the commands take it |
 
 Batch runs exit with 0 when the report passes, 1 on report errors, and 2 on a crash or a missing `-map`. Add

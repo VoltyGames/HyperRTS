@@ -130,7 +130,7 @@ namespace HyperRTS.Editor.Maps.Tests
             var written = MapSpecJson.Write(loaded);
             var reloaded = MapSpecJson.Read(written);
 
-            Assert.IsTrue(MapSpecJson.SameContent(loaded, reloaded), $"{name} changed in a round trip.");
+            Assert.AreEqual(JsonUtility.ToJson(loaded), JsonUtility.ToJson(reloaded), $"{name} changed in a round trip.");
             Assert.AreEqual(written, MapSpecJson.Write(reloaded), $"{name} writes differently the second time.");
         }
 

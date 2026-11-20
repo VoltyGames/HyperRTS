@@ -25,7 +25,15 @@ namespace HyperRTS.Editor.Generators
                 return new GeneratorRunLog();
             }
 
-            return JsonUtility.FromJson<GeneratorRunLog>(File.ReadAllText(FilePath)) ?? new GeneratorRunLog();
+            try
+            {
+                return JsonUtility.FromJson<GeneratorRunLog>(File.ReadAllText(FilePath))
+                    ?? throw new InvalidDataException($"{FilePath} is empty.");
+            }
+            catch (ArgumentException e)
+            {
+                throw new InvalidDataException($"{FilePath} is not valid JSON: {e.Message}", e);
+            }
         }
 
         /// <summary>The generator's last run, or null when it never ran here.</summary>

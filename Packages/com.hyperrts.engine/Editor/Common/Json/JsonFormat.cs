@@ -10,7 +10,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Common.Json
 {
     /// <summary>
-    /// The one layout map specs and effect recipes are written in, so saves diff cleanly. Parses with Newtonsoft,
+    /// The one layout map specs are written in, so saves diff cleanly. Parses with Newtonsoft,
     /// keeping member order and strings as strings.
     /// </summary>
     public static class JsonFormat

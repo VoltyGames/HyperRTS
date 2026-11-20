@@ -33,7 +33,7 @@ since changing one changes every map. `MapIssues` collects errors, which fail a 
 | `Meshes/`, `Scenes/` | Road ribbons and river meshes; `MapScene` and the writers for terrain, environment, placements, decals and lighting |
 | `Nav/`, `Hints/` | `MapNavGrid` builds the runtime nav grid with the runtime's stamps, `MapPathfinder` runs `GridAStar` without its budget so rush times match in-game pathing; `MapHintWriter` writes bot hints |
 | `Report/`, `Views/`, `Look/` | `MapMeasurer`, `MapReport`; match-camera screenshots, minimap and overview; `map look` captures |
-| `Build/`, `Tools/` | `MapBuilder.Build`, `MapPreview.Run`, `MapPaths`, `IMapBuildHook`; `MapBuildRunner`, `MapCommandLine`, `MapCommands`, `MapKeyReference`, `MapSpecSchema` |
+| `Build/`, `Tools/` | `MapBuilder.Build`, `MapPreview.Run`, `MapPaths`, `IMapBuildHook`; `MapBuildRunner`, `MapCommandLine`, `MapCommands`, `MapKeyReference` |
 | `Designer/` | The Map Editor. `MapSpecDocument` holds the open spec for Undo, saves each edit through `JsonChanges` and reloads on import; the canvas tools (`IMapTool`) edit through `MapFeatureEdits` |
 
 Each planted `MapTree` carries a seed hashed from its sector point, so every copy picks the same model variant.

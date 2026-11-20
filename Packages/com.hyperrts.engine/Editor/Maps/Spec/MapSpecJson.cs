@@ -58,8 +58,5 @@ namespace HyperRTS.Editor.Maps.Spec
 
         /// <summary>A deep copy of a feature known only by <paramref name="type"/>.</summary>
         public static object Clone(object value, Type type) => JsonUtility.FromJson(JsonUtility.ToJson(value), type);
-
-        /// <summary>Equal when both specs serialize to the same JSON.</summary>
-        public static bool SameContent(MapSpec a, MapSpec b) => JsonUtility.ToJson(a) == JsonUtility.ToJson(b);
     }
 }
