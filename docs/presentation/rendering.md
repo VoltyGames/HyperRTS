@@ -30,7 +30,9 @@ island of an atlased mesh. Both fade out between `_DetailFadeStart` and `_Detail
 cost six texture samples in the forward pass only, nothing with the toggle off. The detail normal needs the normal path,
 so the toggle turns `_NORMALMAP` on; the depth-normals buffer keeps the base normal.
 
-Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`).
+Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`). After rain (`_HyperRTSWetness`, from the
+`Atmosphere`) every LitTeam surface is wet where the sky reaches it, as the ground is: darker and glossier, metal
+not darker.
 
 **Silhouettes.** A unit hidden behind cover shows as a team-colour silhouette. Units bake onto the `UnitRenderingLayer`,
 and two URP Render Objects features on that layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visible

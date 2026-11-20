@@ -1,9 +1,14 @@
-// HyperRTS/LitTeam grime: dust, mud, wet and soot on a ground vehicle's albedo, smoothness and metallic. The levels are
-// _Grime (dust, mud, wet, soot) and the height band is _GrimeBand; both are per instance, written by GrimeSystem.
+// Grime (dust, mud, wet and soot that GrimeSystem sets per ground vehicle) and rain wetness on every unit and
+// building.
 #ifndef HYPERRTS_LIT_TEAM_GRIME_INCLUDED
 #define HYPERRTS_LIT_TEAM_GRIME_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
+
+// Paint darkens less than soil when wet, and wet metal not at all.
+#define RAIN_DARKENING 0.3
+#define RAIN_GLOSS 0.7
 
 float4 _HyperRTSDustColor;
 float4 _HyperRTSMudColor;
@@ -59,6 +64,19 @@ void ApplyGrime(float3 positionWS, inout SurfaceData surface)
     surface.albedo = albedo;
     surface.smoothness = smoothness;
     surface.metallic = metallic * (1.0 - max(dust, mud));
+}
+
+// After rain every unit and building is wet where the sky reaches it, as the ground is: tops fully, sides half.
+void ApplyRain(half3 normalWS, inout SurfaceData surface)
+{
+    if (!RainWet())
+    {
+        return;
+    }
+
+    half wetness = _HyperRTSWetness * saturate(normalWS.y * 0.5 + 0.5);
+    Wet(surface.albedo, surface.smoothness, surface.normalTS, wetness, RAIN_DARKENING * (1.0 - surface.metallic),
+        RAIN_GLOSS);
 }
 
 #endif

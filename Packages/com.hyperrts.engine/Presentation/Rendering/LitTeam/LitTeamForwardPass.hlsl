@@ -1,5 +1,4 @@
-// HyperRTS/LitTeam forward pass: URP's LitForwardPass (vertex, input data, GI) with a fragment that mirrors
-// LitPassFragment and tints the albedo before decals and lighting.
+// Forward pass: URP's LitForwardPass with a fragment that tints the albedo in the owner's colour before lighting.
 #ifndef HYPERRTS_LIT_TEAM_FORWARD_PASS_INCLUDED
 #define HYPERRTS_LIT_TEAM_FORWARD_PASS_INCLUDED
 
@@ -45,6 +44,7 @@ void LitTeamPassFragment(
 #endif
     surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);
     ApplyGrime(input.positionWS, surfaceData);
+    ApplyRain(input.normalWS.xyz, surfaceData);
 
     LODFadeCrossFade(input.positionCS);
 
@@ -71,7 +71,7 @@ void LitTeamPassFragment(
         UseEnvironmentReflections());
     color.rgb = ClampExposed(inputData.preExposureMultiplier * BlendDistanceFog(color.rgb, input.positionCS));
 #if defined(_TRANSPARENT_RECEIVE_FOG)
-    // Transparent LitTeam always blends premultiplied, so the blend mode argument is unused.
+    // Glass always blends premultiplied, so the blend mode argument is a constant.
     color.rgb = MixVolumetricFog(color.rgb, color.a, 1.0, true, input.positionCS);
 #endif
     color.a = OutputAlpha(color.a, transparent);

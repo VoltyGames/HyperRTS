@@ -2,6 +2,8 @@
 #ifndef HYPERRTS_FOG_OF_WAR_INCLUDED
 #define HYPERRTS_FOG_OF_WAR_INCLUDED
 
+#include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Filtering.hlsl"
+
 TEXTURE2D(_HyperRTSFogOfWar);
 SAMPLER(sampler_HyperRTSFogOfWar);
 float4 _HyperRTSFogOfWarRect;   // x min x, y min z, z size x, w size z
@@ -12,16 +14,13 @@ TEXTURE2D(_HyperRTSSightShape);
 SAMPLER(sampler_HyperRTSSightShape);
 half4 _HyperRTSSightShapeColor; // a 0 when no outline is shown
 
-// The grid's opacity blurred over about a cell, so its stair steps read as round edges.
+// The grid's opacity through core's cubic B-spline filter, so its cell steps read as smooth curves.
 half FogOfWarOpacity(float2 uv)
 {
-    float2 cell = _HyperRTSFogOfWarBorder.zw * 0.7;
-    half centre = SAMPLE_TEXTURE2D_LOD(_HyperRTSFogOfWar, sampler_HyperRTSFogOfWar, saturate(uv), 0).r;
-    half around = SAMPLE_TEXTURE2D_LOD(_HyperRTSFogOfWar, sampler_HyperRTSFogOfWar, saturate(uv + cell), 0).r
-        + SAMPLE_TEXTURE2D_LOD(_HyperRTSFogOfWar, sampler_HyperRTSFogOfWar, saturate(uv - cell), 0).r
-        + SAMPLE_TEXTURE2D_LOD(_HyperRTSFogOfWar, sampler_HyperRTSFogOfWar, saturate(uv + float2(cell.x, -cell.y)), 0).r
-        + SAMPLE_TEXTURE2D_LOD(_HyperRTSFogOfWar, sampler_HyperRTSFogOfWar, saturate(uv + float2(-cell.x, cell.y)), 0).r;
-    return centre * 0.4 + around * 0.15;
+    float2 cell = _HyperRTSFogOfWarBorder.zw;
+    float4 texelSize = float4(1.0 / cell, cell);
+    return SampleTexture2DBicubic(TEXTURE2D_ARGS(_HyperRTSFogOfWar, sampler_HyperRTSFogOfWar), saturate(uv), texelSize,
+        float2(1.0, 1.0), 0).r;
 }
 
 // Fog colour (rgb) and amount (a) over a world point.
