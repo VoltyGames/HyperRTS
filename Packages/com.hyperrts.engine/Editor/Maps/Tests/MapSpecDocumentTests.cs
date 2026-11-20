@@ -12,8 +12,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Tests
 {
     /// <summary>
-    /// The Map Editor's document: an edit saves at once and diffs like a hand edit, and a file
-    /// written from outside reloads.
+    /// The Map Editor's document: an edit saves at once in the canonical layout, and a file written from outside
+    /// reloads.
     /// </summary>
     public class MapSpecDocumentTests
     {
@@ -46,13 +46,13 @@ namespace HyperRTS.Editor.Maps.Tests
         }
 
         [Test]
-        public void AnAddedFeatureLeavesOutItsDefaults()
+        public void AnAddedFeatureSavesAtOnce()
         {
             var hill = MapFeatureEdits.Add(_document, MapFeatureKinds.Find(nameof(MapSpec.hills)), new[] { new Vector2(10, 20) });
 
             Assert.AreEqual(0, hill.Index);
-            Assert.AreEqual(Formatted(Original.TrimEnd('}') + ", \"hills\": [{\"pos\": {\"x\": 10, \"z\": 20}}]}"), Saved());
-            Assert.AreEqual(JsonUtility.ToJson(_document.Spec), JsonUtility.ToJson(MapSpecJson.Read(Saved())));
+            Assert.AreEqual(MapSpecJson.Write(_document.Spec), Saved());
+            Assert.AreEqual(new MapPoint(10, 20), MapSpecJson.Read(Saved()).hills[0].pos);
         }
 
         [Test]
@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Maps.Tests
             tool.Up();
 
             Assert.AreEqual(new MapPoint(130, 20), _document.Spec.roads[0].points[1]);
-            Assert.AreEqual(Formatted(Original.Replace("{\"x\": 100, \"z\": 0}", "{\"x\": 130, \"z\": 20}")), Saved());
+            Assert.AreEqual(MapSpecJson.Write(_document.Spec), Saved());
         }
 
         [Test]
