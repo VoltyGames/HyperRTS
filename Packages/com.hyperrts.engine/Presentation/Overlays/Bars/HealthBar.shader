@@ -1,7 +1,7 @@
 // Screen-aligned health bars of a fixed pixel size, with squad member and veterancy pips above and a squad's
 // suppression strip below, drawn from
 // _Instances by InstanceBuffer. Each sits above its anchor; sizes are reference pixels times _PixelScale.
-Shader "HyperRTS/Health Bar"
+Shader "HyperRTS/HealthBar"
 {
     Properties
     {

@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Effects.Graph
     /// </summary>
     public sealed class EffectLayerParticles
     {
-        public const string Includes = "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/";
+        public const string Blocks = "Packages/com.hyperrts.engine/Presentation/Effects/Blocks/";
 
         private readonly GraphModel _graph;
         private readonly EffectLayer _layer;
@@ -102,7 +102,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
         private void Emit(object initialize)
         {
-            var emit = _graph.Hlsl(initialize, "Emit From Shape", Includes + "GraphEmitShape.hlsl");
+            var emit = _graph.Hlsl(initialize, "Emit From Shape", Blocks + "EmitFromShape.hlsl");
             _graph.Slot(emit, "origin", _layer.origin);
             _graph.Slot(emit, "shape", (float)_layer.Shape);
             _graph.Slot(emit, "radius", _layer.radius);

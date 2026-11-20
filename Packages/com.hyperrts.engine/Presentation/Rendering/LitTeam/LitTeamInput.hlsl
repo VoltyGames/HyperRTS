@@ -11,7 +11,7 @@
 //   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
 //               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamDeform.hlsl)
 //   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
-//   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
+//   _LightLevel   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
 //   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
 //               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
 //   _DETAIL     keyword: detail albedo and normal projected in object space (triplanar) at _DetailTiling repeats per metre,
@@ -20,7 +20,7 @@
 //   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
 //               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
 // TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// BuildingLightsSystem writes _LightsOn, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, CorpseSystem writes _PoseSlot, and game code writes VATClip and the bone clips.
+// BuildingLightsSystem writes _LightLevel, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, CorpseSystem writes _PoseSlot, and game code writes VATClip and the bone clips.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 // URP's LitForwardPass includes "LitInput.hlsl" itself; its guard keeps this file's declarations the only ones.
@@ -70,7 +70,7 @@ float _DetailNormalStrength;
 float _DetailFadeStart;
 float _DetailFadeEnd;
 float4 _InteriorAtlas;
-half _LightsOn;
+half _LightLevel;
 half _Cutoff;
 half _Smoothness;
 half _Metallic;
@@ -99,7 +99,7 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float , _PoseSlot)
     UNITY_DOTS_INSTANCED_PROP(float , _BuildProgress)
     UNITY_DOTS_INSTANCED_PROP(float , _Reveal)
-    UNITY_DOTS_INSTANCED_PROP(float , _LightsOn)
+    UNITY_DOTS_INSTANCED_PROP(float , _LightLevel)
 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
 
 // Loaded once per instance into statics, as URP does, so each use doesn't regenerate the load.
@@ -119,7 +119,7 @@ static float4 unity_DOTS_Sampled_TrackSpan;
 static float  unity_DOTS_Sampled_PoseSlot;
 static float  unity_DOTS_Sampled_BuildProgress;
 static float  unity_DOTS_Sampled_Reveal;
-static float  unity_DOTS_Sampled_LightsOn;
+static float  unity_DOTS_Sampled_LightLevel;
 
 void SetupDOTSLitTeamMaterialPropertyCaches()
 {
@@ -139,7 +139,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_PoseSlot             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _PoseSlot);
     unity_DOTS_Sampled_BuildProgress        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BuildProgress);
     unity_DOTS_Sampled_Reveal               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Reveal);
-    unity_DOTS_Sampled_LightsOn             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _LightsOn);
+    unity_DOTS_Sampled_LightLevel             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _LightLevel);
 }
 
 #undef UNITY_SETUP_DOTS_MATERIAL_PROPERTY_CACHES
@@ -161,7 +161,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _PoseSlot               unity_DOTS_Sampled_PoseSlot
 #define _BuildProgress          unity_DOTS_Sampled_BuildProgress
 #define _Reveal                 unity_DOTS_Sampled_Reveal
-#define _LightsOn               unity_DOTS_Sampled_LightsOn
+#define _LightLevel               unity_DOTS_Sampled_LightLevel
 
 #endif
 

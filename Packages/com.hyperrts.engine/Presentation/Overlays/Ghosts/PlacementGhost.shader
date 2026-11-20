@@ -1,6 +1,6 @@
 // See-through placement ghost over a building's real meshes. PlacementGhosts tints it per entity through
 // _BaseColor. No depth write, so the outline and blocked cells under it stay visible.
-Shader "HyperRTS/Placement Ghost"
+Shader "HyperRTS/PlacementGhost"
 {
     Properties
     {

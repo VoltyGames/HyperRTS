@@ -128,7 +128,7 @@ float3 TrampleBend(float3 world, float3 origin, float2 direction, half amount)
 
     float2 d = direction * rsqrt(length2);
     float3 axis = float3(d.y, 0.0, -d.x);
-    return WindRotate(world, origin, axis, lean);
+    return RotateAbout(world, origin, axis, lean);
 }
 
 #endif

@@ -5,15 +5,15 @@ using Unity.Rendering;
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
     /// <summary>HyperRTS/LitTeam's emission multiplier on a render entity, 0..1; without it meshes glow fully.</summary>
-    [MaterialProperty("_LightsOn")]
-    public struct LightsOn : IComponentData
+    [MaterialProperty("_LightLevel")]
+    public struct LightLevel : IComponentData
     {
         public float Value;
     }
 
     /// <summary>
     /// A building root's lights: on while complete and powered, flickering for a moment whenever that changes.
-    /// Client-only, written to <see cref="LightsOn"/> on every mesh under it.
+    /// Client-only, written to <see cref="LightLevel"/> on every mesh under it.
     /// </summary>
     public struct BuildingLights : IComponentData
     {

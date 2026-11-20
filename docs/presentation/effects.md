@@ -13,7 +13,7 @@ an asset, one that plays on its own (an Initial Event Name) or one without `Dens
 
 A graph must expose `Density`, which takes the effect detail share, and handle a `Burst` event. `EffectGraph` sends it
 with the pose as attributes: `position`, `direction`, `axisZ` and `scale`. A graph drops events until it has run once,
-so bursts in the frame the pool spawned it wait. `GraphBurstPose.hlsl` (Place At Burst) serves graph authors as a Custom
+so bursts in the frame the pool spawned it wait. `PlaceAtBurst.hlsl` (Place At Burst) serves graph authors as a Custom
 HLSL block.
 
 A graph that exposes `Speed` streams, for loops and trails. `GraphStreamPool` keeps copies of the rig's stream graphs,

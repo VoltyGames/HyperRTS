@@ -172,7 +172,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
             Copy<TeamColor>(em, from, part);
             Copy<TeamStrip>(em, from, part);
             Copy<RevealFade>(em, from, part);
-            Copy<LightsOn>(em, from, part);
+            Copy<LightLevel>(em, from, part);
             Copy<BuildProgress>(em, from, part);
             Copy<GrimeLevels>(em, from, part);
             Copy<GrimeBand>(em, from, part);

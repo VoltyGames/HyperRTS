@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Overlays.Bars
 {
-    /// <summary>One health bar as <c>HyperRTS/Health Bar</c> reads it.</summary>
+    /// <summary>One health bar as <c>HyperRTS/HealthBar</c> reads it.</summary>
     [GenerateHLSL(needAccessors: false)]
     public struct HealthBarInstance
     {

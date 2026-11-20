@@ -1,5 +1,5 @@
 // Only TrampleBrush.cs draws with this, never a material.
-Shader "Hidden/HyperRTS/Trample Brush"
+Shader "Hidden/HyperRTS/TrampleBrush"
 {
     SubShader
     {

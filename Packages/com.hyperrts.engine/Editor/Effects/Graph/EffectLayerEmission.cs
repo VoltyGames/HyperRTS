@@ -45,8 +45,8 @@ namespace HyperRTS.Editor.Effects.Graph
 
             var streams = _layer.Streams;
             var block = streams
-                ? _graph.Hlsl(initialize, "Place Along Path", EffectLayerParticles.Includes + "GraphStreamPose.hlsl")
-                : _graph.Hlsl(initialize, "Place At Burst", EffectLayerParticles.Includes + "GraphBurstPose.hlsl");
+                ? _graph.Hlsl(initialize, "Place Along Path", EffectLayerParticles.Blocks + "PlaceAlongPath.hlsl")
+                : _graph.Hlsl(initialize, "Place At Burst", EffectLayerParticles.Blocks + "PlaceAtBurst.hlsl");
             var inputs = streams ? new[] { "from", "to", "normal", "forward", "scale" } : new[] { "origin", "normal", "forward", "scale" };
             var sources = streams ? _inputs.StreamPose : _inputs.BurstPose;
             for (var i = 0; i < inputs.Length; i++)
@@ -125,7 +125,7 @@ namespace HyperRTS.Editor.Effects.Graph
         // A child rises from its parent upright, scaled by the parent's size and faded by its alpha.
         private void PlaceAtParent(object initialize)
         {
-            var place = _graph.Hlsl(initialize, "Place At Parent", EffectLayerParticles.Includes + "GraphBurstPose.hlsl");
+            var place = _graph.Hlsl(initialize, "Place At Parent", EffectLayerParticles.Blocks + "PlaceAtBurst.hlsl");
             _graph.Link(_graph.SourceAttribute("position", new Vector2(_x - 300f, 300f)), place, "origin");
             _graph.Slot(place, "normal", Vector3.up);
             _graph.Slot(place, "forward", Vector3.forward);

@@ -61,7 +61,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             if (Standing == Cap)
             {
-                StartSinking();
+                StartBurying();
             }
 
             var slot = _free.Pop();
@@ -70,7 +70,7 @@ namespace HyperRTS.Presentation.Destruction
             _draws.Place(slot, set.meshes[piece.Mesh], set.material, _pieces[slot].Matrix(_clock));
         }
 
-        /// <summary>Sinks the pieces past the cap and frees those fully under; pieces at rest cost nothing.</summary>
+        /// <summary>Buries the pieces past the cap and frees those fully under; pieces at rest cost nothing.</summary>
         public void Step(float deltaTime)
         {
             _clock += deltaTime;
@@ -89,7 +89,7 @@ namespace HyperRTS.Presentation.Destruction
 
         public void Dispose() => _draws.Dispose();
 
-        private void StartSinking()
+        private void StartBurying()
         {
             if (Burying == BuryRoom)
             {

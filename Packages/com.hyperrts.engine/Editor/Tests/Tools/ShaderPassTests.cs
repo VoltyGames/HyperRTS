@@ -24,8 +24,8 @@ namespace HyperRTS.Editor.Tests.Tools
         {
             "Hidden/HyperRTS/FoliageGrass",
             "HyperRTS/RowCrop",
-            "HyperRTS/Ground Marker",
-            "HyperRTS/Health Bar",
+            "HyperRTS/GroundMarker",
+            "HyperRTS/HealthBar",
             "HyperRTS/Overlay",
         };
 

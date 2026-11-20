@@ -42,7 +42,7 @@ without UV3 data, materials without `_BUILD` and finished buildings draw as auth
 
 ## Building lights
 
-`_LightsOn` on LitTeam multiplies emission from 0 to 1. `BuildingLightsSystem` writes it from the replicated `Offline`
+`_LightLevel` on LitTeam multiplies emission from 0 to 1. `BuildingLightsSystem` writes it from the replicated `Offline`
 state: dark while offline or under construction, with a short flicker on each change.
 
 ## Visibility
@@ -71,7 +71,7 @@ An enemy leaving sight fades out over `FogVisibilitySystem.FadeTime` then stops 
 `FogOfWarFeature`, on the URP renderer with its shader
 set to `Hidden/HyperRTS/FogOfWar`, fogs the camera colour before the transparents, so terrain and buildings fog where they
 stand while health bars and markers stay clear. A transparent shader fogs itself: water and smoke through `SceneFog.hlsl`,
-effect graphs through `GraphFogOfWar.hlsl`.
+effect graphs through `ShadeInFogOfWar.hlsl`.
 
 A client remembers enemy buildings where it last saw them as a visual copy that nothing can pick or count.
 

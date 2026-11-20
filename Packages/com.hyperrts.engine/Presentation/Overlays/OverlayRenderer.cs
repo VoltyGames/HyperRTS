@@ -29,15 +29,15 @@ namespace HyperRTS.Presentation.Overlays
         private Material material;
 
         [SerializeField]
-        [Tooltip("HyperRTS/Ground Marker material for selection and hover markers.")]
+        [Tooltip("HyperRTS/GroundMarker material for selection and hover markers.")]
         private Material markerMaterial;
 
         [SerializeField]
-        [Tooltip("HyperRTS/Health Bar material.")]
+        [Tooltip("HyperRTS/HealthBar material.")]
         private Material barMaterial;
 
         [SerializeField]
-        [Tooltip("HyperRTS/Placement Ghost material drawn over the placed building's real meshes.")]
+        [Tooltip("HyperRTS/PlacementGhost material drawn over the placed building's real meshes.")]
         private Material ghostMaterial;
 
         [SerializeField]

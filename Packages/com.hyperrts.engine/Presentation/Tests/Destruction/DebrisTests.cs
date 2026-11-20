@@ -101,7 +101,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void FullLastingLayer_SinksItsOldest_ThenReusesItsSlot()
+        public void FullLastingLayer_BuriesItsOldest_ThenReusesItsSlot()
         {
             _lasting = new LastingDebris(2);
             for (var x = 0; x < 3; x++)

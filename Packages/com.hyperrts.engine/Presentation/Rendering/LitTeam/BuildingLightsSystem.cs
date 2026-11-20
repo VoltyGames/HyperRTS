@@ -11,7 +11,7 @@ using Unity.Rendering;
 namespace HyperRTS.Presentation.Rendering.LitTeam
 {
     /// <summary>
-    /// Writes each building's <see cref="BuildingLights"/> to <see cref="LightsOn"/> on its meshes: dark while
+    /// Writes each building's <see cref="BuildingLights"/> to <see cref="LightLevel"/> on its meshes: dark while
     /// <see cref="Offline"/>, lit otherwise, with a flicker on each change.
     /// </summary>
     [BurstCompile]
@@ -21,14 +21,14 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
     public partial struct BuildingLightsSystem : ISystem
     {
         private EntityQuery _unseen;
-        private MeshPainter<LightsOn> _painter;
+        private MeshPainter<LightLevel> _painter;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             _unseen = SystemAPI.QueryBuilder().WithAll<BuildingTag>().WithPresent<Offline>().WithNone<BuildingLights>()
                 .Build();
-            _painter = new MeshPainter<LightsOn>(ref state);
+            _painter = new MeshPainter<LightLevel>(ref state);
             state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<BuildingTag>().WithPresent<Offline>().Build());
         }
 
@@ -45,7 +45,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
             {
                 var lights = BuildingLights.Seen(!SystemAPI.IsComponentEnabled<Offline>(root));
                 CollectLit(ref state, root, parts, site);
-                _painter.Add(parts, new LightsOn { Value = lights.Value }, commands);
+                _painter.Add(parts, new LightLevel { Value = lights.Value }, commands);
                 commands.AddComponent(root, lights);
             }
 
@@ -59,7 +59,7 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
                 if (lights.ValueRW.Advance(!offline.ValueRO, deltaTime))
                 {
                     CollectLit(ref state, root, parts, site);
-                    _painter.Set(parts, new LightsOn { Value = lights.ValueRO.Value });
+                    _painter.Set(parts, new LightLevel { Value = lights.ValueRO.Value });
                 }
             }
         }

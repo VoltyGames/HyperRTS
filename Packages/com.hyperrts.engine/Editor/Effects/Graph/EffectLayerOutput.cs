@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Effects.Graph
                 return;
             }
 
-            var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerParticles.Includes + "GraphFogOfWar.hlsl");
+            var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerParticles.Blocks + "ShadeInFogOfWar.hlsl");
             _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
         }
 
@@ -263,7 +263,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             if (_layer.kind == EffectLayerKind.Spark)
             {
-                var stretch = _graph.Hlsl(output, "Stretch Along Velocity", EffectLayerParticles.Includes + "GraphStretch.hlsl");
+                var stretch = _graph.Hlsl(output, "Stretch Along Velocity", EffectLayerParticles.Blocks + "StretchAlongVelocity.hlsl");
                 _graph.Slot(stretch, "sizeLength", _layer.stretch.length);
                 _graph.Slot(stretch, "speedLength", _layer.stretch.lengthPerSpeed);
             }

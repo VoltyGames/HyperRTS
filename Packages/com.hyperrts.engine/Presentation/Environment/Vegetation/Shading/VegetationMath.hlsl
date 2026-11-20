@@ -1,16 +1,12 @@
-// Small math shared by wind, trample, plant shading and the terrain. Plain HLSL, no textures.
+// Plant geometry shared by wind, trample and the plant shaders (turning about a pivot, facing, lean), and the dry
+// patches plants and the terrain both colour by. Plain HLSL, no textures.
 #ifndef HYPERRTS_VEGETATION_MATH_INCLUDED
 #define HYPERRTS_VEGETATION_MATH_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
 
-float3 WindSafeNormalize(float3 v)
-{
-    return v * rsqrt(max(dot(v, v), 1e-8));
-}
-
 // Rodrigues rotation of p about a unit axis through pivot.
-float3 WindRotate(float3 p, float3 pivot, float3 axis, float angle)
+float3 RotateAbout(float3 p, float3 pivot, float3 axis, float angle)
 {
     float3 v = p - pivot;
     float s, c;

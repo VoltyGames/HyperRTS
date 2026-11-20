@@ -117,7 +117,7 @@ float3 GustBend(float3 world, float3 origin, float scale, float time)
     }
 
     float2 d = push / amount;
-    return WindRotate(world, origin, float3(d.y, 0.0, -d.x), min(amount, 1.0) * GUST_MAX_BEND);
+    return RotateAbout(world, origin, float3(d.y, 0.0, -d.x), min(amount, 1.0) * GUST_MAX_BEND);
 }
 
 // A tree's trunk leans from a gust as from wind of the same strength.
@@ -130,10 +130,10 @@ float3 TrunkGust(float3 p, TreeWindSettings s, float3 origin, WindFrame frame)
         return p;
     }
 
-    float3 away = WindSafeNormalize(TransformWorldToObjectDir(float3(push.x, 0.0, push.y), false));
+    float3 away = SafeNormalize(TransformWorldToObjectDir(float3(push.x, 0.0, push.y), false));
     float along = max(p.y, 0.0) / max(s.height, 0.01);
     float3 bent = p + away * (amount * s.trunkSway * s.height * along * along);
-    return WindSafeNormalize(bent) * length(p);
+    return SafeNormalize(bent) * length(p);
 }
 
 // Back-and-forth on top of the push, half the turbulence, so the rolling gusts do most of the bending.
@@ -146,11 +146,11 @@ float WindSwing(float time, float phase)
 float3 CardFlutter(float3 p, TreeWindVertex v, TreeWindSettings s, float push, WindFrame frame, float3 origin)
 {
     float3 seed = v.cardPivot + origin;
-    float3 axis = WindSafeNormalize(float3(Random(seed) - 0.5, 0.3, Random(seed.zxy) - 0.5));
+    float3 axis = SafeNormalize(float3(Random(seed) - 0.5, 0.3, Random(seed.zxy) - 0.5));
     float frequency = s.speed * lerp(6.0, 10.0, v.stiffness);
     float wave = sin(frame.time * frequency + Random(seed.yzx) * WIND_TAU);
     float angle = v.flutter * s.cardFlutter * saturate(push * 2.0) * wave;
-    return WindRotate(p, v.cardPivot, axis, angle);
+    return RotateAbout(p, v.cardPivot, axis, angle);
 }
 
 float3 BranchSway(float3 p, TreeWindVertex v, TreeWindSettings s, float3 downwind, WindFrame frame)
@@ -160,8 +160,8 @@ float3 BranchSway(float3 p, TreeWindVertex v, TreeWindSettings s, float3 downwin
     float frequency = s.speed * lerp(1.0, 3.0, v.stiffness);
     float swing = WindSwing(frame.time * frequency, Random(pivotWS) * WIND_TAU) * s.scale;
     float amplitude = s.branchSway * lerp(1.0, 0.5, v.stiffness);
-    float3 axis = WindSafeNormalize(cross(float3(0.0, 1.0, 0.0), downwind));
-    return WindRotate(p, v.branchPivot, axis, v.flex * amplitude * (push + swing));
+    float3 axis = SafeNormalize(cross(float3(0.0, 1.0, 0.0), downwind));
+    return RotateAbout(p, v.branchPivot, axis, v.flex * amplitude * (push + swing));
 }
 
 // Pulls each point back to its distance from the root so the trunk keeps its length.
@@ -171,7 +171,7 @@ float3 TrunkBend(float3 p, TreeWindSettings s, float3 downwind, float push, Wind
     float along = max(p.y, 0.0) / max(s.height, 0.01);
     float3 bent = p + downwind * ((push + swing) * s.trunkSway * s.height * along * along);
     float reach = length(p);
-    return WindSafeNormalize(bent) * reach;
+    return SafeNormalize(bent) * reach;
 }
 
 // Card flutter, branch sway, then trunk bend.
@@ -183,7 +183,7 @@ float3 TreeWindPosition(TreeWindVertex v, TreeWindSettings s, WindFrame frame)
     if (_HyperRTSWindDetail >= 0.5)
     {
         float3 downwindWS = float3(_HyperRTSWindDirection.x, 0.0, _HyperRTSWindDirection.z);
-        float3 downwind = WindSafeNormalize(TransformWorldToObjectDir(downwindWS, false));
+        float3 downwind = SafeNormalize(TransformWorldToObjectDir(downwindWS, false));
         float push = WindPush(origin.xz, frame) * s.scale;
         UNITY_BRANCH
         if (_HyperRTSWindDetail >= 3.0)

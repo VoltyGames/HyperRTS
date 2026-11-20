@@ -1,6 +1,6 @@
 // Selection and hover markers draped on the terrain heightmap: a crisp outline or corner brackets with a soft inner
 // fill, drawn from _Instances by InstanceBuffer.
-Shader "HyperRTS/Ground Marker"
+Shader "HyperRTS/GroundMarker"
 {
     Properties
     {

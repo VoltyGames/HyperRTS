@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Overlays.Markers
 {
-    /// <summary>One ground marker as <c>HyperRTS/Ground Marker</c> reads it.</summary>
+    /// <summary>One ground marker as <c>HyperRTS/GroundMarker</c> reads it.</summary>
     [GenerateHLSL(needAccessors: false)]
     public struct MarkerInstance
     {

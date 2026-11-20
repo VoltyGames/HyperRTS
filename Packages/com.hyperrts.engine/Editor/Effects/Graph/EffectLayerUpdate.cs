@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Effects.Graph
     /// <summary>Writes a layer's Update context: its forces, wander, stored life curves and ground bounce.</summary>
     public sealed class EffectLayerUpdate
     {
-        private const string Includes = EffectLayerParticles.Includes;
+        private const string Blocks = EffectLayerParticles.Blocks;
 
         private readonly GraphModel _graph;
         private readonly EffectLayer _layer;
@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             if (_layer.flipbook.randomStart)
             {
-                var loop = _graph.Hlsl(update, "Loop Frames", Includes + "GraphLoopFrames.hlsl");
+                var loop = _graph.Hlsl(update, "Loop Frames", Blocks + "LoopFrames.hlsl");
                 _graph.Slot(loop, "frames", (float)_layer.flipbook.Frames);
                 _graph.Slot(loop, "span", _layer.flipbook.to - _layer.flipbook.from);
                 LinkDeltaTime(loop, 880f);
@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             if (_layer.ground)
             {
-                var bounce = _graph.Hlsl(update, "Bounce On Ground", Includes + "GraphGroundBounce.hlsl");
+                var bounce = _graph.Hlsl(update, "Bounce On Ground", Blocks + "BounceOnGround.hlsl");
                 _graph.Slot(bounce, "bounce", _layer.bounce);
                 _graph.Slot(bounce, "friction", _layer.friction);
             }
@@ -62,7 +62,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             if (_layer.drag > 0f)
             {
-                var drag = _graph.Hlsl(update, "Slow Down", Includes + "GraphDrag.hlsl");
+                var drag = _graph.Hlsl(update, "Slow Down", Blocks + "SlowDown.hlsl");
                 _graph.Slot(drag, "drag", _layer.drag);
                 _graph.Slot(drag, "bySpeed", _layer.dragBySpeed ? 1f : 0f);
                 LinkDeltaTime(drag, 760f);
@@ -70,14 +70,14 @@ namespace HyperRTS.Editor.Effects.Graph
 
             if (_layer.drift != Vector3.zero)
             {
-                var drift = _graph.Hlsl(update, "Drift At Velocity", Includes + "GraphDrift.hlsl");
+                var drift = _graph.Hlsl(update, "Drift At Velocity", Blocks + "DriftAtVelocity.hlsl");
                 _graph.Slot(drift, "drift", _layer.drift);
                 LinkDeltaTime(drift, 840f);
             }
 
             if (_layer.wind != 0f)
             {
-                var wind = _graph.Hlsl(update, "Drift With Wind", Includes + "GraphWind.hlsl");
+                var wind = _graph.Hlsl(update, "Drift With Wind", Blocks + "DriftWithWind.hlsl");
                 _graph.Slot(wind, "share", _layer.wind);
                 LinkDeltaTime(wind, 800f);
             }
@@ -87,7 +87,7 @@ namespace HyperRTS.Editor.Effects.Graph
         {
             if (_layer.noise.IsSet)
             {
-                var noise = _graph.Hlsl(update, "Stir With Noise", Includes + "GraphNoise.hlsl");
+                var noise = _graph.Hlsl(update, "Stir With Noise", Blocks + "StirWithNoise.hlsl");
                 _graph.Slot(noise, "strength", _layer.noise.strength);
                 _graph.Slot(noise, "frequency", _layer.noise.frequency);
                 _graph.Slot(noise, "scroll", _layer.noise.scroll);
@@ -97,7 +97,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             if (_layer.orbit.min != 0f || _layer.orbit.max != 0f)
             {
-                var orbit = _graph.Hlsl(update, "Orbit Spawn Point", Includes + "GraphOrbit.hlsl");
+                var orbit = _graph.Hlsl(update, "Orbit Spawn Point", Blocks + "OrbitSpawnPoint.hlsl");
                 _graph.Slot(orbit, "rate", new Vector2(_layer.orbit.min, _layer.orbit.max));
                 LinkDeltaTime(orbit, 1000f);
             }

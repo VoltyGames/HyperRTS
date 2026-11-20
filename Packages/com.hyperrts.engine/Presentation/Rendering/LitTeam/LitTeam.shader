@@ -69,7 +69,7 @@ Shader "HyperRTS/LitTeam"
 
         [Header(Emission)]
         [HDR] _EmissionColor("Emission Color", Color) = (0,0,0)
-        _LightsOn("Lights On", Range(0, 1)) = 1
+        _LightLevel("Light Level", Range(0, 1)) = 1
         _EmissionMap("Emission Map", 2D) = "white" {}
 
         [Header(Interior)]

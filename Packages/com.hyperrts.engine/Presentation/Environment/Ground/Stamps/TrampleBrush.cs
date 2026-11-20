@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     /// <summary>Fades the trample maps and draws a frame of stamps into them as instanced quads.</summary>
     public sealed class TrampleBrush : IDisposable
     {
-        public const string ShaderName = "Hidden/HyperRTS/Trample Brush";
+        public const string ShaderName = "Hidden/HyperRTS/TrampleBrush";
 
         /// <summary>Steps an 8-bit channel fades through.</summary>
         public const int Levels = 255;

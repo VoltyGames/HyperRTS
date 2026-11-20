@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
 
             Assert.AreEqual(1f, Lights(meshes[0]));
             Assert.AreEqual(1f, Lights(meshes[1]));
-            Assert.IsFalse(_em.HasComponent<LightsOn>(bare));
+            Assert.IsFalse(_em.HasComponent<LightLevel>(bare));
         }
 
         [Test]
@@ -93,10 +93,10 @@ namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
             Run(1f);
 
             Assert.AreEqual(0f, Lights(meshes[0]));
-            Assert.IsFalse(_em.HasComponent<LightsOn>(siteMesh));
+            Assert.IsFalse(_em.HasComponent<LightLevel>(siteMesh));
         }
 
-        private float Lights(Entity mesh) => _em.GetComponentData<LightsOn>(mesh).Value;
+        private float Lights(Entity mesh) => _em.GetComponentData<LightLevel>(mesh).Value;
 
         private void SetOffline(Entity building, OfflineReason reasons)
         {

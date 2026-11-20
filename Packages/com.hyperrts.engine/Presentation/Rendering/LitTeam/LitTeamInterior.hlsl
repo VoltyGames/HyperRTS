@@ -24,7 +24,7 @@ float2 InteriorRoomPoint(float2 p, float3 ray, half backWall)
 // Room light through the glass, less what Fresnel reflects.
 half3 InteriorEmission(float2 uv, float3 viewDirTS)
 {
-    if (_LightsOn <= 0.0h)
+    if (_LightLevel <= 0.0h)
     {
         return 0.0h;
     }
@@ -41,7 +41,7 @@ half3 InteriorEmission(float2 uv, float3 viewDirTS)
 
     half facing = saturate(viewDirTS.z);
     half fresnel = 0.04h + 0.96h * pow(1.0h - facing, 5.0h);
-    return photo * _EmissionColor.rgb * _LightsOn * (1.0h - fresnel);
+    return photo * _EmissionColor.rgb * _LightLevel * (1.0h - fresnel);
 }
 
 #endif

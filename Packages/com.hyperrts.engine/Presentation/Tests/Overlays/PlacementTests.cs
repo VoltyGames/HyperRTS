@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.Tests.Overlays
             _view = new MatchView();
             _view.Refresh(_world);
             _source = new Material(Shader.Find("HyperRTS/Overlay"));
-            _ghost = new Material(Shader.Find("HyperRTS/Placement Ghost"));
+            _ghost = new Material(Shader.Find("HyperRTS/PlacementGhost"));
             _mesh = new Mesh();
             _style = ScriptableObject.CreateInstance<OverlayStyle>();
             _ghosts = new PlacementGhosts(_ghost);

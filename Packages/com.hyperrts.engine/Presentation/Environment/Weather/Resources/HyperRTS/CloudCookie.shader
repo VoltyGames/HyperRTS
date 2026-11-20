@@ -1,5 +1,5 @@
 // Only CloudShadows.cs draws with this, into the sun's cookie; a Resources shader, so the component loads it.
-Shader "Hidden/HyperRTS/Cloud Cookie"
+Shader "Hidden/HyperRTS/CloudCookie"
 {
     SubShader
     {
