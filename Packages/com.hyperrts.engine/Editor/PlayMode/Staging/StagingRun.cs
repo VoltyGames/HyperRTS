@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Common.Prefabs;
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEditor;
@@ -73,6 +74,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
             var units = FindGroup(name).Alive(World);
             return units.Count > 0 ? units : throw new InvalidOperationException($"group '{name}' has no live units to {verb}");
         }
+
+        /// <summary>The group's live units in a temporary array, for the cheats that take one.</summary>
+        public NativeArray<Entity> LiveUnitArray(string name, string verb) => new(LiveUnits(name, verb).ToArray(), Allocator.Temp);
 
         public float2 GroupCentre(string name) =>
             FindGroup(name).TryGetCentre(World, out var centre) ? centre : throw new InvalidOperationException($"group '{name}' has no live units");

@@ -16,8 +16,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         private MixerStep(Dictionary<string, float> values) => _values = values;
 
-        public override string Kind => "mixer";
-
         public static StagingStep Read(StagingJson step)
         {
             var json = step.Child("mixer");

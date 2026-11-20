@@ -28,8 +28,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
         }
 
-        public override string Kind => "camera";
-
         public override IEnumerable<string> Uses => _on == null ? base.Uses : new[] { _on };
 
         public static StagingStep Read(StagingJson step) => new CameraStep(step.Child("camera"));

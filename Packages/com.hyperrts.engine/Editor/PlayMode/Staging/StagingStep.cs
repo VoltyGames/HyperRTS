@@ -38,7 +38,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
         /// <summary>Seconds of game time after the match is live.</summary>
         public float At { get; private set; }
 
-        public abstract string Kind { get; }
+        /// <summary>The step's key in the file, such as "spawn".</summary>
+        public string Kind { get; private set; }
 
         /// <summary>The group label this step makes, or null.</summary>
         public virtual string Defines => null;
@@ -64,6 +65,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
             var kind = json.Choose(Readers.Keys);
             var step = Readers[kind](json);
+            step.Kind = kind;
             step.Index = index;
             step.At = at;
             return step;

@@ -21,8 +21,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
         }
 
-        public override string Kind => _movie ? "clip" : "frames";
-
         public override string Output => $"{Kind}:{_name}";
 
         public static StagingStep Read(StagingJson step) => new FramesStep(step.Child("frames"), false);

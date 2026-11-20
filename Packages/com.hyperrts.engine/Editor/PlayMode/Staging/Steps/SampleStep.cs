@@ -21,8 +21,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
         }
 
-        public override string Kind => "sample";
-
         public override string Output => $"sample:{_what}";
 
         public override IEnumerable<string> Uses => _what == CameraKey ? base.Uses : new[] { _what };

@@ -17,8 +17,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
         }
 
-        public override string Kind => "speed";
-
         public static StagingStep Read(StagingJson step) => new SpeedStep(step);
 
         public override void Run(StagingRun run)

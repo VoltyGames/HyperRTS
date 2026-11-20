@@ -1,7 +1,5 @@
 using System.Collections.Generic;
 using HyperRTS.Editor.PlayMode.Cheats;
-using Unity.Collections;
-using Unity.Entities;
 
 namespace HyperRTS.Editor.PlayMode.Staging.Steps
 {
@@ -12,15 +10,13 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         private ReadyStep(string units) => _units = units;
 
-        public override string Kind => "ready";
-
         public override IEnumerable<string> Uses => new[] { _units };
 
         public static StagingStep Read(StagingJson step) => new ReadyStep(step.Text("ready"));
 
         public override void Run(StagingRun run)
         {
-            using var listed = new NativeArray<Entity>(run.LiveUnits(_units, "ready").ToArray(), Allocator.Temp);
+            using var listed = run.LiveUnitArray(_units, "ready");
             MatchCheats.ReadyAbilities(run.World, listed);
         }
     }

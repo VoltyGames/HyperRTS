@@ -59,8 +59,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             _target = json.TextOrNull("target");
         }
 
-        public override string Kind => "order";
-
         public override IEnumerable<string> Uses => _target == null ? new[] { _units } : new[] { _units, _target };
 
         public static StagingStep Read(StagingJson step) => new OrderStep(step.Child("order"));

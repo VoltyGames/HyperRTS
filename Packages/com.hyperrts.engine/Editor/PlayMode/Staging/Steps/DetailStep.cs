@@ -32,8 +32,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
         }
 
-        public override string Kind => "detail";
-
         public static StagingStep Read(StagingJson step) => new DetailStep(step.Child("detail"));
 
         public override void Run(StagingRun run)

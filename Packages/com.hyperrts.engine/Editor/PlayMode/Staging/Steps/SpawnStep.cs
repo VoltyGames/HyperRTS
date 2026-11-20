@@ -59,8 +59,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
         }
 
-        public override string Kind => "spawn";
-
         public override string Defines => _group;
 
         public override bool EndsRunOnError => true;
