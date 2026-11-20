@@ -1,4 +1,4 @@
-// URP's screen-space shadows, darkened where a short depth-buffer trace toward the sun hits something (ContactShadowsPass).
+// URP's screen-space shadows, darkened where a short depth-buffer trace toward the sun hits something.
 Shader "Hidden/HyperRTS/ContactShadows"
 {
     SubShader

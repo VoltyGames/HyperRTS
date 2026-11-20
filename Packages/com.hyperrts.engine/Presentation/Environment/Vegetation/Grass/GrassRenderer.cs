@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
+using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
@@ -22,8 +24,10 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         [Tooltip("The baked plants this map grows.")]
         public GrassField field;
 
-        [Tooltip("The Hidden/HyperRTS/FoliageGrass shader each plant's material is copied onto.")]
-        public Shader shader;
+        private static readonly int StencilBits = Shader.PropertyToID("_StencilBits");
+
+        // Keeps LitTeam's silhouette off units standing in grass; see LitTeam.shader's second silhouette pass.
+        private const float GroundCoverStencil = 64f;
 
         private GrassComputeInputs _kernels;
         private Material[] _materials;
@@ -52,8 +56,11 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         private Material Instanced(GrassPlant plant)
         {
+            var shader = EngineShaders.Get().Foliage;
             var material = new Material(shader) { name = $"{plant.name} (Grass)", hideFlags = HideFlags.DontSave };
             material.CopyPropertiesFromMaterial(plant.material);
+            material.EnableKeyword(new LocalKeyword(shader, "_GRASS_INSTANCES"));
+            material.SetFloat(StencilBits, GroundCoverStencil);
             return material;
         }
 
@@ -69,8 +76,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         }
 
 #if UNITY_EDITOR
-        private protected override bool ReferencesStale() => shader == null;
-
         private protected override bool Stale(List<GrassBatch> batches) => batches[0].Stale();
 #endif
 
@@ -107,11 +112,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             else
             {
                 problems.AddRange(field.Problems());
-            }
-
-            if (shader == null)
-            {
-                problems.Add($"{nameof(shader)} is missing");
             }
         }
     }

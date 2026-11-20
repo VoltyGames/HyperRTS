@@ -6,7 +6,8 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/WorldRect.hlsl"
 
 // The tracks alpha is the ground's level: HYPERRTS_GROUND_LEVEL_BIAS is untouched ground, above it the ground sank
-// and below it a rim lifted it, HYPERRTS_GROUND_RANGE metres across 0 to 1. Match TrampleStamps.GroundLevelBias and GroundRange.
+// and below it a rim lifted it, HYPERRTS_GROUND_RANGE metres across 0 to 1. Match TrampleStamps.GroundLevelBias
+// and GroundRange.
 #define HYPERRTS_GROUND_RANGE 10.0
 #define HYPERRTS_GROUND_LEVEL_BIAS (40.0 / 255.0)
 

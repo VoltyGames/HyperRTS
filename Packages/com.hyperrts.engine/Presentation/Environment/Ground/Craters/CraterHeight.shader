@@ -1,4 +1,4 @@
-// Only CraterTerrain.cs draws with this, into a region of the terrain heightmap; a Resources shader, so systems load it.
+// Only CraterTerrain.cs draws with this, into a region of the terrain heightmap; loaded from Resources.
 Shader "Hidden/HyperRTS/CraterHeight"
 {
     SubShader

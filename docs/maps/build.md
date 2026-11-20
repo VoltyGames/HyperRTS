@@ -54,7 +54,7 @@ meet the crisper one wins, and the wander turns with the symmetry.
 
 **Grass** is drawn by `GrassRenderer`, not terrain details. `Grass.compute` scatters each visible tile's plants on a
 world-anchored lattice, so plants never swim as the camera moves, and draws them with `Graphics.RenderMeshIndirect`
-on the `Hidden/HyperRTS/FoliageGrass` shader, so wind and trampling work as on any Foliage plant. Grass and row crops
+on the `HyperRTS/Foliage` shader with `_GRASS_INSTANCES`, so wind and trampling work as on any Foliage plant. Grass and row crops
 share one scatter host: see [row crops](../presentation/vegetation.md#row-crops).
 
 **Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height. Layers are hex-tiled and randomly

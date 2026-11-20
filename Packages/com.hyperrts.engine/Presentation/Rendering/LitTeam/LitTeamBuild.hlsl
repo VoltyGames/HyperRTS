@@ -1,12 +1,11 @@
-// HyperRTS/LitTeam piece-by-piece construction. With _BUILD on, UV3 holds each vertex's piece: x its build order (0
-// first, 1 last), y 1 where the mesh has build data. Pieces _BuildProgress hasn't reached collapse to the object origin
-// with one normal, so their triangles have no area in any pass and nothing is clipped.
+// Construction reveal: pieces not yet reached by _BuildProgress collapse to the object origin, so they draw nothing
+// in any pass.
 #ifndef HYPERRTS_LIT_TEAM_BUILD_INCLUDED
 #define HYPERRTS_LIT_TEAM_BUILD_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
 
-// Passes take UV3 as a separate input: no URP Attributes struct uses TEXCOORD3.
+// Passes take UV3 as a separate input because no URP Attributes struct uses TEXCOORD3.
 #ifdef _BUILD
 #define BUILD_ORDER_INPUT , float2 buildOrder : TEXCOORD3
 #else
@@ -17,7 +16,6 @@
 // much progress, so a one-piece wall panel can be lowered across the build where a hall's pieces drop in quickly.
 float BuildPieceDrop(float order, float progress)
 {
-    // Turns end one slice early so the last piece lands exactly at 1.
     float reach = order * (1.0 - _BuildDropSlice);
     if (progress < reach)
     {

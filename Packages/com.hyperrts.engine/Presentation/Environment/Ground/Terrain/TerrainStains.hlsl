@@ -1,5 +1,5 @@
 // HyperRTS/Terrain stains: the rubble, ash, fuel and wet mud a match leaves (_HyperRTSStains), over the layered
-// ground or a road. Rubble, ash and mud are tiled textures (albedo, normal, mask map with G occlusion and A smoothness).
+// ground or a road. Rubble, ash and mud are tiled textures (albedo, normal, mask with G occlusion, A smoothness).
 // The includer declares _NoiseMap and the _Stain* tiles, smoothnesses and _StainCharColor.
 #ifndef HYPERRTS_TERRAIN_STAINS_INCLUDED
 #define HYPERRTS_TERRAIN_STAINS_INCLUDED
@@ -39,7 +39,8 @@ TEXTURE2D(_StainMudAlbedo);
 TEXTURE2D(_StainMudNormal);
 TEXTURE2D(_StainMudMask);
 
-// Any turn and any slide per hex cell, so a burnt field's ash never shows its tile. Mud and rubble stay in small patches.
+// Any turn and any slide per hex cell, so a burnt field's ash never shows its tile. Mud and rubble stay in small
+// patches.
 #define STAIN_HEX float4(1.0, 1.0, 0.0, 0.0)
 
 void MixStain(inout TerrainSurface surface, half cover, half smoothness, half3 albedo, half3 normal, half4 mask)
@@ -50,7 +51,7 @@ void MixStain(inout TerrainSurface surface, half cover, half smoothness, half3 a
     surface.occlusion *= lerp(1.0, mask.g, cover);
 }
 
-// Explicit gradients: it runs inside the stain branches. One plain sample per texture.
+// Explicit gradients (texture detail level), as it runs inside a branch. One plain sample per texture.
 void BlendStain(inout TerrainSurface surface, TerrainPixel pixel, half cover, float tile, half smoothness,
     TEXTURE2D_PARAM(albedoMap, albedoSampler), TEXTURE2D_PARAM(normalMap, normalSampler),
     TEXTURE2D_PARAM(maskMap, maskSampler))

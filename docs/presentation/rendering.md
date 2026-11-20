@@ -130,6 +130,22 @@ show (see model copies above). `SectionViewSystem` shows each section in one of 
 Instances built on the CPU each frame (overlays, health bars, ground markers, birds) go through `InstanceBuffer<T>`, a
 structured buffer the shader reads as `_Instances[SV_InstanceID]`.
 
+**Terms.** The words the shader files use, in plain terms:
+
+| Term | Meaning |
+| --- | --- |
+| Pass | One way a shader draws a mesh. URP runs a mesh's passes at different points of the frame: its shadow, its depth, its colour (`UniversalForward`), its motion |
+| Keyword | A switch compiled into the shader, such as `_BONES`. Each combination of keywords is a separate compiled variant, so every new keyword doubles the variants that use it |
+| `UnityPerMaterial` | The block of material values (colours, tiling, strengths). Every pass of a shader must declare the same block, or URP's SRP Batcher stops batching its draws |
+| DOTS instancing | Values Entities Graphics writes per entity (team colour, build progress) instead of per material, through a `[MaterialProperty]` component |
+| Depth and depth-normals | Prepasses that write each pixel's distance and facing. SSAO, contact shadows, screen-space reflections and soft particles read them |
+| Motion vectors | How far each pixel moved since the last frame. DLSS, FSR and TAA rebuild the image from them, so anything that moves its vertices must report it |
+| VAT | Vertex animation textures: an animation baked into a texture, a row per frame, that the shader plays. Bones skin infantry; rigid VAT moves building pieces |
+| Six-way lighting | Smoke flipbooks baked lit from six sides; the shader blends them by where the light comes from, so smoke looks lit with no normals |
+| Triplanar | A texture projected from three sides and blended by the surface's facing, so steep slopes don't stretch |
+| Hex tiling | A tiled texture sampled in hexagonal cells, each turned and shifted, so the repeat never shows |
+| Stencil | A per-pixel mark a pass can write and a later pass test, such as "a unit's visible pixel" for silhouettes |
+
 **Conventions.**
 
 - Every hand-written shader and compute shader compiles with DXC: `#pragma use_dxc` beside `#pragma target`. Shader Graphs

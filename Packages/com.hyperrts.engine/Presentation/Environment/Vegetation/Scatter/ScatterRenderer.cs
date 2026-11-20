@@ -69,9 +69,6 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         private protected abstract void AddProblems(List<string> problems);
 
 #if UNITY_EDITOR
-        /// <summary>Whether the subclass's own references went missing while the scene stayed open.</summary>
-        private protected virtual bool ReferencesStale() => false;
-
         /// <summary>Whether a map rebuild changed what a camera's batches draw.</summary>
         private protected abstract bool Stale(List<TBatch> batches);
 #endif
@@ -135,7 +132,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter
         // Catches a map rebuild that reshaped the baked data or its models while the scene stayed open.
         private bool Stale()
         {
-            if (compute == null || terrain == null || Field == null || ReferencesStale())
+            if (compute == null || terrain == null || Field == null)
             {
                 return true;
             }

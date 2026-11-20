@@ -1,4 +1,5 @@
-// Flipbook frames moved along a motion map, so a cross-fade follows the smoke instead of ghosting. Needs URP Core.hlsl first.
+// Flipbook frames moved along a motion map, so a cross-fade follows the smoke instead of ghosting. Needs URP
+// Core.hlsl first.
 #ifndef HYPERRTS_FLIPBOOK_MOTION_INCLUDED
 #define HYPERRTS_FLIPBOOK_MOTION_INCLUDED
 

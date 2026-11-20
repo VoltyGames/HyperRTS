@@ -1,5 +1,5 @@
-// HyperRTS/LitTeam unit silhouette passes, drawn by two URP Render Objects features after the opaques: the mask pass
-// marks the unit's visible pixels in the stencil, then the silhouette pass paints the team colour where it is hidden.
+// Silhouettes of units hidden behind other things, drawn by two URP Render Objects features: the mask pass marks
+// visible pixels in the stencil, then the silhouette pass paints the team colour where the unit is hidden.
 #ifndef HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 #define HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 
@@ -46,7 +46,8 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     output.positionCS = vertexInput.positionCS;
     output.positionWS = vertexInput.positionWS;
 #ifdef SILHOUETTE_SLACK_ON
-    // The silhouette pass alone: drawn nearer the camera, so only parts hidden by more than the slack pass ZTest Greater.
+    // The silhouette pass alone: drawn nearer the camera, so only parts hidden by more than the slack pass the
+    // ZTest Greater depth test.
     output.positionCS = TransformWorldToHClip(vertexInput.positionWS + GetWorldSpaceNormalizeViewDir(vertexInput.positionWS) * SILHOUETTE_SLACK);
 #endif
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);

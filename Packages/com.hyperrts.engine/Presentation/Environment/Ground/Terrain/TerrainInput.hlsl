@@ -5,7 +5,8 @@
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
-// TerrainDetail's keywords: Low is _TERRAIN_SIMPLE, Medium _TERRAIN_NO_FAR, High _TERRAIN_NO_PARALLAX, Ultra none.
+// TerrainDetail's keywords (compile-time switches): Low is _TERRAIN_SIMPLE, Medium _TERRAIN_NO_FAR,
+// High _TERRAIN_NO_PARALLAX, Ultra none.
 #if !defined(_TERRAIN_SIMPLE) && !defined(_TERRAIN_NO_FAR)
     #define TERRAIN_FAR_SAMPLE
     #define TERRAIN_MICRO
@@ -61,19 +62,20 @@ CBUFFER_START(_Terrain)
     #endif
 CBUFFER_END
 
-TEXTURE2D_ARRAY(_AlbedoArray);
+// Map tools build these. Each array has one slice per layer.
+TEXTURE2D_ARRAY(_AlbedoArray); // RGB albedo (sRGB), A height (linear, stretched to 0..1 per layer)
 SAMPLER(sampler_AlbedoArray);
-TEXTURE2D_ARRAY(_NormalArray);
-TEXTURE2D_ARRAY(_MaskArray);
-TEXTURE2D(_LayerParams);
-TEXTURE2D(_Control0);
+TEXTURE2D_ARRAY(_NormalArray); // u east, v north, before the layer's rotation
+TEXTURE2D_ARRAY(_MaskArray);   // R occlusion, G smoothness (linear)
+TEXTURE2D(_LayerParams);       // 16 x 5 floats, point-sampled, one column per layer: see TerrainLayerParams.hlsl
+TEXTURE2D(_Control0);          // _Control0..3 are the alphamaps, four layers' weights each
 TEXTURE2D(_Control1);
 TEXTURE2D(_Control2);
 TEXTURE2D(_Control3);
-TEXTURE2D(_GroundTintMap);
-TEXTURE2D(_RowMap);
+TEXTURE2D(_GroundTintMap); // over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness of damp hollows
+TEXTURE2D(_RowMap);        // linear, bilinear: RG crop row direction (x east, y north) as 0..1, (0.5, 0.5) off fields
 TEXTURE2D(_NoiseMap);
-TEXTURE2D(_MicroMap);
+TEXTURE2D(_MicroMap);      // tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
 TEXTURE2D(_TerrainHolesTexture);
 SAMPLER(sampler_TerrainHolesTexture);
 

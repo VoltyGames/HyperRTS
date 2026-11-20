@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Vegetation
             _mesh = new Mesh();
             _mesh.SetVertices(new[] { Vector3.zero, Vector3.up * 0.8f, Vector3.right });
             _mesh.SetTriangles(new[] { 0, 1, 2 }, 0);
-            _material = new Material(Shader.Find("Hidden/HyperRTS/FoliageGrass"));
+            _material = new Material(Shader.Find("HyperRTS/Foliage"));
             _coverage = new Texture2DArray(4, 4, 2, TextureFormat.R8, false, true);
             _field = ScriptableObject.CreateInstance<GrassField>();
             _field.coverage = _coverage;

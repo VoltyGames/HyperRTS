@@ -1,5 +1,5 @@
-// HyperRTS/Terrain triplanar sides for the slope layer: world x and z projections on steep ground, so ravine walls
-// keep their texel size instead of stretching downhill. Normals use Golus's whiteout blend with flipped sides.
+// HyperRTS/Terrain triplanar sides for the slope layer: extra world x and z projections on steep ground, so ravine
+// walls keep their texel size instead of stretching downhill. Normals use Golus's whiteout blend with flipped sides.
 #ifndef HYPERRTS_TERRAIN_TRIPLANAR_INCLUDED
 #define HYPERRTS_TERRAIN_TRIPLANAR_INCLUDED
 

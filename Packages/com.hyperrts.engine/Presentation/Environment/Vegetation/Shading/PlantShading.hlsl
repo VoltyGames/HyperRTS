@@ -1,6 +1,5 @@
 // Shading shared by HyperRTS/Foliage and HyperRTS/RowCrop: PlantLighting.hlsl's light on a textured plant whose root
-// fades into the ground. Include after the shader's input file, which declares _BaseMap, the UnityPerMaterial shading
-// properties, PLANT_WRAP and PLANT_TWO_SIDED; its pass file places the vertices.
+// fades into the ground. Include after the shader's input file; its pass file places the vertices.
 #ifndef HYPERRTS_PLANT_SHADING_INCLUDED
 #define HYPERRTS_PLANT_SHADING_INCLUDED
 

@@ -1,6 +1,5 @@
-// HyperRTS/LitTeam surface: URP Lit's InitializeStandardLitSurfaceData (LitInput.hlsl declares it beside Lit's own
-// properties, so it can't be included) without URP's detail maps or the specular workflow, and the team
-// tint. Included by LitTeamInput.hlsl after its accessors.
+// Surface setup: URP Lit's InitializeStandardLitSurfaceData without detail maps or specular workflow, plus the team
+// tint. Included by LitTeamInput.hlsl.
 #ifndef HYPERRTS_LIT_TEAM_SURFACE_INCLUDED
 #define HYPERRTS_LIT_TEAM_SURFACE_INCLUDED
 
@@ -21,7 +20,6 @@ inline void InitializeStandardLitSurfaceData(float2 uv, out SurfaceData outSurfa
 #endif
 }
 
-// Half the soft edge of the team strip band, in metres.
 #define TEAM_STRIP_SOFTNESS 0.025
 
 // Where team colour goes: the mask's R inside the band of object-space heights _TeamStrip.x..y.

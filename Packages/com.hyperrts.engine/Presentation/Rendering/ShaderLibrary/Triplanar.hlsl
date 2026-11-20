@@ -1,4 +1,4 @@
-// Triplanar projection weights and side projections shared by the shaders that project textures from three sides.
+// Triplanar projection: texturing a mesh from its x, y and z sides, blended by the surface normal, so it needs no UVs.
 #ifndef HYPERRTS_TRIPLANAR_INCLUDED
 #define HYPERRTS_TRIPLANAR_INCLUDED
 

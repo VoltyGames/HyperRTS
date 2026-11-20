@@ -1,10 +1,10 @@
-// HyperRTS/LitTeam's URP passes with posed, built and deformed vertices (LitTeamDeform.hlsl). Include after the pass file.
+// URP's passes with posed, built and deformed vertices (LitTeamDeform.hlsl). Include after the pass file.
 #ifndef HYPERRTS_LIT_TEAM_PASSES_INCLUDED
 #define HYPERRTS_LIT_TEAM_PASSES_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDeform.hlsl"
 
-// The forward pass reads UV1 as URP's static lightmap UV, which rigid VAT and bone renderers never use; other passes take it apart.
+// The forward pass reads UV1 as the lightmap UV, which animated meshes never use; other passes take it apart.
 #if defined(UNIVERSAL_FORWARD_LIT_PASS_INCLUDED)
     #define DISPLACED_LIT_INPUTS BONE_INPUT BUILD_ORDER_INPUT
     #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(input.staticLightmapUV, positionOS, normalOS)

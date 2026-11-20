@@ -1,5 +1,5 @@
-// HyperRTS/LitTeam interiors: each window's UVs fill one cell of a room-photo atlas, and the view ray is traced into a
-// box room behind the glass and projected back into the photo. Emission alpha holds the photo's back-wall share.
+// Window interiors: each window shows a room from a photo atlas, found by tracing the view ray into a box room behind
+// the glass.
 #ifndef HYPERRTS_LIT_TEAM_INTERIOR_INCLUDED
 #define HYPERRTS_LIT_TEAM_INTERIOR_INCLUDED
 

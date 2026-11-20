@@ -1,4 +1,4 @@
-// Include after URP's Core.hlsl.
+// Reads the trample maps (ruts, craters, scorch, stains) for ground, water and plants. Include after URP's Core.hlsl.
 #ifndef HYPERRTS_TRAMPLE_INCLUDED
 #define HYPERRTS_TRAMPLE_INCLUDED
 

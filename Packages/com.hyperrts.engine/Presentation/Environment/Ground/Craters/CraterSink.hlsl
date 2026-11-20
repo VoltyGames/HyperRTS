@@ -13,7 +13,7 @@ Texture2D<float> _HyperRTSUndentedHeights;
 float4 _HyperRTSUndentedArea;
 float4 _HyperRTSUndentedScale;
 
-// Metres the drawn ground sank at positionXZ, negative on a rim; none off the maps, where CraterTerrainSystem dents nothing.
+// Metres the drawn ground sank at positionXZ, negative on a rim; zero off the maps.
 float CraterDepth(float2 positionXZ)
 {
     float2 uv = TrampleUV(positionXZ);
@@ -47,7 +47,8 @@ float UndentedGroundHeight(float2 positionXZ)
     return ground;
 }
 
-// The whole object drops by the depth at its origin (rises on a rim), so it keeps its shape; raised objects move less or not at all.
+// The whole object drops by the depth at its origin (rises on a rim), so it keeps its shape; raised objects move
+// less or not at all.
 float CraterSink(float3 originWS)
 {
     float above = originWS.y - UndentedGroundHeight(originWS.xz);

@@ -1,9 +1,5 @@
-// HyperRTS/LitTeam bone animation. With _BONES on, each vertex is skinned by up to four bones. _BoneTex holds a row per
-// frame and three texels per bone, the 3x4 skinning matrix (pose times inverse bind) in object space. Bone 0 is the
-// root (the hips). A negative weight marks an upper-body bone, which plays _UpperClip and is stored relative to its
-// frame's root, so it rides on the root of _LowerClip, which the rest play. A clip switch blends from the frozen pose
-// in _LowerFade or _UpperFade over _BoneFadeTime. With DOTS instancing, _PoseSlot 0 or above draws a live pose (a ragdoll)
-// instead: every bone's skinning matrix, absolute in object space, from that slot of the global _PoseSlots buffer.
+// Skeletal animation for units: each vertex follows up to four bones read from a bone texture (_BoneTex).
+// Upper-body bones (negative weight) play their own clip over the lower body's; _PoseSlot picks a live ragdoll pose.
 #ifndef HYPERRTS_LIT_TEAM_BONES_INCLUDED
 #define HYPERRTS_LIT_TEAM_BONES_INCLUDED
 

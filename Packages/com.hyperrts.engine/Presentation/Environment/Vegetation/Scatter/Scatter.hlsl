@@ -1,6 +1,6 @@
-// Jobs, seeded hashes and noise, band edges, terrain height and the slot layout and counting shared by RowCrops.compute and
-// Grass.compute. The hashes and noise match ScatterHash.cs, the band edges ScatterBands.cs; ScatterDraws.cs binds the
-// jobs, counters and args and ScatterSlots.cs the slots.
+// Shared by RowCrops.compute and Grass.compute: jobs (a visible tile of one plant to fill), seeded hashes and noise,
+// distance bands, terrain height, and slots (one output range per plant model). Hashes and noise match ScatterHash.cs,
+// band edges ScatterBands.cs, slots ScatterSlots.cs.
 #ifndef HYPERRTS_SCATTER_INCLUDED
 #define HYPERRTS_SCATTER_INCLUDED
 
@@ -54,6 +54,19 @@ float Noise(int seed, uint salt, float2 p)
 float BandRange(float range, float pick)
 {
     return range * (1.0 + (pick - 0.5) * BAND_EDGE_WIDTH);
+}
+
+// The job this thread works on; false for threads past its last cell.
+bool JobAt(uint3 id, out ScatterJob job)
+{
+    job = _Jobs[id.z];
+    return id.x < (uint)(job.count.x * job.count.y);
+}
+
+// The lattice cell a job's thread index lands on, row by row.
+int2 JobCell(ScatterJob job, uint index)
+{
+    return job.first + int2(index % (uint)job.count.x, index / (uint)job.count.x);
 }
 
 // Each spot belongs to one tile, so plants on a tile edge aren't grown twice.

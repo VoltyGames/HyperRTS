@@ -1,5 +1,6 @@
-// HyperRTS/Terrain crater ground: the earth a blast dug up, over the bowls it dented in the tracks map. Projected from three sides, so a steep bowl wall keeps its texel size. The includer declares the
-// _StainCrater* textures' tile and smoothness with the other _Stain* fields.
+// HyperRTS/Terrain crater ground: the earth a blast dug up, over the bowls it dented in the tracks map. Projected from
+// three sides (triplanar), so a steep bowl wall keeps its texel size. The includer declares the _StainCrater*
+// textures' tile and smoothness with the other _Stain* fields.
 #ifndef HYPERRTS_TERRAIN_CRATER_GROUND_INCLUDED
 #define HYPERRTS_TERRAIN_CRATER_GROUND_INCLUDED
 

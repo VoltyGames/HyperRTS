@@ -1,6 +1,5 @@
-// Scatters grass and small plants for GrassBatch: Scatter runs one thread per lattice cell of a job, a visible tile
-// of one plant, dispatched as (cells / 64, 1, jobs); Count then writes the draw args and clears the counters.
-// The lattice matches ScatterJob.Square and the thinning GrassBands.cs.
+// Grows grass and small plants for GrassBatch. Scatter places one plant per grid cell (lattice) of each job, a visible
+// tile of one plant; Count then writes the draw args, clears the counters. Matches ScatterJob.Square, GrassBands.cs.
 #pragma kernel Scatter
 #pragma kernel Count
 #pragma use_dxc
@@ -77,7 +76,7 @@ float2 Lean(uint hash, float2 xz)
     float dx = GroundHeight(xz + float2(NORMAL_STEP, 0.0)) - GroundHeight(xz - float2(NORMAL_STEP, 0.0));
     float dz = GroundHeight(xz + float2(0.0, NORMAL_STEP)) - GroundHeight(xz - float2(0.0, NORMAL_STEP));
     float3 normal = normalize(float3(-dx, 2.0 * NORMAL_STEP, -dz));
-    float heading = Channel(hash, CHANNEL_LEAN_TURN) * 6.2831853;
+    float heading = Channel(hash, CHANNEL_LEAN_TURN) * TWO_PI;
     return normal.xz * GROUND_ALIGN + float2(cos(heading), sin(heading)) * MAX_LEAN * Channel(hash, CHANNEL_LEAN);
 }
 
@@ -113,27 +112,17 @@ float Keep(float range, float distance)
     return lerp(1.0, _Thinning.y, saturate((range - start) / max(distance - start, 0.001)));
 }
 
-// Plants past the slot's capacity are dropped and Count clamps the draw to it.
-void Store(uint slot, GrassInstance grown)
-{
-    uint index;
-    if (Claim(slot, index))
-    {
-        _Instances[index] = grown;
-    }
-}
-
 [numthreads(64, 1, 1)]
 void Scatter(uint3 id : SV_DispatchThreadID)
 {
-    ScatterJob job = _Jobs[id.z];
-    if (id.x >= (uint)(job.count.x * job.count.y))
+    ScatterJob job;
+    if (!JobAt(id, job))
     {
         return;
     }
 
     GrassPlantGpu plant = _Plants[job.id];
-    int2 cell = job.first + int2(id.x % (uint)job.count.x, id.x / (uint)job.count.x);
+    int2 cell = JobCell(job, id.x);
     uint hash = Hash(plant.seed, cell.x, cell.y);
     float2 xz = (cell + float2(Channel(hash, CHANNEL_X), Channel(hash, CHANNEL_Z))) * plant.spacing;
     if (!Owns(job.tileMin, xz) || Channel(hash, CHANNEL_DENSITY) >= _Shaping.x)
@@ -174,14 +163,19 @@ void Scatter(uint3 id : SV_DispatchThreadID)
     grown.position = position;
     grown.width = lerp(plant.width.x, plant.width.y, size) * scale;
     grown.height = lerp(plant.height.x, plant.height.y, lerp(size, Channel(hash, CHANNEL_ASPECT), 0.35)) * scale;
-    grown.yaw = Channel(hash, CHANNEL_YAW) * 6.2831853;
+    grown.yaw = Channel(hash, CHANNEL_YAW) * TWO_PI;
     grown.lean = Lean(hash, xz);
     grown.ground = GroundPatch(xz);
     grown.shade = Channel(hash, CHANNEL_SHADE);
     uint variants = (uint)plant.variants;
     uint variant = min((uint)(Channel(hash, CHANNEL_VARIANT) * variants), variants - 1u);
     uint band = BandRange(range, Channel(hash, CHANNEL_BAND)) < _Shaping.y ? 0u : 1u;
-    Store((uint)plant.firstSlot + variant * BANDS + band, grown);
+    // Plants past the slot's capacity are dropped and Count clamps the draw to it.
+    uint index;
+    if (Claim((uint)plant.firstSlot + variant * BANDS + band, index))
+    {
+        _Instances[index] = grown;
+    }
 }
 
 [numthreads(1, 1, 1)]

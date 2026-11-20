@@ -1,5 +1,5 @@
-// Six-way light map sampling and shading from the sun, clustered lights and the ambient probe, for the effect graph
-// output. Needs URP Lighting.hlsl, SceneLighting.hlsl and SceneFog.hlsl first.
+// Six-way lighting: shades the six baked light maps from the sun, clustered lights and the ambient probe. Needs URP
+// Lighting.hlsl, SceneLighting.hlsl and SceneFog.hlsl first.
 #ifndef HYPERRTS_SIX_WAY_LIGHTING_INCLUDED
 #define HYPERRTS_SIX_WAY_LIGHTING_INCLUDED
 

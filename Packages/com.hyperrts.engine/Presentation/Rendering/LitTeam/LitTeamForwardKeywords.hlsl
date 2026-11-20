@@ -1,5 +1,4 @@
-// HyperRTS/LitTeam ForwardLit keywords: material features, fog on transparents, lighting, LOD cross-fade and
-// instancing. No lightmaps: maps bake none, and Surface Cache GI lights units.
+// Keywords (shader feature switches) for the forward pass. No lightmaps: Surface Cache GI lights units.
 #pragma shader_feature_local _NORMALMAP
 #pragma shader_feature_local_fragment _ALPHATEST_ON
 #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT

@@ -3,7 +3,7 @@ using UnityEngine.Rendering;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 {
-    /// <summary>One scattered plant, written by Grass.compute and drawn by <c>Hidden/HyperRTS/FoliageGrass</c>.</summary>
+    /// <summary>One scattered plant, written by Grass.compute and drawn by <c>HyperRTS/Foliage</c> with <c>_GRASS_INSTANCES</c>.</summary>
     [GenerateHLSL(needAccessors: false)]
     public struct GrassInstance
     {

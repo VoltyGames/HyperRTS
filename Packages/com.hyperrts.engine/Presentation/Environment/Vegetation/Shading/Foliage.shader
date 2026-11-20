@@ -1,5 +1,6 @@
 // Alpha-cut vegetation: two-sided wrap lighting with translucency and wind (Wind.hlsl).
 // Tree Wind reads the mesh's tree wind data. Without it plants sway with height and lean where trampled.
+// _GRASS_INSTANCES, set by GrassRenderer on its runtime copies, draws Grass.compute's instances instead of a mesh.
 Shader "HyperRTS/Foliage"
 {
     Properties
@@ -29,6 +30,7 @@ Shader "HyperRTS/Foliage"
         _ScreenOcclusion ("Screen Occlusion", Range(0, 1)) = 1
         [Enum(Off, 0, Grass, 1, Crop, 2)] _Trample ("Trample (Tree Wind off)", Float) = 1
         _MipBias ("Texture Mip Bias (negative sharpens)", Range(-1, 0)) = 0
+        [HideInInspector] _StencilBits ("Stencil Bits Written (grass: ground cover)", Float) = 0
     }
 
     SubShader
@@ -53,10 +55,20 @@ Shader "HyperRTS/Foliage"
             Name "Foliage"
             Tags { "LightMode" = "UniversalForward" }
 
+            // Grass sets bit 64 so units standing in it get no LitTeam silhouette through it; 0 writes nothing.
+            Stencil
+            {
+                Ref [_StencilBits]
+                WriteMask [_StencilBits]
+                Comp Always
+                Pass Replace
+            }
+
             HLSLPROGRAM
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
             #pragma shader_feature_local _TREE_WIND
+            #pragma multi_compile_local _ _GRASS_INSTANCES
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/SimpleLightingKeywords.hlsl"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
@@ -76,6 +88,7 @@ Shader "HyperRTS/Foliage"
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
             #pragma shader_feature_local _TREE_WIND
+            #pragma multi_compile_local _ _GRASS_INSTANCES
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
@@ -95,6 +108,7 @@ Shader "HyperRTS/Foliage"
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
             #pragma shader_feature_local _TREE_WIND
+            #pragma multi_compile_local _ _GRASS_INSTANCES
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
@@ -112,6 +126,7 @@ Shader "HyperRTS/Foliage"
             #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
             #pragma shader_feature_local _TREE_WIND
+            #pragma multi_compile_local _ _GRASS_INSTANCES
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
@@ -130,6 +145,7 @@ Shader "HyperRTS/Foliage"
             #pragma vertex MotionVert
             #pragma fragment MotionFrag
             #pragma shader_feature_local _TREE_WIND
+            #pragma multi_compile_local _ _GRASS_INSTANCES
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"

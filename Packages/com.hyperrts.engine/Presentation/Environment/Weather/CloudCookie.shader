@@ -67,7 +67,8 @@ Shader "Hidden/HyperRTS/CloudCookie"
                 return mul(_CookieWorldToLight, float4(positionWS, 1.0)).xy;
             }
 
-            // Four copies per column, shifted a whole cookie toward its middle, so a quad over the wrap edge draws on both sides.
+            // Four copies per column, shifted a whole cookie toward its middle, so a quad over the wrap edge draws on
+            // both sides.
             SmokeVaryings SmokeVertex(uint vertexID : SV_VertexID, uint instanceID : SV_InstanceID)
             {
                 uint column = instanceID >> 2;

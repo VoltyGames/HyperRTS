@@ -1,5 +1,5 @@
-// URP Lit (minus GBuffer, so Forward or Forward+; opaque, alpha tested or glass, metallic workflow, no UV-mapped detail
-// maps or parallax) with the albedo repainted in _TeamColor.
+// Units and buildings: URP Lit with the albedo repainted in the owner's colour, plus build-up, grime and animation.
+// Forward or Forward+ only (no GBuffer).
 Shader "HyperRTS/LitTeam"
 {
     Properties
@@ -196,7 +196,7 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // A Render Objects feature: marks stencil bit 128 where the unit itself is visible.
+        // Render Objects pass: marks stencil bit 128 (a per-pixel flag) where the unit itself is visible.
         Pass
         {
             Name "UnitMask"
@@ -219,8 +219,8 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // A second Render Objects feature: team colour where something hides the unit, skipping FoliageGrass's ground
-        // cover (bit 64). Inverting the clear bit 128 sets it, so each pixel blends once.
+        // Render Objects pass: team colour where something hides the unit, skipping the grass ground cover (bit 64).
+        // Inverting the clear bit 128 sets it, so each pixel blends once.
         Pass
         {
             Name "UnitSilhouette"
@@ -244,7 +244,7 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // Surface Cache GI and lightmap baking only.
+        // Used only for GI and lightmap baking.
         Pass
         {
             Name "Meta"

@@ -1,5 +1,5 @@
-// HyperRTS/Terrain layer blending: an online softmax over log(weight) + height / depth, so the tallest texels win
-// where layers mix without knowing every layer's height up front.
+// HyperRTS/Terrain layer blending: a running softmax (weights normalised as layers are added) over
+// log(weight) + height / depth, so the tallest texels win where layers mix.
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
@@ -63,7 +63,7 @@ void FadeBlend(inout TerrainBlend blend, float keep)
 void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pixel)
 {
     TerrainLayerParams params = LoadLayerParams(layer, pixel.rowTurn);
-    // Explicit gradients: hex cells jump at their edges and layers are sampled inside branches.
+    // Explicit gradients (texture detail level): hex cells jump at their edges and layers are sampled inside branches.
     float2 st = RotateAndTile(pixel.xz, params);
     float2 dx = RotateAndTile(pixel.dx, params);
     float2 dy = RotateAndTile(pixel.dy, params);

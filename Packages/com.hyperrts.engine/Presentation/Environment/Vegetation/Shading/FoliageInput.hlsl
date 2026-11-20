@@ -41,6 +41,9 @@ CBUFFER_END
 // PlantShading.hlsl: modelled leaves light the side in view; cards and canopies light both sides alike.
 #define PLANT_TWO_SIDED _TwoSidedLeaves
 #define PLANT_WRAP _Wrap
+#if defined(_GRASS_INSTANCES)
+    #define PLANT_VERTEX_LIGHTS 1 // a sward is many small quads: light them per vertex
+#endif
 
 #if defined(_GRASS_INSTANCES)
     #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/GrassInstance.cs.hlsl"
@@ -75,7 +78,8 @@ struct Attributes
     float2 uv4 : TEXCOORD4;
 #endif
     half4 color : COLOR;
-#if defined(_GRASS_INSTANCES)
+// Grass reads its instance from the buffer; with Unity's instancing on, the macro below declares the same field.
+#if defined(_GRASS_INSTANCES) && !UNITY_ANY_INSTANCING_ENABLED
     uint instanceID : SV_InstanceID;
 #endif
     UNITY_VERTEX_INPUT_INSTANCE_ID

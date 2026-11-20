@@ -1,6 +1,5 @@
-// Grows row crop plants for RowCropBatch: Plant runs one thread per lattice spot of a job, dispatched as
-// (spots / 64, 1, jobs), each spot picking its model variant; Count then writes the draw args and clears the counters.
-// Lattice maths match RowCropSpots.Range; hashes, noise and slot counting are in Scatter.hlsl.
+// Grows row crop plants for RowCropBatch: Plant places one plant per grid spot (lattice) of each job, a visible tile,
+// picking its model variant; Count then writes the draw args, clears the counters. Matches RowCropSpots.Range.
 #pragma kernel Plant
 #pragma kernel Count
 #pragma use_dxc
@@ -125,7 +124,7 @@ Lodged Lodging(RowCropField field, float2 metres)
     float2 centre = (float2(cell) + 0.5) * LODGING_CELL + slide * (LODGING_CELL - 2.0 * radius);
     float ragged = 0.75 + 0.5 * Noise(field.seed, LODGING_SALT, metres * 0.4);
     lodged.amount = 1.0 - smoothstep(0.7, 1.0, length(metres - centre) / (radius * ragged));
-    float heading = Channel(hash, 4u) * 6.2831853;
+    float heading = Channel(hash, 4u) * TWO_PI;
     lodged.direction = field.across * cos(heading) + field.along * sin(heading);
     return lodged;
 }
@@ -133,31 +132,22 @@ Lodged Lodging(RowCropField field, float2 metres)
 float2 Lean(uint hash, float edge, RowCropField field)
 {
     float tilt = lerp(_Variety.x, _Variety.y, edge) * Channel(hash, CHANNEL_LEAN);
-    float heading = Channel(hash, CHANNEL_LEAN_TURN) * 6.2831853;
+    float heading = Channel(hash, CHANNEL_LEAN_TURN) * TWO_PI;
     return (field.across * cos(heading) + field.along * sin(heading)) * sin(tilt);
-}
-
-// Slot = variant * LODS + lod. Plants past the slot's capacity are dropped and Count clamps the draw to it.
-void Store(uint variant, uint lod, RowCropInstance grown)
-{
-    uint index;
-    if (Claim(variant * LODS + lod, index))
-    {
-        _Instances[index] = grown;
-    }
 }
 
 [numthreads(64, 1, 1)]
 void Plant(uint3 id : SV_DispatchThreadID)
 {
-    ScatterJob job = _Jobs[id.z];
-    if (id.x >= (uint)(job.count.x * job.count.y))
+    ScatterJob job;
+    if (!JobAt(id, job))
     {
         return;
     }
 
-    int row = job.first.x + (int)(id.x % (uint)job.count.x);
-    int plant = job.first.y + (int)(id.x / (uint)job.count.x);
+    int2 cell = JobCell(job, id.x);
+    int row = cell.x;
+    int plant = cell.y;
     RowCropField field = _Fields[job.id];
     float2 spot = field.origin + field.across * (row * _Planting.x) + field.along * (plant * _Planting.y);
     if (!Owns(job.tileMin, spot))
@@ -246,7 +236,12 @@ void Plant(uint3 id : SV_DispatchThreadID)
     float lodRange = BandRange(range, Channel(hash, CHANNEL_BAND));
     uint lod = (uint)(lodRange >= _Size.z);
     uint variant = min((uint)(Channel(hash, CHANNEL_VARIANT) * _Variants), _Variants - 1u);
-    Store(variant, lod, grown);
+    // Slot = variant * LODS + lod. Plants past its capacity are dropped and Count clamps the draw to it.
+    uint index;
+    if (Claim(variant * LODS + lod, index))
+    {
+        _Instances[index] = grown;
+    }
 }
 
 [numthreads(1, 1, 1)]

@@ -34,7 +34,7 @@ density of 0 draws nothing.
 
 ## Foliage lighting
 
-`HyperRTS/Foliage` and `FoliageGrass` are lit by the sun, Forward+ lights and Surface Cache GI, with sunlight passing
+`HyperRTS/Foliage`, plain or as grass instances, is lit by the sun, Forward+ lights and Surface Cache GI, with sunlight passing
 through leaves. Set `_Wrap` to 0 for plain Lambert, for pebbles and mounds scattered like grass. `_MipBias` (0 to -1)
 sharpens thin stalks. Shadow, depth and motion vector passes share `DisplacedPasses.hlsl`
 (see [rendering](rendering.md#shaders)).

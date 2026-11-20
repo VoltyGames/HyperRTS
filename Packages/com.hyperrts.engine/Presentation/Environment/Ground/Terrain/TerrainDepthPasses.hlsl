@@ -1,5 +1,5 @@
-// HyperRTS/Terrain shadow caster, depth, depth-normals and scene selection passes. Positions match the forward
-// pass exactly; holes are cut in every pass.
+// HyperRTS/Terrain depth-only passes (shadow caster, depth, depth-normals, scene selection: each draws the terrain
+// for one screen effect). Positions match the forward pass exactly; holes are cut in every pass.
 #ifndef HYPERRTS_TERRAIN_DEPTH_PASSES_INCLUDED
 #define HYPERRTS_TERRAIN_DEPTH_PASSES_INCLUDED
 

@@ -1,8 +1,7 @@
 // A VFX Graph Initialize block: where a particle starts and how fast it flies, in rig space before Place At Burst.
-// shape 0 is a cone from a disc, its tilt growing to spread degrees at the rim; 1 a half ball flying out; 2 a ring on
-// the ground; 3 a whole ball flying out; 4 a box of half size radius flying up, tilted by up to spread degrees.
-// rim 1 starts every particle on the disc's edge. shapeScale scales the start offset per axis, then the shape turns its
-// +Y onto axis. ground is the bounce plane's height, kept in targetPosition.y for Place At Burst.
+// shape 0 cone, 1 half ball, 2 ground ring, 3 ball, 4 box (spread is the tilt in degrees); rim 1 starts on the edge.
+// shapeScale scales the start offset per axis, then the shape turns its +Y onto axis. ground is the bounce plane's
+// height, kept in targetPosition.y for Place At Burst.
 void EmitFromShape(inout VFXAttributes attributes, in float3 origin, in float shape, in float radius, in float spread, in float2 speed, in float rim, in float3 axis, in float3 shapeScale, in float ground)
 {
     float turn = VFXRAND * 6.2831853;

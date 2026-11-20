@@ -1,4 +1,4 @@
-// HyperRTS/LitTeam DepthNormals keywords: normal and smoothness output, rendering layers and instancing.
+// Keywords for the depth-normals pass: normal and smoothness output, rendering layers and instancing.
 #pragma shader_feature_local _NORMALMAP
 #pragma shader_feature_local _ALPHATEST_ON
 #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP

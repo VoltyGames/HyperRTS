@@ -1,26 +1,5 @@
-// Map ground: up to 16 terrain layers in one pass, lit by URP PBR. Use it as Terrain.materialTemplate (instanced,
-// per-pixel normals, holes). The map tools build its inputs:
-//   _AlbedoArray  RGB albedo (sRGB), A height (linear, stretched to 0..1 per layer)
-//   _NormalArray  normal maps, u east and v north before the layer's rotation
-//   _MaskArray    R occlusion, G smoothness (linear)
-//   _LayerParams  16 x 5 floats, point-sampled, one column per layer:
-//                 row 0  cos, sin of the clockwise UV rotation; 1 / tile size along u, v (m)
-//                 row 1  tint RGB; tint strength
-//                 row 2  smoothness scale, offset; occlusion scale, offset
-//                 row 3  height-blend weight; normal strength; hex rotation strength (0..1 of a full turn);
-//                        0 for row layers (hex cells slide only along their lines), else 1
-//                 row 4  grass cover 0..1 (sheds rain); 1 for the slope layer, triplanar on steep ground; z, w unused
-//   _Control0..3  the terrain's alphamaps, four layers each, for _LayerCount layers
-//   _GroundTintMap over the whole terrain, linear: RGB tint (0.5 neutral, doubled), A wetness (damp hollows)
-//   _GroundColorMap over the whole terrain, sRGB: the ground's colour from above, the albedo the Meta pass gives GI
-//   _RowMap       over the whole terrain, linear, bilinear, no mips: RG the crop rows' direction (x east, y north)
-//                 remapped to 0..1, (0.5, 0.5) off the fields; row layers lay u along it
-//   _MicroMap     TerrainMicroTexture's tileable soil grain, linear: RG normal xy, B occlusion, A albedo variation
-//   _Stain*       rubble, ash and wet mud tiled over what _HyperRTSStains covers (TerrainStains.hlsl), fuel untextured, and
-//                 the earth craters dig up (TerrainCraterGround.hlsl)
-// One pass binds every layer, so the terrain needs no add-pass or basemap shaders.
-// TerrainDetail sets _TERRAIN_SIMPLE (one sample per texture), _TERRAIN_NO_FAR (hex, no far sample) or
-// _TERRAIN_NO_PARALLAX (everything but parallax).
+// Map ground: up to 16 terrain layers blended in one pass, lit by URP PBR. Use it as Terrain.materialTemplate.
+// TerrainDetail picks a cheaper variant (compile-time switch): _TERRAIN_SIMPLE, _TERRAIN_NO_FAR, _TERRAIN_NO_PARALLAX.
 Shader "HyperRTS/Terrain"
 {
     Properties

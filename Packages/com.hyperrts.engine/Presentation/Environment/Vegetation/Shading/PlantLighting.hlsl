@@ -1,7 +1,6 @@
-// Plant lighting shared by PlantShading.hlsl: wrapped sun, light through the leaf, sheen and
-// point lights. Include after the shader's input file, which declares the UnityPerMaterial _Smoothness, _Translucency
-// and _ScreenOcclusion, PLANT_WRAP and PLANT_TWO_SIDED.
-// PLANT_VERTEX_LIGHTS lights point and spot lights per vertex instead of per pixel.
+// Plant lighting for PlantShading.hlsl: wrapped sun, light through the leaf, sheen and point lights.
+// Include after the input file, which declares the material properties, PLANT_WRAP, PLANT_TWO_SIDED and
+// PLANT_VERTEX_LIGHTS (lights point and spot lights per vertex instead of per pixel).
 #ifndef HYPERRTS_PLANT_LIGHTING_INCLUDED
 #define HYPERRTS_PLANT_LIGHTING_INCLUDED
 
@@ -70,7 +69,6 @@ half3 PlantVertexLights(float3 positionWS, float4 positionCS, half3 normalWS)
 {
     half3 lighting = half3(0.0, 0.0, 0.0);
     #if defined(_ADDITIONAL_LIGHTS)
-        // The screen UV is URP's positionNDC.
         float4 ndc = positionCS * 0.5;
         float2 screenUV = (float2(ndc.x, ndc.y * _ProjectionParams.x) + ndc.w) / positionCS.w;
         InputData inputData = LightLoopInput(positionWS, screenUV);

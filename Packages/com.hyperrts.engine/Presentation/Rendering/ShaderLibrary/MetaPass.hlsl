@@ -1,7 +1,7 @@
-// Meta pass for hand-written shaders without URP Lit's inputs. The including pass defines half3 MetaAlbedo(float2 uv0).
-// Surface Cache GI draws it over a unit quad to bake the material's albedo in UV0 space, so no wind or world-space terms.
-// A cutout shader defines META_ALPHA_CLIP and half MetaAlpha(float2 uv0) too, with _Cutoff declared first, so its
-// holes stay out of the bake.
+// Meta pass (the pass that bakes albedo for Surface Cache GI) for hand-written shaders. The including pass defines
+// half3 MetaAlbedo(float2 uv0); it draws over a unit quad in UV0 space, so no wind or world-space terms. A cutout
+// shader also defines META_ALPHA_CLIP and half MetaAlpha(float2 uv0), with _Cutoff declared first, so its holes
+// stay out.
 #ifndef HYPERRTS_META_PASS_INCLUDED
 #define HYPERRTS_META_PASS_INCLUDED
 

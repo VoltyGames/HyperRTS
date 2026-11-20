@@ -1,26 +1,5 @@
-// HyperRTS/LitTeam inputs: the material properties and accessors URP's Lit passes read (laid out like URP's
-// LitInput.hlsl, minus URP's UV-mapped detail maps, parallax, the specular workflow and transparency) plus the team colour, its mask,
-// its height band, the rigid animation clip, the bone animation clips and their fades, the build progress, grime, track lift and the world-scale detail maps. Every LitTeam pass includes this, so the SRP
-// Batcher sees one UnityPerMaterial layout.
-//   _TeamColor  linear RGB, A how much shows (0 untinted, so neutral needs no special case)
-//   _TeamMask   R where team colour goes, on UV0
-//   _TeamStrip  x bottom, y top of the band (object-space metres) the mask applies in
-//   _BONES      keyword: skinning from _BoneTex, bone indices in UV6 and weights in UV7 (negative for upper-body bones);
-//               per instance _LowerClip and _UpperClip, and _LowerFade and _UpperFade, the pose a clip switch fades
-//               out of over _BoneFadeTime seconds; _PoseSlot 0 or above draws that live pose slot instead (LitTeamBones.hlsl)
-//   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
-//               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamDeform.hlsl)
-//   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
-//   _LightLevel   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
-//   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
-//               _TrackLift0 and _TrackLift1, the lift in metres at 8 stations front to back, it bends the lower run (LitTeamTrack.hlsl)
-//   _DETAIL     keyword: detail albedo and normal projected in object space (triplanar) at _DetailTiling repeats per metre,
-//               faded out between _DetailFadeStart and _DetailFadeEnd metres from the camera (LitTeamDetail.hlsl)
-//   _INTERIOR   keyword: windows show rooms from the emission map's photo atlas (LitTeamInterior.hlsl)
-//   _Grime      dust, mud, wet, soot 0 to 1 and _GrimeBand ground height, mud top, dust top (object space); LitTeamGrime.hlsl,
-//               colours from the _HyperRTSDustColor and _HyperRTSMudColor globals (ground vehicles only)
-// TeamColorSystem writes _TeamColor and _TeamStrip per entity (DOTS instancing), BuildRevealSystem writes _BuildProgress,
-// BuildingLightsSystem writes _LightLevel, MotionRigSystem writes _TrackLift0 and _TrackLift1, GrimeSystem writes _Grime and _GrimeBand, CorpseSystem writes _PoseSlot, and game code writes VATClip and the bone clips.
+// Material properties and accessors for every LitTeam pass, so URP's SRP Batcher (draw call merging) sees one layout.
+// Property meanings: the .shader property tooltips and docs/presentation/rendering.md.
 #ifndef HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 #define HYPERRTS_LIT_TEAM_INPUT_INCLUDED
 // URP's LitForwardPass includes "LitInput.hlsl" itself; its guard keeps this file's declarations the only ones.
@@ -79,7 +58,7 @@ half _OcclusionStrength;
 UNITY_TEXTURE_STREAMING_DEBUG_VARS;
 CBUFFER_END
 
-// Declared in every variant (only their use is ifdef'd) so constant-buffer offsets match across variants.
+// Declared in every variant (only their use is ifdef'd) so the material layout matches across variants.
 #ifdef UNITY_DOTS_INSTANCING_ENABLED
 
 UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
@@ -102,7 +81,6 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float , _LightLevel)
 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
 
-// Loaded once per instance into statics, as URP does, so each use doesn't regenerate the load.
 static float4 unity_DOTS_Sampled_BaseColor;
 static float4 unity_DOTS_Sampled_TeamColor;
 static float4 unity_DOTS_Sampled_TeamStrip;
@@ -189,12 +167,13 @@ static const half4 _SpecColor = half4(0.0, 0.0, 0.0, 0.0);
 half4 GetSpecColor()                    { return _SpecColor; }
 half4 SampleSpecGlossMap(float2 uv)     { return _SpecColor; }
 
-// URP's LitPassFragment, compiled beside ours, reads the blend mode for glass fog; transparent LitTeam is premultiplied.
+// URP's LitPassFragment, compiled beside ours, reads the blend mode for glass fog; LitTeam glass is premultiplied.
 static const half _Blend = 1.0;
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSurface.hlsl"
 
-// Drops a growing share of a mesh's pixels in a 4 by 4 ordered pattern as _Reveal falls, so a unit fading into the
+// Drops a growing share of pixels in a 4 by 4 ordered pattern as _Reveal falls, so a unit fading into the fog thins
+// out instead of popping. 1 keeps every pixel.
 // fog thins out instead of popping. 1 keeps every pixel.
 void ClipReveal(float4 positionCS)
 {

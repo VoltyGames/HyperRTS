@@ -1,5 +1,5 @@
-// HyperRTS/Terrain parallax occlusion near the camera, marched on the dominant layer's heaviest hex cell. One xz offset
-// then shifts every layer, so the height blend and hex cells stay consistent.
+// HyperRTS/Terrain parallax near the camera (bumps shift with the view angle), marched on the dominant layer's heaviest
+// hex cell. One xz offset then shifts every layer, so the height blend and hex cells stay consistent.
 #ifndef HYPERRTS_TERRAIN_PARALLAX_INCLUDED
 #define HYPERRTS_TERRAIN_PARALLAX_INCLUDED
 

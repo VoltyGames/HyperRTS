@@ -27,9 +27,6 @@ namespace HyperRTS.Editor.Maps.Scenes
 
         private const string GrassCompute = "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/Grass.compute";
 
-        private const string GrassShader =
-            "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/FoliageGrass.shader";
-
         /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
         public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
             TerrainData data)
@@ -160,7 +157,6 @@ namespace HyperRTS.Editor.Maps.Scenes
             var renderer = go.AddComponent<GrassRenderer>();
             renderer.field = field;
             renderer.compute = Engine<ComputeShader>(GrassCompute, "grass compute shader");
-            renderer.shader = Engine<Shader>(GrassShader, "grass shader");
             renderer.terrain = terrain;
             go.SetActive(true);
         }

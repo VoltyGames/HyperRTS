@@ -5,7 +5,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 
 // How readily water stands here: low texels, damp hollows and ruts, broken up by two octaves of world noise.
-// Explicit gradients: it runs inside the wetness branch.
+// Explicit gradients (texture detail level), as it runs inside a branch.
 half PuddleCollect(TerrainSurface surface, half dampness, half rut, float2 st, float2 dx, float2 dy)
 {
     half broad = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, st, dx, dy).g;
@@ -34,8 +34,8 @@ void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 
     Wet(surface.albedo, surface.smoothness, surface.normalTS, max(_HyperRTSWetness * shed - dampness, 0.0),
         _RainDarkening, _RainSmoothness);
     half collect = PuddleCollect(surface, dampness, rut, st, dx, dy) * shed;
-    half puddles = PuddleCoverage(collect, _PuddleCoverage);
-    Puddle(surface.albedo, surface.smoothness, surface.normalTS, puddles, _PuddleSmoothness);
+    half puddles = RainPuddles(surface.albedo, surface.smoothness, surface.normalTS, collect, _PuddleCoverage,
+        _PuddleSmoothness);
     surface.occlusion = lerp(surface.occlusion, 1.0, puddles * 0.5);
 }
 

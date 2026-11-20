@@ -1,4 +1,4 @@
-// HyperRTS/Terrain per-layer parameters, read from the _LayerParams columns documented in Terrain.shader.
+// HyperRTS/Terrain per-layer parameters: one _LayerParams column per layer, one row per group of fields below.
 #ifndef HYPERRTS_TERRAIN_LAYER_PARAMS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYER_PARAMS_INCLUDED
 
@@ -6,16 +6,17 @@
 
 struct TerrainLayerParams
 {
-    float2 rotation;   // (cos, sin) of the clockwise UV rotation
-    float2 tiling;     // 1 / tile size (m) along u and v
-    half3 tint;
-    half tintStrength;
-    half4 mask;        // smoothness scale, offset; occlusion scale, offset
-    half heightWeight;
-    half normalStrength;
-    half grass;        // grass cover, which sheds rain
-    half triplanar;    // 1 for the slope layer, projected sideways on steep ground
-    float4 hex;        // x hex rotation (fraction of a turn), y 0 for row layers else 1, zw row line direction in UV
+    float2 rotation;   // row 0: (cos, sin) of the clockwise UV rotation
+    float2 tiling;     // row 0: 1 / tile size (m) along u and v
+    half3 tint;        // row 1: RGB
+    half tintStrength; // row 1
+    half4 mask;        // row 2: smoothness scale, offset; occlusion scale, offset
+    half heightWeight; // row 3: height-blend weight
+    half normalStrength; // row 3
+    half grass;        // row 4: grass cover 0..1, which sheds rain
+    half triplanar;    // row 4: 1 for the slope layer, projected sideways (triplanar) on steep ground
+    float4 hex;        // xy row 3: hex rotation (fraction of a turn), 0 for row layers else 1;
+                       // zw: row line direction in UV, set below
 };
 
 TerrainLayerParams LoadLayerParams(uint layer, float2 rowTurn)

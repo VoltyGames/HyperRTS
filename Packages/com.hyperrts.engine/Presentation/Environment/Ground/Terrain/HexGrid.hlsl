@@ -1,5 +1,5 @@
-// HyperRTS/Terrain hex grid (Mikkelsen, "Practical Real-Time Hex-Tiling", JCGT 2022): the cells and weights any tiled
-// texture blends by, so it never visibly repeats. _TERRAIN_SIMPLE makes it one plain sample.
+// HyperRTS/Terrain hex grid (Mikkelsen, "Practical Real-Time Hex-Tiling", JCGT 2022): the cells and blend weights
+// that keep a tiled texture from visibly repeating. _TERRAIN_SIMPLE makes it one plain sample.
 #ifndef HYPERRTS_HEX_GRID_INCLUDED
 #define HYPERRTS_HEX_GRID_INCLUDED
 

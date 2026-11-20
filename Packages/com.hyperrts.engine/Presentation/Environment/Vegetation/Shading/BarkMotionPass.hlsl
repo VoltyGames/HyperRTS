@@ -1,5 +1,5 @@
-// HyperRTS/Bark's motion vector pass, through DisplacedPasses.hlsl so last frame's wind poses last frame. Include
-// BarkInput.hlsl first.
+// HyperRTS/Bark's motion vector pass (per-pixel movement, for temporal anti-aliasing), through DisplacedPasses.hlsl
+// so last frame's wind poses last frame. Include BarkInput.hlsl first.
 #ifndef HYPERRTS_BARK_MOTION_PASS_INCLUDED
 #define HYPERRTS_BARK_MOTION_PASS_INCLUDED
 

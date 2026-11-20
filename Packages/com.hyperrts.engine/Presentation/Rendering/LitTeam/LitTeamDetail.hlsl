@@ -1,6 +1,5 @@
-// HyperRTS/LitTeam detail maps: a tiling grey albedo and a normal projected on the mesh in object space from three
-// sides, so grain has the same density on every island of an atlased UV set. They fade out with camera distance.
-// Forward pass only; the depth-normals buffer keeps the base normal, which is all SSAO needs.
+// Fine grain on large surfaces: a tiling grey albedo and normal projected on the mesh from three sides (triplanar),
+// fading out with camera distance. Forward pass only.
 #ifndef HYPERRTS_LIT_TEAM_DETAIL_INCLUDED
 #define HYPERRTS_LIT_TEAM_DETAIL_INCLUDED
 
@@ -9,7 +8,7 @@
 TEXTURE2D(_DetailAlbedo);   SAMPLER(sampler_DetailAlbedo);
 TEXTURE2D(_DetailNormal);   SAMPLER(sampler_DetailNormal);
 
-// Gradients are passed in so the samples can sit behind the fade branch.
+// Gradients are passed in so the texture samples can sit behind the fade branch.
 half3 SampleDetailAlbedo(float3 p, float3 dx, float3 dy, float3 blend)
 {
     half3 x = SAMPLE_TEXTURE2D_GRAD(_DetailAlbedo, sampler_DetailAlbedo, p.zy, dx.zy, dy.zy).rgb;
@@ -41,7 +40,7 @@ void ApplyDetail(float3 positionWS, float3 normalWS, float4 tangentWS, inout Sur
 
     float3 blend = TriplanarWeights(TransformWorldToObjectNormal(normalWS));
 
-    // Overlay around grey: 0.5 as authored leaves the albedo as it is. The map imports as sRGB colour, so undo the decode.
+    // Overlay around grey: 0.5 leaves the albedo as it is. The map imports as sRGB colour, so undo the decode.
     half3 grain = LinearToSRGB(SampleDetailAlbedo(p, dx, dy, blend));
     surface.albedo *= lerp(half3(1.0, 1.0, 1.0), grain * 2.0, _DetailAlbedoStrength * fade);
 

@@ -22,7 +22,6 @@ namespace HyperRTS.Editor.Tests.Tools
         [NoAutoStaticsCleanup]
         private static readonly HashSet<string> WithoutMeta = new()
         {
-            "Hidden/HyperRTS/FoliageGrass",
             "HyperRTS/RowCrop",
             "HyperRTS/GroundMarker",
             "HyperRTS/HealthBar",

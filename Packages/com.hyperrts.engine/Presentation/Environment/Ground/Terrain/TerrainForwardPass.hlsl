@@ -1,9 +1,11 @@
+// HyperRTS/Terrain forward pass: the layered ground lit with its trample, stains, craters and wetness.
 #ifndef HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 #define HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainInput.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainSurfaceData.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
@@ -14,7 +16,7 @@
 #define RUT_DARKENING 0.4
 #define SOIL_TINT 0.65
 #define FLATTEN_DARKENING 0.06
-#define CRATER_RELIEF 0.6       // on top of the dented mesh's true slope, so the sun shapes the bowl from the RTS camera
+#define CRATER_RELIEF 0.6       // on top of the dented mesh's slope, so the sun shapes the bowl from the RTS camera
 #define CRATER_FULL_DEPTH 0.5
 #define CRATER_DARKENING 0.3
 #define CRATER_DAMPNESS 0.2
@@ -85,23 +87,17 @@ half ApplyTrample(inout TerrainSurface surface, float2 positionXZ, out TrackSamp
 
 InputData TerrainInputData(TerrainForwardVaryings input, TerrainPixel pixel, half3 normalTS)
 {
-    InputData inputData = (InputData)0;
-    inputData.positionWS = input.positionWS;
-    inputData.positionCS = input.positionCS;
-    inputData.tangentToWorld = pixel.frame;
-    inputData.normalWS = NormalizeNormalPerPixel(TransformTangentToWorld(normalTS, inputData.tangentToWorld));
-    inputData.geometricNormalWS = pixel.frame[2];
-    inputData.viewDirectionWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
+    InputData inputData = GroundInputData(input.positionWS, input.positionCS, pixel.frame, normalTS);
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
         inputData.shadowCoord = input.shadowCoord;
     #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
         const bool isSurfaceTypeTransparent = false;
-        inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS, isSurfaceTypeTransparent, inputData.geometricNormalWS);
+        inputData.shadowCoord = TransformWorldToShadowCoord(input.positionWS, isSurfaceTypeTransparent,
+            inputData.geometricNormalWS);
     #endif
 
     inputData.vertexLighting = input.vertexLight;
-    inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
 
     GIParams giParams = (GIParams)0;
     giParams.vertexSH = input.vertexSH;
@@ -111,17 +107,6 @@ InputData TerrainInputData(TerrainForwardVaryings input, TerrainPixel pixel, hal
     giParams.positionSS = input.positionCS.xy;
     InitializeBakedGI(giParams, inputData.bakedGI, inputData.shadowMask);
     return inputData;
-}
-
-SurfaceData TerrainSurfaceData(TerrainSurface surface)
-{
-    SurfaceData surfaceData = (SurfaceData)0;
-    surfaceData.albedo = surface.albedo;
-    surfaceData.smoothness = surface.smoothness;
-    surfaceData.normalTS = surface.normalTS;
-    surfaceData.occlusion = surface.occlusion;
-    surfaceData.alpha = 1.0;
-    return surfaceData;
 }
 
 void TerrainForwardFragment(TerrainForwardVaryings input, out half4 outColor : SV_Target0

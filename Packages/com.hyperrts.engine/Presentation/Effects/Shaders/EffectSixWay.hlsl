@@ -1,4 +1,4 @@
-// The Shader Graph HyperRTS/EffectSixWay's one function: six-way smoke and fire for effect graphs, lit, fogged and
+// Shader Graph function for smoke and fire sprites: six-way (lit from six directions by baked light maps), fogged and
 // glowing from inside. Frame is the particle's flipbook index, blending into the next.
 #ifndef HYPERRTS_EFFECT_SIX_WAY
 #define HYPERRTS_EFFECT_SIX_WAY

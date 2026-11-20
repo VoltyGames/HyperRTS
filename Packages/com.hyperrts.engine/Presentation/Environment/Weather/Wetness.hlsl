@@ -35,4 +35,13 @@ void Puddle(inout half3 albedo, inout half smoothness, inout half3 normalTS, hal
     normalTS = normalize(lerp(normalTS, half3(0.0, 0.0, 1.0), puddles));
 }
 
+// Rain's puddles over ground already wet: collect is how readily this spot gathers water. Returns their coverage.
+half RainPuddles(inout half3 albedo, inout half smoothness, inout half3 normalTS, half collect, half coverage,
+    half gloss)
+{
+    half puddles = PuddleCoverage(collect, coverage);
+    Puddle(albedo, smoothness, normalTS, puddles, gloss);
+    return puddles;
+}
+
 #endif
