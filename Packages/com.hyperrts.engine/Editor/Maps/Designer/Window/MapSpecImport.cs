@@ -2,14 +2,14 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Common.Json
+namespace HyperRTS.Editor.Maps.Designer.Window
 {
-    /// <summary>Reloads every open <see cref="JsonDocument"/> whose file was imported, so an outside write shows without polling.</summary>
-    public sealed class JsonDocumentImport : AssetPostprocessor
+    /// <summary>Reloads every open <see cref="MapSpecDocument"/> whose file was imported, so an outside write shows without polling.</summary>
+    public sealed class MapSpecImport : AssetPostprocessor
     {
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
-            foreach (var document in Resources.FindObjectsOfTypeAll<JsonDocument>())
+            foreach (var document in Resources.FindObjectsOfTypeAll<MapSpecDocument>())
             {
                 if (Array.IndexOf(imported, document.Path) < 0)
                 {

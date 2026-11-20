@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 namespace HyperRTS.Editor.Common.Json
 {
@@ -52,83 +51,6 @@ namespace HyperRTS.Editor.Common.Json
             var output = new StringBuilder();
             Append(output, token, 0);
             return output.Append('\n').ToString();
-        }
-
-        /// <summary>
-        /// Overwrites <paramref name="target"/> from <paramref name="json"/> and rejects any field its own round trip
-        /// lacks; see <see cref="ReadInto(string, string, string, Func{JToken}, object[])"/>.
-        /// </summary>
-        public static JToken ReadInto(string json, object target, string what, string source) =>
-            ReadInto(json, what, source, () => Parse(JsonUtility.ToJson(target)), target);
-
-        /// <summary>
-        /// Overwrites <paramref name="targets"/> from <paramref name="json"/> and returns the parsed root. Throws an
-        /// <see cref="InvalidOperationException"/> naming <paramref name="source"/> for a field <paramref
-        /// name="known"/> lacks.
-        /// </summary>
-        public static JToken ReadInto(string json, string what, string source, Func<JToken> known, params object[] targets)
-        {
-            JToken root;
-            try
-            {
-                root = Parse(json);
-                foreach (var target in targets)
-                {
-                    JsonUtility.FromJsonOverwrite(json, target);
-                }
-            }
-            catch (Exception e) when (e is ArgumentException or FormatException or InvalidOperationException)
-            {
-                throw new InvalidOperationException($"HyperRTS: {source} is not valid JSON: {e.Message}", e);
-            }
-
-            if (root is not JObject)
-            {
-                throw new InvalidOperationException($"HyperRTS: {source} must be a JSON object, not {root.Type}.");
-            }
-
-            RejectUnknown(root, known(), what, source);
-            return root;
-        }
-
-        /// <summary>
-        /// Throws on a field, at any depth, that <paramref name="known"/> (the round trip of what was read) lacks or
-        /// reads in another shape: JsonUtility drops both silently, so a typo or an old format would vanish.
-        /// </summary>
-        public static void RejectUnknown(JToken read, JToken known, string what, string source, string at = "")
-        {
-            var reshaped = known is JContainer && read.Type != known.Type && read.Type != JTokenType.Null;
-            if (reshaped)
-            {
-                var shape = known is JObject ? "an object" : "a list";
-                throw new InvalidOperationException($"HyperRTS: {source}: '{at}' must be {shape}, not {read.Type}.");
-            }
-
-            if (read is JArray array && known is JArray knownArray)
-            {
-                for (var i = 0; i < Math.Min(array.Count, knownArray.Count); i++)
-                {
-                    RejectUnknown(array[i], knownArray[i], what, source, $"{at}[{i}]");
-                }
-
-                return;
-            }
-
-            if (read is not JObject obj || known is not JObject knownObj)
-            {
-                return;
-            }
-
-            foreach (var property in obj.Properties())
-            {
-                var path = at.Length == 0 ? property.Name : $"{at}.{property.Name}";
-                if (!knownObj.TryGetValue(property.Name, out var value))
-                {
-                    throw new InvalidOperationException($"HyperRTS: {source}: '{path}' is not a {what} field.");
-                }
-
-                RejectUnknown(property.Value, value, what, source, path);
-            }
         }
 
         private static void Append(StringBuilder output, JToken token, int depth)

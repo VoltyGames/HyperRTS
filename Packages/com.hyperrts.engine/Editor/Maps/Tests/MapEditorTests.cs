@@ -120,7 +120,7 @@ namespace HyperRTS.Editor.Maps.Tests
 
             var error = Assert.Throws<System.InvalidOperationException>(() => MapSpecJson.Read(json));
 
-            StringAssert.Contains("'hills[1].raduis' is not a map spec field", error.Message);
+            StringAssert.Contains("hills[1].raduis", error.Message);
         }
 
         /// <summary>Asserts a spec's JSON loads, writes and reloads to the same content, and rewrites identically.</summary>

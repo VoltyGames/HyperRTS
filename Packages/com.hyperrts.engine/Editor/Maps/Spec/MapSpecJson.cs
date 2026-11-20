@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Common;
+using System.Linq;
+using System.Reflection;
 using HyperRTS.Editor.Common.Json;
-using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
@@ -11,52 +13,45 @@ namespace HyperRTS.Editor.Maps.Spec
     /// <summary>Reads and writes <c>&lt;Map&gt;.map.json</c>, laid out by <see cref="JsonFormat"/>.</summary>
     public static class MapSpecJson
     {
-        // A new entry of each feature list as its class starts, which a save leaves out of an added entry.
         [NoAutoStaticsCleanup]
-        private static readonly Lazy<IReadOnlyDictionary<string, JToken>> EntryDefaults = new(FindEntryDefaults);
+        private static readonly JsonSerializerSettings ReadSettings = new()
+        {
+            MissingMemberHandling = MissingMemberHandling.Error,
+            DateParseHandling = DateParseHandling.None,
+            FloatParseHandling = FloatParseHandling.Double,
+            ContractResolver = new SerializedFieldsResolver(),
+        };
 
-        /// <summary>A field the spec doesn't read throws naming its path.</summary>
+        /// <summary>A key the spec has no field for, or a value of the wrong shape, throws naming its path.</summary>
         public static MapSpec Read(string json)
         {
-            var spec = new MapSpec();
-            JsonFormat.ReadInto(json, spec, "map spec", "map spec");
-            return spec;
+            try
+            {
+                return JsonConvert.DeserializeObject<MapSpec>(json, ReadSettings)
+                    ?? throw new InvalidOperationException("HyperRTS: map spec must be a JSON object.");
+            }
+            catch (JsonException e)
+            {
+                throw new InvalidOperationException($"HyperRTS: map spec is not valid: {e.Message}", e);
+            }
         }
 
         public static string Write(MapSpec spec) => JsonFormat.Format(JsonUtility.ToJson(spec, false));
-
-        /// <summary>
-        /// Writes <paramref name="spec"/> over the spec in <paramref name="fileJson"/> by changing only what differs (see
-        /// <see cref="JsonChanges"/>), so a saved edit diffs like a hand edit.
-        /// </summary>
-        public static string WriteOver(string fileJson, MapSpec spec)
-        {
-            var before = JsonFormat.Parse(Write(Read(fileJson)));
-            var after = JsonFormat.Parse(Write(spec));
-            return JsonFormat.Write(JsonChanges.Apply(JsonFormat.Parse(fileJson), before, after, EntryDefaults.Value));
-        }
-
-        private static IReadOnlyDictionary<string, JToken> FindEntryDefaults()
-        {
-            var defaults = new Dictionary<string, JToken>();
-            foreach (var field in typeof(MapSpec).GetFields())
-            {
-                var type = field.FieldType;
-                var entry = UnitySerialization.ItemType(type);
-                if (entry != null && entry.IsClass && entry != typeof(string))
-                {
-                    // Through the same layout as a written spec, so 20.0 compares equal to the file's 20.
-                    defaults[field.Name] = JsonFormat.Parse(JsonFormat.Format(JsonUtility.ToJson(Activator.CreateInstance(entry))));
-                }
-            }
-
-            return defaults;
-        }
 
         /// <summary>A deep copy of a spec or one of its features, through its JSON.</summary>
         public static T Clone<T>(T value) => JsonUtility.FromJson<T>(JsonUtility.ToJson(value));
 
         /// <summary>A deep copy of a feature known only by <paramref name="type"/>.</summary>
         public static object Clone(object value, Type type) => JsonUtility.FromJson(JsonUtility.ToJson(value), type);
+
+        // Reads the public fields JsonUtility writes, not the properties that wrap them.
+        private sealed class SerializedFieldsResolver : DefaultContractResolver
+        {
+            protected override List<MemberInfo> GetSerializableMembers(Type objectType) => objectType
+                .GetFields(BindingFlags.Public | BindingFlags.Instance)
+                .Where(field => !field.IsNotSerialized)
+                .Cast<MemberInfo>()
+                .ToList();
+        }
     }
 }

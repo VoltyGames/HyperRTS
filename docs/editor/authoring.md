@@ -72,9 +72,10 @@ element, `SetGlyph(name)` swaps a recycled row's. To add one, copy the icon from
 folder to `Glyphs/<PascalName>.svg`, delete its licence comment and `class` attribute, set `stroke="#ffffff"` and add
 its class to `Glyphs.uss`.
 
-To edit a JSON file in an inspector or window, derive from `JsonDocument`, a hidden ScriptableObject holding the parsed
-value for Undo. Override `Read`, `Write`, `WriteOver` (writes only what differs) and `Canonical`; edit through
-`Serialized` and `Apply`, or `Record` from code. `MapSpecDocument` is the example.
+A JSON file edited in an inspector or window is held by a hidden ScriptableObject with the parsed value for Undo, as
+`MapSpecDocument` holds a map spec: edits go through `Serialized` and `Apply`, or `Edit` from code, and each saves the
+file in its canonical layout. An `AssetPostprocessor` (`MapSpecImport`) reloads the document when the file is written
+from outside.
 
 ## Editor state
 
