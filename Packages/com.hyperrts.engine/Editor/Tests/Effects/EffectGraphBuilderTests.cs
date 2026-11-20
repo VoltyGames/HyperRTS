@@ -24,7 +24,6 @@ namespace HyperRTS.Editor.Tests.Effects
             [EffectLayerKind.Ring] = "FaceCameraPlane",
             [EffectLayerKind.Distort] = "FaceCameraPlane",
             [EffectLayerKind.Spark] = "AlongVelocity",
-            [EffectLayerKind.Strip] = "FaceCameraPosition",
             [EffectLayerKind.Debris] = null,
             [EffectLayerKind.Source] = null,
         };
@@ -51,7 +50,6 @@ namespace HyperRTS.Editor.Tests.Effects
         public void AnUprightQuad_TurnsAboutWorldUp()
         {
             Assert.AreEqual("FixedAxis", new EffectLayer { kind = EffectLayerKind.SixWay, upright = true }.OrientMode);
-            Assert.AreEqual("FaceCameraPosition", new EffectLayer { kind = EffectLayerKind.Strip, upright = true }.OrientMode);
         }
     }
 }

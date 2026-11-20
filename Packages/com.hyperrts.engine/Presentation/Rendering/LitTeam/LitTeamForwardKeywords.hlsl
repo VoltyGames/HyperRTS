@@ -1,5 +1,5 @@
-// HyperRTS/LitTeam ForwardLit keywords: material features, fog on transparents, lighting, lightmaps, LOD
-// cross-fade and instancing.
+// HyperRTS/LitTeam ForwardLit keywords: material features, fog on transparents, lighting, LOD cross-fade and
+// instancing. No lightmaps: maps bake none, and Surface Cache GI lights units.
 #pragma shader_feature_local _NORMALMAP
 #pragma shader_feature_local_fragment _ALPHATEST_ON
 #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
@@ -14,7 +14,6 @@
 #pragma shader_feature_local _INTERIOR
 #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ForwardLightingKeywords.hlsl"
 #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ObjectLightingKeywords.hlsl"
-#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LightmapKeywords.hlsl"
 #pragma multi_compile _ LOD_FADE_CROSSFADE
 #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
 #pragma instancing_options renderinglayer

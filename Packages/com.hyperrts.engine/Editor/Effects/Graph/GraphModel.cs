@@ -138,15 +138,6 @@ namespace HyperRTS.Editor.Effects.Graph
             space.SetValue(data, Enum.Parse(space.PropertyType, "World"));
         }
 
-        /// <summary>Turns the system into one ribbon of <paramref name="capacity"/> particles, joined in spawn order.</summary>
-        public void Strip(object initialize, uint capacity)
-        {
-            var data = initialize.GetType().GetMethod("GetData", All, null, System.Type.EmptyTypes, null).Invoke(initialize, null);
-            Set(data, "dataType", "ParticleStrip");
-            Set(data, "stripCapacity", 1u);
-            Set(data, "particlePerStripCount", capacity);
-        }
-
         /// <summary>A model setting; enum settings take their value's name.</summary>
         public void Set(object model, string name, object value)
         {

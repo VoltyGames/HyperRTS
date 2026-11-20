@@ -35,10 +35,6 @@ namespace HyperRTS.Editor.Effects.Graph
             var initialize = _graph.Context("VFXBasicInitialize", new Vector2(_x, 100f));
             _emission.Start(initialize, parentUpdate);
             _graph.Particles(initialize, (uint)_layer.capacity);
-            if (_layer.kind == EffectLayerKind.Strip)
-            {
-                _graph.Strip(initialize, (uint)_layer.capacity);
-            }
 
             Initialize(initialize);
             var update = _graph.Context("VFXBasicUpdate", new Vector2(_x, 700f));

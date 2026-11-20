@@ -4,28 +4,26 @@ Shader "HyperRTS/LitTeam"
 {
     Properties
     {
-        [Header(Team Colour)]
-        _TeamColor("Team Color", Vector) = (0, 0, 0, 0)
-        [NoScaleOffset] _TeamMask("Team Mask (R)", 2D) = "white" {}
-        _TeamStrip("Team Strip (bottom, top)", Vector) = (-10000, 10000, 0, 0)
+        [HideInInspector] _TeamColor("Team Color", Vector) = (0, 0, 0, 0)
+        [Header(Team Colour)] [NoScaleOffset] _TeamMask("Team Mask (R)", 2D) = "white" {}
+        [HideInInspector] _TeamStrip("Team Strip (bottom, top)", Vector) = (-10000, 10000, 0, 0)
 
         [Header(Vertex Animation)]
         [NoScaleOffset] _VATPositions("VAT Positions (rigid)", 2D) = "black" {}
         [NoScaleOffset] _VATRotations("VAT Rotations (rigid)", 2D) = "black" {}
-        _VATClip("VAT Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
+        [HideInInspector] _VATClip("VAT Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
 
         [Header(Bone Animation)]
         [NoScaleOffset] _BoneTex("Bone Matrices", 2D) = "black" {}
-        _LowerClip("Lower Body Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
-        _UpperClip("Upper Body Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
-        _LowerFade("Lower Body Fade (frame, next frame, blend, switch time)", Vector) = (0, 0, 0, -100000)
-        _UpperFade("Upper Body Fade (frame, next frame, blend, switch time)", Vector) = (0, 0, 0, -100000)
+        [HideInInspector] _LowerClip("Lower Body Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
+        [HideInInspector] _UpperClip("Upper Body Clip (start frame, frames, fps, start time)", Vector) = (0, 1, 1, 0)
+        [HideInInspector] _LowerFade("Lower Body Fade (frame, next frame, blend, switch time)", Vector) = (0, 0, 0, -100000)
+        [HideInInspector] _UpperFade("Upper Body Fade (frame, next frame, blend, switch time)", Vector) = (0, 0, 0, -100000)
         _BoneFadeTime("Bone Fade Time (s)", Float) = 0.2
         [HideInInspector] _PoseSlot("Pose Slot (live pose; below 0 plays the clips)", Float) = -1
 
-        [Header(Grime)]
-        _Grime("Grime (dust, mud, wet, soot)", Vector) = (0, 0, 0, 0)
-        _GrimeBand("Grime Band (ground y in object space, mud top, dust top above it, m)", Vector) = (0, 0.7, 1.6, 0)
+        [HideInInspector] _Grime("Grime (dust, mud, wet, soot)", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _GrimeBand("Grime Band (ground y in object space, mud top, dust top above it, m)", Vector) = (0, 0.7, 1.6, 0)
 
         [Header(Detail)]
         [Toggle(_DETAIL)] _Detail("Detail Maps (world scale, fade with camera distance)", Float) = 0
@@ -37,17 +35,16 @@ Shader "HyperRTS/LitTeam"
         _DetailFadeStart("Detail Fade Start (camera distance, m)", Float) = 12
         _DetailFadeEnd("Detail Fade End (camera distance, m)", Float) = 30
 
-        [Header(Track)]
-        _TrackLift0("Track Lift (stations 0 to 3, m)", Vector) = (0, 0, 0, 0)
-        _TrackLift1("Track Lift (stations 4 to 7, m)", Vector) = (0, 0, 0, 0)
-        _TrackSpan("Track Span (front z, back z, axle y, wheel radius)", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _TrackLift0("Track Lift (stations 0 to 3, m)", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _TrackLift1("Track Lift (stations 4 to 7, m)", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _TrackSpan("Track Span (front z, back z, axle y, wheel radius)", Vector) = (0, 0, 0, 0)
 
         [Header(Ground)]
         _CraterSink("Crater Sink (1 drops into a crater under it, 0 for a model that brings its own dent)", Range(0, 1)) = 1
 
         [Header(Construction)]
         [Toggle(_BUILD)] _Build("Build Piece By Piece (UV3)", Float) = 0
-        _BuildProgress("Build Progress", Range(0, 1)) = 1
+        [HideInInspector] _BuildProgress("Build Progress", Range(0, 1)) = 1
         [HideInInspector] _Reveal("Reveal (fog fade)", Range(0, 1)) = 1
         _BuildDropHeight("Build Drop Height (m)", Float) = 0.5
         _BuildDropSlice("Build Drop Slice (of progress)", Range(0.01, 1)) = 0.05

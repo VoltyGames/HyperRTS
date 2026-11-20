@@ -90,7 +90,6 @@ namespace HyperRTS.Editor.Effects.Layer
         {
             EffectLayerKind.Debris or EffectLayerKind.Source => null,
             EffectLayerKind.Spark => "AlongVelocity",
-            EffectLayerKind.Strip => "FaceCameraPosition",
             _ when upright => "FixedAxis",
             _ => "FaceCameraPlane",
         };
@@ -159,11 +158,6 @@ namespace HyperRTS.Editor.Effects.Layer
 
         private void AddSpawnProblems(List<string> problems)
         {
-            if (kind == EffectLayerKind.Strip && !Streams)
-            {
-                problems.Add($"strip layer '{name}' needs a rate, since each stream draws one ribbon.");
-            }
-
             if (HasParent)
             {
                 if (rate <= 0f || ratePerMetre != 0f || bursts.Count > 0)
@@ -185,7 +179,7 @@ namespace HyperRTS.Editor.Effects.Layer
         {
             switch (kind)
             {
-                case EffectLayerKind.Glow or EffectLayerKind.Spark or EffectLayerKind.Puff or EffectLayerKind.Strip or EffectLayerKind.Distort:
+                case EffectLayerKind.Glow or EffectLayerKind.Spark or EffectLayerKind.Puff or EffectLayerKind.Distort:
                     Need(problems, texture, nameof(texture));
                     break;
                 case EffectLayerKind.SixWay or EffectLayerKind.Ring:

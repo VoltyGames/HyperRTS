@@ -33,11 +33,7 @@
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/DebugMipmapStreamingMacros.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/NormalMap.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/DetailMap.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/MetallicSpecGloss.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/AlphaBlend.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/OcclusionMap.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/ClearCoat.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/Emission.hlsl"
+#include "Packages/com.unity.render-pipelines.universal/Shaders/LitFeatures.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/Shaders/Utils/SurfaceType.hlsl"
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Macros.hlsl"
@@ -88,7 +84,6 @@ CBUFFER_END
 
 UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _BaseColor)
-    UNITY_DOTS_INSTANCED_PROP(float4, _EmissionColor)
     UNITY_DOTS_INSTANCED_PROP(float4, _TeamColor)
     UNITY_DOTS_INSTANCED_PROP(float4, _TeamStrip)
     UNITY_DOTS_INSTANCED_PROP(float4, _VATClip)
@@ -105,16 +100,10 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float , _BuildProgress)
     UNITY_DOTS_INSTANCED_PROP(float , _Reveal)
     UNITY_DOTS_INSTANCED_PROP(float , _LightsOn)
-    UNITY_DOTS_INSTANCED_PROP(float , _Cutoff)
-    UNITY_DOTS_INSTANCED_PROP(float , _Smoothness)
-    UNITY_DOTS_INSTANCED_PROP(float , _Metallic)
-    UNITY_DOTS_INSTANCED_PROP(float , _BumpScale)
-    UNITY_DOTS_INSTANCED_PROP(float , _OcclusionStrength)
 UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
 
 // Loaded once per instance into statics, as URP does, so each use doesn't regenerate the load.
 static float4 unity_DOTS_Sampled_BaseColor;
-static float4 unity_DOTS_Sampled_EmissionColor;
 static float4 unity_DOTS_Sampled_TeamColor;
 static float4 unity_DOTS_Sampled_TeamStrip;
 static float4 unity_DOTS_Sampled_VATClip;
@@ -131,16 +120,10 @@ static float  unity_DOTS_Sampled_PoseSlot;
 static float  unity_DOTS_Sampled_BuildProgress;
 static float  unity_DOTS_Sampled_Reveal;
 static float  unity_DOTS_Sampled_LightsOn;
-static float  unity_DOTS_Sampled_Cutoff;
-static float  unity_DOTS_Sampled_Smoothness;
-static float  unity_DOTS_Sampled_Metallic;
-static float  unity_DOTS_Sampled_BumpScale;
-static float  unity_DOTS_Sampled_OcclusionStrength;
 
 void SetupDOTSLitTeamMaterialPropertyCaches()
 {
     unity_DOTS_Sampled_BaseColor            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _BaseColor);
-    unity_DOTS_Sampled_EmissionColor        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _EmissionColor);
     unity_DOTS_Sampled_TeamColor            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TeamColor);
     unity_DOTS_Sampled_TeamStrip            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TeamStrip);
     unity_DOTS_Sampled_VATClip              = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _VATClip);
@@ -157,18 +140,12 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_BuildProgress        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BuildProgress);
     unity_DOTS_Sampled_Reveal               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Reveal);
     unity_DOTS_Sampled_LightsOn             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _LightsOn);
-    unity_DOTS_Sampled_Cutoff               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Cutoff);
-    unity_DOTS_Sampled_Smoothness           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Smoothness);
-    unity_DOTS_Sampled_Metallic             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Metallic);
-    unity_DOTS_Sampled_BumpScale            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BumpScale);
-    unity_DOTS_Sampled_OcclusionStrength    = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _OcclusionStrength);
 }
 
 #undef UNITY_SETUP_DOTS_MATERIAL_PROPERTY_CACHES
 #define UNITY_SETUP_DOTS_MATERIAL_PROPERTY_CACHES() SetupDOTSLitTeamMaterialPropertyCaches()
 
 #define _BaseColor              unity_DOTS_Sampled_BaseColor
-#define _EmissionColor          unity_DOTS_Sampled_EmissionColor
 #define _TeamColor              unity_DOTS_Sampled_TeamColor
 #define _TeamStrip              unity_DOTS_Sampled_TeamStrip
 #define _VATClip                unity_DOTS_Sampled_VATClip
@@ -185,11 +162,6 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _BuildProgress          unity_DOTS_Sampled_BuildProgress
 #define _Reveal                 unity_DOTS_Sampled_Reveal
 #define _LightsOn               unity_DOTS_Sampled_LightsOn
-#define _Cutoff                 unity_DOTS_Sampled_Cutoff
-#define _Smoothness             unity_DOTS_Sampled_Smoothness
-#define _Metallic               unity_DOTS_Sampled_Metallic
-#define _BumpScale              unity_DOTS_Sampled_BumpScale
-#define _OcclusionStrength      unity_DOTS_Sampled_OcclusionStrength
 
 #endif
 

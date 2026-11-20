@@ -70,9 +70,6 @@ namespace HyperRTS.Editor.Effects.Graph
                 case EffectLayerKind.Debris:
                     Debris(output);
                     break;
-                case EffectLayerKind.Strip:
-                    Strip(output);
-                    break;
                 case EffectLayerKind.Distort:
                     Distort(output);
                     break;
@@ -90,7 +87,6 @@ namespace HyperRTS.Editor.Effects.Graph
         {
             EffectLayerKind.Glow or EffectLayerKind.Spark => "VFXPlanarPrimitiveOutput",
             EffectLayerKind.Debris => "VFXURPLitMeshOutput",
-            EffectLayerKind.Strip => "VFXURPLitQuadStripOutput",
             _ => "VFXURPLitPlanarPrimitiveOutput",
         };
 
@@ -193,13 +189,6 @@ namespace HyperRTS.Editor.Effects.Graph
 
             _graph.Slot(output, "metallic", _layer.debris.metallic);
             _graph.Slot(output, "smoothness", _layer.debris.smoothness);
-        }
-
-        private void Strip(object output)
-        {
-            _graph.Set(output, "blendMode", "Alpha");
-            _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
-            _graph.Slot(output, "baseColorMap", _layer.texture);
         }
 
         // The Shader Graph reads the stored alpha as its bend and does the fog of war per pixel.
