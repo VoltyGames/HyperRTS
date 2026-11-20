@@ -63,12 +63,12 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Stains = Create("HyperRTS Stains", stainsSize, GraphicsFormat.R8G8B8A8_UNorm);
         }
 
-        /// <summary>Metres per texel of each map at <paramref name="quality"/>; Off has no maps.</summary>
+        /// <summary>Metres per texel of each map at <paramref name="quality"/>; None has no maps.</summary>
         public static (float Trample, float Tracks, float Stains) Texels(TrampleQuality quality) => quality switch
         {
             TrampleQuality.Full => (0.5f, 0.2f, 0.4f),
             TrampleQuality.Low => (1f, 0.4f, 0.8f),
-            _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "Off has no trample maps."),
+            _ => throw new ArgumentOutOfRangeException(nameof(quality), quality, "None has no trample maps."),
         };
 
         /// <summary>Texels needed to cover <paramref name="mapSize"/> metres, capped at <see cref="MaxTextureSize"/>.</summary>

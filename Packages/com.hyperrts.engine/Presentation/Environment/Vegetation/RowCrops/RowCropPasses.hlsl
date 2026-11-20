@@ -28,6 +28,8 @@ void Displace(Attributes input, WindFrame frame, float4x4 objectToWorld, out flo
     uv = TRANSFORM_TEX(input.uv, _BaseMap);
 }
 
+// Crop cards are two-sided: SSAO and reflections need the side facing the camera.
+#define DISPLACED_FACING_NORMALS
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedPasses.hlsl"
 
 #endif

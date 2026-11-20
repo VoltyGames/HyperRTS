@@ -78,7 +78,7 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
     FadeBlend(blend, exp(blend.maxScore - maxScore));
     blend.maxScore = maxScore;
     // Ramped in from the weight threshold, so a tall layer doesn't pop in at its edge.
-    float share = exp(score - maxScore) * saturate(weight * 50.0);
+    float share = exp(score - maxScore) * saturate((weight - TERRAIN_MIN_WEIGHT) * 50.0);
     blend.total += share;
     blend.albedo += share * albedo.rgb * params.tint;
     blend.height += share * albedo.a;

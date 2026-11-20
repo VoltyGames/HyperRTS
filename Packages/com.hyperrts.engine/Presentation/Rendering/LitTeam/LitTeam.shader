@@ -168,7 +168,7 @@ Shader "HyperRTS/LitTeam"
             HLSLPROGRAM
             #pragma target 2.0
             #pragma vertex DisplacedLitVertex
-            #pragma fragment DepthOnlyFragment
+            #pragma fragment LitTeamDepthOnlyFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile _ LOD_FADE_CROSSFADE
@@ -190,7 +190,7 @@ Shader "HyperRTS/LitTeam"
             HLSLPROGRAM
             #pragma target 2.0
             #pragma vertex DisplacedLitVertex
-            #pragma fragment DepthNormalsFragment
+            #pragma fragment LitTeamDepthNormalsFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
@@ -215,6 +215,7 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex SilhouetteVertex
             #pragma fragment UnitMaskFragment
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"
@@ -238,6 +239,7 @@ Shader "HyperRTS/LitTeam"
             #pragma target 2.0
             #pragma vertex SilhouetteVertex
             #pragma fragment SilhouetteFragment
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
             #define SILHOUETTE_SLACK_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
@@ -277,7 +279,7 @@ Shader "HyperRTS/LitTeam"
             HLSLPROGRAM
             #pragma target 3.5
             #pragma vertex DisplacedLitVertex
-            #pragma fragment frag
+            #pragma fragment LitTeamMotionFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #pragma shader_feature_local _ALPHATEST_ON

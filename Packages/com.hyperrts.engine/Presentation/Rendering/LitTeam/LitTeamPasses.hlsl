@@ -15,4 +15,36 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedLitPasses.hlsl"
 
+// The fog fade's dither in the prepasses too, so SSAO and contact shadows thin out with the unit. Shadows stay whole.
+#if defined(UNIVERSAL_DEPTH_ONLY_PASS_INCLUDED)
+half LitTeamDepthOnlyFragment(Varyings input) : SV_TARGET
+{
+    UNITY_SETUP_INSTANCE_ID(input);
+    ClipReveal(input.positionCS);
+    return DepthOnlyFragment(input);
+}
+#elif defined(UNIVERSAL_FORWARD_LIT_DEPTH_NORMALS_PASS_INCLUDED)
+void LitTeamDepthNormalsFragment(Varyings input, out half4 outNormalWS : SV_Target0
+#ifdef _WRITE_RENDERING_LAYERS
+    , out uint outRenderingLayers : SV_Target1
+#endif
+)
+{
+    UNITY_SETUP_INSTANCE_ID(input);
+    ClipReveal(input.positionCS);
+    DepthNormalsFragment(input, outNormalWS
+#ifdef _WRITE_RENDERING_LAYERS
+        , outRenderingLayers
+#endif
+    );
+}
+#elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
+float4 LitTeamMotionFragment(Varyings input) : SV_Target
+{
+    UNITY_SETUP_INSTANCE_ID(input);
+    ClipReveal(input.positionCS);
+    return frag(input);
+}
+#endif
+
 #endif

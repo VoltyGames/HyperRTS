@@ -11,7 +11,7 @@
 #define PLANT_LEAF_F0 0.04 // a waxy leaf's reflectance head on
 
 #ifndef PLANT_WRAP
-    #error "PlantLighting.hlsl: define PLANT_WRAP (1 foliage lighting, 0 opaque solid)."
+    #error "PlantLighting.hlsl: define PLANT_WRAP (1 foliage lighting down to 0 opaque solid)."
 #endif
 
 #ifndef PLANT_TWO_SIDED
@@ -37,7 +37,7 @@ struct ForwardVaryings
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-// PLANT_WRAP (set by the input file): 1 lights as foliage, 0 as an opaque solid with plain Lambert light.
+// PLANT_WRAP (set by the input file) runs from 1, lit as foliage, to 0, an opaque solid with plain Lambert light.
 // Wrapped light on the facing side plus light through the leaf toward the eye; the root wraps and passes none.
 half PlantDiffuse(half3 normal, half3 toLight, half3 view, half canopy, half root)
 {

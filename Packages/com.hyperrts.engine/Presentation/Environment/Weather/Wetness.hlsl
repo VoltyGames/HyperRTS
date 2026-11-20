@@ -1,4 +1,4 @@
-// Ground wetness after rain, from Wetness.cs, and the wet and puddle shading terrain and roads share.
+// Ground wetness after rain (Atmosphere sets _HyperRTSWetness) and the wet and puddle shading terrain and roads share.
 #ifndef HYPERRTS_WETNESS_INCLUDED
 #define HYPERRTS_WETNESS_INCLUDED
 

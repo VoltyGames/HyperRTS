@@ -15,6 +15,7 @@ struct SilhouetteAttributes
 {
     float4 positionOS : POSITION;
     float3 normalOS   : NORMAL;
+    float2 uv         : TEXCOORD0;
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
@@ -23,6 +24,7 @@ struct SilhouetteVaryings
     float4 positionCS : SV_POSITION;
     float3 positionWS : TEXCOORD0;
     float3 normalWS   : TEXCOORD1;
+    float2 uv         : TEXCOORD2;
     UNITY_VERTEX_INPUT_INSTANCE_ID
     UNITY_VERTEX_OUTPUT_STEREO
 };
@@ -45,14 +47,22 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     output.positionCS = TransformWorldToHClip(vertexInput.positionWS + GetWorldSpaceNormalizeViewDir(vertexInput.positionWS) * SILHOUETTE_SLACK);
 #endif
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);
+    output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
     return output;
+}
+
+// The pixels the forward pass draws: cutout holes and the fog fade's dither stay out of both passes.
+void ClipSilhouette(SilhouetteVaryings input)
+{
+    AlphaDiscard(SampleBaseMap(input.uv).a * GetBaseColor().a, GetCutoff());
+    ClipReveal(input.positionCS);
 }
 
 half4 UnitMaskFragment(SilhouetteVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-    ClipReveal(input.positionCS);
+    ClipSilhouette(input);
     return 0;
 }
 
@@ -61,7 +71,7 @@ half4 SilhouetteFragment(SilhouetteVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
     UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
-    ClipReveal(input.positionCS);
+    ClipSilhouette(input);
 
     clip(_TeamColor.a - 0.001);
     half3 normalWS = normalize(input.normalWS);

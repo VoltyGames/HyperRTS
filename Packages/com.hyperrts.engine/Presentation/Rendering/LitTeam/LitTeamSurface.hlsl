@@ -1,5 +1,5 @@
 // HyperRTS/LitTeam surface: URP Lit's InitializeStandardLitSurfaceData (LitInput.hlsl declares it beside Lit's own
-// properties, so it can't be included) without detail maps, the specular workflow or transparency, and the team
+// properties, so it can't be included) without URP's detail maps or the specular workflow, and the team
 // tint. Included by LitTeamInput.hlsl after its accessors.
 #ifndef HYPERRTS_LIT_TEAM_SURFACE_INCLUDED
 #define HYPERRTS_LIT_TEAM_SURFACE_INCLUDED

@@ -253,7 +253,7 @@ Shader "HyperRTS/Road"
                 const bool isSurfaceTypeTransparent = false;
                 data.shadowCoord = TransformWorldToShadowCoord(input.positionWS, isSurfaceTypeTransparent, data.geometricNormalWS);
                 data.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(input.positionCS);
-                data.bakedGI = SampleSH(data.normalWS);
+                data.bakedGI = SurfaceCacheAmbient(input.positionWS, data.normalWS, data.viewDirectionWS, input.positionCS.xy);
                 data.shadowMask = half4(1.0, 1.0, 1.0, 1.0);
                 #if defined(_ADDITIONAL_LIGHTS_VERTEX)
                     data.vertexLighting = input.vertexLighting;

@@ -18,7 +18,7 @@ CBUFFER_START(UnityPerMaterial)
     float _WaveAmplitude;
 CBUFFER_END
 
-// Mirrors URP 17.6 UnlitInput.hlsl: FlagState and FlagColor come per entity under Entities Graphics.
+// Mirrors URP's UnlitInput.hlsl: FlagState and FlagColor come per entity under Entities Graphics.
 #ifdef UNITY_DOTS_INSTANCING_ENABLED
 UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _FlagState)

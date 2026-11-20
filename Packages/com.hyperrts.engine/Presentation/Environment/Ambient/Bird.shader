@@ -77,7 +77,6 @@ Shader "HyperRTS/Bird"
         Pass
         {
             Name "Bird"
-            AlphaToMask On
 
             HLSLPROGRAM
             #pragma vertex BirdVert

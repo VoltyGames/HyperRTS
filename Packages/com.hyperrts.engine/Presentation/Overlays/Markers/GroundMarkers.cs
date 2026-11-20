@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.Overlays.Markers
             _markers.Add(new MarkerInstance
             {
                 ObjectToWorld = pose.Matrix(footprint),
-                Tint = color,
+                Tint = color.linear,
                 Shape = new Vector4(look.Line, look.Fade, look.Fill, signedCorner),
             });
         }
