@@ -8,16 +8,15 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     {
         private readonly float _scale;
 
-        private SpeedStep(StagingJson json)
+        public SpeedStep(float scale) => _scale = scale;
+
+        public override void Check()
         {
-            _scale = json.Number("speed");
             if (_scale <= 0f)
             {
-                throw json.Problem($"needs a 'speed' above 0, not {_scale}");
+                throw new InvalidOperationException($"needs a 'speed' above 0, not {_scale}");
             }
         }
-
-        public static StagingStep Read(StagingJson step) => new SpeedStep(step);
 
         public override void Run(StagingRun run)
         {

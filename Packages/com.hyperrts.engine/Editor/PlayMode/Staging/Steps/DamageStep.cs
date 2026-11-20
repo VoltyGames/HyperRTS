@@ -6,23 +6,17 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     /// <summary>Hurts every live unit of a group by an amount through the damage system.</summary>
     internal sealed class DamageStep : StagingStep
     {
-        private readonly string _units;
-        private readonly float _amount;
+        public string units;
+        public float amount;
 
-        private DamageStep(StagingJson json)
-        {
-            _units = json.Text("units");
-            _amount = json.Number("amount");
-        }
+        public override IEnumerable<string> Uses => new[] { units };
 
-        public override IEnumerable<string> Uses => new[] { _units };
-
-        public static StagingStep Read(StagingJson step) => new DamageStep(step.Child("damage"));
+        public override void Check() => Need(units, "units");
 
         public override void Run(StagingRun run)
         {
-            using var listed = run.LiveUnitArray(_units, "damage");
-            MatchCheats.Damage(run.World, listed, _amount);
+            using var listed = run.LiveUnitArray(units, "damage");
+            MatchCheats.Damage(run.World, listed, amount);
         }
     }
 }

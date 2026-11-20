@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -14,13 +13,14 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     {
         private readonly Dictionary<string, float> _values;
 
-        private MixerStep(Dictionary<string, float> values) => _values = values;
+        public MixerStep(Dictionary<string, float> values) => _values = values;
 
-        public static StagingStep Read(StagingJson step)
+        public override void Check()
         {
-            var json = step.Child("mixer");
-            var values = json.Keys.ToDictionary(key => key, json.Number);
-            return values.Count > 0 ? new MixerStep(values) : throw json.Problem("names no mixer parameter");
+            if (_values.Count == 0)
+            {
+                throw new InvalidOperationException("names no mixer parameter");
+            }
         }
 
         public override void Run(StagingRun run)

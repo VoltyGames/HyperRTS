@@ -1,36 +1,39 @@
+using System;
 using HyperRTS.Editor.PlayMode.Capture;
+
 namespace HyperRTS.Editor.PlayMode.Staging.Steps
 {
     /// <summary>A burst of Game view frames at a fixed rate, or a ProRes movie with the game's sound, through <see cref="FrameCapture"/>.</summary>
     internal sealed class FramesStep : StagingStep
     {
-        private readonly string _name;
-        private readonly float _seconds;
-        private readonly int _fps;
-        private readonly bool _movie;
+        public string name;
+        public float seconds;
+        public int fps;
 
-        private FramesStep(StagingJson json, bool movie)
+        private bool _movie;
+
+        public override string Output => $"{Kind}:{name}";
+
+        /// <summary>Makes this a ProRes movie instead of a burst of frames.</summary>
+        public FramesStep AsMovie()
         {
-            _name = json.Text("name");
-            _seconds = json.Number("seconds");
-            _fps = json.Whole("fps");
-            _movie = movie;
-            if (_seconds <= 0f || _fps <= 0)
+            _movie = true;
+            return this;
+        }
+
+        public override void Check()
+        {
+            Need(name, "name");
+            if (seconds <= 0f || fps <= 0)
             {
-                throw json.Problem($"needs 'seconds' and 'fps' above 0, got {_seconds} and {_fps}");
+                throw new InvalidOperationException($"needs 'seconds' and 'fps' above 0, got {seconds} and {fps}");
             }
         }
 
-        public override string Output => $"{Kind}:{_name}";
-
-        public static StagingStep Read(StagingJson step) => new FramesStep(step.Child("frames"), false);
-
-        public static StagingStep ReadClip(StagingJson step) => new FramesStep(step.Child("clip"), true);
-
         public override void Run(StagingRun run)
         {
-            var folder = $"{run.Folder}/{_name}";
-            var capture = new FrameCapture(folder, _seconds, _fps) { Size = run.Resolution, Movie = _movie };
+            var folder = $"{run.Folder}/{name}";
+            var capture = new FrameCapture(folder, seconds, fps) { Size = run.Resolution, Movie = _movie };
             run.Start(new CaptureActivity(capture, files =>
             {
                 if (_movie)

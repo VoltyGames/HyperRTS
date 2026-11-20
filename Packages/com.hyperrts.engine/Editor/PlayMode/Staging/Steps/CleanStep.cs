@@ -10,9 +10,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     {
         private readonly bool _clean;
 
-        private CleanStep(bool clean) => _clean = clean;
-
-        public static StagingStep Read(StagingJson step) => new CleanStep(step.Flag("clean"));
+        public CleanStep(bool clean) => _clean = clean;
 
         public override void Run(StagingRun run)
         {

@@ -1,37 +1,16 @@
-using HyperRTS.Editor.PlayMode.Staging.Steps;
 using System;
 using System.Collections.Generic;
-using Unity.Scripting.LifecycleManagement;
+using System.Linq;
+using Unity.Mathematics;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
     /// <summary>
-    /// One timed step of a <see cref="StagingFile"/>. To add a kind, subclass it with a static <c>Read</c>, and list the
-    /// kind's key in <see cref="Readers"/>.
+    /// One timed step of a <see cref="StagingFile"/>. To add a kind, subclass it with public fields named after the
+    /// kind's JSON keys, check them in <see cref="Check"/>, and list the kind in <see cref="StagingEntry"/>.
     /// </summary>
     internal abstract class StagingStep
     {
-        [NoAutoStaticsCleanup]
-        private static readonly Dictionary<string, Func<StagingJson, StagingStep>> Readers = new()
-        {
-            ["spawn"] = SpawnStep.Read,
-            ["order"] = OrderStep.Read,
-            ["camera"] = CameraStep.Read,
-            ["view"] = ViewStep.Read,
-            ["clean"] = CleanStep.Read,
-            ["shot"] = ShotStep.Read,
-            ["frames"] = FramesStep.Read,
-            ["clip"] = FramesStep.ReadClip,
-            ["sample"] = SampleStep.Read,
-            ["destroy"] = DestroyStep.Read,
-            ["damage"] = DamageStep.Read,
-            ["ready"] = ReadyStep.Read,
-            ["speed"] = SpeedStep.Read,
-            ["fog"] = FogStep.Read,
-            ["mixer"] = MixerStep.Read,
-            ["detail"] = DetailStep.Read,
-        };
-
         /// <summary>Position in the file, for messages.</summary>
         public int Index { get; private set; }
 
@@ -55,20 +34,42 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public abstract void Run(StagingRun run);
 
-        public static StagingStep Read(StagingJson json, int index)
+        /// <summary>Throws an <see cref="InvalidOperationException"/> saying what is wrong with the fields, as "needs ..." or "has ..."; the file adds the step's path.</summary>
+        public virtual void Check()
         {
-            var at = json.Number("at");
-            if (at < 0f)
+        }
+
+        public StagingStep Placed(int index, float at, string kind)
+        {
+            Index = index;
+            At = at;
+            Kind = kind;
+            return this;
+        }
+
+        /// <summary>The key of the one option given; none or several throws.</summary>
+        public static string OneOf(params (string Key, bool Given)[] options)
+        {
+            var found = options.Where(option => option.Given).Select(option => $"'{option.Key}'").ToList();
+            if (found.Count == 1)
             {
-                throw json.Problem($"has a negative 'at' of {at}");
+                return options.First(option => option.Given).Key;
             }
 
-            var kind = json.Choose(Readers.Keys);
-            var step = Readers[kind](json);
-            step.Kind = kind;
-            step.Index = index;
-            step.At = at;
-            return step;
+            var keys = string.Join(", ", options.Select(option => $"'{option.Key}'"));
+            throw new InvalidOperationException(found.Count == 0 ? $"needs one of {keys}" : $"has {string.Join(", ", found)} together; give one");
+        }
+
+        /// <summary>A map point written <c>[x, z]</c>.</summary>
+        public static float2 Point(float[] value, string key) =>
+            value is { Length: 2 } ? new float2(value[0], value[1]) : throw new InvalidOperationException($"needs '{key}' as two numbers [x, z]");
+
+        protected static void Need(string value, string key)
+        {
+            if (value == null)
+            {
+                throw new InvalidOperationException($"needs '{key}'");
+            }
         }
     }
 }

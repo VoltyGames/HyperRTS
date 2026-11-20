@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Input.Cameras;
 using Unity.Mathematics;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging.Steps
@@ -14,33 +15,33 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     /// </summary>
     internal sealed class ViewStep : StagingStep
     {
-        private readonly string _on;
-        private readonly CameraAim _from;
-        private readonly CameraAim _to;
-        private readonly float _seconds;
-        private readonly float? _fov;
-        private readonly bool _sun;
+        public string on;
+        public float[] at;
+        public float? lift;
+        [JsonProperty("from")]
+        public ViewAim start;
+        [JsonProperty("to")]
+        public ViewAim end;
+        public float? seconds;
+        public float? fov;
+        public bool? sun;
 
-        private ViewStep(StagingJson json)
+        private CameraAim _from;
+        private CameraAim _to;
+
+        public override IEnumerable<string> Uses => on == null ? base.Uses : new[] { on };
+
+        public override void Check()
         {
-            var target = json.Choose(new[] { "on", "at" });
-            _on = target == "on" ? json.Text("on") : null;
-            var look = target == "at" ? json.Point("at") : float2.zero;
-            _from = Aim(json.Child("from"), look, json.NumberOrNull("lift") ?? 0f, null);
-            var moves = json.Has("to");
-            _to = moves ? Aim(json.Child("to"), look, _from.Lift, _from) : _from;
-            _seconds = moves ? json.Number("seconds") : 0f;
-            _fov = json.NumberOrNull("fov");
-            _sun = json.Has("sun") && json.Flag("sun");
-            if (moves && _seconds <= 0f)
+            var target = OneOf(("on", on != null), ("at", at != null));
+            var look = target == "at" ? Point(at, "at") : float2.zero;
+            _from = (start ?? throw new InvalidOperationException("needs 'from'")).Aim(look, lift ?? 0f, null, "from");
+            _to = end == null ? _from : end.Aim(look, _from.Lift, _from, "to");
+            if (end != null && (seconds ?? 0f) <= 0f)
             {
-                throw json.Problem($"needs 'seconds' above 0 to move, got {_seconds}");
+                throw new InvalidOperationException($"needs 'seconds' above 0 to move, got {seconds}");
             }
         }
-
-        public override IEnumerable<string> Uses => _on == null ? base.Uses : new[] { _on };
-
-        public static StagingStep Read(StagingJson step) => new ViewStep(step.Child("view"));
 
         public override void Run(StagingRun run)
         {
@@ -49,16 +50,16 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
                 cinematic = run.Camera.gameObject.AddComponent<CinematicCamera>();
             }
 
-            if (_fov is { } fov)
+            if (fov is { } angle)
             {
-                run.Camera.fieldOfView = fov;
+                run.Camera.fieldOfView = angle;
             }
 
             run.Follow = null;
-            var group = _on == null ? null : run.FindGroup(_on);
+            var group = on == null ? null : run.FindGroup(on);
             Func<float2?> track = group == null ? null : () => group.TryGetCentre(run.World, out var centre) ? centre : null;
-            var turn = _sun ? SunHeading() : 0f;
-            cinematic.Path = new ViewPath(_from.Turned(turn), _to.Turned(turn), Time.time, _seconds, point => run.GroundPoint(point).y, track);
+            var turn = sun == true ? SunHeading() : 0f;
+            cinematic.Path = new ViewPath(_from.Turned(turn), _to.Turned(turn), Time.time, end == null ? 0f : seconds.Value, point => run.GroundPoint(point).y, track);
         }
 
         // The heading the brightest directional light shines along, as a camera yaw.
@@ -71,18 +72,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             return sun != null
                 ? sun.transform.eulerAngles.y
                 : throw new InvalidOperationException("HyperRTS: a view with 'sun' needs a directional light in the scene.");
-        }
-
-        // An end aim takes what it leaves out from the start aim; a start aim needs its distance, pitch and yaw.
-        private static CameraAim Aim(StagingJson json, float2 look, float lift, CameraAim? from)
-        {
-            float Read(string key, float? kept) => kept is { } value ? json.NumberOrNull(key) ?? value : json.Number(key);
-            return new CameraAim(
-                json.PointOrNull("at") ?? from?.Look ?? look,
-                json.NumberOrNull("lift") ?? lift,
-                Read("distance", from?.Distance),
-                Read("pitch", from?.Pitch),
-                Read("yaw", from?.Yaw));
         }
     }
 }

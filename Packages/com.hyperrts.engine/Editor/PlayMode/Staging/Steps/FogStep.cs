@@ -7,9 +7,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     {
         private readonly bool _enabled;
 
-        private FogStep(bool enabled) => _enabled = enabled;
-
-        public static StagingStep Read(StagingJson step) => new FogStep(step.Flag("fog"));
+        public FogStep(bool enabled) => _enabled = enabled;
 
         public override void Run(StagingRun run) => MatchCheats.SetFog(run.World, _enabled);
     }

@@ -87,7 +87,7 @@ tagged instance waits up to 60 s in Play for that file, then calls `GameLauncher
 
 ## Stagings
 
-A staging is a JSON file that scripts a whole Play check or a filmed scene, so an agent makes one call instead of many
+A staging is a JSON file, named for the check or scene it films, that scripts a whole Play check or a filmed scene, so an agent makes one call instead of many
 evals. `play
 stage <file>` (`StagingJob`) opens the file's scene, enters Play, waits until the match is live (world, streamed
 SubScene entities, a local player, the match camera), runs the steps at their game-time seconds, leaves Play and
@@ -95,7 +95,7 @@ reopens the scene that was open before. It returns at once; poll `play stage_sta
 when the match is not live after 120 s, when the run still goes after an hour, or with "Play ended early" when Play
 quits by itself. A contact sheet that fails is noted in the report's `ended` line and the report is still written.
 
-`Logs/Stagings/<name>/` is cleared at the start of a run and then holds `report.json`, the shots, one folder per
+`Logs/Stagings/<name>/`, named after the file without its extension, is cleared at the start of a run and then holds `report.json`, the shots, one folder per
 frames burst, the sample TSVs and `sheet.png`, a contact sheet of all shots and up to six evenly spaced frames of each
 burst, three or four tiles across and unlabelled; the report lists its tiles in order. The report gives each step's
 outcome, how many units of each group are alive, every console error (message and first stack line, with counts), the
@@ -104,7 +104,7 @@ run goes on, except a `spawn`, whose failure ends the run with its message (a wr
 
 ```json
 {
-  "name": "muzzle_cannon", "scene": "Assets/Maps/X.unity",
+  "scene": "Assets/Maps/X.unity",
   "steps": [
     { "at": 0, "fog": false },
     { "at": 0, "spawn": { "as": "blue", "prefab": "Tank", "owner": 1, "count": 2, "at": [120, -40], "spacing": 8, "yaw": 90 } },
@@ -118,7 +118,7 @@ run goes on, except a `spawn`, whose failure ends the run with its message (a wr
 }
 ```
 
-`name`, `scene` and `steps` are required; `resolution` (`[width, height]`) sets the Game view size every shot, burst
+`scene` and `steps` are required; `resolution` (`[width, height]`) sets the Game view size every shot, burst
 and clip records at. Positions are `[x, z]` on the map. An unknown key, a wrong type, a step with two kinds or two order actions, or a group no earlier step spawns fails
 the file, naming its path. Steps run by `at`, and in file order at the same time.
 
@@ -141,8 +141,10 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `mixer` | parameter names and values | Sets exposed parameters on the loaded audio mixers, such as `{ "Music": -80 }` to record without the match music under footage that gets its own; a name no mixer exposes fails |
 | `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |
 
-To add a step kind, subclass `StagingStep` in `Editor/PlayMode/Staging/Steps/` with a static `Read` that takes the step's `StagingJson`, run it in `Run`
-(long work becomes a `StagingActivity` handed to `run.Start`), and list its key in `StagingStep.Readers`. A group
+To add a step kind, subclass `StagingStep` in `Editor/PlayMode/Staging/Steps/` with a public field per JSON key (a
+nullable one is optional, a `float[]` is an `[x, z]` point), check the rules JSON can't express in `Check`, run it in
+`Run` (long work becomes a `StagingActivity` handed to `run.Start`), and give `StagingEntry` a field named after its key
+and a line in `Given`. A group
 label it makes is `Defines`, labels it needs are `Uses`, and a file it writes is `Output`.
 
 - One recording runs at a time: space `shot`, `frames` and `clip` steps apart, and cut between `view` steps inside

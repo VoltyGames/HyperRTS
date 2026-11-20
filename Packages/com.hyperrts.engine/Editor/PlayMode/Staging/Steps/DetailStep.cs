@@ -15,38 +15,37 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     {
         private const float ShadowReachPriority = 1000f;
 
-        private readonly float? _shadows;
-        private readonly float? _grass;
-        private readonly float? _crops;
-        private readonly float? _lod;
+        public float? shadows;
+        public float? grass;
+        public float? crops;
+        public float? lod;
 
-        private DetailStep(StagingJson json)
+        public override void Check()
         {
-            _shadows = Positive(json, "shadows");
-            _grass = Positive(json, "grass");
-            _crops = Positive(json, "crops");
-            _lod = Positive(json, "lod");
-            if (new[] { _shadows, _grass, _crops, _lod }.All(value => value == null))
+            if (new[] { shadows, grass, crops, lod }.All(value => value == null))
             {
-                throw json.Problem("needs one of 'shadows', 'grass', 'crops' or 'lod'");
+                throw new System.InvalidOperationException("needs one of 'shadows', 'grass', 'crops' or 'lod'");
             }
-        }
 
-        public static StagingStep Read(StagingJson step) => new DetailStep(step.Child("detail"));
+            Positive(shadows, "shadows");
+            Positive(grass, "grass");
+            Positive(crops, "crops");
+            Positive(lod, "lod");
+        }
 
         public override void Run(StagingRun run)
         {
-            if (_shadows is { } shadows)
+            if (shadows is { } reach)
             {
-                RaiseShadowReach(run, shadows);
+                RaiseShadowReach(run, reach);
             }
 
-            if (_lod is { } lod)
+            if (lod is { } finer)
             {
                 var bias = QualitySettings.lodBias;
                 var threshold = QualitySettings.meshLodThreshold;
-                QualitySettings.lodBias = bias * lod;
-                QualitySettings.meshLodThreshold = threshold / lod;
+                QualitySettings.lodBias = bias * finer;
+                QualitySettings.meshLodThreshold = threshold / finer;
                 run.Undo(() =>
                 {
                     QualitySettings.lodBias = bias;
@@ -54,17 +53,17 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
                 });
             }
 
-            if (_shadows != null || _grass != null || _crops != null)
+            if (shadows != null || grass != null || crops != null)
             {
                 RaiseVegetation(run);
             }
         }
 
         // A global volume above the scene's and the quality level's, so no asset changes.
-        private static void RaiseShadowReach(StagingRun run, float shadows)
+        private static void RaiseShadowReach(StagingRun run, float reach)
         {
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
-            profile.Add<ShadowsVolumeOverride>().maxShadowDistance.Override(shadows);
+            profile.Add<ShadowsVolumeOverride>().maxShadowDistance.Override(reach);
             var volume = new GameObject("Staging Shadow Reach").AddComponent<Volume>();
             volume.isGlobal = true;
             volume.priority = ShadowReachPriority;
@@ -83,23 +82,25 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             raised.GrassDensity = 1f;
             raised.CropDensity = 1f;
             raised.CloseDetail = 1f;
-            raised.GrassDistance = _grass ?? before.GrassDistance;
-            raised.CropDistance = _crops ?? before.CropDistance;
-            if (_shadows is { } shadows)
+            raised.GrassDistance = grass ?? before.GrassDistance;
+            raised.CropDistance = crops ?? before.CropDistance;
+            if (shadows is { } reach)
             {
                 // Plants keep their own shadow reach, so without this they stop casting a few dozen metres out.
-                raised.GrassShadowDistance = math.min(shadows, raised.GrassDistance);
-                raised.CropShadowDistance = math.min(shadows, raised.CropDistance);
+                raised.GrassShadowDistance = math.min(reach, raised.GrassDistance);
+                raised.CropShadowDistance = math.min(reach, raised.CropDistance);
             }
 
             PresentationQuality.Apply(raised);
             run.Undo(() => PresentationQuality.Apply(before));
         }
 
-        private static float? Positive(StagingJson json, string key)
+        private static void Positive(float? value, string key)
         {
-            var value = json.NumberOrNull(key);
-            return value is null or > 0f ? value : throw json.Problem($"'{key}' must be above 0, got {value}");
+            if (value is <= 0f)
+            {
+                throw new System.InvalidOperationException($"has a '{key}' that must be above 0, got {value}");
+            }
         }
     }
 }

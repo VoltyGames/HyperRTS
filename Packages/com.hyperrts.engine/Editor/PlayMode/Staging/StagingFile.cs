@@ -2,15 +2,25 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.Mathematics;
+using HyperRTS.Editor.Common.Json;
+using Newtonsoft.Json;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
-    /// <summary>A scripted Play check read from a hand-written JSON file: a scene and timed steps.</summary>
+    /// <summary>A scripted Play check read from a hand-written JSON file named for it: a scene and timed steps.</summary>
     internal sealed class StagingFile
     {
         public const string Root = "Logs/Stagings";
+
+        [NoAutoStaticsCleanup]
+        private static readonly JsonSerializerSettings ReadSettings = new()
+        {
+            MissingMemberHandling = MissingMemberHandling.Error,
+            DateParseHandling = DateParseHandling.None,
+            ContractResolver = new JsonUtilityResolver(true),
+        };
 
         private StagingFile(string name, string scene, Vector2Int resolution, List<StagingStep> steps)
         {
@@ -42,31 +52,82 @@ namespace HyperRTS.Editor.PlayMode.Staging
             return Parse(File.ReadAllText(path), path);
         }
 
-        /// <summary>Throws naming the file and the key for bad JSON, an unknown key, a missing or misplaced value or an undefined group.</summary>
+        /// <summary>
+        /// The staging's name is <paramref name="source"/>'s file name without its extension. Throws naming the file and
+        /// the key for bad JSON, an unknown key, a missing or misplaced value or an undefined group.
+        /// </summary>
         public static StagingFile Parse(string json, string source)
         {
-            var root = StagingJson.Parse(json, source);
-            var name = root.Text("name");
-            var scene = root.Text("scene");
-            var resolution = ReadResolution(root);
-            var steps = root.Items("steps").Select(StagingStep.Read).OrderBy(step => step.At).ToList();
-            root.Finish();
+            var name = Path.GetFileNameWithoutExtension(source);
             if (name.Length == 0 || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
             {
-                throw root.Problem($"has a 'name' of '{name}' that is not a folder name");
+                throw new InvalidOperationException($"HyperRTS: staging {source} is named '{name}', which is not a folder name.");
             }
 
+            var spec = Deserialize(json, source);
+            var scene = spec.scene ?? throw new InvalidOperationException($"HyperRTS: staging {source} needs 'scene'.");
+            var entries = spec.steps ?? throw new InvalidOperationException($"HyperRTS: staging {source} needs 'steps'.");
+            var steps = entries.Select((entry, i) => Build(entry, i, source)).OrderBy(step => step.At).ToList();
             Check(steps, source);
-            return new StagingFile(name, scene, resolution, steps);
+            return new StagingFile(name, scene, ReadResolution(spec.resolution, source), steps);
         }
 
-        private static Vector2Int ReadResolution(StagingJson root)
+        private static StagingSpec Deserialize(string json, string source)
         {
-            var size = root.PointOrNull("resolution") ?? float2.zero;
-            var pixels = new Vector2Int((int)size.x, (int)size.y);
-            if (pixels.x < 0 || pixels.y < 0 || pixels.x != size.x || pixels.y != size.y)
+            try
             {
-                throw root.Problem($"has a 'resolution' of {size} that is not [width, height] in whole pixels");
+                return JsonConvert.DeserializeObject<StagingSpec>(json, ReadSettings)
+                    ?? throw new InvalidOperationException($"HyperRTS: staging {source} must be a JSON object.");
+            }
+            catch (JsonException exception)
+            {
+                throw new InvalidOperationException($"HyperRTS: staging {source} is not valid: {exception.Message}", exception);
+            }
+        }
+
+        private static StagingStep Build(StagingEntry entry, int index, string source)
+        {
+            var where = $"steps[{index}]";
+            try
+            {
+                if (entry == null)
+                {
+                    throw new InvalidOperationException("must be an object");
+                }
+
+                if (entry.at < 0f)
+                {
+                    throw new InvalidOperationException($"has a negative 'at' of {entry.at}");
+                }
+
+                var (kind, step) = entry.Chosen();
+                where += $".{kind}";
+                step.Check();
+                return step.Placed(index, entry.at, kind);
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw new InvalidOperationException($"HyperRTS: staging {source} {where} {exception.Message}.", exception);
+            }
+        }
+
+        private static Vector2Int ReadResolution(float[] size, string source)
+        {
+            if (size == null)
+            {
+                return Vector2Int.zero;
+            }
+
+            var problem = new InvalidOperationException($"HyperRTS: staging {source} has a 'resolution' that is not [width, height] in whole pixels.");
+            if (size.Length != 2)
+            {
+                throw problem;
+            }
+
+            var pixels = new Vector2Int((int)size[0], (int)size[1]);
+            if (pixels.x < 0 || pixels.y < 0 || pixels.x != size[0] || pixels.y != size[1])
+            {
+                throw problem;
             }
 
             return pixels;

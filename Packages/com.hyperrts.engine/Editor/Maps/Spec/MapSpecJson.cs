@@ -1,10 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 using HyperRTS.Editor.Common.Json;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
@@ -19,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Spec
             MissingMemberHandling = MissingMemberHandling.Error,
             DateParseHandling = DateParseHandling.None,
             FloatParseHandling = FloatParseHandling.Double,
-            ContractResolver = new SerializedFieldsResolver(),
+            ContractResolver = new JsonUtilityResolver(false),
         };
 
         /// <summary>A key the spec has no field for, or a value of the wrong shape, throws naming its path.</summary>
@@ -43,15 +39,5 @@ namespace HyperRTS.Editor.Maps.Spec
 
         /// <summary>A deep copy of a feature known only by <paramref name="type"/>.</summary>
         public static object Clone(object value, Type type) => JsonUtility.FromJson(JsonUtility.ToJson(value), type);
-
-        // Reads the public fields JsonUtility writes, not the properties that wrap them.
-        private sealed class SerializedFieldsResolver : DefaultContractResolver
-        {
-            protected override List<MemberInfo> GetSerializableMembers(Type objectType) => objectType
-                .GetFields(BindingFlags.Public | BindingFlags.Instance)
-                .Where(field => !field.IsNotSerialized)
-                .Cast<MemberInfo>()
-                .ToList();
-        }
     }
 }

@@ -12,63 +12,78 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     /// <summary>Gives a group a command through its player, the way input and AI do.</summary>
     internal sealed class OrderStep : StagingStep
     {
-        private static readonly string[] Actions = { "move", "attack", "attackGround", "ability", "command", "stop" };
+        public string units;
+        public float[] move;
+        public string attack;
+        public float[] attackGround;
+        public string ability;
+        public JToken command;
+        public bool? stop;
+        public int? argument;
+        public float[] at;
+        public string target;
 
-        private readonly string _units;
-        private readonly CommandType _type;
-        private readonly float2? _point;
-        private readonly string _target;
-        private readonly int _argument;
+        private CommandType _type;
+        private float2? _point;
+        private string _target;
+        private int _argument;
 
-        private OrderStep(StagingJson json)
+        public override IEnumerable<string> Uses => _target == null ? new[] { units } : new[] { units, _target };
+
+        public override void Check()
         {
-            _units = json.Text("units");
-            var action = json.Choose(Actions);
+            Need(units, "units");
+            var action = OneOf(
+                ("move", move != null),
+                ("attack", attack != null),
+                ("attackGround", attackGround != null),
+                ("ability", ability != null),
+                ("command", command != null),
+                ("stop", stop != null));
+            RejectExtras(action);
             switch (action)
             {
                 case "move":
                     _type = CommandType.Move;
-                    _point = json.Point(action);
+                    _point = Point(move, action);
                     return;
                 case "attackGround":
                     _type = CommandType.FireMission;
-                    _point = json.Point(action);
+                    _point = Point(attackGround, action);
                     return;
                 case "attack":
                     _type = CommandType.Attack;
-                    _target = json.Text(action);
+                    _target = attack;
                     return;
                 case "stop":
-                    _type = json.Flag(action) ? CommandType.Stop : throw json.Problem("has 'stop' false; leave the key out instead");
+                    _type = stop == true ? CommandType.Stop : throw new InvalidOperationException("has 'stop' false; leave the key out instead");
                     return;
             }
 
             // Abilities go by the hash of their name, as the command card sends them.
-            var ability = action == "ability";
-            _type = ability ? CommandType.UseAbility : ReadCommand(json);
-            if (ability)
-            {
-                _argument = EntityInfo.TypeIdFromName(json.Text("ability"));
-            }
-            else if (json.Has("argument"))
-            {
-                _argument = json.Whole("argument");
-            }
-
-            _point = json.PointOrNull("at");
-            _target = json.TextOrNull("target");
+            var isAbility = action == "ability";
+            _type = isAbility ? CommandType.UseAbility : ReadCommand();
+            _argument = isAbility ? EntityInfo.TypeIdFromName(ability) : argument ?? 0;
+            _point = at == null ? null : Point(at, "at");
+            _target = target;
         }
 
-        public override IEnumerable<string> Uses => _target == null ? new[] { _units } : new[] { _units, _target };
-
-        public static StagingStep Read(StagingJson step) => new OrderStep(step.Child("order"));
+        // Only abilities and raw commands take a point, a target or an argument beside their action.
+        private void RejectExtras(string action)
+        {
+            var hasExtras = at != null || target != null || argument != null;
+            if (hasExtras && action is not ("ability" or "command"))
+            {
+                throw new InvalidOperationException($"has 'at', 'target' or 'argument', which '{action}' doesn't take");
+            }
+        }
 
         public override void Run(StagingRun run)
         {
             var entityManager = run.World;
-            var units = run.LiveUnits(_units, "order");
+            var live = run.LiveUnits(units, "order");
 
-            var player = run.FindPlayer(run.FindGroup(_units).Owner);
+            var player = run.FindPlayer(run.FindGroup(units).Owner);
             var command = new PlayerCommand { Type = _type, Argument = _argument };
             if (_point.HasValue)
             {
@@ -77,7 +92,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
             if (_target == null)
             {
-                using var listed = new NativeArray<Entity>(units.ToArray(), Allocator.Temp);
+                using var listed = new NativeArray<Entity>(live.ToArray(), Allocator.Temp);
                 PlayerCommands.Address(ref command, entityManager.GetBuffer<PlayerCommandSubject>(player), listed);
                 entityManager.GetBuffer<PlayerCommand>(player).Add(command);
                 return;
@@ -87,29 +102,29 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             var targets = run.LiveUnits(_target, "target");
             var commands = entityManager.GetBuffer<PlayerCommand>(player);
 
-            for (var i = 0; i < units.Count; i++)
+            for (var i = 0; i < live.Count; i++)
             {
                 var each = command;
-                each.Unit = units[i];
+                each.Unit = live[i];
                 each.Target = targets[i % targets.Count];
                 commands.Add(each);
             }
         }
 
         // A name of an engine command, or the number of a game's own.
-        private static CommandType ReadCommand(StagingJson json)
+        private CommandType ReadCommand()
         {
-            var token = json.Either("command");
             var advice = $"give a CommandType name or a game command number from {(int)CommandType.GameFirst}";
-            if (token.Type != JTokenType.String)
+            if (command.Type is JTokenType.Integer or JTokenType.Float)
             {
-                var number = (int)token;
-                return IsGameCommand(number) ? (CommandType)number : throw json.Problem($"has a 'command' of {number}: {advice}");
+                var number = (int)command;
+                return IsGameCommand(number) ? (CommandType)number : throw new InvalidOperationException($"has a 'command' of {number}: {advice}");
             }
 
-            var name = (string)token;
-            var named = Enum.TryParse(name, true, out CommandType command) && !char.IsDigit(name[0]);
-            return named && command != CommandType.None ? command : throw json.Problem($"has a 'command' of '{name}': {advice}");
+            var name = command.Type == JTokenType.String ? (string)command : string.Empty;
+            var parsed = CommandType.None;
+            var named = name.Length > 0 && Enum.TryParse(name, true, out parsed) && !char.IsDigit(name[0]);
+            return named && parsed != CommandType.None ? parsed : throw new InvalidOperationException($"has a 'command' of '{name}': {advice}");
         }
 
         private static bool IsGameCommand(int number) => number >= (int)CommandType.GameFirst && number <= byte.MaxValue;

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HyperRTS.Input.Cameras;
 using Unity.Mathematics;
@@ -8,29 +9,25 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     /// <summary>Points the match camera at a group's centre or a map point, taking it back from a cinematic view; it may keep following the group.</summary>
     internal sealed class CameraStep : StagingStep
     {
-        private readonly string _on;
-        private readonly float2 _point;
-        private readonly float _height;
-        private readonly float? _yaw;
-        private readonly bool _follow;
+        public string on;
+        public float[] at;
+        public float height;
+        public float? yaw;
+        public bool? follow;
 
-        private CameraStep(StagingJson json)
+        private float2 _point;
+
+        public override IEnumerable<string> Uses => on == null ? base.Uses : new[] { on };
+
+        public override void Check()
         {
-            var target = json.Choose(new[] { "on", "at" });
-            _on = target == "on" ? json.Text("on") : null;
-            _point = target == "at" ? json.Point("at") : default;
-            _height = json.Number("height");
-            _yaw = json.NumberOrNull("yaw");
-            _follow = json.Has("follow") && json.Flag("follow");
-            if (_follow && _on == null)
+            var target = OneOf(("on", on != null), ("at", at != null));
+            _point = target == "at" ? Point(at, "at") : default;
+            if (follow == true && on == null)
             {
-                throw json.Problem("can follow only a group: use 'on', not 'at'");
+                throw new InvalidOperationException("can follow only a group: use 'on', not 'at'");
             }
         }
-
-        public override IEnumerable<string> Uses => _on == null ? base.Uses : new[] { _on };
-
-        public static StagingStep Read(StagingJson step) => new CameraStep(step.Child("camera"));
 
         public override void Run(StagingRun run)
         {
@@ -39,9 +36,9 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
                 cinematic.Path = null;
             }
 
-            var centre = _on == null ? _point : run.GroupCentre(_on);
-            run.Controller.LookAt(new Vector3(centre.x, 0f, centre.y), _height, _yaw);
-            run.Follow = _follow ? _on : null;
+            var centre = on == null ? _point : run.GroupCentre(on);
+            run.Controller.LookAt(new Vector3(centre.x, 0f, centre.y), height, yaw);
+            run.Follow = follow == true ? on : null;
         }
     }
 }

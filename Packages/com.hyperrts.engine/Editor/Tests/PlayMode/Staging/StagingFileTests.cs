@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
     public class StagingFileTests
     {
         private const string Good = @"{
-            ""name"": ""check"", ""scene"": ""Assets/X.unity"",
+            ""scene"": ""Assets/X.unity"",
             ""steps"": [
                 { ""at"": 0, ""fog"": false },
                 { ""at"": 2, ""order"": { ""units"": ""blue"", ""attack"": ""red"" } },

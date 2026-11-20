@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace HyperRTS.Editor.PlayMode.Staging.Steps
@@ -8,25 +9,22 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         /// <summary>The value of <c>what</c> that samples the camera instead of a group.</summary>
         public const string CameraKey = "camera";
 
-        private readonly string _what;
-        private readonly float _seconds;
+        public string what;
+        public float seconds;
 
-        private SampleStep(StagingJson json)
+        public override string Output => $"sample:{what}";
+
+        public override IEnumerable<string> Uses => what == CameraKey ? base.Uses : new[] { what };
+
+        public override void Check()
         {
-            _what = json.Text("what");
-            _seconds = json.Number("seconds");
-            if (_seconds <= 0f)
+            Need(what, "what");
+            if (seconds <= 0f)
             {
-                throw json.Problem($"needs 'seconds' above 0, not {_seconds}");
+                throw new InvalidOperationException($"needs 'seconds' above 0, not {seconds}");
             }
         }
 
-        public override string Output => $"sample:{_what}";
-
-        public override IEnumerable<string> Uses => _what == CameraKey ? base.Uses : new[] { _what };
-
-        public static StagingStep Read(StagingJson step) => new SampleStep(step.Child("sample"));
-
-        public override void Run(StagingRun run) => run.Start(new SampleActivity(run, _what, _seconds));
+        public override void Run(StagingRun run) => run.Start(new SampleActivity(run, what, seconds));
     }
 }

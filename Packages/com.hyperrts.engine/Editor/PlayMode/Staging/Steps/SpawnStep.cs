@@ -4,6 +4,7 @@ using System.Linq;
 using HyperRTS.Editor.PlayMode.Cheats;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Surfaces;
+using Newtonsoft.Json;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -14,89 +15,92 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     {
         private const float SearchStep = 8f;
 
-        private readonly string _group;
-        private readonly string _prefab;
-        private readonly byte _owner;
-        private readonly int _count;
-        private readonly float2 _point;
-        private readonly float _spacing;
-        private readonly float _yaw;
-        private readonly SurfaceMaterial? _ground;
-        private readonly float _radius;
+        [JsonProperty("as")]
+        public string group;
+        public string prefab;
+        public int owner;
+        public int count;
+        public float[] at;
+        public float? spacing;
+        public float yaw;
+        public string ground;
+        public float? radius;
 
-        private SpawnStep(StagingJson json)
-        {
-            _group = json.Text("as");
-            _prefab = json.Text("prefab");
-            var owner = json.Whole("owner");
-            _owner = owner is >= 0 and <= byte.MaxValue ? (byte)owner : throw json.Problem($"has an 'owner' of {owner}, not 0 to 255");
-            _count = json.Whole("count");
-            _point = json.Point("at");
-            _spacing = json.NumberOrNull("spacing") ?? 0f;
-            _yaw = json.Number("yaw");
-            if (_count < 1)
-            {
-                throw json.Problem($"needs a 'count' of at least 1, not {_count}");
-            }
+        private float2 _point;
+        private SurfaceMaterial? _ground;
 
-            if (_count > 1 && _spacing <= 0f)
-            {
-                throw json.Problem("needs a 'spacing' above 0 for more than one unit");
-            }
-
-            if (_group == SampleStep.CameraKey)
-            {
-                throw json.Problem($"cannot name its group '{SampleStep.CameraKey}'; sample uses that for the camera");
-            }
-
-            if (json.Has("ground"))
-            {
-                _ground = ReadGround(json);
-            }
-
-            if (_ground.HasValue || json.Has("radius"))
-            {
-                _radius = json.Number("radius");
-            }
-        }
-
-        public override string Defines => _group;
+        public override string Defines => group;
 
         public override bool EndsRunOnError => true;
 
-        public static StagingStep Read(StagingJson step) => new SpawnStep(step.Child("spawn"));
+        public override void Check()
+        {
+            Need(group, "as");
+            Need(prefab, "prefab");
+            if (owner is < 0 or > byte.MaxValue)
+            {
+                throw new InvalidOperationException($"has an 'owner' of {owner}, not 0 to 255");
+            }
+
+            _point = Point(at, "at");
+            if (count < 1)
+            {
+                throw new InvalidOperationException($"needs a 'count' of at least 1, not {count}");
+            }
+
+            if (count > 1 && (spacing ?? 0f) <= 0f)
+            {
+                throw new InvalidOperationException("needs a 'spacing' above 0 for more than one unit");
+            }
+
+            if (group == SampleStep.CameraKey)
+            {
+                throw new InvalidOperationException($"cannot name its group '{SampleStep.CameraKey}'; sample uses that for the camera");
+            }
+
+            if (ground == null)
+            {
+                return;
+            }
+
+            _ground = ReadGround();
+            if (radius == null)
+            {
+                throw new InvalidOperationException("needs a 'radius' with 'ground'");
+            }
+        }
 
         public override void Run(StagingRun run)
         {
             var entityManager = run.World;
-            var prefab = FindPrefab(entityManager, _prefab);
+            var template = FindPrefab(entityManager, prefab);
             var centre = _ground.HasValue
-                ? new GroundSearch(entityManager).Nearest(_point, _ground.Value, _radius)
+                ? new GroundSearch(entityManager).Nearest(_point, _ground.Value, radius ?? 0f)
                 : _point;
-            var row = new SpawnRow(centre, _yaw, _spacing, _count);
+            var row = new SpawnRow(centre, yaw, spacing ?? 0f, count);
             var units = new List<Entity>();
-            for (var i = 0; i < _count; i++)
+            for (var i = 0; i < count; i++)
             {
-                var unit = SpawnNear(entityManager, prefab, row.Position(i));
+                var unit = SpawnNear(entityManager, template, row.Position(i));
                 if (unit != Entity.Null)
                 {
                     units.Add(unit);
                 }
             }
 
-            run.AddGroup(new StagingGroup(_group, _owner, units));
-            if (units.Count < _count)
+            run.AddGroup(new StagingGroup(group, (byte)owner, units));
+            if (units.Count < count)
             {
-                throw new InvalidOperationException($"{_count - units.Count} of {_count} {_prefab} not spawned: the ground there is blocked");
+                throw new InvalidOperationException($"{count - units.Count} of {count} {prefab} not spawned: the ground there is blocked");
             }
         }
 
         // A building on blocked ground takes the nearest free spot within the radius, tried in widening squares.
-        private Entity SpawnNear(EntityManager entityManager, Entity prefab, float2 spot)
+        private Entity SpawnNear(EntityManager entityManager, Entity template, float2 spot)
         {
-            var yaw = math.radians(_yaw);
-            var unit = SpawnCheat.SpawnAt(entityManager, prefab, _owner, spot, yaw);
-            for (var ring = 1; unit == Entity.Null && ring * SearchStep <= _radius; ring++)
+            var facing = math.radians(yaw);
+            var unit = SpawnCheat.SpawnAt(entityManager, template, (byte)owner, spot, facing);
+            for (var ring = 1; unit == Entity.Null && ring * SearchStep <= (radius ?? 0f); ring++)
             {
                 for (var x = -ring; x <= ring && unit == Entity.Null; x++)
                 {
@@ -104,7 +108,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
                     {
                         if (math.max(math.abs(x), math.abs(z)) == ring)
                         {
-                            unit = SpawnCheat.SpawnAt(entityManager, prefab, _owner, spot + new float2(x, z) * SearchStep, yaw);
+                            unit = SpawnCheat.SpawnAt(entityManager, template, (byte)owner, spot + new float2(x, z) * SearchStep, facing);
                         }
                     }
                 }
@@ -113,15 +117,14 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             return unit;
         }
 
-        private static SurfaceMaterial ReadGround(StagingJson json)
+        private SurfaceMaterial ReadGround()
         {
-            var name = json.Text("ground");
-            if (Enum.TryParse<SurfaceMaterial>(name, true, out var material) && Enum.IsDefined(typeof(SurfaceMaterial), material))
+            if (Enum.TryParse<SurfaceMaterial>(ground, true, out var material) && Enum.IsDefined(typeof(SurfaceMaterial), material))
             {
                 return material;
             }
 
-            throw json.Problem($"has no ground material '{name}'; known: {string.Join(", ", Enum.GetNames(typeof(SurfaceMaterial)))}");
+            throw new InvalidOperationException($"has no ground material '{ground}'; known: {string.Join(", ", Enum.GetNames(typeof(SurfaceMaterial)))}");
         }
 
         private static Entity FindPrefab(EntityManager entityManager, string name)
