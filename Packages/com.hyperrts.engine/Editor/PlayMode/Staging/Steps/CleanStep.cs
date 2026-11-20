@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
                 overlays.enabled = !_clean;
             }
 
-            UnitSilhouetteFeature.Hidden = _clean;
+            UnitSilhouettes.Hide(_clean);
         }
     }
 }

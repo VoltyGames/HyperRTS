@@ -196,7 +196,7 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // UnitSilhouetteFeature: marks stencil bit 128 where the unit itself is visible.
+        // A Render Objects feature: marks stencil bit 128 where the unit itself is visible.
         Pass
         {
             Name "UnitMask"
@@ -219,8 +219,8 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // UnitSilhouetteFeature: team colour where something hides the unit, skipping FoliageGrass's ground cover (bit
-        // 64). Inverting the clear bit 128 sets it, so each pixel blends once.
+        // A second Render Objects feature: team colour where something hides the unit, skipping FoliageGrass's ground
+        // cover (bit 64). Inverting the clear bit 128 sets it, so each pixel blends once.
         Pass
         {
             Name "UnitSilhouette"

@@ -30,8 +30,12 @@ island of an atlased mesh. Both fade out between `_DetailFadeStart` and `_Detail
 cost six texture samples in the forward pass only, nothing with the toggle off. The detail normal needs the normal path,
 so the toggle turns `_NORMALMAP` on; the depth-normals buffer keeps the base normal.
 
-Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`). `UnitSilhouetteFeature` outlines units hidden
-behind cover.
+Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`).
+
+**Silhouettes.** A unit hidden behind cover shows as a team-colour silhouette. Units bake onto the `UnitRenderingLayer`,
+and two URP Render Objects features on that layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visible
+pixels in the stencil, then its `HyperRTSSilhouette` pass where the unit is hidden. The validator adds both in that
+order; `UnitSilhouettes.Hide` turns them off for footage.
 
 ## Build reveal
 

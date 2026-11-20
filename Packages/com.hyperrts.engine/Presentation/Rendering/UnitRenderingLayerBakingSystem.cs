@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
     /// Puts every rendered part of a unit on <see cref="UnitRenderingLayer"/> at bake time, so unit prefabs need no
-    /// authored rendering layer for <see cref="UnitSilhouetteFeature"/> to find them.
+    /// authored rendering layer for the unit silhouettes to find them.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial struct UnitRenderingLayerBakingSystem : ISystem

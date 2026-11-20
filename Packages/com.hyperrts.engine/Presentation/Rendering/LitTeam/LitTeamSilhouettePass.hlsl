@@ -1,5 +1,5 @@
-// HyperRTS/LitTeam unit silhouette passes, drawn by UnitSilhouetteFeature after the opaques: the mask pass marks the
-// unit's visible pixels in the stencil, then the silhouette pass paints the team colour where the unit is hidden.
+// HyperRTS/LitTeam unit silhouette passes, drawn by two URP Render Objects features after the opaques: the mask pass
+// marks the unit's visible pixels in the stencil, then the silhouette pass paints the team colour where it is hidden.
 #ifndef HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 #define HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 
@@ -10,6 +10,9 @@
 // Metres a part may sit behind what hides it and still count as seen, so feet and tracks touching the ground, or a
 // sole a little under it, draw no silhouette.
 #define SILHOUETTE_SLACK 0.3
+
+// 1 while footage hides the silhouettes (UnitSilhouettes.Hide).
+float _HyperRTSHideSilhouettes;
 
 struct SilhouetteAttributes
 {
@@ -74,6 +77,7 @@ half4 SilhouetteFragment(SilhouetteVaryings input) : SV_Target
     ClipSilhouette(input);
 
     clip(_TeamColor.a - 0.001);
+    clip(0.5 - _HyperRTSHideSilhouettes);
     half3 normalWS = normalize(input.normalWS);
     half3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
     half rim = pow(1.0 - saturate(abs(dot(normalWS, viewDirWS))), SILHOUETTE_RIM_POWER);
