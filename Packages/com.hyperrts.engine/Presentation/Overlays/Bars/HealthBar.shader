@@ -1,5 +1,6 @@
 // Screen-aligned health bars of a fixed pixel size, with squad member and veterancy pips above and a suppression strip
-// below, drawn from _Instances by InstanceBuffer. Sizes are reference pixels times _PixelScale.
+// below, drawn from _Instances by InstanceBuffer. Sizes are reference pixels times _PixelScale. ScreenOverlayFeature
+// draws them into the finished frame, past post-processing and the upscaler, so their colours are the style's own.
 Shader "HyperRTS/HealthBar"
 {
     Properties
@@ -32,7 +33,7 @@ Shader "HyperRTS/HealthBar"
         Pass
         {
             Name "HealthBar"
-            Tags { "LightMode" = "UniversalForward" }
+            Tags { "LightMode" = "HyperRTSScreenOverlay" }
 
             Blend SrcAlpha OneMinusSrcAlpha
             ZWrite Off

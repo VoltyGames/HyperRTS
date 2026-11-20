@@ -184,3 +184,12 @@ the result unchanged; transparents keep the cascades.
 
 `SharpenFeature` sharpens the finished frame after post-processing and
 any upscaler. The validator offers to add it to a renderer that lacks it.
+
+## Screen overlay
+
+`ScreenOverlayFeature` draws every visible renderer's `HyperRTSScreenOverlay` pass into the camera's final target,
+after URP's last post-processing pass and blit and before it draws the UI. That point is at the screen's resolution
+whatever the upscaler: a temporal one (DLSS, FSR 3 and 4, STP) works before post-processing and a spatial one after
+it. The pass draws with the camera's unjittered matrices, so a shape sized in screen pixels stays crisp and still at
+any resolution scale, with its colours untouched by tonemapping. Health bars draw there. The validator offers to
+add the feature to a renderer that lacks it.

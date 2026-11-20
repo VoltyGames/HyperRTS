@@ -77,7 +77,8 @@ the OS pointer stays.
 - **Ground markers** (`GroundMarker.shader`) drape on the terrain for selected and hovered entities: a rounded
   rectangle round a vehicle, a circle round infantry, corner brackets round a building. Colours follow the relation.
 - **Health bars** are screen-aligned quads of fixed pixel size. `OverlayRenderer.HealthBars` picks who shows one:
-  everyone, damaged units, or only selected ones.
+  everyone, damaged units, or only selected ones. They draw after upscaling, through the
+  [screen overlay](rendering.md#screen-overlay), so they stay crisp at any resolution scale.
 - **`FireMissionOverlay`** draws while a fire mission is pending, through a `GroundMarkers` on a finer grid so
   long rings follow the terrain: round each selected launcher an outline at its maximum range and a soft red disc
   inside its minimum range, and at the pointer the circle one salvo covers (`FireMissionReach`: spread plus splash
