@@ -1,5 +1,6 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <ui:Template name="StrikesPanel" src="StrikesPanel.uxml" />
+  <Style src="CheatsPanel.uss" />
   <ui:VisualElement>
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">

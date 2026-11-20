@@ -1,0 +1,34 @@
+/* The cheats and strike rows in the Cheats window. */
+
+.hrts-cheats__picker {
+  -unity-text-align: middle-left;
+}
+
+.hrts-cheats__count {
+  width: 48px;
+}
+
+/* A long title shrinks to an ellipsis so it never runs under the status. */
+.hrts-strike__title {
+  flex-grow: 1;
+  flex-shrink: 1;
+  min-width: 0;
+  margin-left: 3px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.hrts-strike__status {
+  flex-shrink: 0;
+  margin: 0 4px;
+}
+
+.hrts-strike > .unity-button {
+  flex-shrink: 0;
+}
+
+.hrts-strike__heading {
+  -unity-font-style: bold;
+  margin: 4px 0 1px 2px;
+}
