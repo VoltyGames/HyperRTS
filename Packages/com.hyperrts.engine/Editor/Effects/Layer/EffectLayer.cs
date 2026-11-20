@@ -125,10 +125,13 @@ namespace HyperRTS.Editor.Effects.Layer
             return gradient;
         }
 
-        /// <summary>The flipbook frame over life, stopping short of the last frame's end so it never wraps.</summary>
+        /// <summary>
+        /// The flipbook frame over life, ending exactly on the last frame: any fraction past it would blend toward the
+        /// next frame, which wraps to the first.
+        /// </summary>
         public AnimationCurve FrameCurve()
         {
-            var last = flipbook.Frames - 0.01f;
+            var last = flipbook.Frames - 1f;
             return AnimationCurve.Linear(0f, Mathf.Min(flipbook.from * flipbook.Frames, last), 1f, Mathf.Min(flipbook.to * flipbook.Frames, last));
         }
 
