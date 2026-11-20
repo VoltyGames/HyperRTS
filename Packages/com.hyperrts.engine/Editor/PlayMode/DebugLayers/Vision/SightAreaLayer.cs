@@ -1,4 +1,3 @@
-using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Selection;

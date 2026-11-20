@@ -13,11 +13,9 @@ namespace HyperRTS.Editor.PlayMode.Launch
         public LaunchEntry entry;
         public LaunchNetwork network;
 
-        /// <summary>Multiplayer Play Mode Editor instances (0 to <see cref="MaxVirtualPlayers"/>) that join a hosted match.</summary>
+        /// <summary>Multiplayer Play Mode Editor instances (0 to 3) that join a hosted match.</summary>
         public int virtualPlayers;
         public List<LaunchSlot> slots = new();
-
-        public const int MaxVirtualPlayers = 3;
 
         /// <summary>Whether virtual players could join: Play hosts this map.</summary>
         public bool CanHostVirtualPlayers => entry == LaunchEntry.Map && network == LaunchNetwork.Host;

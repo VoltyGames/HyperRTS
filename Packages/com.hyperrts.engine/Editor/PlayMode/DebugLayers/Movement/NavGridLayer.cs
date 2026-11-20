@@ -1,5 +1,4 @@
 using HyperRTS.Editor.Authoring;
-using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Collections;
 using Unity.Entities;

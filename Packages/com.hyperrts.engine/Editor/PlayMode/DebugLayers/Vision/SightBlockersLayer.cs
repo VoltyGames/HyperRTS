@@ -1,4 +1,3 @@
-using HyperRTS.Editor.PlayMode.DebugLayers;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Entities;
