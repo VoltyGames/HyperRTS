@@ -7,7 +7,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Validation.Rules.Effects
 {
-    /// <summary>A match scene needs the sharpen feature, with its shader and sane settings, on every active renderer.</summary>
+    /// <summary>A match scene needs the sharpen feature, with sane settings, on every active renderer.</summary>
     public sealed class SharpenRule : ISceneRule
     {
         private const string FeatureName = "Sharpen";
@@ -35,11 +35,6 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
                 return;
             }
 
-            if (feature.shader == null)
-            {
-                issues.Error(renderer, $"The Sharpen feature has no shader; set it to {SharpenFeature.ShaderName}.");
-            }
-
             var problem = feature.SettingsProblem();
             if (problem.Length > 0)
             {
@@ -50,7 +45,6 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
         private static void AddFeature(UniversalRendererData renderer)
         {
             var feature = ScriptableObject.CreateInstance<SharpenFeature>();
-            feature.shader = Shader.Find(SharpenFeature.ShaderName);
             RendererFeatures.Add(renderer, feature, FeatureName);
         }
     }

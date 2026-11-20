@@ -10,8 +10,6 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     /// <summary>Fades the trample maps and draws a frame of stamps into them as instanced quads.</summary>
     public sealed class TrampleBrush : IDisposable
     {
-        public const string ShaderName = "Hidden/HyperRTS/TrampleBrush";
-
         /// <summary>Steps an 8-bit channel fades through.</summary>
         public const int Levels = 255;
 
@@ -36,14 +34,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<TrampleStamp>(), 256);
         private int _wakeFadedSteps;
 
-        public TrampleBrush(Shader shader)
+        public TrampleBrush()
         {
-            if (shader == null || shader.name != ShaderName)
-            {
-                throw new ArgumentException($"HyperRTS: the trample brush needs the '{ShaderName}' shader.");
-            }
-
-            _material = new Material(shader) { hideFlags = HideFlags.DontSave };
+            _material = new Material(EngineShaders.Get().TrampleBrush) { hideFlags = HideFlags.DontSave };
             _trampleDirectionPass = FindPass("TrampleDirection");
             _trampleAmountPass = FindPass("TrampleAmount");
             _tracksPass = FindPass("Tracks");
@@ -61,7 +54,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             var pass = _material.FindPass(name);
             if (pass < 0)
             {
-                throw new ArgumentException($"HyperRTS: the '{ShaderName}' shader has no '{name}' pass.");
+                throw new ArgumentException($"HyperRTS: the '{_material.shader.name}' shader has no '{name}' pass.");
             }
 
             return pass;

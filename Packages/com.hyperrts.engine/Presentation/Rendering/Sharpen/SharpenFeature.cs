@@ -10,11 +10,6 @@ namespace HyperRTS.Presentation.Rendering.Sharpen
     /// </summary>
     public sealed class SharpenFeature : ScriptableRendererFeature
     {
-        public const string ShaderName = "Hidden/HyperRTS/Sharpen";
-
-        [Tooltip("The Hidden/HyperRTS/Sharpen shader.")]
-        public Shader shader;
-
         [Tooltip("How strongly edges are sharpened, 0 to 1.")]
         public float strength = 0.5f;
 
@@ -32,20 +27,14 @@ namespace HyperRTS.Presentation.Rendering.Sharpen
 
         public override void Create()
         {
-            if (shader == null)
-            {
-                Debug.LogError($"HyperRTS: {nameof(SharpenFeature)} '{name}' has no shader; set it to {ShaderName}.", this);
-                return;
-            }
-
-            _material = CoreUtils.CreateEngineMaterial(shader);
+            _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().Sharpen);
             _pass = new SharpenPass(_material);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             var shown = SceneCameras.Shown(renderingData.cameraData.cameraType);
-            if (_pass == null || !shown || strength <= 0f || !RunsAt(QualitySettings.GetQualityLevel()))
+            if (!shown || strength <= 0f || !RunsAt(QualitySettings.GetQualityLevel()))
             {
                 return;
             }

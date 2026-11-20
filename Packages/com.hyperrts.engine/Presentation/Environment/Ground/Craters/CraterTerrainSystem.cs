@@ -24,14 +24,11 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
     {
         public const float SyncSeconds = 0.5f;
 
-        private Shader _shader;
         private CraterTerrain _crater;
         private readonly BuildingLevels _levels = new();
         private readonly Dictionary<Entity, BuildingLevel> _wanted = new();
         private Texture _tracks;
         private float _syncedAt = float.NegativeInfinity;
-
-        protected override void OnCreate() => _shader = Resources.Load<Shader>(CraterTerrain.ShaderPath);
 
         protected override void OnDestroy() => Release();
 
@@ -86,7 +83,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             if (_crater == null || _crater.Terrain != terrain || _tracks != tracks)
             {
                 Release();
-                _crater = new CraterTerrain(terrain, _shader);
+                _crater = new CraterTerrain(terrain);
                 _tracks = tracks;
             }
 

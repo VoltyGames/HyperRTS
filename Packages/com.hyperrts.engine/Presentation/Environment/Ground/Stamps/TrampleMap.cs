@@ -13,10 +13,6 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     [DisallowMultipleComponent]
     public sealed class TrampleMap : PresentationBehaviour
     {
-        [SerializeField]
-        [Tooltip("The " + TrampleBrush.ShaderName + " shader the maps are drawn with.")]
-        private Shader brush;
-
         public const float TrampleRecoverySeconds = 60f;
         public const float TrackFadeSeconds = 240f;
         public const float WakeFadeSeconds = 5f;
@@ -27,7 +23,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private float _fadeCarry;
         private float _wakeCarry;
 
-        protected override void OnAwake() => _brush = new TrampleBrush(brush);
+        protected override void OnAwake() => _brush = new TrampleBrush();
 
         private void LateUpdate()
         {

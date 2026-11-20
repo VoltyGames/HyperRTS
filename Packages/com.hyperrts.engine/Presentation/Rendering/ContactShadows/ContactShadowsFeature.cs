@@ -12,11 +12,6 @@ namespace HyperRTS.Presentation.Rendering.ContactShadows
     /// </summary>
     public sealed class ContactShadowsFeature : ScriptableRendererFeature
     {
-        public const string ShaderName = "Hidden/HyperRTS/ContactShadows";
-
-        [Tooltip("The Hidden/HyperRTS/ContactShadows shader.")]
-        public Shader shader;
-
         [Tooltip("Metres traced toward the sun from each pixel.")]
         public float length = 1f;
 
@@ -75,13 +70,7 @@ namespace HyperRTS.Presentation.Rendering.ContactShadows
 
         public override void Create()
         {
-            if (shader == null)
-            {
-                Debug.LogError($"HyperRTS: {nameof(ContactShadowsFeature)} '{name}' has no shader; set it to {ShaderName}.", this);
-                return;
-            }
-
-            _material = CoreUtils.CreateEngineMaterial(shader);
+            _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().ContactShadows);
             _pass = new ContactShadowsPass(_material);
         }
 
@@ -100,7 +89,7 @@ namespace HyperRTS.Presentation.Rendering.ContactShadows
         // Mirrors when URP's Screen Space Shadows pass runs, since the trace darkens its texture.
         private bool Traces(ref RenderingData renderingData)
         {
-            if (_pass == null || !RunsAt(QualitySettings.GetQualityLevel()))
+            if (!RunsAt(QualitySettings.GetQualityLevel()))
             {
                 return false;
             }

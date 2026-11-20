@@ -68,9 +68,8 @@ trees with leaf cards that generated levels would strip, into one mesh.
 An enemy leaving sight fades out over `FogVisibilitySystem.FadeTime` then stops rendering; one coming into sight fades in
 (`RevealFade`, `_Reveal` on LitTeam). Passengers inside a container stop rendering at once.
 
-`FogOfWarFeature`, on the URP renderer with its shader
-set to `Hidden/HyperRTS/FogOfWar`, fogs the camera colour before the transparents, so terrain and buildings fog where they
-stand while health bars and markers stay clear. A transparent shader fogs itself: water and smoke through `SceneFog.hlsl`,
+`FogOfWarFeature` on the URP renderer fogs the camera colour before the transparents, so terrain and buildings fog where
+they stand while health bars and markers stay clear. A transparent shader fogs itself: water and smoke through `SceneFog.hlsl`,
 effect graphs through `ShadeInFogOfWar.hlsl`.
 
 A client remembers enemy buildings where it last saw them as a visual copy that nothing can pick or count.
@@ -131,6 +130,9 @@ structured buffer the shader reads as `_Instances[SV_InstanceID]`.
 
 - Every hand-written shader and compute shader compiles with DXC: `#pragma use_dxc` beside `#pragma target`. Shader Graphs
   and VFX Graphs take no pragmas, so the includes they pull in must also compile under FXC.
+- Shaders that code draws with (full-screen passes, map painting, the cloud cookie) are found by name through
+  `EngineShaders`, an `IRenderPipelineResources` that URP's global settings fill in and keep in player builds: a new
+  one is a field there with its `ResourcePath`, and `EngineShadersTests` fails if a name finds nothing.
 - Shader code that several shaders share lives in `Presentation/Rendering/ShaderLibrary/`. URP keyword lists shared
   across passes are in its `Keywords/` and pulled in with `#include_with_pragmas`. An include holds only lines
   identical in every pass that uses it.
@@ -152,11 +154,11 @@ structured buffer the shader reads as `_Instances[SV_InstanceID]`.
 ## Contact shadows
 
 `ContactShadowsFeature` gives small things (fences, wheels, grass clumps, infantry) short sharp sun shadows where they meet
-the ground. It needs URP's Screen Space Shadows feature on the same renderer and its shader set to
-`Hidden/HyperRTS/ContactShadows`; the validator checks all three. Opaque shaders that read the screen-space shadow get
+the ground. It needs URP's Screen Space Shadows feature on the same renderer and a forward rendering mode, which the
+validator checks. Opaque shaders that read the screen-space shadow get
 the result unchanged; transparents keep the cascades.
 
 ## Sharpening
 
-`SharpenFeature`, with its shader set to `Hidden/HyperRTS/Sharpen`, sharpens the finished frame after post-processing and
+`SharpenFeature` sharpens the finished frame after post-processing and
 any upscaler. The validator offers to add it to a renderer that lacks it.

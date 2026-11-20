@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -10,11 +11,6 @@ namespace HyperRTS.Presentation.Fog
     /// </summary>
     public sealed class FogOfWarFeature : ScriptableRendererFeature
     {
-        public const string ShaderName = "Hidden/HyperRTS/FogOfWar";
-
-        [Tooltip("The Hidden/HyperRTS/FogOfWar shader.")]
-        public Shader shader;
-
         private Material _material;
         private FogOfWarPass _pass;
         private ClearAtmosphereFogPass _clearFog;
@@ -22,13 +18,7 @@ namespace HyperRTS.Presentation.Fog
         public override void Create()
         {
             _clearFog = new ClearAtmosphereFogPass();
-            if (shader == null)
-            {
-                Debug.LogError($"HyperRTS: {nameof(FogOfWarFeature)} '{name}' has no shader; set it to {ShaderName}.", this);
-                return;
-            }
-
-            _material = CoreUtils.CreateEngineMaterial(shader);
+            _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().FogOfWar);
             _pass = new FogOfWarPass(_material);
         }
 
@@ -42,7 +32,7 @@ namespace HyperRTS.Presentation.Fog
                 return;
             }
 
-            if (_pass == null || cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
+            if (cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
             {
                 return;
             }

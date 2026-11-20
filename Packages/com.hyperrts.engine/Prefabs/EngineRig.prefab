@@ -115,7 +115,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ed4d2ab144f9c204ba63dea1e59bcf04, type: 3}
   m_Name: 
   m_EditorClassIdentifier: HyperRTS.Presentation::HyperRTS.Presentation.Environment.InteractionMap
-  brush: {fileID: 4800000, guid: 085fee3c7457c774eb0ebd6035c89d6f, type: 3}
 --- !u!1 &8073591838981333275
 GameObject:
   m_ObjectHideFlags: 0

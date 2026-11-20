@@ -46,11 +46,11 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
             _terrain.transform.position = new Vector3(-32f, 0f, -32f);
             _surfaces = new TrampleSurfaces(new float2(-32f), new float2(64f), TrampleQuality.Full);
             _surfaces.Publish();
-            _brush = new TrampleBrush(Shader.Find(TrampleBrush.ShaderName));
+            _brush = new TrampleBrush();
             _brush.Clear(_surfaces);
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
             _mark.scar.craterDepth = CraterDepth;
-            _crater = new CraterTerrain(_terrain, Resources.Load<Shader>(CraterTerrain.ShaderPath));
+            _crater = new CraterTerrain(_terrain);
         }
 
         [TearDown]
@@ -103,7 +103,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground
             Assert.AreNotEqual(before[CraterZ * 65 + CraterX], dented[CraterZ * 65 + CraterX], "the terrain did not dent");
             _crater.Dispose();
             Assert.AreEqual(Vector4.zero, Shader.GetGlobalVector(CraterTerrain.UndentedScaleId), "the heights outlived it");
-            _crater = new CraterTerrain(_terrain, Resources.Load<Shader>(CraterTerrain.ShaderPath));
+            _crater = new CraterTerrain(_terrain);
         }
 
         private static ushort[] Texels(Texture heights)

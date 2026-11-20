@@ -15,9 +15,6 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
     /// </summary>
     public sealed class CraterTerrain : IDisposable
     {
-        /// <summary>Where <c>Resources.Load</c> finds the shader that dents the heightmap.</summary>
-        public const string ShaderPath = "HyperRTS/CraterHeight";
-
         private static readonly int OriginalHeightsId = Shader.PropertyToID("_OriginalHeights");
         private static readonly int HeightRegionId = Shader.PropertyToID("_HeightRegion");
         private static readonly int TerrainTexelsId = Shader.PropertyToID("_TerrainTexels");
@@ -41,7 +38,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
         private RectInt _unsynced;
         private bool _dented;
 
-        public CraterTerrain(Terrain terrain, Shader shader)
+        public CraterTerrain(Terrain terrain)
         {
             Terrain = terrain;
             _data = terrain.terrainData;
@@ -54,7 +51,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             var size = _data.size;
             _origin = new float2(position.x, position.z);
             _texelsPerMetre = (_data.heightmapResolution - 1) / new float2(size.x, size.z);
-            _material = CoreUtils.CreateEngineMaterial(shader);
+            _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().CraterHeight);
             _material.SetTexture(OriginalHeightsId, _original);
             _material.SetVector(TerrainTexelsId, new float4(_origin, 1f / _texelsPerMetre));
             _material.SetFloat(DepthScaleId, TerrainHeightInput.HeightmapFull / size.y);

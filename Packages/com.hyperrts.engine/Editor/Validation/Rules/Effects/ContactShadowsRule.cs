@@ -8,7 +8,7 @@ using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Validation.Rules.Effects
 {
-    /// <summary>A match scene needs contact shadows, with their shader and URP's Screen Space Shadows, on every active renderer.</summary>
+    /// <summary>A match scene needs contact shadows, with URP's Screen Space Shadows, on every active renderer.</summary>
     public sealed class ContactShadowsRule : ISceneRule
     {
         private const string FeatureName = "Contact Shadows";
@@ -39,11 +39,6 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
                 return;
             }
 
-            if (feature.shader == null)
-            {
-                issues.Error(renderer, $"The Contact Shadows feature has no shader; set it to {ContactShadowsFeature.ShaderName}.");
-            }
-
             var problem = feature.SettingsProblem();
             if (problem.Length > 0)
             {
@@ -64,7 +59,6 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
         private static void AddFeature(UniversalRendererData renderer)
         {
             var feature = ScriptableObject.CreateInstance<ContactShadowsFeature>();
-            feature.shader = Shader.Find(ContactShadowsFeature.ShaderName);
             RendererFeatures.Add(renderer, feature, FeatureName);
         }
     }

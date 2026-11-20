@@ -51,7 +51,7 @@ the flow: alpha thins fords, green streaks rapids foam, red trails foam lines do
 ## Trample maps
 
 Vehicles leave ruts, shells leave craters and scorch, units in water leave wakes, and the ground keeps rubble and ash.
-`TrampleMap` on the rig keeps four GPU textures over the map; it needs the `Hidden/HyperRTS/TrampleBrush` shader.
+`TrampleMap` on the rig keeps four GPU textures over the map, drawn with the `Hidden/HyperRTS/TrampleBrush` shader.
 
 | Texture | Channels |
 | --- | --- |

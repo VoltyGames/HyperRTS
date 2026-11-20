@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Rendering.Sharpen;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 
 namespace HyperRTS.Presentation.Tests.Rendering.Sharpen
 {
@@ -13,8 +12,6 @@ namespace HyperRTS.Presentation.Tests.Rendering.Sharpen
         [SetUp]
         public void SetUp()
         {
-            // A new feature creates itself, and reports its missing shader, while URP is the running pipeline.
-            LogAssert.ignoreFailingMessages = true;
             _feature = ScriptableObject.CreateInstance<SharpenFeature>();
         }
 

@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         {
             _probe = AssetDatabase.LoadAssetAtPath<ComputeShader>(ProbePath);
             _surfaces = new TrampleSurfaces(new float2(-200f, -200f), new float2(400f), TrampleQuality.Full);
-            _brush = new TrampleBrush(Shader.Find(TrampleBrush.ShaderName));
+            _brush = new TrampleBrush();
             _brush.Clear(_surfaces);
             _mark = ScriptableObject.CreateInstance<ImpactMark>();
             _mark.scar.craterDepth = 1f;

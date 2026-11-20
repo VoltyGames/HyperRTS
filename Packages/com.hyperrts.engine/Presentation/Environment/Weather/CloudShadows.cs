@@ -21,9 +21,6 @@ namespace HyperRTS.Presentation.Environment.Weather
     [DisallowMultipleComponent]
     public sealed class CloudShadows : PresentationBehaviour
     {
-        /// <summary>Where <c>Resources.Load</c> finds the shader that draws the cookie.</summary>
-        public const string ShaderPath = "HyperRTS/CloudCookie";
-
         private static readonly int CloudsId = Shader.PropertyToID("_Clouds");
         private static readonly int CloudPlaceId = Shader.PropertyToID("_CloudPlace");
         private static readonly int CookieFocusId = Shader.PropertyToID("_CookieFocus");
@@ -113,7 +110,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         {
             _light = GetComponent<Light>();
             _data = GetComponent<UniversalAdditionalLightData>();
-            _material = new Material(Resources.Load<Shader>(ShaderPath)) { hideFlags = HideFlags.DontSave };
+            _material = new Material(EngineShaders.Get().CloudCookie) { hideFlags = HideFlags.DontSave };
             _commands = new CommandBuffer { name = "HyperRTS Cloud Cookie" };
             // Repeat, so the cookie wraps around the camera and only its far seam moves with it.
             _cookie = RenderTargets.Create("Cloud Cookie", resolution, resolution, GraphicsFormat.R8_UNorm,
