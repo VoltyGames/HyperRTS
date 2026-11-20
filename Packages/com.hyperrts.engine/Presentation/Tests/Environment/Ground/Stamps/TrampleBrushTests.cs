@@ -68,11 +68,16 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             var stamps = new TrampleStamps();
             stamps.AddScar(new float2(50f, 120f), _mark.scar, 6f * 0.5f);
             Draw(stamps, 0, 0);
+            var bowl = Sample(_surfaces.Tracks, Alpha)[0];
+            var scorch = Sample(_surfaces.Tracks, Blue)[0];
+            Assert.Greater(bowl, TrampleStamps.GroundLevelBias + 0.05f, "no crater bowl was dug");
+            Assert.Greater(scorch, 0.9f, "no scorch was drawn");
 
             Draw(new TrampleStamps(), TrampleBrush.Levels, TrampleBrush.Levels);
 
-            Assert.Greater(Sample(_surfaces.Tracks, Alpha)[0], TrampleStamps.GroundLevelBias + 0.1f, "the crater bowl faded");
-            Assert.Greater(Sample(_surfaces.Tracks, Blue)[0], 0.9f, "the scorch faded");
+            // The bowl's lumpy floor puts its centre anywhere near the full depth, so compare it with itself.
+            Assert.AreEqual(bowl, Sample(_surfaces.Tracks, Alpha)[0], 1.5f / 255f, "the crater bowl faded");
+            Assert.AreEqual(scorch, Sample(_surfaces.Tracks, Blue)[0], 1.5f / 255f, "the scorch faded");
         }
 
         // The sample sits near the footprint's corner, outside the disc a crater scar would draw.
