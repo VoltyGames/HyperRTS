@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 
 namespace HyperRTS.Editor.PlayMode.Staging
 {
@@ -26,6 +28,28 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         /// <summary>Source image of each sheet tile, left to right, top to bottom.</summary>
         public List<string> sheetTiles = new();
+
+        /// <summary>Tiles every shot, then a spread of each burst's frames, into <c>sheet.png</c> in <paramref name="folder"/>.</summary>
+        public void WriteSheet(string folder)
+        {
+            var contact = new ContactSheet();
+            foreach (var shot in shots)
+            {
+                contact.Add(shot);
+            }
+
+            foreach (var burst in frames)
+            {
+                contact.AddSpread(Directory.GetFiles(burst, "*.png").Select(file => file.Replace('\\', '/')).OrderBy(file => file).ToList(), 6);
+            }
+
+            var path = $"{folder}/sheet.png";
+            if (contact.Write(path))
+            {
+                sheet = path;
+                sheetTiles.AddRange(contact.Images);
+            }
+        }
 
         [Serializable]
         public sealed class Step

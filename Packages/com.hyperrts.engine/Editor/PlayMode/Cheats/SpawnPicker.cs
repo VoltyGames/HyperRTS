@@ -93,7 +93,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             }
         }
 
-        private static int HeadingIndex(IReadOnlyList<string> headings, string heading)
+        /// <summary>Where <paramref name="heading"/> sorts: its place in <paramref name="headings"/>, or last for none.</summary>
+        public static int HeadingIndex(IReadOnlyList<string> headings, string heading)
         {
             if (heading == null)
             {

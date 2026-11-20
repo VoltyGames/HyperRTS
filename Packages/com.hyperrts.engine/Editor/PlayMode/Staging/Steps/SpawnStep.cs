@@ -28,7 +28,8 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         {
             _group = json.Text("as");
             _prefab = json.Text("prefab");
-            _owner = (byte)Math.Clamp(json.Whole("owner"), 0, byte.MaxValue);
+            var owner = json.Whole("owner");
+            _owner = owner is >= 0 and <= byte.MaxValue ? (byte)owner : throw json.Problem($"has an 'owner' of {owner}, not 0 to 255");
             _count = json.Whole("count");
             _point = json.Point("at");
             _spacing = json.NumberOrNull("spacing") ?? 0f;

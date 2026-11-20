@@ -6,6 +6,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Power;
 using HyperRTS.Simulation.Strikes;
@@ -75,9 +76,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 }
             }
 
-            // Entries without a heading go last, as in the spawn picker.
-            var headings = grouping?.Headings.ToList() ?? new List<string>();
-            return found.OrderBy(entry => entry.Heading == null ? int.MaxValue : headings.IndexOf(entry.Heading))
+            var headings = grouping?.Headings ?? new List<string>();
+            return found.OrderBy(entry => SpawnPicker.HeadingIndex(headings, entry.Heading))
                 .ThenBy(entry => entry.Title).ToList();
         }
 
@@ -248,8 +248,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
                 return null;
             }
 
+            // Measured edge to edge from the caster, as Ability.InRange does for a ground aim.
             var from = entityManager.GetComponentData<LocalTransform>(instance).Position;
-            return math.distance(from.xz, point.xz) > ability.Range ? "Out of range of the view" : null;
+            var gap = EntityRadius.EdgeDistance(from, EntityRadius.Get(entityManager, instance), point, 0f);
+            return gap > ability.Range ? "Out of range of the view" : null;
         }
 
         // Too little power takes a consumer offline and the ability command is dropped. One that draws nothing is never

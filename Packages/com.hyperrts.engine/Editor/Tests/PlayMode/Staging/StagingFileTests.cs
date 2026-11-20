@@ -65,6 +65,16 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         }
 
         [Test]
+        public void ParseRejectsAnOwnerPastAByte()
+        {
+            var json = Good.Replace("\"owner\": 2", "\"owner\": 300");
+
+            var error = Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(json, "owner.json"));
+
+            StringAssert.Contains("'owner' of 300", error.Message);
+        }
+
+        [Test]
         public void ParseRejectsAGroupUsedBeforeItsSpawnRuns()
         {
             var json = Good.Replace("{ \"at\": 2, \"order\"", "{ \"at\": 0.5, \"order\"").Replace("\"at\": 0, \"spawn\": { \"as\": \"red\"", "\"at\": 1, \"spawn\": { \"as\": \"red\"");

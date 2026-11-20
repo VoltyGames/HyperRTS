@@ -7,11 +7,13 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
     /// <summary>A <see cref="FrameCapture"/> in progress; hands its PNG paths to the step when it ends.</summary>
     internal sealed class CaptureActivity : StagingActivity
     {
+        private readonly FrameCapture _capture;
         private readonly Task<string[]> _recording;
         private readonly Action<string[]> _done;
 
         public CaptureActivity(FrameCapture capture, Action<string[]> done)
         {
+            _capture = capture;
             _recording = capture.Record();
             _done = done;
         }
@@ -28,5 +30,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             _done(_recording.GetAwaiter().GetResult());
             return true;
         }
+
+        public override void Stop() => _capture.Stop();
     }
 }

@@ -26,6 +26,7 @@ namespace HyperRTS.Editor.PlayMode.Capture
         private readonly int _fps;
         private readonly int _frames;
         private readonly TaskCompletionSource<bool> _done = new();
+        private RecorderController _controller;
         private int _start;
         private double _deadline;
 
@@ -81,6 +82,14 @@ namespace HyperRTS.Editor.PlayMode.Capture
             return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();
         }
 
+        /// <summary>Ends a recording before its frames are in, stopping the Recorder now; <see cref="Record"/> then throws.</summary>
+        public void Stop()
+        {
+            EditorApplication.update -= Poll;
+            StopRecorder();
+            _done.TrySetException(new OperationCanceledException("HyperRTS: frame capture was stopped before its frames were in."));
+        }
+
         private void Clear()
         {
             if (Directory.Exists(Folder))
@@ -88,14 +97,17 @@ namespace HyperRTS.Editor.PlayMode.Capture
                 Directory.Delete(Folder, true);
             }
 
-            File.Delete(Folder + MovieExtension);
+            if (File.Exists(Folder + MovieExtension))
+            {
+                File.Delete(Folder + MovieExtension);
+            }
         }
 
         private async Task Run(RecorderControllerSettings controls)
         {
-            var controller = new RecorderController(controls);
-            controller.PrepareRecording();
-            if (!controller.StartRecording())
+            _controller = new RecorderController(controls);
+            _controller.PrepareRecording();
+            if (!_controller.StartRecording())
             {
                 throw new InvalidOperationException("HyperRTS: the Recorder did not start; see the Console.");
             }
@@ -103,8 +115,22 @@ namespace HyperRTS.Editor.PlayMode.Capture
             _start = Time.frameCount;
             _deadline = EditorApplication.timeSinceStartup + StartSeconds + _frames * FrameSeconds;
             EditorApplication.update += Poll;
-            await _done.Task;
-            controller.StopRecording();
+            try
+            {
+                await _done.Task;
+            }
+            finally
+            {
+                StopRecorder();
+            }
+        }
+
+        private void StopRecorder()
+        {
+            if (_controller != null && _controller.IsRecording())
+            {
+                _controller.StopRecording();
+            }
         }
 
         private void Configure(RecorderControllerSettings controls, RecorderSettings output)

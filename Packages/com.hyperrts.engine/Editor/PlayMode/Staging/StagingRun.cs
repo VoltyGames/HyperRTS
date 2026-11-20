@@ -19,7 +19,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
     internal sealed class StagingRun
     {
         private const double LiveTimeoutSeconds = 120.0;
-        private const double RunTimeoutSeconds = 900.0;
+        // Above every caller's own wait, so it only ends a run whose capture or sample never finishes.
+        private const double RunTimeoutSeconds = 3600.0;
 
         private readonly StagingFile _file;
         private readonly Dictionary<string, StagingGroup> _groups = new();
@@ -116,6 +117,11 @@ namespace HyperRTS.Editor.PlayMode.Staging
         /// <summary>Advances a frame; true when every step has run and finished. Throws when the match never goes live.</summary>
         public bool Tick()
         {
+            if (EditorApplication.timeSinceStartup - _began > RunTimeoutSeconds)
+            {
+                throw new TimeoutException($"the staging still ran after {RunTimeoutSeconds:0} s");
+            }
+
             if (!_live && !TryGoLive())
             {
                 return false;
@@ -151,9 +157,19 @@ namespace HyperRTS.Editor.PlayMode.Staging
             }
 
             Report.consoleErrors.AddRange(_console.Issues);
-            WriteSheet();
-            var path = $"{Folder}/report.json";
             Directory.CreateDirectory(Folder);
+            try
+            {
+                Report.WriteSheet(Folder);
+            }
+            catch (Exception exception)
+            {
+                // The report matters more than the sheet, so a sheet error is told in it instead of ending the run here.
+                Debug.LogException(exception);
+                Report.ended += $"; the contact sheet failed: {exception.Message}";
+            }
+
+            var path = $"{Folder}/report.json";
             File.WriteAllText(path, JsonUtility.ToJson(Report, true));
             return path;
         }
@@ -271,28 +287,6 @@ namespace HyperRTS.Editor.PlayMode.Staging
             }
 
             Follow = null;
-        }
-
-        // Every shot, then a spread of each burst's frames, in step order.
-        private void WriteSheet()
-        {
-            var sheet = new ContactSheet();
-            foreach (var shot in Report.shots)
-            {
-                sheet.Add(shot);
-            }
-
-            foreach (var folder in Report.frames)
-            {
-                sheet.AddSpread(Directory.GetFiles(folder, "*.png").Select(file => file.Replace('\\', '/')).OrderBy(file => file).ToList(), 6);
-            }
-
-            var path = $"{Folder}/sheet.png";
-            if (sheet.Write(path))
-            {
-                Report.sheet = path;
-                Report.sheetTiles.AddRange(sheet.Images);
-            }
         }
     }
 }

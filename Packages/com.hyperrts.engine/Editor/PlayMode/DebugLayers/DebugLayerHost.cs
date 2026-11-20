@@ -45,10 +45,10 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
 
         public static void HideAll()
         {
-            for (var i = 0; i < AllLayers.Length; i++)
+            EditorState.instance.HideLayers();
+            foreach (var shapes in Shapes)
             {
-                AllLayers[i].Shown = false;
-                Shapes[i].Hide();
+                shapes.Hide();
             }
         }
 

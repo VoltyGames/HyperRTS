@@ -80,6 +80,12 @@ namespace HyperRTS.Editor.Common
 
         public void ShowLayer(string layer, bool shown) => SetListed(debugLayers, layer, shown);
 
+        public void HideLayers()
+        {
+            debugLayers.Clear();
+            Save();
+        }
+
         // Keeps name in names exactly when listed, and saves.
         private void SetListed(List<string> names, string name, bool listed)
         {

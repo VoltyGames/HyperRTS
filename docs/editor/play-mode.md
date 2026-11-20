@@ -92,7 +92,8 @@ evals. `play
 stage <file>` (`StagingJob`) opens the file's scene, enters Play, waits until the match is live (world, streamed
 SubScene entities, a local player, the match camera), runs the steps at their game-time seconds, leaves Play and
 reopens the scene that was open before. It returns at once; poll `play stage_status`. The run fails with a message
-when the match is not live after 120 s, or with "Play ended early" when Play quits by itself.
+when the match is not live after 120 s, when the run still goes after an hour, or with "Play ended early" when Play
+quits by itself. A contact sheet that fails is noted in the report's `ended` line and the report is still written.
 
 `Logs/Stagings/<name>/` is cleared at the start of a run and then holds `report.json`, the shots, one folder per
 frames burst, the sample TSVs and `sheet.png`, a contact sheet of all shots and up to six evenly spaced frames of each

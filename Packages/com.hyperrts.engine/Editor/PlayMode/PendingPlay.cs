@@ -43,6 +43,7 @@ namespace HyperRTS.Editor.PlayMode
                 EditorApplication.EnterPlaymode();
             }
 
+            EditorApplication.update -= DropUnlessEnteringPlay;
             EditorApplication.update += DropUnlessEnteringPlay;
         }
 
