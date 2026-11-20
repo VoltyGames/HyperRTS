@@ -217,6 +217,9 @@ static const half4 _SpecColor = half4(0.0, 0.0, 0.0, 0.0);
 half4 GetSpecColor()                    { return _SpecColor; }
 half4 SampleSpecGlossMap(float2 uv)     { return _SpecColor; }
 
+// URP's LitPassFragment, compiled beside ours, reads the blend mode for glass fog; transparent LitTeam is premultiplied.
+static const half _Blend = 1.0;
+
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSurface.hlsl"
 
 // Drops a growing share of a mesh's pixels in a 4 by 4 ordered pattern as _Reveal falls, so a unit fading into the
