@@ -119,7 +119,7 @@ run goes on, except a `spawn`, whose failure ends the run with its message (a wr
 ```
 
 `scene` and `steps` are required; `resolution` (`[width, height]`) sets the Game view size every shot, burst
-and clip records at. Positions are `[x, z]` on the map. An unknown key, a wrong type, a step with two kinds or two order actions, or a group no earlier step spawns fails
+and clip records at, and `play stage <file> <width> <height>` replaces it for one run, as for a draft. Positions are `[x, z]` on the map. An unknown key, a wrong type, a step with two kinds or two order actions, or a group no earlier step spawns fails
 the file, naming its path. Steps run by `at`, and in file order at the same time.
 
 | Step key | Keys inside | Does |

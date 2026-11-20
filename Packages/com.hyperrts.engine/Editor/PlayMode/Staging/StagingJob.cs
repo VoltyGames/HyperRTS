@@ -21,6 +21,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         private const string StatusKey = "HyperRTS.Staging.Status";
         private const string ResultKey = "HyperRTS.Staging.Result";
         private const string StartedKey = "HyperRTS.Staging.Started";
+        private const string ResolutionKey = "HyperRTS.Staging.Resolution";
 
         // Play starts within this, even behind a script reload, or not at all.
         private const double EntrySeconds = 180;
@@ -46,9 +47,14 @@ namespace HyperRTS.Editor.PlayMode.Staging
         /// <summary>Where the run is, or how the last one ended.</summary>
         public static string Status => _current != null ? $"Running: {_current._run.Progress}" : SessionState.GetString(StatusKey, "");
 
-        /// <summary>Opens the staging's scene and enters Play; returns the folder its files will land in.</summary>
-        public static string Start(string path)
+        /// <summary>
+        /// Opens the staging's scene and enters Play; returns the folder its files will land in. A nonzero
+        /// <paramref name="resolution"/> replaces the staging's own, as for a draft.
+        /// </summary>
+        public static string Start(string path, Vector2Int resolution)
         {
+            CheckResolution(resolution);
+
             EndIfStalled();
             if (IsRunning || EditorApplication.isPlayingOrWillChangePlaymode)
             {
@@ -71,6 +77,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             SessionState.SetString(StatusKey, $"Starting '{file.Name}'");
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetFloat(StartedKey, (float)EditorApplication.timeSinceStartup);
+            SessionState.SetIntArray(ResolutionKey, new[] { resolution.x, resolution.y });
             if (active.path != file.Scene)
             {
                 EditorSceneManager.OpenScene(file.Scene, OpenSceneMode.Single);
@@ -95,6 +102,16 @@ namespace HyperRTS.Editor.PlayMode.Staging
             }
         }
 
+        private static void CheckResolution(Vector2Int resolution)
+        {
+            var negative = resolution.x < 0 || resolution.y < 0;
+            var half = (resolution.x == 0) != (resolution.y == 0);
+            if (negative || half)
+            {
+                throw new ArgumentException($"HyperRTS: a staging resolution needs both width and height in pixels, not {resolution.x}x{resolution.y}.");
+            }
+        }
+
         private static void RequireSavedScenes()
         {
             for (var i = 0; i < SceneManager.sceneCount; i++)
@@ -110,7 +127,8 @@ namespace HyperRTS.Editor.PlayMode.Staging
         {
             try
             {
-                _current = new StagingJob(new StagingRun(StagingFile.Load(path)));
+                var size = SessionState.GetIntArray(ResolutionKey, new[] { 0, 0 });
+                _current = new StagingJob(new StagingRun(StagingFile.Load(path), new Vector2Int(size[0], size[1])));
             }
             catch (Exception exception)
             {

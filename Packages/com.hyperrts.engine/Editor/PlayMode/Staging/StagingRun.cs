@@ -23,6 +23,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         private const double RunTimeoutSeconds = 3600.0;
 
         private readonly StagingFile _file;
+        private readonly Vector2Int _resolution;
         private readonly Dictionary<string, StagingGroup> _groups = new();
         private readonly List<(StagingActivity activity, StagingReport.Step step)> _active = new();
         private readonly Stack<Action> _undo = new();
@@ -33,9 +34,11 @@ namespace HyperRTS.Editor.PlayMode.Staging
         private int _next;
         private StagingReport.Step _current;
 
-        public StagingRun(StagingFile file)
+        /// <summary>A nonzero <paramref name="resolution"/> replaces the file's own.</summary>
+        public StagingRun(StagingFile file, Vector2Int resolution)
         {
             _file = file;
+            _resolution = resolution == Vector2Int.zero ? file.Resolution : resolution;
             Report = new StagingReport { name = file.Name, scene = file.Scene };
         }
 
@@ -43,7 +46,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public string Folder => _file.Folder;
 
-        public Vector2Int Resolution => _file.Resolution;
+        public Vector2Int Resolution => _resolution;
 
         public Camera Camera { get; private set; }
 
