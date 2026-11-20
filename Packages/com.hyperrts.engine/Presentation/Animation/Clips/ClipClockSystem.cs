@@ -11,7 +11,14 @@ namespace HyperRTS.Presentation.Animation.Clips
     public partial struct ClipClockSystem : ISystem
     {
         private static readonly int TimeId = Shader.PropertyToID("_ClipTime");
+        private static readonly int LastTimeId = Shader.PropertyToID("_LastClipTime");
 
-        public void OnUpdate(ref SystemState state) => Shader.SetGlobalFloat(TimeId, (float)SystemAPI.Time.ElapsedTime);
+        // Last frame's time lets LitTeam's motion vector pass pose a vertex where it was a frame ago.
+        public void OnUpdate(ref SystemState state)
+        {
+            var time = SystemAPI.Time;
+            Shader.SetGlobalFloat(TimeId, (float)time.ElapsedTime);
+            Shader.SetGlobalFloat(LastTimeId, (float)(time.ElapsedTime - time.DeltaTime));
+        }
     }
 }

@@ -41,6 +41,7 @@ namespace HyperRTS.Presentation.Animation.Clips
                 Copy<UpperClip>(em, owner, mesh);
                 Copy<LowerFade>(em, owner, mesh);
                 Copy<UpperFade>(em, owner, mesh);
+                em.AddComponent<PerVertexMotionVectors_Tag>(mesh);
             }
         }
 

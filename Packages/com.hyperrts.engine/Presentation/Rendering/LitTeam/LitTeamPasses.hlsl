@@ -39,6 +39,20 @@ void LitTeamDepthNormalsFragment(Varyings input, out half4 outNormalWS : SV_Targ
     );
 }
 #elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
+// URP's vertex takes last frame's position from the posed mesh, which reports the object's motion but not its
+// animation's: pose the vertex at last frame's clip time too.
+Varyings LitTeamMotionVertex(Attributes input DISPLACED_LIT_INPUTS)
+{
+    UNITY_SETUP_INSTANCE_ID(input);
+    float3 last = input.position.xyz;
+    float3 normalOS = float3(0.0, 1.0, 0.0);
+    LIT_TEAM_DEFORM_AT(vatIndex, last, normalOS, _LastClipTime)
+    LIT_TEAM_DEFORM(vatIndex, input.position.xyz, normalOS)
+    Varyings output = vert(input);
+    output.previousPositionCSNoJitter = mul(_PrevViewProjMatrix, mul(UNITY_PREV_MATRIX_M, float4(last, 1.0)));
+    return output;
+}
+
 float4 LitTeamMotionFragment(Varyings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);

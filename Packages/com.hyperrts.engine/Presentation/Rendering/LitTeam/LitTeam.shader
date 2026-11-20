@@ -278,7 +278,7 @@ Shader "HyperRTS/LitTeam"
             // ObjectMotionVectors.hlsl's own pragmas, minus its vertex entry, which DisplacedLitVertex replaces.
             HLSLPROGRAM
             #pragma target 3.5
-            #pragma vertex DisplacedLitVertex
+            #pragma vertex LitTeamMotionVertex
             #pragma fragment LitTeamMotionFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"

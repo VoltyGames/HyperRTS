@@ -2,6 +2,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -36,6 +37,8 @@ namespace HyperRTS.Presentation.Animation.VAT
         {
             writer.Add(PlayingClip.Started(start, 0f));
             writer.Add(new ClipBounds { Value = bounds });
+            // Clips move the pieces, so the motion vector pass draws them even while the object stands.
+            writer.Add<PerVertexMotionVectors_Tag>();
         }
 
         /// <summary>Why this renderer can't play its clips, or null when it can.</summary>

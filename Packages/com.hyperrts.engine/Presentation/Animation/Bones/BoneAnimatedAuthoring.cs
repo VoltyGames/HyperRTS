@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using System;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Rendering;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -49,6 +50,8 @@ namespace HyperRTS.Presentation.Animation.Bones
             writer.Add(new UpperFade { Fade = ClipFade.None });
             writer.Add(new ClipBounds { Value = bounds });
             writer.Add(new PoseSlot { Value = PoseSlot.None });
+            // Skinning moves the vertices every frame, so the motion vector pass draws them even while the unit stands.
+            writer.Add<PerVertexMotionVectors_Tag>();
         }
 
         /// <summary>Why this renderer can't play its clips, or null when it can.</summary>

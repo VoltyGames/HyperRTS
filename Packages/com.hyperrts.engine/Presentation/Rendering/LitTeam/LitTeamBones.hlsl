@@ -52,12 +52,12 @@ struct BoneSide
     float shown;
 };
 
-BoneSide BoneSideAt(float4 clip, float4 fade)
+BoneSide BoneSideAt(float4 clip, float4 fade, float time)
 {
     BoneSide side;
-    side.frame = VATFrameAt(clip, _ClipTime);
+    side.frame = VATFrameAt(clip, time);
     side.old = fade.xyz;
-    side.shown = saturate((_ClipTime - fade.w) / max(_BoneFadeTime, 0.0001));
+    side.shown = saturate((time - fade.w) / max(_BoneFadeTime, 0.0001));
     return side;
 }
 
@@ -91,7 +91,7 @@ float3x4 Compose(float3x4 outer, float3x4 inner)
     return float3x4(float4(turned[0], moved.x), float4(turned[1], moved.y), float4(turned[2], moved.z));
 }
 
-void ApplyBones(float4 boneIndex, float4 boneWeight, inout float3 positionOS, inout float3 normalOS)
+void ApplyBones(float4 boneIndex, float4 boneWeight, float time, inout float3 positionOS, inout float3 normalOS)
 {
 #ifdef UNITY_DOTS_INSTANCING_ENABLED
     if (_PoseSlot >= 0.0)
@@ -100,8 +100,8 @@ void ApplyBones(float4 boneIndex, float4 boneWeight, inout float3 positionOS, in
         return;
     }
 #endif
-    BoneSide lower = BoneSideAt(_LowerClip, _LowerFade);
-    BoneSide upper = BoneSideAt(_UpperClip, _UpperFade);
+    BoneSide lower = BoneSideAt(_LowerClip, _LowerFade, time);
+    BoneSide upper = BoneSideAt(_UpperClip, _UpperFade, time);
     float3x4 hips = BonePose(0, lower);
     float3 position = 0.0;
     float3 normal = 0.0;

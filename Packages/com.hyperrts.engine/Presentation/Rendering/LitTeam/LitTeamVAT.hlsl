@@ -31,6 +31,8 @@ float3 VATFrameAt(float4 clip, float time)
 TEXTURE2D(_VATPositions);
 TEXTURE2D(_VATRotations);
 float _ClipTime;
+// ClipClockSystem's time a frame ago, for the motion vector pass.
+float _LastClipTime;
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamBones.hlsl"
 
@@ -41,9 +43,9 @@ float3 VATRotate(float4 q, float3 v)
 }
 
 // Moves a rigid piece's vertex from where row 0 rests it to where the clip's frame has it; normals only turn.
-void ApplyRigidVAT(float2 vatIndex, inout float3 positionOS, inout float3 normalOS)
+void ApplyRigidVAT(float2 vatIndex, float time, inout float3 positionOS, inout float3 normalOS)
 {
-    float3 frame = VATFrameAt(_VATClip, _ClipTime);
+    float3 frame = VATFrameAt(_VATClip, time);
     uint column = floor(vatIndex.x * _VATPositions_TexelSize.z);
     float3 rest = LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, 0), 0).xyz;
     float3 position = lerp(LOAD_TEXTURE2D_LOD(_VATPositions, uint2(column, frame.x), 0).xyz,
@@ -62,11 +64,11 @@ float3 DeformObject(float3 positionOS)
 }
 
 #if defined(_VAT_RIGID)
-    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS) ApplyRigidVAT(vatIndex, positionOS, normalOS);
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS, time) ApplyRigidVAT(vatIndex, time, positionOS, normalOS);
 #elif defined(_BONES)
-    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS) ApplyBones(boneIndex, boneWeight, positionOS, normalOS);
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS, time) ApplyBones(boneIndex, boneWeight, time, positionOS, normalOS);
 #else
-    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS)
+    #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS, time)
 #endif
 
 #ifdef _BUILD
@@ -76,10 +78,11 @@ float3 DeformObject(float3 positionOS)
 #endif
 
 // Every LitTeam pass moves its vertices through this, so all of them agree on depth. Reads the buildOrder, boneIndex
-// and boneWeight inputs.
-#define LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS) \
-    LIT_TEAM_POSE(vatIndex, positionOS, normalOS) \
+// and boneWeight inputs. The _AT form poses the clips at another time, as the motion vector pass does for last frame.
+#define LIT_TEAM_DEFORM_AT(vatIndex, positionOS, normalOS, time) \
+    LIT_TEAM_POSE(vatIndex, positionOS, normalOS, time) \
     LIT_TEAM_BUILD(positionOS, normalOS) \
     positionOS = DeformObject(positionOS);
+#define LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS) LIT_TEAM_DEFORM_AT(vatIndex, positionOS, normalOS, _ClipTime)
 
 #endif

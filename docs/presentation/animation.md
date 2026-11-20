@@ -34,7 +34,9 @@ on the walking hips.
 
 The material turns on `_BONES`. `BoneAnimatedAuthoring` on a renderer bakes the start clip, render bounds and a
 `PoseSlot` of -1. Game code plays a clip with `PlayingClip.Switch` using `SystemAPI.Time.ElapsedTime`, so pause and
-replay speed apply.
+replay speed apply. Bone and rigid clip renderers carry Entities Graphics' `PerVertexMotionVectors_Tag`, so LitTeam's
+motion vector pass draws them every frame and poses each vertex at `_LastClipTime` as well as `_ClipTime`: upscalers
+and TAA see the animation move, not only the unit.
 
 A renderer whose `PoseSlot` is 0 or above draws a live pose instead of its clips: every bone's skinning matrix,
 absolute in object space, from that slot of the global `_PoseSlots` buffer (DOTS instanced draws only). The material
