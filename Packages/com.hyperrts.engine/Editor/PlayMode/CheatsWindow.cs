@@ -11,7 +11,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>HyperRTS ▸ Cheats: the match at a glance, then the player, spawning, combat, strikes and world cheats.</summary>
+    /// <summary>The Cheats window: the match at a glance, then the player, spawning, combat, strikes and world cheats.</summary>
     public class CheatsWindow : PlayModeWindow
     {
         private const long PollMilliseconds = 500;

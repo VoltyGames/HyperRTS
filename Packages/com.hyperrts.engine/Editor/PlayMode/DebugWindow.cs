@@ -6,7 +6,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>HyperRTS ▸ Debug: the debug layers and, in Play, a table of the AI players.</summary>
+    /// <summary>The Debug window: the debug layers and, in Play, a table of the AI players.</summary>
     public class DebugWindow : PlayModeWindow
     {
         [MenuItem(EditorMenu.Debug, false, EditorMenu.DebugPriority)]

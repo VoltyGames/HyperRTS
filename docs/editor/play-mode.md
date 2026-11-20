@@ -7,14 +7,14 @@ players for network tests. For anyone playing or debugging a match in the Editor
 
 ## Cheats and debug layers
 
-Two windows share the `PlayModeWindow` base, which remembers each section's fold state and opens each as a floating
+Two windows share the `PlayModeWindow` base, which remembers each group's fold state and opens each as a floating
 window that stays above the Editor during Play. **HyperRTS ▸ Cheats** (`CheatsWindow`) holds the cheats;
 **HyperRTS ▸ Debug** (`DebugWindow`) holds the debug layers and a table of the AI players. A line at the top of Cheats
 sums up the running match: who runs it (single player, host or server) and its players, units and buildings.
 
 The cheats work in Play mode only, through the normal game systems, and drop the replay recording:
 
-| Section | Does |
+| Group | Does |
 | --- | --- |
 | Player and resources | Pick the player every cheat acts for; **Play as** it (its AI stops), add resources, finish its construction and production |
 | Spawning | Spawn any prefab at the view centre for the player (buildings follow placement rules) |
@@ -62,7 +62,7 @@ through the main menu), network (offline, host, dedicated server), the slot tabl
 (`GameLauncher.Play`) opens the game's menu scene and hands the choice to the game. The toolbar beside Play shows the choice
 (`LaunchToolbar`). In Play mode the page shows:
 
-| Section | Does |
+| Part | Does |
 | --- | --- |
 | Network | Session status and traffic; host, join localhost, run a dedicated server of the scene |
 | Bot matches | AI against AI, match after match, with a results table and reports in `Logs/BotMatches/` |
@@ -140,7 +140,7 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `mixer` | parameter names and values | Sets exposed parameters on the loaded audio mixers, such as `{ "Music": -80 }` to record without the match music under footage that gets its own; a name no mixer exposes fails |
 | `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |
 
-To add a step kind, subclass `StagingStep` with a static `Read` that takes the step's `StagingJson`, run it in `Run`
+To add a step kind, subclass `StagingStep` in `Editor/PlayMode/Staging/Steps/` with a static `Read` that takes the step's `StagingJson`, run it in `Run`
 (long work becomes a `StagingActivity` handed to `run.Start`), and list its key in `StagingStep.Readers`. A group
 label it makes is `Defines`, labels it needs are `Uses`, and a file it writes is `Output`.
 

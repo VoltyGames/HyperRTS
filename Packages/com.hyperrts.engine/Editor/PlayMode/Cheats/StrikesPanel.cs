@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode.Cheats
 {
-    /// <summary>The Strikes cheats: every strike and strategic launcher the game has, under the spawn grouping's headings, built, readied or fired for the chosen player.</summary>
+    /// <summary>The strike cheats: every strike and strategic launcher, built, readied or fired for the chosen player.</summary>
     internal class StrikesPanel
     {
         private const long PollMilliseconds = 250;
