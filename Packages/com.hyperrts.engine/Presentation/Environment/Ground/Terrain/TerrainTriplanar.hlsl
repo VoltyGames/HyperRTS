@@ -3,8 +3,8 @@
 #ifndef HYPERRTS_TERRAIN_TRIPLANAR_INCLUDED
 #define HYPERRTS_TERRAIN_TRIPLANAR_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayerParams.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainPixel.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainLayerParams.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainPixel.hlsl"
 
 struct TerrainSides
 {

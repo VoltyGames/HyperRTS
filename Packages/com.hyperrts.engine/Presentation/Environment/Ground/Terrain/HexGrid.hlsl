@@ -4,7 +4,12 @@
 #define HYPERRTS_HEX_GRID_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRotation.hlsl"
+
+// Turns uv clockwise by rotation, the turn's (cos, sin); hex cells and the terrain layers share it.
+float2 RotateUV(float2 uv, float2 rotation)
+{
+    return float2(uv.x * rotation.x - uv.y * rotation.y, uv.x * rotation.y + uv.y * rotation.x);
+}
 
 // Hex grid vertices per tile, as in the paper.
 #define HEX_GRID_SCALE 3.4641016

@@ -3,11 +3,11 @@
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHexTiling.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayerParams.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainPixel.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainTriplanar.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainParallax.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainHexTiling.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainLayerParams.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainPixel.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainTriplanar.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainParallax.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
 
 #define TERRAIN_MAX_LAYERS 16

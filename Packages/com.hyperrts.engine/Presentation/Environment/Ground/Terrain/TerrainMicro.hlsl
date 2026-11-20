@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_TERRAIN_MICRO_INCLUDED
 #define HYPERRTS_TERRAIN_MICRO_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainLayers.hlsl"
 
 // (cos, sin) of one radian, and the golden ratio: the second sample's turn and scale.
 #define MICRO_TURN float2(0.54030231, 0.84147098)

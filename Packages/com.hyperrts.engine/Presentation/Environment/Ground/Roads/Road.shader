@@ -89,7 +89,7 @@ Shader "HyperRTS/Road"
             half _RutWidth;
             half _RutPuddles;
             half _EdgePuddles;
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStainInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainStainInput.hlsl"
         CBUFFER_END
         ENDHLSL
 
@@ -116,7 +116,7 @@ Shader "HyperRTS/Road"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainCraterGround.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainCraterGround.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/BuildingFootprints.hlsl"
 
             // A bowl this deep breaks the road: it is gone by the far depth.

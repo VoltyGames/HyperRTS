@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_TERRAIN_CRATER_GROUND_INCLUDED
 #define HYPERRTS_TERRAIN_CRATER_GROUND_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStains.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainStains.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Triplanar.hlsl"
 
 #define CRATER_GROUND_START 0.03 // metres dented from which dug earth shows

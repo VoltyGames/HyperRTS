@@ -49,7 +49,7 @@ CBUFFER_START(UnityPerMaterial)
     float _TriplanarFull;
     float _ParallaxDepth;
     float _ParallaxEnd;
-    #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainStainInput.hlsl"
+    #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainStainInput.hlsl"
 CBUFFER_END
 
 CBUFFER_START(_Terrain)

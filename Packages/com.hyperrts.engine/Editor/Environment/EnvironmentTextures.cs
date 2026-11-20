@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Environment
         private const string Folder = "Packages/com.hyperrts.engine/Presentation/Environment/";
         public const string CloudCookiePath = Folder + "Weather/CloudCookie.png";
         public const string EdgeNoisePath = Folder + "EdgeNoise.png";
-        public const string TerrainNoisePath = Folder + "Ground/TerrainNoise.png";
+        public const string TerrainNoisePath = Folder + "Ground/Terrain/TerrainNoise.png";
         public const string WaterRipplesPath = Folder + "Water/WaterRipples.png";
 
         private const int CloudSize = 512;

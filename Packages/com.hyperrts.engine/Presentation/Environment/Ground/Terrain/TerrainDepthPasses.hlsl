@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_TERRAIN_DEPTH_PASSES_INCLUDED
 #define HYPERRTS_TERRAIN_DEPTH_PASSES_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainInput.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/CasterPasses.hlsl"
 
 struct TerrainDepthVaryings

@@ -1,14 +1,14 @@
 #ifndef HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 #define HYPERRTS_TERRAIN_FORWARD_PASS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainInput.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainInput.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainLayers.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainWetness.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainCraterGround.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainWetness.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainCraterGround.hlsl"
 
 #define RUT_DEPTH 0.12
 #define RUT_DARKENING 0.4

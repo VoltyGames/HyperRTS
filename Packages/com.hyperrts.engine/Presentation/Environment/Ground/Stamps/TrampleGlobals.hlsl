@@ -1,6 +1,6 @@
 // The trample map globals TrampleSurfaces publishes. Channel layout: docs/presentation/environment.md, Trample maps.
-#ifndef HYPERRTS_INTERACTION_GLOBALS_INCLUDED
-#define HYPERRTS_INTERACTION_GLOBALS_INCLUDED
+#ifndef HYPERRTS_TRAMPLE_GLOBALS_INCLUDED
+#define HYPERRTS_TRAMPLE_GLOBALS_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/WorldRect.hlsl"

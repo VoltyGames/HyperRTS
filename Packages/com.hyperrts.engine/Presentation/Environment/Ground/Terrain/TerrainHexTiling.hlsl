@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 #define HYPERRTS_TERRAIN_HEX_TILING_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/HexGrid.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/HexGrid.hlsl"
 
 // (cos, sin) of the far sample's fixed turn, so its repeats don't line up with the near ones.
 #define FAR_TURN float2(0.79863551, 0.60181502)

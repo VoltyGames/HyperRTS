@@ -4,8 +4,8 @@
 #ifndef HYPERRTS_TERRAIN_STAINS_INCLUDED
 #define HYPERRTS_TERRAIN_STAINS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/HexGrid.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainSurface.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/HexGrid.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainSurface.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 

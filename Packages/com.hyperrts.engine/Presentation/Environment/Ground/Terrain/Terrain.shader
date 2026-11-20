@@ -123,7 +123,7 @@ Shader "HyperRTS/Terrain"
             #pragma fragment TerrainForwardFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ForwardLightingKeywords.hlsl"
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE _TERRAIN_NO_FAR _TERRAIN_NO_PARALLAX
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainForwardPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainForwardPass.hlsl"
             ENDHLSL
         }
 
@@ -139,7 +139,7 @@ Shader "HyperRTS/Terrain"
             #pragma vertex TerrainShadowVertex
             #pragma fragment TerrainShadowFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainDepthPasses.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainDepthPasses.hlsl"
             ENDHLSL
         }
 
@@ -154,7 +154,7 @@ Shader "HyperRTS/Terrain"
             HLSLPROGRAM
             #pragma vertex TerrainDepthVertex
             #pragma fragment TerrainDepthFragment
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainDepthPasses.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainDepthPasses.hlsl"
             ENDHLSL
         }
 
@@ -170,7 +170,7 @@ Shader "HyperRTS/Terrain"
             #pragma fragment TerrainDepthNormalsFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.universal/ShaderLibrary/RenderingLayers.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainDepthPasses.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainDepthPasses.hlsl"
             ENDHLSL
         }
 
@@ -183,7 +183,7 @@ Shader "HyperRTS/Terrain"
             #pragma vertex TerrainDepthVertex
             #pragma fragment TerrainDepthFragment
             #define SCENESELECTIONPASS
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainDepthPasses.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainDepthPasses.hlsl"
             ENDHLSL
         }
 
@@ -197,7 +197,7 @@ Shader "HyperRTS/Terrain"
             HLSLPROGRAM
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainInput.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Terrain/TerrainInput.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"
 
             TEXTURE2D(_GroundColorMap);

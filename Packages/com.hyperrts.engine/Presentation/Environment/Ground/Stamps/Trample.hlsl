@@ -1,6 +1,6 @@
 // Include after URP's Core.hlsl.
-#ifndef HYPERRTS_INTERACTION_INCLUDED
-#define HYPERRTS_INTERACTION_INCLUDED
+#ifndef HYPERRTS_TRAMPLE_INCLUDED
+#define HYPERRTS_TRAMPLE_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/TrampleGlobals.hlsl"
