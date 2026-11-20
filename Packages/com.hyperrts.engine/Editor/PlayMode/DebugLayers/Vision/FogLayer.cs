@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
     {
         public override string Label => "Fog";
 
-        public override string Detail => "Green where the local player's team sees.";
+        public override string Tooltip => "Green where the local player's team sees.";
 
         public override string Group => "Vision";
 

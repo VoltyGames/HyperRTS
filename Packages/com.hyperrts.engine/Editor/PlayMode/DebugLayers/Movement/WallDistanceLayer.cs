@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
     {
         public override string Label => "Wall distance";
 
-        public override string Detail => "Distance to the nearest wall for the first field key, red at a wall to blue far from one.";
+        public override string Tooltip => "Distance to the nearest wall for the first field key, red at a wall to blue far from one.";
 
         public override string Group => "Movement";
 

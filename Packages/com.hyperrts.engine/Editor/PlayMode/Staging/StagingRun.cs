@@ -236,7 +236,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 var (activity, step) = _active[i];
                 try
                 {
-                    if (!activity.Step(this))
+                    if (!activity.Advance(this))
                     {
                         continue;
                     }

@@ -12,14 +12,14 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.PlayMode
 {
-    /// <summary>The Tools window Play page: the launcher outside Play mode; network, soak tests and replays in it.</summary>
+    /// <summary>The Tools window Play page: the launcher outside Play mode; network, bot matches and replays in it.</summary>
     public class PlayPage : HubPage
     {
         private const long PollMilliseconds = 250;
 
         private VisualElement _launch;
         private VisualElement _network;
-        private VisualElement _soak;
+        private VisualElement _botMatches;
         private Button _host;
         private Button _join;
         private Button _server;
@@ -46,9 +46,9 @@ namespace HyperRTS.Editor.PlayMode
             var root = Layout().Instantiate();
             EditorState.Bind(root);
             _launch = root.Require<VisualElement>("launch");
-            new LaunchSection(_launch, EditorAssets.Layout(typeof(LaunchSection), "SlotRow"));
+            new LaunchPanel(_launch, EditorAssets.Layout(typeof(LaunchPanel), "SlotRow"));
             _network = root.Require<VisualElement>("network");
-            _soak = root.Require<VisualElement>("soak");
+            _botMatches = root.Require<VisualElement>("bot-matches");
             BindNetwork(root);
             BindBots(root);
             _save = root.Require<Button>("save");
@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.PlayMode
             var playing = Application.isPlaying;
             _launch.SetHidden(playing);
             _network.SetHidden(!playing);
-            _soak.SetHidden(!playing);
+            _botMatches.SetHidden(!playing);
 
             var running = NetworkSession.IsRunning;
             var canStart = playing && !running;

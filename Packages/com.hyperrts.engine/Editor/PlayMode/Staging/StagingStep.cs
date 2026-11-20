@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
     internal abstract class StagingStep
     {
         [NoAutoStaticsCleanup]
-        private static readonly Dictionary<string, Func<StagingObject, StagingStep>> Readers = new()
+        private static readonly Dictionary<string, Func<StagingJson, StagingStep>> Readers = new()
         {
             ["spawn"] = SpawnStep.Read,
             ["order"] = OrderStep.Read,
@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         public abstract void Run(StagingRun run);
 
-        public static StagingStep Read(StagingObject json, int index)
+        public static StagingStep Read(StagingJson json, int index)
         {
             var at = json.Number("at");
             if (at < 0f)

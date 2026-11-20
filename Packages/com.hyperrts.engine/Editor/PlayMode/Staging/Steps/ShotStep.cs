@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override string Output => $"shot:{_name}";
 
-        public static StagingStep Read(StagingObject step) => new ShotStep(step.Text("shot"));
+        public static StagingStep Read(StagingJson step) => new ShotStep(step.Text("shot"));
 
         public override void Run(StagingRun run)
         {

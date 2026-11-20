@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly string _units;
         private readonly float _amount;
 
-        private DamageStep(StagingObject json)
+        private DamageStep(StagingJson json)
         {
             _units = json.Text("units");
             _amount = json.Number("amount");
@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override IEnumerable<string> Uses => new[] { _units };
 
-        public static StagingStep Read(StagingObject step) => new DamageStep(step.Child("damage"));
+        public static StagingStep Read(StagingJson step) => new DamageStep(step.Child("damage"));
 
         public override void Run(StagingRun run)
         {

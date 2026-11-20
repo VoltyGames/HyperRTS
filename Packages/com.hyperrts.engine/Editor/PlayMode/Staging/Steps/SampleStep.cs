@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly string _what;
         private readonly float _seconds;
 
-        private SampleStep(StagingObject json)
+        private SampleStep(StagingJson json)
         {
             _what = json.Text("what");
             _seconds = json.Number("seconds");
@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override IEnumerable<string> Uses => _what == CameraKey ? base.Uses : new[] { _what };
 
-        public static StagingStep Read(StagingObject step) => new SampleStep(step.Child("sample"));
+        public static StagingStep Read(StagingJson step) => new SampleStep(step.Child("sample"));
 
         public override void Run(StagingRun run) => run.Start(new SampleActivity(run, _what, _seconds));
     }

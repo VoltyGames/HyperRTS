@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
     {
         public override string Label => "Sight area";
 
-        public override string Detail => "The first selected unit's sight: green sees the ground, blue only tall targets, yellow close range.";
+        public override string Tooltip => "The first selected unit's sight: green sees the ground, blue only tall targets, yellow close range.";
 
         public override string Group => "Vision";
 

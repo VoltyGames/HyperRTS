@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
     {
         public override string Label => "High ground";
 
-        public override string Detail => "Cells above the ground round them, blue for a small sight bonus to red for the largest.";
+        public override string Tooltip => "Cells above the ground round them, blue for a small sight bonus to red for the largest.";
 
         public override string Group => "Vision";
 

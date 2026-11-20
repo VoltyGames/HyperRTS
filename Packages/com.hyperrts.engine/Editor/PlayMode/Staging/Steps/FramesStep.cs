@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly int _fps;
         private readonly bool _movie;
 
-        private FramesStep(StagingObject json, bool movie)
+        private FramesStep(StagingJson json, bool movie)
         {
             _name = json.Text("name");
             _seconds = json.Number("seconds");
@@ -25,9 +25,9 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override string Output => $"{Kind}:{_name}";
 
-        public static StagingStep Read(StagingObject step) => new FramesStep(step.Child("frames"), false);
+        public static StagingStep Read(StagingJson step) => new FramesStep(step.Child("frames"), false);
 
-        public static StagingStep ReadClip(StagingObject step) => new FramesStep(step.Child("clip"), true);
+        public static StagingStep ReadClip(StagingJson step) => new FramesStep(step.Child("clip"), true);
 
         public override void Run(StagingRun run)
         {

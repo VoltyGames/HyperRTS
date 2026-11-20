@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Vision
     {
         public override string Label => "Sight blockers";
 
-        public override string Detail => "Red solid blockers, green porous or crop cover, yellow other concealment.";
+        public override string Tooltip => "Red solid blockers, green porous or crop cover, yellow other concealment.";
 
         public override string Group => "Vision";
 

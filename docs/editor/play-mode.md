@@ -34,9 +34,9 @@ entity name, with null listing the prefab under Other. It runs as the list opens
 no assets. The picker finds the implementation by type, and search covers every
 heading.
 
-Debug layers (the Debug window) are `DebugLayer`s, found by type (a `Label`, `Detail`, `Group` and `Glyph` each). Switches are
+Debug layers (the Debug window) are `DebugLayer`s, found by type (a `Label`, `Tooltip`, `Group` and `Glyph` each). Switches are
 remembered and work outside Play mode; **Hide all** clears them. While a layer is on, a status line under it shows
-its `Describe` text, or that it has nothing to draw yet. Each refresh a layer adds lines and one grid of cells to a
+its `Status` text, or that it has nothing to draw yet. Each refresh a layer adds lines and one grid of cells to a
 `DebugShapes`: hidden mesh objects draw them in the Game and Scene views, the cells draped on the simulation's ground
 heights, and both over everything so crops and units never hide them.
 
@@ -65,7 +65,7 @@ through the main menu), network (offline, host, dedicated server), the slot tabl
 | Section | Does |
 | --- | --- |
 | Network | Session status and traffic; host, join localhost, run a dedicated server of the scene |
-| Soak test | AI against AI, match after match, with a results table and reports in `Logs/BotMatches/` |
+| Bot matches | AI against AI, match after match, with a results table and reports in `Logs/BotMatches/` |
 | Replays | Save the recording to `Logs/Replays/`; play or reveal the newest |
 
 A game joins the launcher with two subclasses in an editor assembly: `GameLauncher` lists maps and sides, names the
@@ -140,7 +140,7 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `mixer` | parameter names and values | Sets exposed parameters on the loaded audio mixers, such as `{ "Music": -80 }` to record without the match music under footage that gets its own; a name no mixer exposes fails |
 | `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |
 
-To add a step kind, subclass `StagingStep` with a static `Read` that takes the step's `StagingObject`, run it in `Run`
+To add a step kind, subclass `StagingStep` with a static `Read` that takes the step's `StagingJson`, run it in `Run`
 (long work becomes a `StagingActivity` handed to `run.Start`), and list its key in `StagingStep.Readers`. A group
 label it makes is `Defines`, labels it needs are `Uses`, and a file it writes is `Output`.
 

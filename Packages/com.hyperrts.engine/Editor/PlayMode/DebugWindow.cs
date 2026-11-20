@@ -12,6 +12,6 @@ namespace HyperRTS.Editor.PlayMode
         [MenuItem(EditorMenu.Debug, false, EditorMenu.DebugPriority)]
         public static void Open() => Open<DebugWindow>("Debug");
 
-        protected override void Build(VisualElement root) => new DebugSection(root.Require<VisualElement>("debug"));
+        protected override void Build(VisualElement root) => new DebugPanel(root.Require<VisualElement>("debug"));
     }
 }

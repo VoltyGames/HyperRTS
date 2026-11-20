@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly SurfaceMaterial? _ground;
         private readonly float _radius;
 
-        private SpawnStep(StagingObject json)
+        private SpawnStep(StagingJson json)
         {
             _group = json.Text("as");
             _prefab = json.Text("prefab");
@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override bool EndsRunOnError => true;
 
-        public static StagingStep Read(StagingObject step) => new SpawnStep(step.Child("spawn"));
+        public static StagingStep Read(StagingJson step) => new SpawnStep(step.Child("spawn"));
 
         public override void Run(StagingRun run)
         {
@@ -114,7 +114,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             return unit;
         }
 
-        private static SurfaceMaterial ReadGround(StagingObject json)
+        private static SurfaceMaterial ReadGround(StagingJson json)
         {
             var name = json.Text("ground");
             if (Enum.TryParse<SurfaceMaterial>(name, true, out var material) && Enum.IsDefined(typeof(SurfaceMaterial), material))

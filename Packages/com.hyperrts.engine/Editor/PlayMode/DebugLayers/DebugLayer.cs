@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
         public abstract string Label { get; }
 
         /// <summary>What the layer draws and what its colours mean, shown as the row's tooltip.</summary>
-        public abstract string Detail { get; }
+        public abstract string Tooltip { get; }
 
         /// <summary>The heading the row sits under, such as "Movement".</summary>
         public abstract string Group { get; }
@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
         public abstract void Draw(EntityManager entityManager, DebugShapes shapes);
 
         /// <summary>A short status shown under the row while the layer is on, such as totals; null for none.</summary>
-        public virtual string Describe(EntityManager entityManager) => null;
+        public virtual string Status(EntityManager entityManager) => null;
 
         // PlayWorld is internal, so layers in a game's assembly reach it through here.
         protected static bool TryGetSingleton<T>(EntityManager entityManager, out T value) where T : unmanaged, IComponentData =>

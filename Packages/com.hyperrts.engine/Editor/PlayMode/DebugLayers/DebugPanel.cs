@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.PlayMode.DebugLayers
 {
     /// <summary>The debug layers in their groups, each with a status line while on, and in Play mode a table of the AI players.</summary>
-    internal class DebugSection
+    internal class DebugPanel
     {
         private const long PollMilliseconds = 250;
 
@@ -19,8 +19,8 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
         private readonly VisualElement _aiGroup;
         private readonly VisualElement _ai;
 
-        /// <summary>Wires a cloned DebugSection.uxml and polls the statuses and AI table while it is shown.</summary>
-        public DebugSection(VisualElement root)
+        /// <summary>Wires a cloned DebugPanel.uxml and polls the statuses and AI table while it is shown.</summary>
+        public DebugPanel(VisualElement root)
         {
             BuildLayers(root.Require<VisualElement>("layers"));
             root.Require<Button>("hide-all").clicked += HideAll;
@@ -136,7 +136,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
             public LayerRow(DebugLayer layer)
             {
                 _layer = layer;
-                Root = new VisualElement { tooltip = layer.Detail };
+                Root = new VisualElement { tooltip = layer.Tooltip };
                 var line = new VisualElement();
                 line.AddToClassList("hrts-debug__row");
                 line.Add(GlyphElements.CreateGlyph(layer.Glyph));
@@ -155,19 +155,19 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
             public void Refresh(bool playing)
             {
                 _toggle.SetValueWithoutNotify(_layer.Shown);
-                var text = playing && _layer.Shown ? Describe() : null;
+                var text = playing && _layer.Shown ? StatusText() : null;
                 _status.text = text;
                 _status.SetHidden(string.IsNullOrEmpty(text));
             }
 
-            private string Describe()
+            private string StatusText()
             {
                 if (!PlayWorld.TryGet(_layer.Source, out var entityManager))
                 {
                     return "No world to draw from.";
                 }
 
-                var described = _layer.Describe(entityManager);
+                var described = _layer.Status(entityManager);
                 if (described != null)
                 {
                     return described;

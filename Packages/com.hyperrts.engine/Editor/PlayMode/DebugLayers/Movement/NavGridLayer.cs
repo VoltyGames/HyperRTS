@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 
         public override string Label => "Nav grid";
 
-        public override string Detail => "Red blocked cells, blue water, yellow decks over water or gaps.";
+        public override string Tooltip => "Red blocked cells, blue water, yellow decks over water or gaps.";
 
         public override string Group => "Movement";
 

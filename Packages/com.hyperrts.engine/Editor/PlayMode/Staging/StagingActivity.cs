@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public virtual bool Records => false;
 
         /// <summary>Called once a frame; true when the work is done. Throwing fails the step.</summary>
-        public abstract bool Step(StagingRun run);
+        public abstract bool Advance(StagingRun run);
 
         /// <summary>Releases what the activity holds when the run ends before it is done.</summary>
         public virtual void Stop()

@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override bool Records => true;
 
-        public override bool Step(StagingRun run)
+        public override bool Advance(StagingRun run)
         {
             if (!_recording.IsCompleted)
             {

@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         /// <summary>Throws naming the file and the key for bad JSON, an unknown key, a missing or misplaced value or an undefined group.</summary>
         public static StagingFile Parse(string json, string source)
         {
-            var root = StagingObject.Parse(json, source);
+            var root = StagingJson.Parse(json, source);
             var name = root.Text("name");
             var scene = root.Text("scene");
             var resolution = ReadResolution(root);
@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             return new StagingFile(name, scene, resolution, steps);
         }
 
-        private static Vector2Int ReadResolution(StagingObject root)
+        private static Vector2Int ReadResolution(StagingJson root)
         {
             var size = root.PointOrNull("resolution") ?? float2.zero;
             var pixels = new Vector2Int((int)size.x, (int)size.y);

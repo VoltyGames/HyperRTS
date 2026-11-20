@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.PlayMode
     internal static partial class PlayWorld
     {
         [AutoStaticsCleanup]
-        private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> Singletons = new();
+        private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> SingletonQueries = new();
 
         /// <summary>The world that owns game state: the host or server when one runs, else the single-player world. Cheats write here.</summary>
         public static bool TryGetAuthoritative(out EntityManager entityManager) =>
@@ -128,13 +128,13 @@ namespace HyperRTS.Editor.PlayMode
         // Queries belong to their world, so each world keeps its own and disposed worlds are dropped.
         private static Dictionary<Type, EntityQuery> GetQueries(World world)
         {
-            if (Singletons.TryGetValue(world, out var queries))
+            if (SingletonQueries.TryGetValue(world, out var queries))
             {
                 return queries;
             }
 
             var disposed = new List<World>();
-            foreach (var cached in Singletons.Keys)
+            foreach (var cached in SingletonQueries.Keys)
             {
                 if (!cached.IsCreated)
                 {
@@ -142,8 +142,8 @@ namespace HyperRTS.Editor.PlayMode
                 }
             }
 
-            disposed.ForEach(stale => Singletons.Remove(stale));
-            Singletons[world] = queries = new Dictionary<Type, EntityQuery>();
+            disposed.ForEach(stale => SingletonQueries.Remove(stale));
+            SingletonQueries[world] = queries = new Dictionary<Type, EntityQuery>();
             return queries;
         }
     }

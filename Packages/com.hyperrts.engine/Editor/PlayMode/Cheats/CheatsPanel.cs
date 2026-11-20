@@ -16,7 +16,7 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.PlayMode.Cheats
 {
     /// <summary>The Play-mode cheats: the chosen player's control, resources and builds; spawning, repair and battles; fog and game speed.</summary>
-    internal class CheatsSection
+    internal class CheatsPanel
     {
         private const long PollMilliseconds = 250;
 
@@ -36,8 +36,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         private readonly Button _pause;
         private readonly Label _speedNote;
 
-        /// <summary>Wires the controls of a cloned CheatsSection.uxml and polls them while it is shown.</summary>
-        public CheatsSection(VisualElement root)
+        /// <summary>Wires the controls of a cloned CheatsPanel.uxml and polls them while it is shown.</summary>
+        public CheatsPanel(VisualElement root)
         {
             _root = root;
             _status = root.Require<HelpBox>("status");
@@ -59,7 +59,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _destroy = root.Require<Button>("destroy");
             _readySelected = root.Require<Button>("ready-selected");
             WireSpawnAndCombat();
-            new StrikesSection(root.Require<VisualElement>("strikes"), this);
+            new StrikesPanel(root.Require<VisualElement>("strikes"), this);
 
             _fog = root.Require<Toggle>("fog");
             _fog.RegisterValueChangedCallback(change => Act((manager, _, _) => MatchCheats.SetFog(manager, change.newValue)));

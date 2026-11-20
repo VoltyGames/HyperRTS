@@ -8,17 +8,17 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.PlayMode.Cheats
 {
     /// <summary>The Strikes cheats: every strike and strategic launcher the game has, under the spawn grouping's headings, built, readied or fired for the chosen player.</summary>
-    internal class StrikesSection
+    internal class StrikesPanel
     {
         private const long PollMilliseconds = 250;
 
-        private readonly CheatsSection _cheats;
+        private readonly CheatsPanel _cheats;
         private readonly VisualElement _rows;
         private readonly List<StrikeRow> _shown = new();
         private World _world;
 
-        /// <summary>Wires a cloned StrikesSection.uxml and polls it while the cheats are usable.</summary>
-        public StrikesSection(VisualElement root, CheatsSection cheats)
+        /// <summary>Wires a cloned StrikesPanel.uxml and polls it while the cheats are usable.</summary>
+        public StrikesPanel(VisualElement root, CheatsPanel cheats)
         {
             _cheats = cheats;
             _rows = root.Require<VisualElement>("rows");

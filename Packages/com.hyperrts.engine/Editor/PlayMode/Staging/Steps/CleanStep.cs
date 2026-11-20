@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override string Kind => "clean";
 
-        public static StagingStep Read(StagingObject step) => new CleanStep(step.Flag("clean"));
+        public static StagingStep Read(StagingJson step) => new CleanStep(step.Flag("clean"));
 
         public override void Run(StagingRun run)
         {

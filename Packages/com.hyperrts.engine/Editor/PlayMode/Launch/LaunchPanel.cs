@@ -10,7 +10,7 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.PlayMode.Launch
 {
     /// <summary>The Play page's launcher form: map, mode, start, network, the slot table and the game's own settings.</summary>
-    internal class LaunchSection
+    internal class LaunchPanel
     {
         private static readonly string[] SlotKinds = { "Closed", "Human", "Bot" };
         private static readonly string[] Modes = { "Free for all", "1v1", "2v2", "3v3", "4v4" };
@@ -29,8 +29,8 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private IReadOnlyList<LaunchSide> _sides;
         private LaunchMap _map;
 
-        /// <summary>Wires a cloned LaunchSection.uxml.</summary>
-        public LaunchSection(VisualElement root, VisualTreeAsset slotRow)
+        /// <summary>Wires a cloned LaunchPanel.uxml.</summary>
+        public LaunchPanel(VisualElement root, VisualTreeAsset slotRow)
         {
             _slotRow = slotRow;
             _slots = root.Require<VisualElement>("slots");

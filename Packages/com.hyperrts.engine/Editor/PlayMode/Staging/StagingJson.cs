@@ -11,24 +11,24 @@ namespace HyperRTS.Editor.PlayMode.Staging
     /// A JSON object of a staging file, read key by key. <see cref="Finish"/> fails on a key nobody read, so a typo
     /// never passes silently, and every failure names the path of the key.
     /// </summary>
-    internal sealed class StagingObject
+    internal sealed class StagingJson
     {
         private readonly JObject _json;
         private readonly string _path;
         private readonly HashSet<string> _read = new();
-        private readonly List<StagingObject> _children = new();
+        private readonly List<StagingJson> _children = new();
 
-        public StagingObject(JToken token, string path)
+        public StagingJson(JToken token, string path)
         {
             _path = path;
             _json = token as JObject ?? throw Problem($"must be an object, not {token.Type}");
         }
 
-        public static StagingObject Parse(string json, string source)
+        public static StagingJson Parse(string json, string source)
         {
             try
             {
-                return new StagingObject(JToken.Parse(json), source);
+                return new StagingJson(JToken.Parse(json), source);
             }
             catch (JsonException exception)
             {
@@ -71,12 +71,12 @@ namespace HyperRTS.Editor.PlayMode.Staging
             return new float2((float)list[0], (float)list[1]);
         }
 
-        public StagingObject Child(string key) => Track(new StagingObject(Read(key, JTokenType.Object), $"{_path}.{key}"));
+        public StagingJson Child(string key) => Track(new StagingJson(Read(key, JTokenType.Object), $"{_path}.{key}"));
 
-        public List<StagingObject> Items(string key)
+        public List<StagingJson> Items(string key)
         {
             var list = (JArray)Read(key, JTokenType.Array);
-            return list.Select((item, i) => Track(new StagingObject(item, $"{_path}.{key}[{i}]"))).ToList();
+            return list.Select((item, i) => Track(new StagingJson(item, $"{_path}.{key}[{i}]"))).ToList();
         }
 
         /// <summary>The one of <paramref name="keys"/> this object has; none or two fails.</summary>
@@ -110,7 +110,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
 
         private static string Quote(IEnumerable<string> keys) => string.Join(", ", keys.Select(key => $"'{key}'"));
 
-        private StagingObject Track(StagingObject child)
+        private StagingJson Track(StagingJson child)
         {
             _children.Add(child);
             return child;

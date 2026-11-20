@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <Style src="LaunchSection.uss" />
+  <Style src="LaunchPanel.uss" />
   <HyperRTS.Editor.Common.TitledSection title="Launch">
     <ui:HelpBox name="missing" class="hrts-note" message-type="Info" message="This project has no game launcher: subclass GameLauncher in an editor assembly." />
     <ui:VisualElement name="form">

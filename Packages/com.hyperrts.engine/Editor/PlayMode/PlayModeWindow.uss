@@ -1,4 +1,4 @@
-/* The Cheats and Debug windows. The debug section is styled in DebugSection.uss. */
+/* The Cheats and Debug windows. The debug panel is styled in DebugPanel.uss. */
 
 .hrts-play-window {
   flex-grow: 1;

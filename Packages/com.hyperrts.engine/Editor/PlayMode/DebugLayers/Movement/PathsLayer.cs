@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 
         public override string Label => "Paths";
 
-        public override string Detail =>
+        public override string Tooltip =>
             "Cyan waypoints, dashed when reversing, and orange rear axles; red dashes to attack " +
             "targets.";
 
@@ -38,7 +38,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
         }
 
         // The totals cover every unit: the pathfinder keeps no count per unit.
-        public override string Describe(EntityManager entityManager)
+        public override string Status(EntityManager entityManager)
         {
             if (!TryGetPathfinding(entityManager, out var pathfinding))
             {

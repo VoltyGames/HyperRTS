@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
     {
         public override string Label => "Sectors";
 
-        public override string Detail => "Connected regions of the first movement class, one colour each, white where a region ends.";
+        public override string Tooltip => "Connected regions of the first movement class, one colour each, white where a region ends.";
 
         public override string Group => "Movement";
 

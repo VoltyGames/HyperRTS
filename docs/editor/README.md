@@ -25,7 +25,7 @@ pill, red when any counted item is an error, amber otherwise.
 | **Catalog** | Every unit and building in one editable stats table, and the tech tree |
 | **Effects** | Every effect rig prefab by kind, played at the Scene view pivot, with its recipes. See [Effects page](#effects-page) |
 | **Validate** | Every rule's issues in prefabs, assets and open scenes, with quick fixes. See [Validation](#validation) |
-| **Play** | The launcher outside Play mode; network, soak tests and replays in it. See [Play mode](play-mode.md#play-page) |
+| **Play** | The launcher outside Play mode; network, bot matches and replays in it. See [Play mode](play-mode.md#play-page) |
 | **Build** | Tabs for the generators, a game's art commands and player builds. See [Build page](#build-page) |
 
 **New blank scene...** in the Map Editor gallery asks for map size, player count and an optional starting base, then builds a scene with a

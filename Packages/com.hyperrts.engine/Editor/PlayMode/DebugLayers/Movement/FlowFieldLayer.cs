@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
 
         public override string Label => "Flow field";
 
-        public override string Detail => "Cost to the goal of the latest ordered group, repeating blue to red.";
+        public override string Tooltip => "Cost to the goal of the latest ordered group, repeating blue to red.";
 
         public override string Group => "Movement";
 

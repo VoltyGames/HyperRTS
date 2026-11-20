@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override string Kind => "fog";
 
-        public static StagingStep Read(StagingObject step) => new FogStep(step.Flag("fog"));
+        public static StagingStep Read(StagingJson step) => new FogStep(step.Flag("fog"));
 
         public override void Run(StagingRun run) => MatchCheats.SetFog(run.World, _enabled);
     }

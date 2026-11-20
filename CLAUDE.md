@@ -109,8 +109,8 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   the run. Delete one that does; a check over files or assets is a validation rule.
 - A new authoring rule is an `AuthoringRule<T>` in its domain folder under `Editor/Validation/Rules/` (`Units`,
   `Buildings`, `Effects`, `Match`, `Fields`). The inspector, **HyperRTS ▸ Tools ▸ Validate** and the tests pick it up.
-- In Play, the **HyperRTS ▸ Cheats** and **Debug** windows and the Tools window's Play page (the launcher, network, soak
-  tests and replays) inspect and drive the world ([play mode](docs/editor/play-mode.md)).
+- In Play, the **HyperRTS ▸ Cheats** and **Debug** windows and the Tools window's Play page (the launcher, network, bot
+  matches and replays) inspect and drive the world ([play mode](docs/editor/play-mode.md)).
 
 ## Gotchas
 

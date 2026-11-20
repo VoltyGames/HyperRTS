@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly float? _crops;
         private readonly float? _lod;
 
-        private DetailStep(StagingObject json)
+        private DetailStep(StagingJson json)
         {
             _shadows = Positive(json, "shadows");
             _grass = Positive(json, "grass");
@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override string Kind => "detail";
 
-        public static StagingStep Read(StagingObject step) => new DetailStep(step.Child("detail"));
+        public static StagingStep Read(StagingJson step) => new DetailStep(step.Child("detail"));
 
         public override void Run(StagingRun run)
         {
@@ -98,7 +98,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             run.Undo(() => PresentationQuality.Apply(before));
         }
 
-        private static float? Positive(StagingObject json, string key)
+        private static float? Positive(StagingJson json, string key)
         {
             var value = json.NumberOrNull(key);
             return value is null or > 0f ? value : throw json.Problem($"'{key}' must be above 0, got {value}");

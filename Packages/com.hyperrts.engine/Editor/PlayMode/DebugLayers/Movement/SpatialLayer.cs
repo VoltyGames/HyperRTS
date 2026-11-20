@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
     {
         public override string Label => "Spatial cells";
 
-        public override string Detail => "Blue spatial index cells that hold at least one entity.";
+        public override string Tooltip => "Blue spatial index cells that hold at least one entity.";
 
         public override string Group => "Movement";
 

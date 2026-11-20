@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly string _target;
         private readonly int _argument;
 
-        private OrderStep(StagingObject json)
+        private OrderStep(StagingJson json)
         {
             _units = json.Text("units");
             var action = json.Choose(Actions);
@@ -63,7 +63,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override IEnumerable<string> Uses => _target == null ? new[] { _units } : new[] { _units, _target };
 
-        public static StagingStep Read(StagingObject step) => new OrderStep(step.Child("order"));
+        public static StagingStep Read(StagingJson step) => new OrderStep(step.Child("order"));
 
         public override void Run(StagingRun run)
         {
@@ -99,7 +99,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         }
 
         // A name of an engine command, or the number of a game's own.
-        private static CommandType ReadCommand(StagingObject json)
+        private static CommandType ReadCommand(StagingJson json)
         {
             var token = json.Either("command");
             var advice = $"give a CommandType name or a game command number from {(int)CommandType.GameFirst}";

@@ -1,8 +1,8 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
   <Style src="PlayPage.uss" />
-  <ui:Template name="LaunchSection" src="Launch/LaunchSection.uxml" />
+  <ui:Template name="LaunchPanel" src="Launch/LaunchPanel.uxml" />
   <HyperRTS.Editor.Hub.PageShell name="shell">
-    <ui:Instance template="LaunchSection" name="launch" />
+    <ui:Instance template="LaunchPanel" name="launch" />
     <HyperRTS.Editor.Common.TitledSection name="network" title="Network">
       <ui:Label name="traffic" class="hrts-note" />
       <ui:VisualElement class="hrts-buttons">
@@ -12,7 +12,7 @@
         <ui:Button name="stop" text="Stop" />
       </ui:VisualElement>
     </HyperRTS.Editor.Common.TitledSection>
-    <HyperRTS.Editor.Common.TitledSection name="soak" title="Soak test">
+    <HyperRTS.Editor.Common.TitledSection name="bot-matches" title="Bot matches">
       <uie:PropertyField binding-path="bots.matches" label="Matches" />
       <uie:PropertyField binding-path="bots.players" label="Players" />
       <uie:PropertyField binding-path="bots.difficulty" label="Difficulty" />

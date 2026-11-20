@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly float? _fov;
         private readonly bool _sun;
 
-        private ViewStep(StagingObject json)
+        private ViewStep(StagingJson json)
         {
             var target = json.Choose(new[] { "on", "at" });
             _on = target == "on" ? json.Text("on") : null;
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override IEnumerable<string> Uses => _on == null ? base.Uses : new[] { _on };
 
-        public static StagingStep Read(StagingObject step) => new ViewStep(step.Child("view"));
+        public static StagingStep Read(StagingJson step) => new ViewStep(step.Child("view"));
 
         public override void Run(StagingRun run)
         {
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         }
 
         // An end aim takes what it leaves out from the start aim; a start aim needs its distance, pitch and yaw.
-        private static CameraAim Aim(StagingObject json, float2 look, float lift, CameraAim? from)
+        private static CameraAim Aim(StagingJson json, float2 look, float lift, CameraAim? from)
         {
             float Read(string key, float? kept) => kept is { } value ? json.NumberOrNull(key) ?? value : json.Number(key);
             return new CameraAim(

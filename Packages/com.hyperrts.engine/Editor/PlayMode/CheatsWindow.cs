@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.PlayMode
 
         protected override void Build(VisualElement root)
         {
-            new CheatsSection(root.Require<VisualElement>("cheats"));
+            new CheatsPanel(root.Require<VisualElement>("cheats"));
             _match = root.Require<Label>("match");
             ShowMatch();
             root.schedule.Execute(ShowMatch).Every(PollMilliseconds);

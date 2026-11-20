@@ -1,5 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" editor-extension-mode="True">
-  <ui:Template name="StrikesSection" src="StrikesSection.uxml" />
+  <ui:Template name="StrikesPanel" src="StrikesPanel.uxml" />
   <ui:VisualElement>
     <ui:HelpBox name="status" class="hrts-note" message-type="Info" />
     <ui:VisualElement name="controls">
@@ -32,7 +32,7 @@
           <ui:Button name="battle" text="Start battle" tooltip="A load test: two hostile armies of the chosen prefab march on each other's bases." />
         </ui:VisualElement>
       </ui:Foldout>
-      <ui:Instance template="StrikesSection" name="strikes" />
+      <ui:Instance template="StrikesPanel" name="strikes" />
       <ui:Foldout name="world-group" text="World" class="hrts-group" tooltip="Fog of war and game speed; speed works in single player only.">
         <ui:Toggle name="fog" label="Fog of war" />
         <ui:VisualElement class="hrts-row">

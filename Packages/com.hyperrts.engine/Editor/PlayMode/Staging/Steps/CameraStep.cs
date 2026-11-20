@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
         private readonly float? _yaw;
         private readonly bool _follow;
 
-        private CameraStep(StagingObject json)
+        private CameraStep(StagingJson json)
         {
             var target = json.Choose(new[] { "on", "at" });
             _on = target == "on" ? json.Text("on") : null;
@@ -32,7 +32,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override IEnumerable<string> Uses => _on == null ? base.Uses : new[] { _on };
 
-        public static StagingStep Read(StagingObject step) => new CameraStep(step.Child("camera"));
+        public static StagingStep Read(StagingJson step) => new CameraStep(step.Child("camera"));
 
         public override void Run(StagingRun run)
         {

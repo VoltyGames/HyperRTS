@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             run.Report.samples.Add(_result);
         }
 
-        public override bool Step(StagingRun run)
+        public override bool Advance(StagingRun run)
         {
             if (Time.frameCount != _lastFrame)
             {

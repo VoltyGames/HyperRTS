@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
 
         public override IEnumerable<string> Uses => new[] { _units };
 
-        public static StagingStep Read(StagingObject step) => new ReadyStep(step.Text("ready"));
+        public static StagingStep Read(StagingJson step) => new ReadyStep(step.Text("ready"));
 
         public override void Run(StagingRun run)
         {

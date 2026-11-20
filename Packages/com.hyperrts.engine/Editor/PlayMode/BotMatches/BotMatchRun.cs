@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.PlayMode.BotMatches
     /// </summary>
     internal static partial class BotMatchRun
     {
-        private const double TickSeconds = 0.25;
+        private const double PollSeconds = 0.25;
 
         /// <summary>Every match finished since the editor opened, oldest first.</summary>
         [NoAutoStaticsCleanup]
@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.PlayMode.BotMatches
         [AutoStaticsCleanup]
         private static bool _setupSeen;
         [AutoStaticsCleanup]
-        private static double _nextTick;
+        private static double _nextPoll;
 
         /// <summary>One finished match, for the Play page's table.</summary>
         public class Result
@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.PlayMode.BotMatches
                 settings = settings,
             };
             _current = -1;
-            EditorApplication.update += Tick;
+            EditorApplication.update += Poll;
             EditorApplication.playModeStateChanged += StopOnExit;
             Next();
         }
@@ -77,7 +77,7 @@ namespace HyperRTS.Editor.PlayMode.BotMatches
                 return;
             }
 
-            EditorApplication.update -= Tick;
+            EditorApplication.update -= Poll;
             EditorApplication.playModeStateChanged -= StopOnExit;
             // A match stopped before it ended has no result.
             var stopped = _current < _report.matches.Count && _report.matches[_current].players.Count == 0;
@@ -159,14 +159,14 @@ namespace HyperRTS.Editor.PlayMode.BotMatches
         }
 
         // Polled at the Play page's rate: reading the world completes all of its jobs.
-        private static void Tick()
+        private static void Poll()
         {
-            if (EditorApplication.timeSinceStartup < _nextTick)
+            if (EditorApplication.timeSinceStartup < _nextPoll)
             {
                 return;
             }
 
-            _nextTick = EditorApplication.timeSinceStartup + TickSeconds;
+            _nextPoll = EditorApplication.timeSinceStartup + PollSeconds;
             if (!PlayWorld.TryGetAuthoritative(out var entityManager))
             {
                 return;
