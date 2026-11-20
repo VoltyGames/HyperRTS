@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Designer.Window
 
             var document = CreateInstance<MapSpecDocument>();
             document.hideFlags = HideFlags.DontSave;
-            document.Load(specPath);
+            document.Load(specPath, ReadFile(specPath));
             return document;
         }
 
@@ -66,7 +66,8 @@ namespace HyperRTS.Editor.Maps.Designer.Window
 
             if (finished)
             {
-                Save();
+                Commit();
+                return;
             }
 
             Changed?.Invoke();
@@ -85,16 +86,21 @@ namespace HyperRTS.Editor.Maps.Designer.Window
             Undo.RecordObject(this, undoName);
             edit(spec);
             Serialized.Update();
-            Save();
-            Changed?.Invoke();
+            Commit();
         }
 
         /// <summary>Rereads the file when it holds different content, as after an outside write, dropping the undo history.</summary>
         public void Reload()
         {
-            if (File.Exists(path) && OnDisk() != savedJson)
+            if (!File.Exists(path))
             {
-                Load(path);
+                return;
+            }
+
+            var file = ReadFile(path);
+            if (file.Json != savedJson)
+            {
+                Load(path, file);
             }
         }
 
@@ -102,14 +108,20 @@ namespace HyperRTS.Editor.Maps.Designer.Window
 
         private void OnDisable() => Undo.undoRedoPerformed -= OnUndoRedo;
 
-        private void Load(string filePath)
+        // The file's spec and its content in the canonical layout.
+        private static (MapSpec Spec, string Json) ReadFile(string filePath)
         {
-            var json = File.ReadAllText(filePath);
+            var read = MapSpecJson.Read(File.ReadAllText(filePath));
+            return (read, MapSpecJson.Write(read));
+        }
+
+        private void Load(string filePath, (MapSpec Spec, string Json) file)
+        {
             Undo.ClearUndo(this);
             path = filePath;
             name = System.IO.Path.GetFileName(filePath);
-            spec = MapSpecJson.Read(json);
-            savedJson = MapSpecJson.Write(spec);
+            spec = file.Spec;
+            savedJson = file.Json;
             Serialized.Update();
             Changed?.Invoke();
         }
@@ -130,8 +142,6 @@ namespace HyperRTS.Editor.Maps.Designer.Window
             AssetDatabase.ImportAsset(path);
         }
 
-        private string OnDisk() => MapSpecJson.Write(MapSpecJson.Read(File.ReadAllText(path)));
-
         // Undo restores savedJson along with the content, so only the file tells whether it is behind. An undo of
         // something else leaves the two alike and changes nothing.
         private void OnUndoRedo()
@@ -143,7 +153,7 @@ namespace HyperRTS.Editor.Maps.Designer.Window
 
             Serialized.Update();
             var json = MapSpecJson.Write(spec);
-            if (json == OnDisk())
+            if (json == ReadFile(path).Json)
             {
                 savedJson = json;
                 return;

@@ -1,7 +1,5 @@
 using System;
 using HyperRTS.Editor.Common.Json;
-using Newtonsoft.Json;
-using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Spec
@@ -9,28 +7,8 @@ namespace HyperRTS.Editor.Maps.Spec
     /// <summary>Reads and writes <c>&lt;Map&gt;.map.json</c>, laid out by <see cref="JsonFormat"/>.</summary>
     public static class MapSpecJson
     {
-        [NoAutoStaticsCleanup]
-        private static readonly JsonSerializerSettings ReadSettings = new()
-        {
-            MissingMemberHandling = MissingMemberHandling.Error,
-            DateParseHandling = DateParseHandling.None,
-            FloatParseHandling = FloatParseHandling.Double,
-            ContractResolver = new JsonUtilityResolver(false),
-        };
-
         /// <summary>A key the spec has no field for, or a value of the wrong shape, throws naming its path.</summary>
-        public static MapSpec Read(string json)
-        {
-            try
-            {
-                return JsonConvert.DeserializeObject<MapSpec>(json, ReadSettings)
-                    ?? throw new InvalidOperationException("HyperRTS: map spec must be a JSON object.");
-            }
-            catch (JsonException e)
-            {
-                throw new InvalidOperationException($"HyperRTS: map spec is not valid: {e.Message}", e);
-            }
-        }
+        public static MapSpec Read(string json) => StrictJson.Read<MapSpec>(json, "map spec", false);
 
         public static string Write(MapSpec spec) => JsonFormat.Format(JsonUtility.ToJson(spec, false));
 

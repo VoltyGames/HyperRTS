@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Common.Json
         private const int MaxInlinePoint = 4;
 
         /// <summary>Parses one JSON value; malformed or trailing text throws a <see cref="FormatException"/>.</summary>
-        public static JToken Parse(string json)
+        private static JToken Parse(string json)
         {
             using var reader = new JsonTextReader(new StringReader(json))
             {
@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Common.Json
         public static string Format(string json) => Write(Parse(json));
 
         /// <summary>Lays out a value as a file, ending in a newline.</summary>
-        public static string Write(JToken token)
+        private static string Write(JToken token)
         {
             var output = new StringBuilder();
             Append(output, token, 0);

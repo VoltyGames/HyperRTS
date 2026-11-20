@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Common.Json;
-using Newtonsoft.Json;
-using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Staging
@@ -13,14 +11,6 @@ namespace HyperRTS.Editor.PlayMode.Staging
     internal sealed class StagingFile
     {
         public const string Root = "Logs/Stagings";
-
-        [NoAutoStaticsCleanup]
-        private static readonly JsonSerializerSettings ReadSettings = new()
-        {
-            MissingMemberHandling = MissingMemberHandling.Error,
-            DateParseHandling = DateParseHandling.None,
-            ContractResolver = new JsonUtilityResolver(true),
-        };
 
         private StagingFile(string name, string scene, Vector2Int resolution, List<StagingStep> steps)
         {
@@ -64,25 +54,12 @@ namespace HyperRTS.Editor.PlayMode.Staging
                 throw new InvalidOperationException($"HyperRTS: staging {source} is named '{name}', which is not a folder name.");
             }
 
-            var spec = Deserialize(json, source);
+            var spec = StrictJson.Read<StagingSpec>(json, $"staging {source}", true);
             var scene = spec.scene ?? throw new InvalidOperationException($"HyperRTS: staging {source} needs 'scene'.");
             var entries = spec.steps ?? throw new InvalidOperationException($"HyperRTS: staging {source} needs 'steps'.");
             var steps = entries.Select((entry, i) => Build(entry, i, source)).OrderBy(step => step.At).ToList();
             Check(steps, source);
             return new StagingFile(name, scene, ReadResolution(spec.resolution, source), steps);
-        }
-
-        private static StagingSpec Deserialize(string json, string source)
-        {
-            try
-            {
-                return JsonConvert.DeserializeObject<StagingSpec>(json, ReadSettings)
-                    ?? throw new InvalidOperationException($"HyperRTS: staging {source} must be a JSON object.");
-            }
-            catch (JsonException exception)
-            {
-                throw new InvalidOperationException($"HyperRTS: staging {source} is not valid: {exception.Message}", exception);
-            }
         }
 
         private static StagingStep Build(StagingEntry entry, int index, string source)
