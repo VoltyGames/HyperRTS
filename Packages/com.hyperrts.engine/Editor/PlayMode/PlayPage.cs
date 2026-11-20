@@ -1,3 +1,4 @@
+using HyperRTS.Editor.PlayMode.BotMatches;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Common;
@@ -76,9 +77,9 @@ namespace HyperRTS.Editor.PlayMode
         private void BindBots(VisualElement root)
         {
             _runBots = root.Require<Button>("run-bots");
-            _runBots.clicked += () => BotMatches.Start(EditorState.instance.bots);
+            _runBots.clicked += () => BotMatchRun.Start(EditorState.instance.bots);
             _stopBots = root.Require<Button>("stop-bots");
-            _stopBots.clicked += BotMatches.Stop;
+            _stopBots.clicked += BotMatchRun.Stop;
             _botStatus = root.Require<Label>("bot-status");
             _results = root.Require<VisualElement>("results");
         }
@@ -97,9 +98,9 @@ namespace HyperRTS.Editor.PlayMode
             _server.SetEnabled(canStart);
             _stop.SetEnabled(playing && running);
             ShowTraffic(running);
-            _runBots.SetEnabled(playing && !running && !BotMatches.IsRunning);
-            _stopBots.SetEnabled(BotMatches.IsRunning);
-            _botStatus.text = BotMatches.Status;
+            _runBots.SetEnabled(playing && !running && !BotMatchRun.IsRunning);
+            _stopBots.SetEnabled(BotMatchRun.IsRunning);
+            _botStatus.text = BotMatchRun.Status;
             ShowResults();
 
             _save.SetEnabled(SavedReplays.CanSave);
@@ -120,7 +121,7 @@ namespace HyperRTS.Editor.PlayMode
 
         private void ShowResults()
         {
-            var results = BotMatches.Results;
+            var results = BotMatchRun.Results;
             if (results.Count == _shownResults)
             {
                 return;

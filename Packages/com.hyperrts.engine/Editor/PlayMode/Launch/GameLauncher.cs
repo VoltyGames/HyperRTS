@@ -9,34 +9,6 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.PlayMode.Launch
 {
-    /// <summary>A map the launcher can start. <see cref="Slots"/> is how many players it seats.</summary>
-    public readonly struct LaunchMap
-    {
-        public readonly string Id;
-        public readonly string Name;
-        public readonly int Slots;
-
-        public LaunchMap(string id, string name, int slots)
-        {
-            Id = id;
-            Name = name;
-            Slots = slots;
-        }
-    }
-
-    /// <summary>A side a slot can play. Id 0 is the random pick.</summary>
-    public readonly struct LaunchSide
-    {
-        public readonly byte Id;
-        public readonly string Name;
-
-        public LaunchSide(byte id, string name)
-        {
-            Id = id;
-            Name = name;
-        }
-    }
-
     /// <summary>
     /// Starts a <see cref="LaunchChoice"/> in Play mode: the engine opens the game's menu scene and enters Play, and the
     /// game says what it can start and starts it. Subclass it once (like a <c>HubPage</c>) and the Play page launcher

@@ -1,3 +1,4 @@
+using HyperRTS.Editor.PlayMode.BotMatches;
 using System.Collections.Generic;
 using HyperRTS.Editor.Effects.Preview;
 using HyperRTS.Editor.PlayMode;
