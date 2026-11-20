@@ -73,22 +73,22 @@ Shader "HyperRTS/Water"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/MainLightKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/MainLightKeywords.hlsl"
             #pragma multi_compile_fragment _ _TERRAIN_SIMPLE
             #pragma multi_compile_fragment _ _WATER_NO_CAUSTICS
             #pragma multi_compile_fragment _FOG_ANALYTIC _FOG_VOLUMETRIC
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneDepth.hlsl"
 
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterFoam.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterReflection.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterSurface.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneFog.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneFog.hlsl"
 
             struct Attributes
             {
@@ -210,7 +210,7 @@ Shader "HyperRTS/Water"
             HLSLPROGRAM
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"
 
             // Surface Cache GI asks every renderer for albedo, transparent or not; deep water is what bounces light.
             half3 MetaAlbedo(float2 uv0)

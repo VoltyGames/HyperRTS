@@ -62,7 +62,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             HLSLPROGRAM
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/SimpleLightingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -78,7 +78,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             HLSLPROGRAM
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -108,7 +108,7 @@ Shader "Hidden/HyperRTS/FoliageGrass"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }

@@ -23,7 +23,7 @@ Shader "Hidden/HyperRTS/FogOfWar"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneDepth.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneDepth.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
 
             half4 Frag(Varyings input) : SV_Target

@@ -108,12 +108,12 @@ Shader "HyperRTS/Road"
             #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LightingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/LightingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DBuffer.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainCraterGround.hlsl"
@@ -301,7 +301,7 @@ Shader "HyperRTS/Road"
             #pragma use_dxc
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"
 
             // One tile across the quad: the road's V runs in metres, so GI sees the tile's mean colour.
             half3 MetaAlbedo(float2 uv0)

@@ -1,9 +1,9 @@
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.Sharpen;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace HyperRTS.Presentation.Tests.Rendering
+namespace HyperRTS.Presentation.Tests.Rendering.Sharpen
 {
     /// <summary>Sharpen settings checks and the quality levels it runs at.</summary>
     public class SharpenFeatureTests

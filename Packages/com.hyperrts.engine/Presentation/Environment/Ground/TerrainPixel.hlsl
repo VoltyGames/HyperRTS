@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_TERRAIN_PIXEL_INCLUDED
 #define HYPERRTS_TERRAIN_PIXEL_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Triplanar.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Triplanar.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainSurface.hlsl"
 
 // The row map holds the rows' direction (x east, y north); u then runs along it. Unturned off the fields.

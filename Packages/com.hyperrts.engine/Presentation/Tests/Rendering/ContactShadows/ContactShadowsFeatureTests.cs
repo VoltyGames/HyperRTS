@@ -1,9 +1,9 @@
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.ContactShadows;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace HyperRTS.Presentation.Tests.Rendering
+namespace HyperRTS.Presentation.Tests.Rendering.ContactShadows
 {
     /// <summary>Contact shadow settings checks and the quality levels they run at.</summary>
     public class ContactShadowsFeatureTests

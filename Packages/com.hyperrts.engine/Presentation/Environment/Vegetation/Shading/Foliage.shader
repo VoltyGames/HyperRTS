@@ -57,9 +57,9 @@ Shader "HyperRTS/Foliage"
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
             #pragma shader_feature_local _TREE_WIND
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/SimpleLightingKeywords.hlsl"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -77,8 +77,8 @@ Shader "HyperRTS/Foliage"
             #pragma fragment ShadowFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -96,7 +96,7 @@ Shader "HyperRTS/Foliage"
             #pragma fragment DepthFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -113,8 +113,8 @@ Shader "HyperRTS/Foliage"
             #pragma fragment DepthNormalsFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -131,7 +131,7 @@ Shader "HyperRTS/Foliage"
             #pragma fragment MotionFrag
             #pragma shader_feature_local _TREE_WIND
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
         }
@@ -146,7 +146,7 @@ Shader "HyperRTS/Foliage"
             #pragma fragment MetaPassFragment
             #define META_ALPHA_CLIP
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageInput.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"
 
             half4 MetaTexel(float2 uv0)
             {

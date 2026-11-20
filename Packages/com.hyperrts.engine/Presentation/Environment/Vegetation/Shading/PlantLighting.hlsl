@@ -19,7 +19,7 @@
 #endif
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/VegetationMath.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 

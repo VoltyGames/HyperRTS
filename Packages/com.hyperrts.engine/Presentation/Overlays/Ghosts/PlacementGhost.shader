@@ -46,7 +46,7 @@ Shader "HyperRTS/Placement Ghost"
             #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -110,7 +110,7 @@ Shader "HyperRTS/Placement Ghost"
             #pragma use_dxc
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"
 
             // Black to GI: a ghost is a preview and must never tint the bounce light round it.
             half3 MetaAlbedo(float2 uv0)

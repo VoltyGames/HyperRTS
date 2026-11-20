@@ -1,6 +1,12 @@
-// World position behind a full-screen pixel, for the fog passes. Needs URP Core.hlsl and DeclareDepthTexture.hlsl first.
+// Depth helpers: eye depth for perspective and orthographic cameras (map tools render top-down), and the world
+// position behind a full-screen pixel. Include after URP's Core.hlsl.
 #ifndef HYPERRTS_SCENE_DEPTH_INCLUDED
 #define HYPERRTS_SCENE_DEPTH_INCLUDED
+
+float EyeDepth(float rawDepth)
+{
+    return unity_OrthoParams.w == 0 ? LinearEyeDepth(rawDepth, _ZBufferParams) : LinearDepthToEyeDepth(rawDepth);
+}
 
 float3 ReconstructWorldPosition(float2 uv, float rawDepth)
 {

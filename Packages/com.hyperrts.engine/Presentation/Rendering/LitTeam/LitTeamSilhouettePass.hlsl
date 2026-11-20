@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 #define HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVAT.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDeform.hlsl"
 
 #define SILHOUETTE_FILL 0.12
 #define SILHOUETTE_RIM_POWER 2.0

@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_VEGETATION_MATH_INCLUDED
 #define HYPERRTS_VEGETATION_MATH_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
 
 float3 WindSafeNormalize(float3 v)
 {

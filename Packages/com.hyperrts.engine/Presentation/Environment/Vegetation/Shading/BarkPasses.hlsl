@@ -13,6 +13,6 @@
         positionOS = BarkWindPosition(positionOS, uv2, uv3, uv4, color, WindThisFrame());
 #endif
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedLitPasses.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/DisplacedLitPasses.hlsl"
 
 #endif

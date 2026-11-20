@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_LIT_TEAM_GRIME_INCLUDED
 #define HYPERRTS_LIT_TEAM_GRIME_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
 
 float4 _HyperRTSDustColor;
 float4 _HyperRTSMudColor;

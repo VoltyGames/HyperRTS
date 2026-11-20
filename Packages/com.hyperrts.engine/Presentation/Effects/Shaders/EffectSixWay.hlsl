@@ -7,10 +7,10 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/FlipbookMotion.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneFog.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneFog.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Effects/Shaders/SixWayLighting.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneDepth.hlsl"
 
 // The particle materials' camera fade, so smoke thins as the camera flies into it.
 #define SIX_WAY_NEAR_FADE_START 1.0

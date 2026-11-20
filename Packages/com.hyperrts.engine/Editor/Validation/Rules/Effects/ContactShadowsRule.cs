@@ -2,7 +2,7 @@ using System.Linq;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Project;
 using HyperRTS.Editor.Validation.Sets;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.ContactShadows;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 

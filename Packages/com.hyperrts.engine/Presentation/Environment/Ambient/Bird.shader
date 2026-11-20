@@ -120,8 +120,8 @@ Shader "HyperRTS/Bird"
             HLSLPROGRAM
             #pragma vertex BirdVert
             #pragma fragment Frag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/CasterPasses.hlsl"
 
             half4 Frag(Varyings input) : SV_Target
             {
@@ -141,8 +141,8 @@ Shader "HyperRTS/Bird"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/CasterPasses.hlsl"
 
             Varyings Vert(Attributes input)
             {

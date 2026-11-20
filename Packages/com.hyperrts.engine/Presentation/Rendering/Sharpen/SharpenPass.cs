@@ -4,7 +4,7 @@ using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.Sharpen
 {
     /// <summary>Copies the camera colour through the sharpen shader and makes the copy the camera colour.</summary>
     public sealed class SharpenPass : ScriptableRenderPass

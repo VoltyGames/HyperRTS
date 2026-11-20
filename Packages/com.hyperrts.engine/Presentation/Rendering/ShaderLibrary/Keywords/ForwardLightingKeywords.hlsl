@@ -1,6 +1,6 @@
 // URP lighting keywords for forward passes on the full Lit model: LightingKeywords plus ambient probes, reflection
 // probes, fog, the sun dimmed by volumetric fog, and rendering layers.
-#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/LightingKeywords.hlsl"
+#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/LightingKeywords.hlsl"
 #pragma multi_compile _ EVALUATE_SH_MIXED EVALUATE_SH_VERTEX
 #pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
 #pragma multi_compile_fragment _ _REFLECTION_PROBE_ATLAS

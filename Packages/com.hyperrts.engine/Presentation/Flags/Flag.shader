@@ -40,8 +40,8 @@ Shader "HyperRTS/Flag"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/SimpleLightingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/SimpleLightingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagForward.hlsl"
             ENDHLSL
         }
@@ -57,8 +57,8 @@ Shader "HyperRTS/Flag"
             HLSLPROGRAM
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
@@ -74,7 +74,7 @@ Shader "HyperRTS/Flag"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
@@ -89,8 +89,8 @@ Shader "HyperRTS/Flag"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/DepthNormalsKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
@@ -105,7 +105,7 @@ Shader "HyperRTS/Flag"
             HLSLPROGRAM
             #pragma vertex MotionVert
             #pragma fragment MotionFrag
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagPasses.hlsl"
             ENDHLSL
         }
@@ -118,7 +118,7 @@ Shader "HyperRTS/Flag"
             HLSLPROGRAM
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/MetaPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"
 
             // GI bakes per material, so it sees the material's flag and band, not each entity's.
             half3 MetaAlbedo(float2 uv0)

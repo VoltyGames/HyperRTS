@@ -143,10 +143,10 @@ Shader "HyperRTS/LitTeam"
             #pragma fragment ShadowPassFragment
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #pragma shader_feature_local _ALPHATEST_ON
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             // Directional and punctual light shadows apply normal bias differently.
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ShadowCasterKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/ShadowCasterPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamPasses.hlsl"
@@ -169,7 +169,7 @@ Shader "HyperRTS/LitTeam"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile _ LOD_FADE_CROSSFADE
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamPasses.hlsl"
@@ -214,7 +214,7 @@ Shader "HyperRTS/LitTeam"
             #pragma fragment UnitMaskFragment
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"
             ENDHLSL
         }
@@ -239,7 +239,7 @@ Shader "HyperRTS/LitTeam"
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #define SILHOUETTE_SLACK_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"
             ENDHLSL
         }
@@ -277,7 +277,7 @@ Shader "HyperRTS/LitTeam"
             #pragma target 3.5
             #pragma vertex LitTeamMotionVertex
             #pragma fragment LitTeamMotionFragment
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.unity.render-pipelines.core/ShaderLibrary/FoveatedRenderingKeywords.hlsl"
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma multi_compile _ LOD_FADE_CROSSFADE

@@ -3,7 +3,7 @@
 #define HYPERRTS_FLAG_FORWARD_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
 
 struct Varyings
 {

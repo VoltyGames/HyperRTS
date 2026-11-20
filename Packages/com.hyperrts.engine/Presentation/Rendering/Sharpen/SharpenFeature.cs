@@ -3,7 +3,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.Sharpen
 {
     /// <summary>
     /// Contrast-adaptive sharpening of the finished frame, restoring the edges that temporal anti-aliasing and DLSS soften.

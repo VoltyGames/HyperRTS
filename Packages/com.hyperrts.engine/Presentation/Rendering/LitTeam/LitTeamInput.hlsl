@@ -9,7 +9,7 @@
 //               per instance _LowerClip and _UpperClip, and _LowerFade and _UpperFade, the pose a clip switch fades
 //               out of over _BoneFadeTime seconds; _PoseSlot 0 or above draws that live pose slot instead (LitTeamBones.hlsl)
 //   _VAT_RIGID  keyword: rigid pieces, each moved by its position in _VATPositions and rotation in _VATRotations at
-//               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamVAT.hlsl)
+//               _VATClip, piece column in UV1 and row 0 the rest pose (LitTeamDeform.hlsl)
 //   _BUILD      keyword (structures only): pieces appear in their UV3 build order up to _BuildProgress (LitTeamBuild.hlsl)
 //   _LightsOn   emission multiplier, 0 dark to 1 lit (structures go dark while offline)
 //   _TrackSpan  per instance (track meshes only): front z, back z, axle height, wheel radius in object space; with
@@ -170,7 +170,7 @@ TEXTURE2D(_OcclusionMap);       SAMPLER(sampler_OcclusionMap);
 TEXTURE2D(_MetallicGlossMap);   SAMPLER(sampler_MetallicGlossMap);
 TEXTURE2D(_TeamMask);           SAMPLER(sampler_TeamMask);
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SurfaceMaps.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SurfaceMaps.hlsl"
 
 // URP's Utils headers declare these and build every feature on them.
 half4 GetEmissionColor()        { return _EmissionColor; }

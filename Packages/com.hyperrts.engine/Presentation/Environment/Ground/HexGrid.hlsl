@@ -3,7 +3,7 @@
 #ifndef HYPERRTS_HEX_GRID_INCLUDED
 #define HYPERRTS_HEX_GRID_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainRotation.hlsl"
 
 // Hex grid vertices per tile, as in the paper.

@@ -4,7 +4,7 @@
 #ifndef HYPERRTS_LIT_TEAM_DETAIL_INCLUDED
 #define HYPERRTS_LIT_TEAM_DETAIL_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Triplanar.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Triplanar.hlsl"
 
 TEXTURE2D(_DetailAlbedo);   SAMPLER(sampler_DetailAlbedo);
 TEXTURE2D(_DetailNormal);   SAMPLER(sampler_DetailNormal);

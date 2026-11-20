@@ -7,7 +7,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareOpaqueTexture.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Fog/FogOfWar.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/EyeDepth.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneDepth.hlsl"
 #endif
 
 void EffectDistort_float(float2 UV, float3 WorldPosition, UnityTexture2D NormalMap, float Strength, float2 Scroll,

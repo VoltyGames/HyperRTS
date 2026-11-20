@@ -2,7 +2,7 @@
 #ifndef HYPERRTS_SCAR_SHAPE_INCLUDED
 #define HYPERRTS_SCAR_SHAPE_INCLUDED
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
 
 // The floor is flat out to this share of the radius, then the wall eases up to the crest: no steeper than the
 // terrain's heightmap can draw without stepping.

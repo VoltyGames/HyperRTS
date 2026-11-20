@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.ContactShadows
 {
     /// <summary>
     /// Short sun shadows where small things meet the ground, traced from the depth buffer into URP's screen-space shadows.

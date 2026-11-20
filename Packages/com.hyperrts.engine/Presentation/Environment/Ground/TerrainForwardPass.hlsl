@@ -3,7 +3,7 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainInput.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SceneLighting.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneLighting.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainLayers.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainMicro.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"

@@ -12,8 +12,8 @@
 #pragma shader_feature_local_fragment _OCCLUSIONMAP
 #pragma shader_feature_local_fragment _DETAIL
 #pragma shader_feature_local _INTERIOR
-#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ForwardLightingKeywords.hlsl"
-#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/ObjectLightingKeywords.hlsl"
+#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ForwardLightingKeywords.hlsl"
+#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ObjectLightingKeywords.hlsl"
 #pragma multi_compile _ LOD_FADE_CROSSFADE
-#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/Keywords/InstancingKeywords.hlsl"
+#include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
 #pragma instancing_options renderinglayer

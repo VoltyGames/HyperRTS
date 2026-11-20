@@ -4,7 +4,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.ContactShadows
 {
     /// <summary>
     /// Copies URP's screen-space shadow texture with the contact trace applied and registers the copy under the same

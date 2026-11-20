@@ -5,7 +5,7 @@ using HyperRTS.Editor.PlayMode;
 using HyperRTS.Editor.Validation.Project;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.ContactShadows;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Death;
 using Unity.Collections;

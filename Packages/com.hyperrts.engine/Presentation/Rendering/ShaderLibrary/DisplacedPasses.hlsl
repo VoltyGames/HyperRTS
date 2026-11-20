@@ -6,7 +6,7 @@
 #define HYPERRTS_DISPLACED_PASSES_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MotionVectorsCommon.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/CasterPasses.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/CasterPasses.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wind.hlsl"
 
 #if !defined(DISPLACED_VIEW_FADE)

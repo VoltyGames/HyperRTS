@@ -26,7 +26,7 @@ namespace HyperRTS.Presentation.Animation.Clips
             Value = clip.Packed(startTime, rate);
         }
 
-        /// <summary>The rows LitTeamVAT.hlsl and LitTeamBones.hlsl blend at <paramref name="time"/>; the shader does the same sums.</summary>
+        /// <summary>The rows LitTeamDeform.hlsl and LitTeamBones.hlsl blend at <paramref name="time"/>; the shader does the same sums.</summary>
         public ClipBlend BlendAt(float time)
         {
             var rows = Value.y;

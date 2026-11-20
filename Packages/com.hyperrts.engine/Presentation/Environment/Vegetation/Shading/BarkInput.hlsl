@@ -37,7 +37,7 @@ float _WindScale;
 UNITY_TEXTURE_STREAMING_DEBUG_VARS;
 CBUFFER_END
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/SurfaceMaps.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SurfaceMaps.hlsl"
 
 // HDRP mask layout: R metallic, G occlusion, A smoothness.
 TEXTURE2D(_MaskMap);    SAMPLER(sampler_MaskMap);

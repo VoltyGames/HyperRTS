@@ -22,6 +22,6 @@ void ClipDisplaced(float2 uv, float4 positionCS)
 {
 }
 
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/DisplacedPasses.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/DisplacedPasses.hlsl"
 
 #endif

@@ -5,7 +5,7 @@
 #define HYPERRTS_SCATTER_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/TerrainHeight.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Rendering/Hash.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Hash.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Scatter/ScatterJob.cs.hlsl"
 
 struct DrawArgs // GraphicsBuffer.IndirectDrawIndexedArgs, 20 bytes
