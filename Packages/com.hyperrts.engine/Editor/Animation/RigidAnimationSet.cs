@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Animation
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Rigid Animation Set", fileName = "RigidAnimationSet")]
     [HelpURL(HyperRTSDocs.Presentation)]
-    public class RigidAnimationSet : ScriptableObject
+    public class RigidAnimationSet : ScriptableObject, IAnimationSet
     {
         private const int MaxRows = 16384;
         private const int MaxTextureSize = 16384;

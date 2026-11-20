@@ -66,7 +66,8 @@ detached jobs. `--tag hyperrts` lists them.
 | `play capture <name> [seconds] [fps]` | In Play, records the Game view as PNGs at a fixed rate into `Logs/FrameCaptures/<name>/` |
 | `play stage <file>` | Runs a JSON [staging](play-mode.md#stagings) as one scripted Play check: opens its scene, enters Play, runs the timed steps, leaves Play and writes `Logs/Stagings/<name>/report.json` and `sheet.png`; returns at once |
 | `play stage_status` | Whether a staging runs, and how the last one ended, with its report path |
-| `generator run [name] [--list true] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
+| `generator run [name] [--stale true]` | Runs one, all, or the out of date [generators](#generators) |
+| `generator list` | Lists the generators with what each reads and writes and its last run |
 | `bone bake [set]` | Bakes a `BoneAnimationSet` (none named bakes all) |
 | `rigid bake [set]` | Bakes a `RigidAnimationSet` (none named bakes all) |
 | `project validate` | Error and warning counts, then each issue's rule, message, asset and fix |

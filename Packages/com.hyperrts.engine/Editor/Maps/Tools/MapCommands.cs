@@ -3,7 +3,6 @@ using System.Linq;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Look;
 using HyperRTS.Editor.Maps.Report;
-using HyperRTS.Editor.Maps.Tools;
 using HyperRTS.Editor.Maps.Views;
 using Unity.Pipeline.Commands;
 

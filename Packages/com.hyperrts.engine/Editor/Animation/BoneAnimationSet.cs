@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Animation
     /// </summary>
     [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Bone Animation Set", fileName = "BoneAnimationSet")]
     [HelpURL(HyperRTSDocs.Presentation)]
-    public class BoneAnimationSet : ScriptableObject
+    public class BoneAnimationSet : ScriptableObject, IAnimationSet
     {
         public const string GeneratedFolder = "Generated";
         private const int MaxFrames = 16384;
