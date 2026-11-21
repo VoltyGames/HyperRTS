@@ -4,8 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects.Graph
 {
     /// <summary>
-    /// Writes a layer's output context for its kind, then the per-frame looks every kind shares: size, colour and
-    /// flipbook frame over life, and the fog of war last.
+    /// Writes a layer's output context for its kind, then size, colour and frame over life, and the fog of war last.
     /// </summary>
     public sealed class EffectLayerOutput
     {
@@ -36,20 +35,18 @@ namespace HyperRTS.Editor.Effects.Graph
             DrawKind(output);
             Orient(output);
 
-            if (_layer.softness > 0f && !_layer.DrawsShaderGraph)
+            if (_layer.softness > 0f && !_layer.DrawsShaderGraph && !_layer.Projected)
             {
                 _graph.Set(output, "useSoftParticle", true);
                 _graph.Slot(output, "softParticleFadeDistance", _layer.softness);
             }
 
             OverLife(output);
-            if (_layer.DrawsShaderGraph)
+            if (!_layer.DrawsShaderGraph)
             {
-                return;
+                var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerParticles.Blocks + "ShadeInFogOfWar.hlsl");
+                _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
             }
-
-            var fog = _graph.Hlsl(output, "Fog Of War", EffectLayerParticles.Blocks + "ShadeInFogOfWar.hlsl");
-            _graph.Slot(fog, "glow", _layer.Glows ? 1f : 0f);
         }
 
         private void DrawKind(object output)
@@ -87,6 +84,7 @@ namespace HyperRTS.Editor.Effects.Graph
         {
             EffectLayerKind.Glow or EffectLayerKind.Spark => "VFXPlanarPrimitiveOutput",
             EffectLayerKind.Debris => "VFXURPLitMeshOutput",
+            EffectLayerKind.Puff when _layer.Projected => "VFXDecalURPOutput",
             _ => "VFXURPLitPlanarPrimitiveOutput",
         };
 
@@ -97,12 +95,21 @@ namespace HyperRTS.Editor.Effects.Graph
             _graph.Slot(output, "mainTexture", _layer.texture);
         }
 
-        // Unshadowed: a puff at ground level would take the grass's shadows.
+        // Unshadowed: a puff at ground level would take the grass's shadows. A decal tints the ground and no more.
         private void Puff(object output)
         {
-            _graph.Set(output, "blendMode", "Alpha");
-            _graph.Set(output, "receiveShadows", false);
-            _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
+            if (_layer.Projected)
+            {
+                _graph.Set(output, "affectMAOS", false);
+                _graph.Set(output, "angleFade", false);
+            }
+            else
+            {
+                _graph.Set(output, "blendMode", "Alpha");
+                _graph.Set(output, "receiveShadows", false);
+                _graph.Set(output, "useBaseColorMap", "ColorAndAlpha");
+            }
+
             Flipbook(output);
             _graph.Slot(output, "baseColorMap", _layer.texture);
         }

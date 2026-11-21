@@ -53,7 +53,7 @@ namespace HyperRTS.Editor.Effects.Layer
         public float softness;
         public bool upright;
 
-        [Tooltip("Lies on the ground facing up, as a blast's ring does, instead of facing the camera.")]
+        [Tooltip("Lies on the ground facing up, as a blast's ring does, instead of facing the camera. A flat puff is projected onto the ground, so it follows the terrain and takes its light.")]
         public bool flat;
         public float pivot;
         public Flipbook flipbook;
@@ -97,6 +97,9 @@ namespace HyperRTS.Editor.Effects.Layer
             _ when flat => "Advanced",
             _ => "FaceCameraPlane",
         };
+
+        /// <summary>A flat puff, drawn as a decal projected down onto the ground rather than as a quad.</summary>
+        public bool Projected => kind == EffectLayerKind.Puff && flat;
 
         /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
         public bool Streams => !HasParent && HasRate;
