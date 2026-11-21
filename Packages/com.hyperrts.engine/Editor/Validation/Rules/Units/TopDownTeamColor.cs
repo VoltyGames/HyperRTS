@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Squads;
 using Unity.Collections;
@@ -43,16 +44,17 @@ namespace HyperRTS.Editor.Validation.Rules.Units
         }
 
         /// <summary>
-        /// Masked share of the upward-facing area, projected on the ground, of the model's highest-detail meshes; false
-        /// when no part carries a _TeamMask, as on a base prefab or a model still to be made.
+        /// Masked share of the upward-facing area, projected on the ground, of the intact model's highest-detail
+        /// meshes; false when no part carries a _TeamMask, as on a base prefab or a model still to be made.
         /// </summary>
         public bool TryGetShare(GameObject root, out float share)
         {
             _masked = 0f;
             _total = 0f;
             _anyMask = false;
-            var lower = LowerDetail(root);
-            foreach (var renderer in root.GetComponentsInChildren<Renderer>().Where(r => r.enabled && !lower.Contains(r)))
+            var hidden = LowerDetail(root);
+            hidden.UnionWith(DamagedStages(root));
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>().Where(r => r.enabled && !hidden.Contains(r)))
             {
                 AddRenderer(renderer);
             }
@@ -75,6 +77,13 @@ namespace HyperRTS.Editor.Validation.Rules.Units
 
             return lower;
         }
+
+        // A damage stage's model stands in for the intact one only once the unit is hurt.
+        private static IEnumerable<Renderer> DamagedStages(GameObject root) =>
+            root.GetComponentsInChildren<DamageStagesAuthoring>()
+                .SelectMany(stages => stages.stages)
+                .Where(stage => stage.below < 1f && stage.visual != null)
+                .SelectMany(stage => stage.visual.GetComponentsInChildren<Renderer>(true));
 
         private static Mesh MeshOf(Renderer renderer) => renderer switch
         {
