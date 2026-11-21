@@ -35,9 +35,6 @@ namespace HyperRTS.Presentation.Rendering
         [SerializeField, ResourcePath("Hidden/HyperRTS/TrampleBrush", SearchType.ShaderName)]
         private Shader trampleBrush;
 
-        [SerializeField, ResourcePath("HyperRTS/Foliage", SearchType.ShaderName)]
-        private Shader foliage;
-
         int IRenderPipelineGraphicsSettings.version => version;
 
         bool IRenderPipelineGraphicsSettings.isAvailableInPlayerBuild => true;
@@ -53,8 +50,6 @@ namespace HyperRTS.Presentation.Rendering
         public Shader CloudCookie => cloudCookie;
 
         public Shader TrampleBrush => trampleBrush;
-
-        public Shader Foliage => foliage;
 
         /// <summary>The project's copy from URP's global settings; throws when the active pipeline isn't URP.</summary>
         public static EngineShaders Get()

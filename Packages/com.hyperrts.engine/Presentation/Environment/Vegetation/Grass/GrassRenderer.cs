@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using HyperRTS.Presentation.Quality;
-using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Environment.Vegetation.Grass
@@ -56,10 +54,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         private Material Instanced(GrassPlant plant)
         {
-            var shader = EngineShaders.Get().Foliage;
-            var material = new Material(shader) { name = $"{plant.name} (Grass)", hideFlags = HideFlags.DontSave };
-            material.CopyPropertiesFromMaterial(plant.material);
-            material.EnableKeyword(new LocalKeyword(shader, "_GRASS_INSTANCES"));
+            var material = new Material(plant.material) { name = $"{plant.name} (Grass)", hideFlags = HideFlags.DontSave };
+            material.EnableKeyword("_GRASS_INSTANCES");
             material.SetFloat(StencilBits, GroundCoverStencil);
             return material;
         }
