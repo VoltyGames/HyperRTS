@@ -37,7 +37,9 @@ not darker.
 **Silhouettes.** A unit hidden behind cover shows as a team-colour silhouette. Units bake onto the `UnitRenderingLayer`,
 and two URP Render Objects features on that layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visible
 pixels in the stencil, then its `HyperRTSSilhouette` pass where the unit is hidden. The validator adds both in that
-order; `UnitSilhouettes.Hide` turns them off for footage.
+order; `UnitSilhouettes.Hide` turns them off for footage. Scattered grass and row crops write stencil bit 64 (ground
+cover), which the silhouette pass and the ground markers skip, so plants cover a marker line and hide no unit behind
+them.
 
 ## Build reveal
 

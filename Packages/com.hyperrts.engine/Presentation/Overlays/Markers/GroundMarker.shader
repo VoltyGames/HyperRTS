@@ -28,6 +28,8 @@ Shader "HyperRTS/GroundMarker"
             ZWrite Off
             ZTest LEqual
             Cull Off
+            // Plants (ground cover, stencil bit 64) cover the marker instead of taking its colour.
+            Stencil { Ref 0 ReadMask 64 Comp Equal }
 
             HLSLPROGRAM
             #pragma target 4.5

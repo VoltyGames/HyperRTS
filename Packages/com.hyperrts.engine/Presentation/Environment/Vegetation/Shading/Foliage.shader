@@ -55,7 +55,7 @@ Shader "HyperRTS/Foliage"
             Name "Foliage"
             Tags { "LightMode" = "UniversalForward" }
 
-            // Grass sets bit 64 so units standing in it get no LitTeam silhouette through it; 0 writes nothing.
+            // Grass sets bit 64: no LitTeam silhouette or ground marker shows through it; 0 writes nothing.
             Stencil
             {
                 Ref [_StencilBits]

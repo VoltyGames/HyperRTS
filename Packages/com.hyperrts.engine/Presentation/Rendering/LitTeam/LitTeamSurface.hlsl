@@ -31,6 +31,12 @@ half TeamMask(float2 uv0, float objectY)
     return painted * aboveBottom * belowTop;
 }
 
+// Paint reads as a worn coat, not a flat fill: a little duller and darker than the pure colour, with some of the
+// surface under it showing through.
+#define TEAM_PAINT_CHROMA 0.92
+#define TEAM_PAINT_VALUE 0.9
+#define TEAM_PAINT_COVER 0.9
+
 // Repaints masked albedo in the team colour, keeping its shading; _TeamColor.a 0 (neutral) leaves it untouched.
 half3 ApplyTeamColor(half3 albedo, float2 uv0, float3 positionWS)
 {
@@ -41,8 +47,10 @@ half3 ApplyTeamColor(half3 albedo, float2 uv0, float3 positionWS)
     }
 
     half amount = TeamMask(uv0, TransformWorldToObject(positionWS).y) * half(_TeamColor.a);
-    half3 painted = half3(_TeamColor.rgb) * saturate(Luminance(albedo) * half(2.2));
-    return lerp(albedo, painted, amount);
+    half3 team = half3(_TeamColor.rgb);
+    half3 coat = lerp(Luminance(team).xxx, team, half(TEAM_PAINT_CHROMA)) * half(TEAM_PAINT_VALUE);
+    half3 painted = coat * saturate(Luminance(albedo) * half(2.2));
+    return lerp(albedo, painted, amount * half(TEAM_PAINT_COVER));
 }
 
 #endif

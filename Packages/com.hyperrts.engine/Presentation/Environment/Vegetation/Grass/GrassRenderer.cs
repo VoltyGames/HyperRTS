@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         private static readonly int StencilBits = Shader.PropertyToID("_StencilBits");
 
-        // Keeps LitTeam's silhouette off units standing in grass; see LitTeam.shader's second silhouette pass.
+        // Keeps LitTeam's silhouette and ground markers off grass; RowCrop.shader writes the same bit.
         private const float GroundCoverStencil = 64f;
 
         private GrassComputeInputs _kernels;

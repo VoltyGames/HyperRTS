@@ -219,7 +219,7 @@ Shader "HyperRTS/LitTeam"
             ENDHLSL
         }
 
-        // Render Objects pass: team colour where something hides the unit, skipping the grass ground cover (bit 64).
+        // Render Objects pass: team colour where something hides the unit, skipping grass and row crops (ground cover, bit 64).
         // Inverting the clear bit 128 sets it, so each pixel blends once.
         Pass
         {

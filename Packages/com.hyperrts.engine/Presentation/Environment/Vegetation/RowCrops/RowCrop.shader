@@ -43,6 +43,15 @@ Shader "HyperRTS/RowCrop"
             Name "RowCrop"
             Tags { "LightMode" = "UniversalForward" }
 
+            // Ground cover bit 64, like scattered grass: unit silhouettes and ground markers skip these pixels.
+            Stencil
+            {
+                Ref 64
+                WriteMask 64
+                Comp Always
+                Pass Replace
+            }
+
             HLSLPROGRAM
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
