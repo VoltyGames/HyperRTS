@@ -19,6 +19,35 @@ namespace HyperRTS.Editor.Maps.Meshes
             return (Fades(road, points[0], roads), Fades(road, points[^1], roads));
         }
 
+        /// <summary>
+        /// The highest-ranked road that covers the end and outranks this one, or null when the end carries on or none
+        /// does.
+        /// </summary>
+        public static MapRoad HigherAt(MapRoad road, Vector2 end, IReadOnlyList<MapRoad> roads)
+        {
+            MapRoad higher = null;
+            foreach (var other in roads)
+            {
+                if (other == road || other.Line.Distance(end, out var along) > other.Width * 0.5f)
+                {
+                    continue;
+                }
+
+                var atEnd = along <= Continues || along >= other.Line.Length - Continues;
+                if (atEnd && other.Line.Distance(end) <= Continues)
+                {
+                    return null;
+                }
+
+                if (other.Class.rank > road.Class.rank && (higher == null || other.Class.rank > higher.Class.rank))
+                {
+                    higher = other;
+                }
+            }
+
+            return higher;
+        }
+
         private static bool Fades(MapRoad road, Vector2 end, IReadOnlyList<MapRoad> roads)
         {
             var touching = false;

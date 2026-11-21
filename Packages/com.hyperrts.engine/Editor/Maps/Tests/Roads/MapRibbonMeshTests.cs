@@ -159,6 +159,32 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         }
 
         [Test]
+        public void Spill_IsSolidAtTheHigherRoadsEdge_AndFadesOntoIt()
+        {
+            var main = MapFixture.RoadShape(Asphalt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));
+            var side = MapFixture.RoadShape(Dirt, false, new Vector2(0f, -40f), new Vector2(0f, 0f));
+            Assert.AreEqual(main, MapRoadFades.HigherAt(side, new Vector2(0f, 0f), new[] { main, side }));
+            Assert.IsNull(MapRoadFades.HigherAt(main, new Vector2(50f, 0f), new[] { main, side }), "a free end has none above it");
+
+            var mesh = new MapRoadMesh(Flat(), 0f);
+            mesh.AddSpill(side, main, false);
+
+            // The 4 m dirt road has a column every 1.5 m.
+            const int columns = 4;
+            var rows = mesh.Count / columns;
+            var edge = 0;
+            for (var row = 1; row < rows; row++)
+            {
+                var nearer = Mathf.Abs(mesh.Vertices[row * columns].z + 3f) < Mathf.Abs(mesh.Vertices[edge * columns].z + 3f);
+                edge = nearer ? row : edge;
+            }
+
+            Assert.AreEqual(255, mesh.Colors[edge * columns].a, "solid where the dirt meets the asphalt's edge");
+            Assert.AreEqual(0, mesh.Colors[0].a, "clear again 2 m back along the dirt");
+            Assert.AreEqual(0, mesh.Colors[^1].a, "clear at the asphalt's middle");
+        }
+
+        [Test]
         public void River_MarksShallowAndFastWaterOverAFord()
         {
             var (mesh, shapes) = River();

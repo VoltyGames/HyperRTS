@@ -18,6 +18,9 @@ namespace HyperRTS.Editor.Maps.Meshes
         public const float FadeLength = 4f;
 
         private const float AcrossStep = 1.5f;
+        private const float SpillStep = 0.5f;
+        private const float SpillIn = 3f;
+        private const float SpillOut = 2f;
 
         private readonly MapHeights _heights;
         private readonly float _groundLevel;
@@ -69,6 +72,42 @@ namespace HyperRTS.Editor.Maps.Meshes
                 var run = (first, end, first > 0 || fadeStart, end < last || fadeEnd);
                 AddRun(points, along, run, road.Width);
                 first = end;
+            }
+        }
+
+        /// <summary>
+        /// Adds the stretch of a road's end that meets a higher-ranked road, drawn over that road: solid at its edge,
+        /// fading out onto it and back out along the lower road, so the surface blends across the join.
+        /// </summary>
+        public void AddSpill(MapRoad road, MapRoad higher, bool atStart)
+        {
+            var points = MapCurves.Resample(road.Line.Points, SpillStep);
+            var along = Distances(points);
+            var half = higher.Width * 0.5f;
+            var last = points.Count - 1;
+            var reach = 0;
+            while (reach < last && higher.Line.Distance(points[atStart ? reach : last - reach]) < half + SpillOut)
+            {
+                reach++;
+            }
+
+            var (first, end) = atStart ? (0, reach) : (last - reach, last);
+            var columns = Mathf.Max(3, Mathf.CeilToInt(road.Width / AcrossStep) + 1);
+            var previous = -1;
+            for (var i = first; i <= end; i++)
+            {
+                var distance = higher.Line.Distance(points[i]);
+                var onto = Mathf.Clamp01((distance - (half - SpillIn)) / SpillIn);
+                var alongRoad = Mathf.Clamp01((half + SpillOut - distance) / SpillOut);
+                var ahead = points[Mathf.Min(i + 1, last)] - points[Mathf.Max(i - 1, 0)];
+                var row = Count;
+                AddRow(points[i], ahead.normalized, road.Width, columns, along[i], Mathf.Min(onto, alongRoad));
+                if (previous >= 0)
+                {
+                    AddQuads(previous, row, columns);
+                }
+
+                previous = row;
             }
         }
 

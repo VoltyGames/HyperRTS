@@ -98,6 +98,10 @@ namespace HyperRTS.Editor.Maps.Climate
         [Tooltip("Width of the bank band above the water line (metres).")]
         public float shoreWidth = 6f;
 
+        [Tooltip("How far the bank's width swings along a river, as a share of shoreWidth either way: 0 keeps it even, 0.8 runs from a fifth to nearly twice as wide.")]
+        [Range(0f, 0.95f)]
+        public float shoreWidthVariation;
+
         [Tooltip("Surface of the floodplain meadows beyond the banks.")]
         [MapKey(typeof(MapClimateSurface))]
         public string floodplainSurface;

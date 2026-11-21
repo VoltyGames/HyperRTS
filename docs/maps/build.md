@@ -49,7 +49,7 @@ meet the crisper one wins, and the wander turns with the symmetry.
 | Ground materials | A `GroundMaterialMap` of one `SurfaceMaterial` byte per cell, for impacts and wheel debris |
 | Ground colour | The ground's colour from above, so foliage blends in at its roots |
 | Ground decals | A URP `DecalProjector` per decal |
-| Road ribbons | A mesh just above the ground, drawn by `HyperRTS/Road` |
+| Road ribbons | A mesh just above the ground per road class, drawn by `HyperRTS/Road`; a higher rank draws on top, and where a lower road ends on a higher one its end is drawn again over it, fading in a few metres, so the surfaces blend |
 | Weather | A `WeatherSet` holding every climate weather, with the spec's weather active. In play it swaps in the one `MatchSetup.Weather` names |
 
 **Grass** is drawn by `GrassRenderer`, not terrain details. `Grass.compute` scatters each visible tile's plants on a
