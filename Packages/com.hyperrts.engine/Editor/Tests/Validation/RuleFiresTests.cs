@@ -74,6 +74,25 @@ namespace HyperRTS.Editor.Tests.Validation
             Assert.IsTrue(PrerequisiteWarned(unit));
         }
 
+        [TestCase(0f)]
+        [TestCase(1f)]
+        public void TopDownTeamColor_SharesTheMaskSeenFromAbove(float maskValue)
+        {
+            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            var model = unit.GetComponentInChildren<MeshRenderer>();
+            model.GetComponent<MeshFilter>().sharedMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
+            model.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            var mask = Track(new Texture2D(4, 4, TextureFormat.RGBA32, false, true));
+            mask.SetPixels(Enumerable.Repeat(new Color(maskValue, 0f, 0f, 1f), 16).ToArray());
+            mask.Apply();
+            var material = Track(new Material(model.sharedMaterial));
+            material.SetTexture("_TeamMask", mask);
+            model.sharedMaterial = material;
+
+            Assert.IsTrue(new TopDownTeamColor().TryGetShare(unit.gameObject, out var share));
+            Assert.AreEqual(maskValue, share, 0.01f);
+        }
+
         [Test]
         public void SkippedRulesHaveNoRow() =>
             Assert.IsEmpty(Skipped.Keys.Where(RuleFiresCases.Rows.ContainsKey).Select(rule => rule.Name));
