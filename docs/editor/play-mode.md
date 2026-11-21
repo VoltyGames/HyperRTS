@@ -137,6 +137,9 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `ready` | a group | Ends its ability cooldowns, so a power that charges for minutes, such as a strategic asset, fires at once |
 | `speed` | a number | Game speed of a single-player match |
 | `fog` | true or false | Fog of war |
+| `group` | `as`, `at` `[x, z]`, `radius`, optional `prefab` (display name) | Labels what the map already placed within `radius` metres of the point, so later steps can `damage`, `destroy`, `select` or `order` it. It takes the live entities that have health, whole (a sectioned building is one entity, its sections a buffer on it), narrowed to those named `prefab` when given. It fails when none match, naming the point and radius, or when their owners differ |
+| `select` | a group | Selects the group for the local player and clears the selection before it, so selection rings, order markers and range previews show in later captures; single player only |
+| `weather` | a weather key | Switches the map to that weather; an unknown key fails naming the keys the map has |
 | `detail` | `shadows`, `grass`, `crops` (metres), `lod` (a factor); one or more | Raises render detail past the play camera's needs for footage shot from far off: the pipeline's shadow distance, which plants follow out to their drawn reach, full vegetation drawn out to the given distances (capped by each plant's own) and finer model levels. The run puts each setting back when it ends, so nothing is saved |
 | `mixer` | parameter names and values | Sets exposed parameters on the loaded audio mixers, such as `{ "Music": -80 }` to record without the match music under footage that gets its own; a name no mixer exposes fails |
 | `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |

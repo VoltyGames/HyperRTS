@@ -162,7 +162,7 @@ namespace HyperRTS.Editor.Maps.Designer.Window
                 ("Attack paths", Count(metrics.paths)),
                 ("Path search", $"{metrics.maxExpansions:N0} cells"),
                 ("Renewable fields", $"{metrics.renewableFieldsPerPlayer:0.#} per player"),
-                ("View contrast", $"spread {metrics.viewLuminanceSpread:0.000}, local {metrics.viewLocalContrast:0.000}"),
+                ("View contrast", $"spread {metrics.viewLuminanceSpread:0.000}, local {metrics.viewLocalContrast:0.000}, chroma {metrics.viewChroma:0.0}"),
             };
             foreach (var spawn in metrics.spawns)
             {

@@ -35,6 +35,9 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>The ground views' mean <see cref="MapViewContrast.LocalContrast"/>; the overview is left out.</summary>
         public float viewLocalContrast;
 
+        /// <summary>The ground views' mean <see cref="MapViewContrast.Chroma"/>; the overview is left out.</summary>
+        public float viewChroma;
+
         /// <summary>Measures the light and shade of the views just captured.</summary>
         public void MeasureViews(IEnumerable<string> files, string overviewName)
         {
@@ -47,6 +50,7 @@ namespace HyperRTS.Editor.Maps.Report
 
             viewLuminanceSpread = views.Average(v => v.LuminanceSpread);
             viewLocalContrast = views.Average(v => v.LocalContrast);
+            viewChroma = views.Average(v => v.Chroma);
         }
     }
 }

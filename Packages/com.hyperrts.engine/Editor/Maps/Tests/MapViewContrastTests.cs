@@ -17,6 +17,19 @@ namespace HyperRTS.Editor.Maps.Tests
 
             Assert.AreEqual(0f, contrast.LuminanceSpread, 1e-5f);
             Assert.AreEqual(0f, contrast.LocalContrast, 1e-5f);
+            Assert.AreEqual(0f, contrast.Chroma, 0.01f);
+        }
+
+        [Test]
+        public void ASaturatedView_HasHighChroma()
+        {
+            var pixels = Fill((x, y) => 0);
+            for (var i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = new Color32(255, 0, 0, 255);
+            }
+
+            Assert.AreEqual(104.6f, MapViewContrast.Measure(pixels, Width, Height).Chroma, 1f);
         }
 
         [Test]

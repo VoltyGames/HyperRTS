@@ -27,6 +27,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public bool? fog;
         public Dictionary<string, float> mixer;
         public DetailStep detail;
+        public string select;
+        public string weather;
+        public GroupStep group;
 
         /// <summary>The step of the one kind key this entry has, with the key; none or two throws.</summary>
         public (string Kind, StagingStep Step) Chosen()
@@ -54,6 +57,9 @@ namespace HyperRTS.Editor.PlayMode.Staging
             ("fog", fog is { } enabled ? new FogStep(enabled) : null),
             ("mixer", mixer == null ? null : new MixerStep(mixer)),
             ("detail", detail),
+            ("select", select == null ? null : new SelectStep(select)),
+            ("weather", weather == null ? null : new WeatherStep(weather)),
+            ("group", group),
         };
     }
 }

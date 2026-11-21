@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             return count > 0;
         }
 
-        private static bool IsAlive(EntityManager entityManager, Entity unit)
+        public static bool IsAlive(EntityManager entityManager, Entity unit)
         {
             if (!entityManager.Exists(unit) || !entityManager.HasComponent<Health>(unit))
             {

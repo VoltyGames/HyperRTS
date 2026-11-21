@@ -114,6 +114,27 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         }
 
         [Test]
+        public void ParseReadsSelectAndWeatherAndRejectsSelectingAnUndefinedGroup()
+        {
+            string With(string select) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 1, \"select\": \"{select}\" }}, {{ \"at\": 1, \"weather\": \"Rain\" }},");
+
+            Assert.That(StagingFile.Parse(With("blue"), "pick.json").Steps.Select(step => step.Kind), Is.SupersetOf(new[] { "select", "weather" }));
+            StringAssert.Contains("group 'green'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("green"), "pick.json")).Message);
+        }
+
+        [Test]
+        public void ParseReadsGroupAndLetsLaterStepsUseItsLabelAndRejectsAMissingAsOrRadius()
+        {
+            string With(string group) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 0, \"group\": {group} }}, {{ \"at\": 1, \"damage\": {{ \"units\": \"barn\", \"amount\": 50 }} }},");
+
+            var file = StagingFile.Parse(With("{ \"as\": \"barn\", \"at\": [10, 20], \"radius\": 15, \"prefab\": \"Barn\" }"), "group.json");
+
+            Assert.That(file.Steps.Select(step => step.Defines), Does.Contain("barn"));
+            StringAssert.Contains("'as'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"at\": [10, 20], \"radius\": 15 }"), "as.json")).Message);
+            StringAssert.Contains("'radius'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"as\": \"barn\", \"at\": [10, 20] }"), "radius.json")).Message);
+        }
+
+        [Test]
         public void ViewTurnedTowardTheSunKeepsItsShapeAndAddsTheHeading()
         {
             var aim = new CameraAim(new float2(3f, 4f), 2f, 10f, 8f, 30f).Turned(100f);

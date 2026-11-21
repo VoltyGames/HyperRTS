@@ -20,11 +20,11 @@ match camera.
 | Preview | The Map Editor, the `map preview` [command](../editor/README.md#commands) or batch `.Preview` | Layout image, issues and land figures |
 | Build | **Build** in the Map Editor, `map build` or batch `.Build` | Scene, SubScene, assets, report, minimap, views |
 | Views | Every build with graphics, **Recapture views**, or `map capture` | Screenshots in `Logs/MapReports/<Map>/`, and their contrast in the report |
-| Looks | `map look`, in Play mode | The spec's `looks` at three zooms in every weather with GI settled, in `Logs/MapReports/<Map>/look/<Weather>/` |
+| Looks | `map look`, in Play mode | The spec's `looks` at three zooms in every weather with GI settled, in `Logs/MapReports/<Map>/look/<Weather>/`; `summary.json` there holds each weather's mean `viewLuminanceSpread`, `viewLocalContrast` and `viewChroma` under `weathers`, except for a `cost` run |
 
 A preview needs no scene. It does not measure rush times or attack paths; only a build does. The views' contrast is
-`viewLuminanceSpread` and `viewLocalContrast` in the report, averaged over the ground views; low figures mean flat,
-front-lit ground.
+`viewLuminanceSpread`, `viewLocalContrast` and `viewChroma` (mean CIELAB chroma C*) in the report, averaged over the
+ground views; low figures mean flat, front-lit or washed-out ground.
 
 ## Spec format
 

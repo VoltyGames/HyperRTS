@@ -223,6 +223,11 @@ namespace HyperRTS.Editor.Maps.Look
 
             QualitySettings.SetQualityLevel(_previousQuality, true);
             Summary.failure = failure;
+            if (!_cost)
+            {
+                Summary.MeasureWeathers();
+            }
+
             var folder = MapLookCapture.Folder(_spec.name, _graded);
             Directory.CreateDirectory(folder);
             var path = Path.Combine(folder, "summary.json");
