@@ -52,6 +52,9 @@ namespace HyperRTS.Editor.Effects.Layer
         public Texture2D texture;
         public float softness;
         public bool upright;
+
+        [Tooltip("Lies on the ground facing up, as a blast's ring does, instead of facing the camera.")]
+        public bool flat;
         public float pivot;
         public Flipbook flipbook;
 
@@ -91,6 +94,7 @@ namespace HyperRTS.Editor.Effects.Layer
             EffectLayerKind.Debris or EffectLayerKind.Source => null,
             EffectLayerKind.Spark => "AlongVelocity",
             _ when upright => "FixedAxis",
+            _ when flat => "Advanced",
             _ => "FaceCameraPlane",
         };
 
@@ -146,6 +150,11 @@ namespace HyperRTS.Editor.Effects.Layer
 
             AddSpawnProblems(problems);
             AddAssetProblems(problems);
+            if (upright && flat)
+            {
+                problems.Add($"layer '{name}' is both upright and flat; pick one.");
+            }
+
             if (flipbook.random && flipbook.randomStart)
             {
                 problems.Add($"layer '{name}' flipbook is both random and randomStart; pick one.");

@@ -51,5 +51,11 @@ namespace HyperRTS.Editor.Tests.Effects
         {
             Assert.AreEqual("FixedAxis", new EffectLayer { kind = EffectLayerKind.SixWay, upright = true }.OrientMode);
         }
+
+        [Test]
+        public void AFlatQuad_LiesOnTheGround()
+        {
+            Assert.AreEqual("Advanced", new EffectLayer { kind = EffectLayerKind.Puff, flat = true }.OrientMode);
+        }
     }
 }

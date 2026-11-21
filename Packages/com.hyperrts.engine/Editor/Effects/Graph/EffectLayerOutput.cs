@@ -216,6 +216,13 @@ namespace HyperRTS.Editor.Effects.Graph
             {
                 _graph.Slot(orient, "Up", Vector3.up);
             }
+
+            if (mode == "Advanced")
+            {
+                _graph.Set(orient, "axes", "ZY");
+                _graph.Slot(orient, "AxisZ", Vector3.up);
+                _graph.Slot(orient, "AxisY", Vector3.forward);
+            }
         }
 
         private void LinkAttribute(string attribute, object output, string input, float y)
