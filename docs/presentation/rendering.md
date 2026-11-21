@@ -13,6 +13,13 @@ developers writing shaders.
 the metallic workflow, opaque, alpha-tested or transparent, and `LitTeamGUI` keeps its keywords, blend, queue and passes
 in step with the maps and toggles.
 
+**Team markers.** A team marker is a child mesh (a roof panel, pennant, flag or placard) on a LitTeam material with a
+white team mask, which `TeamColorSystem` paints like every mesh under the root. `TeamMarkerAuthoring` bakes nothing; it
+lets `TeamColorRule` count markers on vehicles and buildings without a team strip against
+`TeamColorSettings.minMarkers`. A marker hides with the damage stage it sits under and dies with its entity, since
+remains are their own prefab. A building's marker turns `_BUILD` on with UV3 at 1, or it shows before the building
+rises.
+
 **Glass.** The `_Transparent` toggle blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
 diffuse while reflections stay whole, which is what glass looks like. A transparent material writes no depth, casts no
 shadow and skips the depth, depth-normals and motion-vector passes, so whatever the model shows behind it, such as a
@@ -34,12 +41,15 @@ Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`). After rain 
 `Atmosphere`) every LitTeam surface is wet where the sky reaches it, as the ground is: darker and glossier, metal
 not darker.
 
-**Silhouettes.** A unit hidden behind cover shows as a team-colour silhouette. Units bake onto the `UnitRenderingLayer`,
-and two URP Render Objects features on that layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visible
-pixels in the stencil, then its `HyperRTSSilhouette` pass where the unit is hidden. The validator adds both in that
-order; `UnitSilhouettes.Hide` turns them off for footage. Scattered grass and row crops write stencil bit 64 (ground
-cover), which the silhouette pass and the ground markers skip, so plants cover a marker line and hide no unit behind
-them.
+**Silhouettes.** A unit hidden behind cover shows as a team-colour silhouette. Units bake onto the `UnitRenderingLayer`
+and buildings onto the `BuildingRenderingLayer` (`RenderingLayerBakingSystem`). Two URP Render Objects features on the
+units layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visible pixels in stencil bit 128, then its
+`HyperRTSSilhouette` pass where the unit is hidden, which also sets bit 32 for the
+[team outline](hud.md#team-outlines). Buildings stay off the
+units layer, or one in front of a unit would mark it seen. The validator adds both features in that order;
+`UnitSilhouettes.Hide` turns them and the team outlines off for footage. Scattered grass and row crops write stencil bit
+64 (ground cover), which the silhouette pass and the ground markers skip, so plants cover a marker line and hide no unit
+behind them.
 
 ## Build reveal
 

@@ -1,6 +1,6 @@
 namespace HyperRTS.Presentation.Rendering
 {
-    /// <summary>The rendering layer <see cref="UnitRenderingLayerBakingSystem"/> puts units on for the unit silhouettes.</summary>
+    /// <summary>The rendering layer <see cref="RenderingLayerBakingSystem"/> puts units on for the silhouettes and outlines.</summary>
     public static class UnitRenderingLayer
     {
         public const int Index = 8;

@@ -5,18 +5,18 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules.Units
 {
-    /// <summary>The project's team colour bar for the validation rules; create one asset to turn the top-view check on.</summary>
+    /// <summary>The project's team colour bar for the validation rules; create one asset to turn the marker count on.</summary>
     [CreateAssetMenu(menuName = "HyperRTS/Team Colour Settings")]
     public sealed class TeamColorSettings : ScriptableObject
     {
-        [Tooltip("Smallest share of a vehicle's top-down area that must show team colour, so owners read apart from the match camera.")]
-        [Range(0f, 1f)]
-        public float minTopDownShare = 0.2f;
+        [Tooltip("Fewest team markers (Team Marker components) a vehicle or building prefab carries, so its owner shows on the model.")]
+        [Min(0)]
+        public int minMarkers = 2;
 
-        /// <summary>The project asset's bar; false when the project has no asset, which leaves the check off.</summary>
-        public static bool TryGetMinTopDownShare(out float share)
+        /// <summary>The project asset's bar; false when the project has no asset, which leaves the count off.</summary>
+        public static bool TryGetMinMarkers(out int markers)
         {
-            share = 0f;
+            markers = 0;
             var guids = AssetDatabase.FindAssets("t:" + nameof(TeamColorSettings));
             if (guids.Length == 0)
             {
@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                     string.Join(", ", guids.Select(AssetDatabase.GUIDToAssetPath)));
             }
 
-            share = AssetDatabase.LoadAssetAtPath<TeamColorSettings>(AssetDatabase.GUIDToAssetPath(guids[0])).minTopDownShare;
+            markers = AssetDatabase.LoadAssetAtPath<TeamColorSettings>(AssetDatabase.GUIDToAssetPath(guids[0])).minMarkers;
             return true;
         }
     }

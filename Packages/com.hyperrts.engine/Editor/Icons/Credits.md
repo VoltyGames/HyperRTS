@@ -158,6 +158,7 @@ file is named after the component it marks.
 | StatusEffectAuthoring | lorc/poison-gas | Lorc |
 | StealthAuthoring | lorc/ninja-mask | Lorc |
 | StretchPartsAuthoring | delapouite/resize | Delapouite |
+| TeamMarkerAuthoring | delapouite/paint-roller | Delapouite |
 | TeamStripAuthoring | delapouite/vertical-banner | Delapouite |
 | TerrainHeightAuthoring | lorc/mountains | Lorc |
 | TerrainHoleAuthoring | delapouite/hole | Delapouite |

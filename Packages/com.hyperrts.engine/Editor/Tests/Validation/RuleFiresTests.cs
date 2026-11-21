@@ -8,6 +8,7 @@ using HyperRTS.Editor.Validation.Rules.Effects;
 using HyperRTS.Editor.Validation.Rules.Fields;
 using HyperRTS.Editor.Validation.Rules.Units;
 using HyperRTS.Editor.Validation.Sets;
+using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Upgrades;
 using NUnit.Framework;
@@ -26,7 +27,9 @@ namespace HyperRTS.Editor.Tests.Validation
         private static readonly Dictionary<Type, string> Skipped = new()
         {
             [typeof(ContactShadowsRule)] = "Fires only when the project's active URP renderer lacks the features.",
+            [typeof(ScreenOverlayRule)] = "Fires only when the project's active URP renderer lacks the feature.",
             [typeof(SharpenRule)] = "Fires only when the project's active URP renderer lacks the feature.",
+            [typeof(TeamOutlineRule)] = "Fires only when the project's active URP renderer lacks the feature.",
             [typeof(UnitSilhouetteRule)] = "Fires only on the project's renderer assets and rendering layer names.",
         };
 
@@ -74,23 +77,33 @@ namespace HyperRTS.Editor.Tests.Validation
             Assert.IsTrue(PrerequisiteWarned(unit));
         }
 
-        [TestCase(0f)]
-        [TestCase(1f)]
-        public void TopDownTeamColor_SharesTheMaskSeenFromAbove(float maskValue)
+        [Test]
+        public void TeamColorRule_CountsMarkers_AndWarnsOnAnUnpaintedOne()
         {
             var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
-            var model = unit.GetComponentInChildren<MeshRenderer>();
-            model.GetComponent<MeshFilter>().sharedMesh = Resources.GetBuiltinResource<Mesh>("Quad.fbx");
-            model.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            var mask = Track(new Texture2D(4, 4, TextureFormat.RGBA32, false, true));
-            mask.SetPixels(Enumerable.Repeat(new Color(maskValue, 0f, 0f, 1f), 16).ToArray());
-            mask.Apply();
-            var material = Track(new Material(model.sharedMaterial));
-            material.SetTexture("_TeamMask", mask);
-            model.sharedMaterial = material;
+            var teamMaterial = unit.GetComponentInChildren<MeshRenderer>().sharedMaterial;
+            AddMarker(unit, teamMaterial);
+            Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("Only 1 team markers")));
 
-            Assert.IsTrue(new TopDownTeamColor().TryGetShare(unit.gameObject, out var share));
-            Assert.AreEqual(maskValue, share, 0.01f);
+            AddMarker(unit, teamMaterial);
+            Assert.IsEmpty(MarkerWarnings(unit));
+
+            AddMarker(unit, Track(new Material(Shader.Find("Universal Render Pipeline/Lit"))));
+            Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("no _TeamColor material")));
+        }
+
+        private static void AddMarker(UnitAuthoring unit, Material material)
+        {
+            var marker = new GameObject("Marker", typeof(MeshFilter), typeof(MeshRenderer), typeof(TeamMarkerAuthoring));
+            marker.transform.SetParent(unit.transform);
+            marker.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
+        private static string[] MarkerWarnings(UnitAuthoring unit)
+        {
+            var issues = new ValidationIssues();
+            TeamColorRule.CheckMarkers(unit, 2, issues);
+            return issues.Select(issue => issue.Message).ToArray();
         }
 
         [Test]

@@ -94,3 +94,24 @@ the OS pointer stays.
   Colours are the `fire*` fields of `OverlayStyle`.
 - **`CoverPreview`** rings the cover spots a move would use when squads are selected and the pointer is over open
   ground. It ignores craters, which are server only.
+
+## Team outlines
+
+`TeamOutlineFeature` lines every owned unit and building on screen in its owner's colour, `width` pixels on a
+1080-pixel-high screen (scaled with the screen's height) at `opacity`. It runs at the same point as the
+[screen overlay](rendering.md#screen-overlay) and sits before it in the renderer's list, so health bars draw over the
+lines. Two steps share one extra texture:
+
+1. **Mask.** At the camera depth's size and against its depth and stencil, LitTeam's `HyperRTSUnitOutline` pass draws
+   units on the units layer with no depth test, skipping [silhouette](rendering.md#team-colour) pixels (bit 32), so
+   grass and row crops in front of a unit leave its outline whole. `HyperRTSBuildingOutline` draws buildings on the buildings layer by depth, with the
+   silhouette's slack, since buildings have no silhouette. Both write the owner's colour at alpha 1, neutral entities
+   none. A full-screen draw then marks the silhouette pixels at alpha 0.5.
+2. **Outline.** A full-screen pass over the final target paints each empty pixel within the width of an alpha 1 pixel
+   in that pixel's colour, so units of different owners keep their colours. Hidden pixels are not empty, so no line
+   crosses a unit behind a wall: its silhouette shows there instead.
+
+The mask draws with the camera's unjittered matrices, so the lines stay still under a temporal upscaler, at the cost of
+following the render resolution's pixel grid. Units in the fog of war stop rendering, so they get no line; a fog memory
+copy of a building keeps one. The mask costs one more draw per unit or building mesh on screen. `TeamOutlines.Hide`
+turns the feature off for a player who wants no lines, and the validator offers to add it to a renderer that lacks it.

@@ -98,6 +98,7 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string StatusEffectAuthoring = Dir + "StatusEffectAuthoring.png";
         public const string StealthAuthoring = Dir + "StealthAuthoring.png";
         public const string StretchPartsAuthoring = Dir + "StretchPartsAuthoring.png";
+        public const string TeamMarkerAuthoring = Dir + "TeamMarkerAuthoring.png";
         public const string TeamStripAuthoring = Dir + "TeamStripAuthoring.png";
         public const string TerrainHeightAuthoring = Dir + "TerrainHeightAuthoring.png";
         public const string TerrainHoleAuthoring = Dir + "TerrainHoleAuthoring.png";

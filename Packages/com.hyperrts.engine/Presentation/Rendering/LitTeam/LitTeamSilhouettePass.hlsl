@@ -1,5 +1,6 @@
 // Silhouettes of units hidden behind other things, drawn by two URP Render Objects features: the mask pass marks
-// visible pixels in the stencil, then the silhouette pass paints the team colour where the unit is hidden.
+// visible pixels in the stencil, then the silhouette pass paints the team colour where the unit is hidden. The team
+// outline passes draw the owner's colour into TeamOutlineFeature's mask.
 #ifndef HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 #define HYPERRTS_LIT_TEAM_SILHOUETTE_PASS_INCLUDED
 
@@ -32,8 +33,8 @@ struct SilhouetteVaryings
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-// Same transform as the forward pass so the mask's ZTest Equal matches its depth exactly; the silhouette pass adds
-// SILHOUETTE_SLACK_ON.
+// Same transform as the forward pass so the mask's ZTest Equal matches its depth exactly; the silhouette and building
+// outline passes add SILHOUETTE_SLACK_ON.
 SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT BONE_INPUT BUILD_ORDER_INPUT)
 {
     SilhouetteVaryings output = (SilhouetteVaryings)0;
@@ -46,8 +47,8 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     output.positionCS = vertexInput.positionCS;
     output.positionWS = vertexInput.positionWS;
 #ifdef SILHOUETTE_SLACK_ON
-    // The silhouette pass alone: drawn nearer the camera, so only parts hidden by more than the slack pass the
-    // ZTest Greater depth test.
+    // Drawn nearer the camera, so only parts hidden by more than the slack pass the silhouette's ZTest Greater, and
+    // parts hidden by less pass the building outline's ZTest LEqual.
     output.positionCS = TransformWorldToHClip(vertexInput.positionWS + GetWorldSpaceNormalizeViewDir(vertexInput.positionWS) * SILHOUETTE_SLACK);
 #endif
     output.normalWS = TransformObjectToWorldNormal(input.normalOS);
@@ -83,6 +84,19 @@ half4 SilhouetteFragment(SilhouetteVaryings input) : SV_Target
     half3 viewDirWS = GetWorldSpaceNormalizeViewDir(input.positionWS);
     half rim = pow(1.0 - saturate(abs(dot(normalWS, viewDirWS))), SILHOUETTE_RIM_POWER);
     return half4(_TeamColor.rgb, lerp(SILHOUETTE_FILL, 1.0, rim));
+}
+
+// The owner's colour at full alpha, which the outline reads as "a unit or building is here"; neutral ones draw none.
+half4 TeamOutlineFragment(SilhouetteVaryings input) : SV_Target
+{
+    UNITY_SETUP_INSTANCE_ID(input);
+    UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+    ClipSilhouette(input);
+
+    clip(_TeamColor.a - 0.001);
+    // Without silhouettes the stencil no longer marks hidden parts, so footage loses the outlines with them.
+    clip(0.5 - _HyperRTSHideSilhouettes);
+    return half4(_TeamColor.rgb, 1.0);
 }
 
 #endif
