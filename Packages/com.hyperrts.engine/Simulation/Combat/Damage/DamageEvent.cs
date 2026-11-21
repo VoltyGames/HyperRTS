@@ -14,6 +14,8 @@ namespace HyperRTS.Simulation.Combat.Damage
     [InternalBufferCapacity(0)]
     public struct DamageEvent : IBufferElementData
     {
+        private const float WholeBuilding = 1000f;
+
         /// <summary>Takes full damage; <c>Entity.Null</c> for a pure area hit.</summary>
         public Entity Target;
 
@@ -63,6 +65,18 @@ namespace HyperRTS.Simulation.Combat.Damage
             var hit = this;
             hit.Profile.Type = kind.Type;
             hit.Profile.CoverPiercing = kind.CoverPiercing;
+            return hit;
+        }
+
+        /// <summary>
+        /// This hit dealing its full amount to every section of a sectioned building, as a blast over all of it. Its
+        /// <see cref="Layers"/> stay empty, so it reaches no other unit.
+        /// </summary>
+        public readonly DamageEvent ReachingAllSections()
+        {
+            var hit = this;
+            hit.Profile.SplashRadius = WholeBuilding;
+            hit.Profile.CoreRadius = WholeBuilding;
             return hit;
         }
 

@@ -113,6 +113,24 @@ namespace HyperRTS.Simulation.Tests.Destruction
         }
 
         [Test]
+        public void ReachingAllSections_HurtsEverySectionInFull_AndKillsTheBuildingWhenLethal()
+        {
+            var house = House(float3.zero);
+            World.Tick();
+
+            World.QueueDamage(DamageEvent.Direct(house, float3.zero, Entity.Null, 0, 30f).ReachingAllSections());
+            World.Tick();
+            for (var i = 0; i < 5; i++)
+            {
+                Assert.AreEqual(70f, HouseSection(house, i).Health, 1e-3f);
+            }
+
+            World.QueueDamage(DamageEvent.Direct(house, float3.zero, Entity.Null, 0, 1e9f).ReachingAllSections());
+            World.Tick();
+            Assert.IsFalse(World.EntityManager.Exists(house), "every section broke, so the building is destroyed");
+        }
+
+        [Test]
         public void Splash_ReachesSectionsWithinItsRadius_WithFalloff()
         {
             var house = House(float3.zero);

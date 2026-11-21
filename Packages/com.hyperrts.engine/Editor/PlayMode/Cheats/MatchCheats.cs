@@ -7,6 +7,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;
@@ -133,7 +134,10 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             }
         }
 
-        /// <summary>Hurts each of <paramref name="units"/> by <paramref name="amount"/> through the damage system, untyped.</summary>
+        /// <summary>
+        /// Hurts each of <paramref name="units"/> by <paramref name="amount"/> through the damage system, untyped. A
+        /// sectioned building takes it on every section, since one hit would break only the section it lands on.
+        /// </summary>
         public static void Damage(EntityManager entityManager, NativeArray<Entity> units, float amount) =>
             Hit(entityManager, units, _ => amount);
 
@@ -149,7 +153,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             foreach (var unit in units)
             {
                 var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
-                hits.Add(DamageEvent.Direct(unit, position, Entity.Null, Owner.Neutral, amount(unit)));
+                var hit = DamageEvent.Direct(unit, position, Entity.Null, Owner.Neutral, amount(unit));
+                hits.Add(entityManager.HasBuffer<Section>(unit) ? hit.ReachingAllSections() : hit);
             }
         }
     }
