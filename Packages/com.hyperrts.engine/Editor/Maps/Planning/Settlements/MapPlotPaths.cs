@@ -25,6 +25,23 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             _kit = kit;
         }
 
+        /// <summary>Lays the door decal at the house front in every copy.</summary>
+        public void MarkDoor(MapPlot plot, MapPlacement house)
+        {
+            if (string.IsNullOrEmpty(_kit.doorDecal))
+            {
+                return;
+            }
+
+            var decal = _context.Climate.Decal(_kit.doorDecal);
+            var door = Door(plot, house);
+            foreach (var copy in _context.Layout.Symmetry.Copies)
+            {
+                var yaw = copy.ApplyYaw(plot.FacingYaw);
+                _context.Decals.Add(new MapDecal(decal, copy.Apply(door), _kit.doorDecalSize, yaw, copy.Mirrored));
+            }
+        }
+
         public void Wear(MapPlot plot, MapPlacement house, Vector2 gate, IReadOnlyList<Vector2> spots, int seed)
         {
             if (string.IsNullOrEmpty(_kit.pathSurface))
@@ -51,6 +68,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             }
         }
 
+        private static Vector2 Door(MapPlot plot, MapPlacement house)
+        {
+            plot.Local(house.Position, out var houseU, out var houseV);
+            return plot.Point(houseU, houseV - house.Entry.size.y * house.Scale * 0.5f - WallGap);
+        }
+
         /// <summary>Gate to door, then from the door round the nearer side of the house to each spot beside or behind it.</summary>
         private static List<List<Vector2>> Lines(MapPlot plot, MapPlacement house, Vector2 gate, IReadOnlyList<Vector2> spots)
         {
@@ -58,7 +81,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             var halfWidth = house.Entry.size.x * house.Scale * 0.5f + WallGap;
             var halfDepth = house.Entry.size.y * house.Scale * 0.5f + WallGap;
             var (front, back) = (houseV - halfDepth, houseV + halfDepth);
-            var door = plot.Point(houseU, front);
+            var door = Door(plot, house);
             var lines = new List<List<Vector2>> { new() { gate, door } };
             foreach (var spot in spots)
             {

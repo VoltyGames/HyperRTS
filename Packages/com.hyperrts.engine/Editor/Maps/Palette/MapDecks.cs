@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Maps.Palette
             {
                 if (entry.HasDeck)
                 {
-                    decks._decks[entry.key] = MapDeck.Read(entry.prefab);
+                    decks._decks[entry.key] = MapDeck.Read(entry);
                 }
             }
 

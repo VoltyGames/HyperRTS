@@ -39,6 +39,27 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             }
         }
 
+        [Test]
+        public void DoorDecals_LieInFrontOfEachHouse_InEveryCopy()
+        {
+            _fixture = MapSettlementFixture.Plan(edit: kit =>
+            {
+                kit.doorDecal = "Trodden";
+                kit.doorDecalSize = 3f;
+            });
+
+            var houses = _fixture.Placements.Where(p => p.Entry.key == "House").ToList();
+            var decals = _fixture.Context.Decals;
+            Assert.Greater(houses.Count, 0);
+            Assert.AreEqual(houses.Count, decals.Count);
+            foreach (var house in houses)
+            {
+                var nearest = decals.Min(d => Vector2.Distance(d.Position, house.Position));
+                // The door stands half the house depth plus a metre from its centre.
+                Assert.AreEqual(house.Entry.size.y * house.Scale * 0.5f + 1f, nearest, 0.1f);
+            }
+        }
+
         private bool IsPath(Vector2 point) => _fixture.Context.Land.At(point)?.Surface == "Path";
 
         private bool RingHasPath(Vector2 centre, float radius)

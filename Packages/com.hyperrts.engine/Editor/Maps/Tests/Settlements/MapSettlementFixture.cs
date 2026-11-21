@@ -163,6 +163,7 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             var climate = MapFixture.Item<MapClimate>("Test");
             MapFixture.AddSurfaces(climate, "Meadow", "Road", "Verge", "Yard", "Garden", "Orchard", "Path");
 
+            climate.decals.Add(MapFixture.Item<MapClimateDecal>("Trodden", i => i.size = new Vector2(2f, 3f)));
             climate.groundSurface = "Meadow";
             climate.baseSurface = "Meadow";
             climate.shoreSurface = "Meadow";

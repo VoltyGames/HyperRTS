@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Heights
 {
     /// <summary>
     /// Shapes the ground from the layout: rolling relief and hills, river valleys and fords, ponds, ravines, then roads
-    /// levelled (on embankments over ravines) and ramps up to bridge decks.
+    /// levelled (on embankments over ravines) and embankments up to bridge abutments.
     /// </summary>
     public static class MapHeightShaper
     {
@@ -19,15 +19,6 @@ namespace HyperRTS.Editor.Maps.Heights
         private const float RimDrop = 0.12f;
         private const float SwellScale = 0.3f;
         private const float FordEdge = 3f;
-        private const float RampLength = 14f;
-        private const float MaxRampLength = 80f;
-        private const float RampStep = 2f;
-        private const float RampGrade = 0.12f;
-        private const float RampEdge = 3f;
-        private const float CutEdge = 8f;
-        private const float MaxCutEdge = 24f;
-        private const float LandingDrop = 0.05f;
-        private const float AbutmentDrop = 0.4f;
 
         public static MapHeights Shape(MapLayout layout, MapShapes shapes)
         {
@@ -50,8 +41,9 @@ namespace HyperRTS.Editor.Maps.Heights
             // Ravines, roads and bridges each reshape what the last left, so they stay in order.
             var open = heights.Copy();
             CutRavines(heights, shapes, terrain.waterLevel);
+            var carved = heights.Copy();
             MapRoadLeveller.Level(heights, open, shapes, terrain.waterLevel);
-            RaiseBridges(heights, shapes);
+            RaiseBridges(heights, carved, shapes);
             return heights;
         }
 
@@ -198,81 +190,14 @@ namespace HyperRTS.Editor.Maps.Heights
             return RimDrop + (1f - RimDrop) * wall;
         }
 
-        /// <summary>Fills the banks under a deck to just below it and ramps the ground up to its ends.</summary>
-        private static void RaiseBridges(MapHeights heights, MapShapes shapes)
+        private static void RaiseBridges(MapHeights heights, MapHeights carved, MapShapes shapes)
         {
             foreach (var crossing in shapes.Crossings)
             {
                 if (crossing.IsBridge)
                 {
-                    RaiseBridge(heights, shapes, crossing);
+                    new MapEmbankment(heights, crossing).Raise(heights, carved);
                 }
-            }
-        }
-
-        private static void RaiseBridge(MapHeights heights, MapShapes shapes, MapCrossing crossing)
-        {
-            var half = crossing.Span * 0.5f;
-            var landed = half + crossing.Landing;
-            var level = crossing.Height - LandingDrop;
-            var ahead = Ramp.Measure(heights, crossing, 1f);
-            var behind = Ramp.Measure(heights, crossing, -1f);
-            var reach = landed + Mathf.Max(ahead.Length, behind.Length) + crossing.Width + MaxCutEdge;
-            heights.ForEachNear(crossing.Position, reach, (x, z, _) =>
-            {
-                var p = heights.Position(x, z);
-                var local = crossing.Local(p);
-                var ramp = local.y < 0f ? behind : ahead;
-                var along = Mathf.Abs(local.y);
-                var underDeck = along <= half;
-                if (along > landed + ramp.Length || (underDeck && shapes.WaterEdgeDistance(p) < 1f))
-                {
-                    return;
-                }
-
-                var h = heights[x, z];
-                var target = underDeck ? crossing.Height - AbutmentDrop : ramp.Height(level, h, along - landed);
-                // A deep cut or a high bank eases out wider, so the ramp's sides stay drivable.
-                var edge = along <= landed ? RampEdge : Mathf.Clamp(Mathf.Abs(h - target) * CutEdge, RampEdge, MaxCutEdge);
-                var side = Mathf.Abs(local.x) - (crossing.Width * 0.5f + 1f);
-                heights[x, z] = Mathf.Lerp(h, target, 1f - MapGeometry.Smooth(side / edge));
-            });
-        }
-
-        /// <summary>
-        /// The ground's climb from the level landing past one end of a deck: as long as it takes to meet the ground
-        /// at an easy grade.
-        /// </summary>
-        private readonly struct Ramp
-        {
-            public readonly float Length;
-            private readonly float _top;
-
-            private Ramp(float length, float top)
-            {
-                Length = length;
-                _top = top;
-            }
-
-            public static Ramp Measure(MapHeights heights, MapCrossing crossing, float sign)
-            {
-                var end = crossing.Position + crossing.Across * (sign * (crossing.Span * 0.5f + crossing.Landing));
-                var length = RampLength;
-                var top = heights.Height(end + crossing.Across * (sign * length));
-                while (length < MaxRampLength && Mathf.Abs(top - crossing.Height) > RampGrade * length)
-                {
-                    length += RampStep;
-                    top = heights.Height(end + crossing.Across * (sign * length));
-                }
-
-                return new Ramp(length, top);
-            }
-
-            /// <summary>The height <paramref name="along"/> metres up it, meeting the ground <paramref name="h"/> at its top.</summary>
-            public float Height(float deck, float h, float along)
-            {
-                var t = Mathf.Clamp01(along / Length);
-                return Mathf.Lerp(deck, Mathf.Lerp(_top, h, t), MapGeometry.Smooth(t));
             }
         }
     }

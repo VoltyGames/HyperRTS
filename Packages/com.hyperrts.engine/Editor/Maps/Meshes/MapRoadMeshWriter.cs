@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Maps.Meshes
                 foreach (var road in group)
                 {
                     var (start, end) = MapRoadFades.For(road, roads);
-                    data.AddRibbon(road, start, end, p => shapes.WaterEdgeDistance(p) < 0f);
+                    data.AddRibbon(road, start, end, p => shapes.WaterEdgeDistance(p) < 0f || shapes.UnderSpan(p));
                 }
 
                 if (data.Count > 0)

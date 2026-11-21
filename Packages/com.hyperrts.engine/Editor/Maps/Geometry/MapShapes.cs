@@ -102,6 +102,9 @@ namespace HyperRTS.Editor.Maps.Geometry
             return best;
         }
 
+        /// <summary>Whether a point lies under a bridge's span, where the ground keeps the river's banks.</summary>
+        public bool UnderSpan(Vector2 point) => Crossings.Exists(c => c.SpanOpening(point) > 0f);
+
         /// <summary>Distance to the nearest road's edge (negative on the road), or infinity far from roads.</summary>
         public float RoadEdgeDistance(Vector2 point)
         {
@@ -214,18 +217,21 @@ namespace HyperRTS.Editor.Maps.Geometry
                 return;
             }
 
-            var deck = decks.Find(spec.prop);
-            Crossings.Add(new MapCrossing
-            {
-                Kind = spec.kind,
-                Prop = spec.prop,
-                Position = position,
-                Across = across,
-                Width = deck.Size.x,
-                Span = deck.Size.y,
-                Landing = deck.Landing,
-                Height = water + DeckClearance,
-            });
+            Crossings.Add(Bridge(spec, position, across, decks.Find(spec.prop), water));
         }
+
+        private static MapCrossing Bridge(MapCrossingSpec spec, Vector2 position, Vector2 across, MapDeck deck,
+            float water) => new()
+        {
+            Kind = spec.kind,
+            Prop = spec.prop,
+            Position = position,
+            Across = across,
+            Width = deck.Size.x,
+            Span = deck.Size.y,
+            Landing = deck.Landing,
+            ClearSpan = deck.ClearSpan,
+            Height = water + DeckClearance,
+        };
     }
 }

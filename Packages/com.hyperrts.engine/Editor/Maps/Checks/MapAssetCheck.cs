@@ -205,6 +205,9 @@ namespace HyperRTS.Editor.Maps.Checks
                 Optional(key, entry => NotBesideRoad(entry, name));
             }
 
+            Optional(kit.doorDecal, key =>
+                Require(kit.doorDecalSize > 0f,
+                    $"{name}: doorDecalSize {kit.doorDecalSize} must be above 0 for doorDecal '{key}'."));
             Optional(kit.streetPipe, key => StreetPipe(kit, key, name));
 
             Optional(kit.streetPole, key =>

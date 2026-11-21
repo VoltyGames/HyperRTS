@@ -132,9 +132,21 @@ namespace HyperRTS.Editor.Maps.Checks
                 return;
             }
 
-            var length = MapDeck.Read(entry.prefab).Size.y;
-            Require(length >= river.width + BridgeOverhang,
-                $"{name}: bridge '{crossing.prop}' ({length} m deck) is too short for a {river.width} m river.");
+            BridgeDeck(river, entry, name);
+        }
+
+        private void BridgeDeck(MapRiverSpec river, MapProp entry, string name)
+        {
+            var deck = MapDeck.Read(entry);
+            if (!deck.HasAbutments)
+            {
+                Issues.Error($"{name}: bridge '{entry.key}' needs a clearSpan above 0 and under its {deck.Size.y} m deck.",
+                    Feature);
+                return;
+            }
+
+            Require(deck.ClearSpan >= river.width + BridgeOverhang,
+                $"{name}: bridge '{entry.key}' ({deck.ClearSpan} m between its abutments) is too short for a {river.width} m river.");
         }
 
         /// <summary>

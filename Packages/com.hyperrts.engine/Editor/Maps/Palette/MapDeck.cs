@@ -13,22 +13,30 @@ namespace HyperRTS.Editor.Maps.Palette
         /// <summary>How far the building footprint runs over the approach slabs, past each end of the deck.</summary>
         public readonly float Landing;
 
-        private MapDeck(Vector2 size, float landing)
+        /// <summary>Length between the abutment faces, from the prop's <see cref="MapProp.clearSpan"/>.</summary>
+        public readonly float ClearSpan;
+
+        private MapDeck(Vector2 size, float landing, float clearSpan)
         {
             Size = size;
             Landing = landing;
+            ClearSpan = clearSpan;
         }
 
-        /// <summary>Reads a bridge prefab on the main thread.</summary>
-        public static MapDeck Read(GameObject prefab)
+        /// <summary>Whether the abutments stand inside the deck, as the height shaper needs.</summary>
+        public bool HasAbutments => ClearSpan > 0f && ClearSpan < Size.y;
+
+        /// <summary>Reads a bridge prop's prefab on the main thread.</summary>
+        public static MapDeck Read(MapProp entry)
         {
+            var prefab = entry.prefab;
             var size = prefab.GetComponent<NavAreaAuthoring>().size;
             if (!prefab.TryGetComponent<BuildingAuthoring>(out var building))
             {
-                return new MapDeck(size, 0f);
+                return new MapDeck(size, 0f, entry.clearSpan);
             }
 
-            return new MapDeck(size, Mathf.Max(0f, (building.footprint.y - size.y) * 0.5f));
+            return new MapDeck(size, Mathf.Max(0f, (building.footprint.y - size.y) * 0.5f), entry.clearSpan);
         }
     }
 }

@@ -63,6 +63,7 @@ namespace HyperRTS.Editor.Maps.Library
             {
                 var kit = _library.Get<MapSettlementKit>(key, null);
                 Tree(kit.orchardTree, File<MapSettlementKit>(key));
+                Add(_climate.decals, kit.doorDecal, File<MapSettlementKit>(key));
             }
 
             foreach (var key in _library.Keys<MapProp>())

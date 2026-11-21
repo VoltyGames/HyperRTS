@@ -66,6 +66,13 @@ namespace HyperRTS.Editor.Maps.Kits
         [Tooltip("Width of a worn path (metres).")]
         public float pathWidth = 1.2f;
 
+        [Tooltip("Climate decal laid at each house door, for ground worn by feet; empty for none.")]
+        [MapKey(typeof(MapClimateDecal), Optional = true)]
+        public string doorDecal;
+
+        [Tooltip("Diameter of the door decal (metres); required above 0 with a door decal.")]
+        public float doorDecalSize;
+
         [Tooltip("Share of the depth behind the yard that is vegetable garden; the rest is the back.")]
         [Range(0f, 1f)]
         public float gardenShare = 0.55f;

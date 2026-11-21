@@ -79,6 +79,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             plot.Local(house.Position, out var houseU, out _);
             var gate = _fences.Build(plot, houseU) ?? plot.Point(houseU, 0f);
             _paths.Wear(plot, house, gate, _spots, seed);
+            _paths.MarkDoor(plot, house);
         }
 
         private void Outbuildings(MapPlot plot)
