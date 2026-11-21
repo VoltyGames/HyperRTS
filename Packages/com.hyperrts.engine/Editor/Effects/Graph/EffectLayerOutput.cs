@@ -219,16 +219,16 @@ namespace HyperRTS.Editor.Effects.Graph
 
             var orient = _graph.Block(output, "Orient");
             _graph.Set(orient, "mode", mode);
-            if (mode == "FixedAxis")
+            switch (mode)
             {
-                _graph.Slot(orient, "Up", Vector3.up);
-            }
-
-            if (mode == "Advanced")
-            {
-                _graph.Set(orient, "axes", "ZY");
-                _graph.Slot(orient, "AxisZ", Vector3.up);
-                _graph.Slot(orient, "AxisY", Vector3.forward);
+                case "FixedAxis":
+                    _graph.Slot(orient, "Up", Vector3.up);
+                    break;
+                case "Advanced":
+                    _graph.Set(orient, "axes", "ZY");
+                    _graph.Slot(orient, "AxisZ", Vector3.up);
+                    _graph.Slot(orient, "AxisY", Vector3.forward);
+                    break;
             }
         }
 

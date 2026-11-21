@@ -45,7 +45,8 @@ Quads face the camera, so smoke stays round as the camera turns: `EffectLayer.Or
 mode per kind. Sparks turn along their velocity, an `upright` layer turns only about world up, a `flat` layer lies
 on the ground facing up, as a blast's ring does, and the rest face the camera plane. A flat `puff` is drawn as a URP
 decal projected down onto the ground (`EffectLayer.Projected`), so it follows the terrain and takes its light; it
-needs the renderer's Decal feature. Other flat kinds stay quads. A new kind needs its mode there; `EffectGraphBuilderTests` fails until it has one.
+needs the renderer's Decal feature. Other flat kinds stay quads. A new kind needs its mode there;
+`EffectGraphBuilderTests` fails until it has one.
 
 `distort` layers refract the opaque texture through `HyperRTS/EffectDistort`, which needs the camera's opaque and depth
 textures. `sixway` and `ring` layers are lit through `HyperRTS/EffectSixWay` and draw their sheet as baked: soft edges

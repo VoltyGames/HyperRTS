@@ -53,10 +53,11 @@ namespace HyperRTS.Editor.Tests.Effects
         }
 
         [Test]
-        public void AFlatQuad_LiesOnTheGround()
+        public void AFlatPuff_IsADecalOnTheGround()
         {
-            Assert.AreEqual("Advanced", new EffectLayer { kind = EffectLayerKind.Puff, flat = true }.OrientMode);
-            Assert.IsTrue(new EffectLayer { kind = EffectLayerKind.Puff, flat = true }.Projected, "a flat puff is a decal");
+            var puff = new EffectLayer { kind = EffectLayerKind.Puff, flat = true };
+            Assert.AreEqual("Advanced", puff.OrientMode);
+            Assert.IsTrue(puff.Projected, "a flat puff is a decal");
             Assert.IsFalse(new EffectLayer { kind = EffectLayerKind.Distort, flat = true }.Projected, "a flat distortion stays a quad");
         }
     }
