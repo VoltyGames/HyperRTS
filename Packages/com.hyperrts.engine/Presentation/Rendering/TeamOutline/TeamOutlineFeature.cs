@@ -25,6 +25,10 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
         [Tooltip("How opaque the line is, 0 to 1.")]
         public float opacity = 0.8f;
 
+        [Tooltip("Widest gap inside a building, in pixels on a 1080-pixel-high screen, that its outline bridges, so " +
+                 "lattice masts, fences and rails read as one shape. 0 to 24.")]
+        public float buildingGap = 12f;
+
         private Material _material;
         private TeamOutlinePass _pass;
 
@@ -36,11 +40,16 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
                 return $"Team outline width {width} must be 0.5 to 4 pixels.";
             }
 
-            return opacity is < 0f or > 1f ? $"Team outline opacity {opacity} must be 0 to 1." : string.Empty;
+            if (opacity is < 0f or > 1f)
+            {
+                return $"Team outline opacity {opacity} must be 0 to 1.";
+            }
+
+            return buildingGap is < 0f or > 24f ? $"Team outline building gap {buildingGap} must be 0 to 24 pixels." : string.Empty;
         }
 
-        /// <summary>The line's width in pixels on a screen <paramref name="screenHeight"/> pixels high.</summary>
-        public float WidthAt(int screenHeight) => width * screenHeight / ReferenceHeight;
+        /// <summary>Converts pixels on a 1080-pixel-high screen to pixels on one <paramref name="screenHeight"/> high.</summary>
+        public static float Scaled(float pixels, int screenHeight) => pixels * screenHeight / ReferenceHeight;
 
         public override void Create()
         {
@@ -57,7 +66,8 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
             }
 
             var camera = renderingData.cameraData.camera;
-            _pass.Setup(WidthAt(camera.pixelHeight), opacity, new Vector2Int(camera.pixelWidth, camera.pixelHeight));
+            var screen = new Vector2Int(camera.pixelWidth, camera.pixelHeight);
+            _pass.Setup(Scaled(width, screen.y), opacity, Scaled(buildingGap, screen.y), screen);
             renderer.EnqueuePass(_pass);
         }
 

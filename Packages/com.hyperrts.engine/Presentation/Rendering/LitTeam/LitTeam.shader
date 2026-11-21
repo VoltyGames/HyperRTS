@@ -284,6 +284,7 @@ Shader "HyperRTS/LitTeam"
             #pragma fragment TeamOutlineFragment
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #define SILHOUETTE_SLACK_ON
+            #define BUILDING_OUTLINE_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"

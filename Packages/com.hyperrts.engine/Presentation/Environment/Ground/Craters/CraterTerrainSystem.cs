@@ -111,7 +111,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
             foreach (var (obstacle, place, entity) in SystemAPI.Query<RefRO<NavObstacle>, RefRO<LocalToWorld>>()
                          .WithAll<BuildingTag>().WithNone<ConstructionProgress, FogHidden>().WithEntityAccess())
             {
-                if (obstacle.ValueRO.Open)
+                if (obstacle.ValueRO.Open || IsBridge(entity))
                 {
                     continue;
                 }
@@ -122,6 +122,10 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
 
             return _wanted;
         }
+
+        // A bridge spans the ground under it, which the map shaped for it; levelling to its deck would bury the river.
+        private bool IsBridge(Entity entity) =>
+            SystemAPI.HasComponent<NavArea>(entity) && SystemAPI.GetComponent<NavArea>(entity).Kind == NavAreaKind.Deck;
 
         private void Release()
         {

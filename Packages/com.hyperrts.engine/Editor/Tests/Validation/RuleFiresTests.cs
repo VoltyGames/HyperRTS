@@ -90,6 +90,36 @@ namespace HyperRTS.Editor.Tests.Validation
 
             AddMarker(unit, Track(new Material(Shader.Find("Universal Render Pipeline/Lit"))));
             Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("no _TeamColor material")));
+
+            var prop = Track(EntityTemplates.Unit("Prop")).GetComponent<UnitAuthoring>();
+            prop.owner = 0;
+            Assert.IsEmpty(MarkerWarnings(prop), "a neutral entity nobody can capture or garrison never takes an owner");
+        }
+
+        // A base prefab only exists to be derived from; its variant is placed, with the base's markers and its own.
+        [Test]
+        public void TeamColorRule_SkipsBasePrefabs_CountsInheritedMarkers()
+        {
+            const string folder = "Assets/_TeamMarkerTests";
+            AssetDatabase.CreateFolder("Assets", "_TeamMarkerTests");
+            try
+            {
+                var template = Track(EntityTemplates.Unit());
+                AddMarker(template.GetComponent<UnitAuthoring>(), template.GetComponentInChildren<MeshRenderer>().sharedMaterial);
+                var basePrefab = PrefabUtility.SaveAsPrefabAsset(template, folder + "/Base.prefab");
+                var instance = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab);
+                var variant = PrefabUtility.SaveAsPrefabAsset(instance, folder + "/Variant.prefab");
+                UnityEngine.Object.DestroyImmediate(instance);
+                var prefabs = new PrefabSet(new[] { basePrefab, variant });
+
+                Assert.IsEmpty(MarkerWarnings(basePrefab.GetComponent<UnitAuthoring>(), prefabs));
+                Assert.IsTrue(MarkerWarnings(variant.GetComponent<UnitAuthoring>(), prefabs)
+                    .Any(message => message.Contains("Only 1 team markers")));
+            }
+            finally
+            {
+                AssetDatabase.DeleteAsset(folder);
+            }
         }
 
         private static void AddMarker(UnitAuthoring unit, Material material)
@@ -99,10 +129,10 @@ namespace HyperRTS.Editor.Tests.Validation
             marker.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
-        private static string[] MarkerWarnings(UnitAuthoring unit)
+        private static string[] MarkerWarnings(UnitAuthoring unit, PrefabSet prefabs = null)
         {
             var issues = new ValidationIssues();
-            TeamColorRule.CheckMarkers(unit, 2, issues);
+            TeamColorRule.CheckMarkers(unit, 2, prefabs ?? new PrefabSet(new[] { unit.gameObject }), issues);
             return issues.Select(issue => issue.Message).ToArray();
         }
 

@@ -86,7 +86,8 @@ half4 SilhouetteFragment(SilhouetteVaryings input) : SV_Target
     return half4(_TeamColor.rgb, lerp(SILHOUETTE_FILL, 1.0, rim));
 }
 
-// The owner's colour at full alpha, which the outline reads as "a unit or building is here"; neutral ones draw none.
+// The owner's colour, at alpha 1 for a unit and 0.75 for a building, whose outline bridges its own gaps; neutral
+// entities draw none.
 half4 TeamOutlineFragment(SilhouetteVaryings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
@@ -96,7 +97,11 @@ half4 TeamOutlineFragment(SilhouetteVaryings input) : SV_Target
     clip(_TeamColor.a - 0.001);
     // Without silhouettes the stencil no longer marks hidden parts, so footage loses the outlines with them.
     clip(0.5 - _HyperRTSHideSilhouettes);
+#ifdef BUILDING_OUTLINE_ON
+    return half4(_TeamColor.rgb, 0.75);
+#else
     return half4(_TeamColor.rgb, 1.0);
+#endif
 }
 
 #endif

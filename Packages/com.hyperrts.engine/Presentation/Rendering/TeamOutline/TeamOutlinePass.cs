@@ -15,6 +15,7 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
         private const int HiddenPass = 0;
         private const int OutlinePass = 1;
         private const int MaxReach = 8;
+        private const int MaxGap = 48;
 
         private static readonly int OutlineId = Shader.PropertyToID("_TeamOutline");
         private static readonly int PixelId = Shader.PropertyToID("_TeamOutlinePixel");
@@ -33,10 +34,12 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
             renderPassEvent = RenderPassEvent.AfterRendering;
         }
 
-        public void Setup(float width, float opacity, Vector2Int screen)
+        /// <summary>Width and building gap in this screen's pixels.</summary>
+        public void Setup(float width, float opacity, float buildingGap, Vector2Int screen)
         {
             var reach = Mathf.Min(Mathf.CeilToInt(width), MaxReach);
-            _material.SetVector(OutlineId, new Vector4(width, reach, opacity, 0f));
+            var gap = Mathf.Min(Mathf.RoundToInt(buildingGap), MaxGap);
+            _material.SetVector(OutlineId, new Vector4(width, reach, opacity, gap));
             _material.SetVector(PixelId, new Vector4(1f / screen.x, 1f / screen.y, 0f, 0f));
         }
 

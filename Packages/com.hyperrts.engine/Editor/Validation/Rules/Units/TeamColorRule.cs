@@ -1,16 +1,20 @@
 using System.Linq;
 using HyperRTS.Editor.Validation.Issues;
+using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Capture;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Transport;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Validation.Rules.Units
 {
     /// <summary>
     /// Owner colour reaches a unit or building only through a material with <c>_TeamColor</c> (HyperRTS/LitTeam), and a
-    /// vehicle or building carries enough team markers for its owner to show on the model.
+    /// vehicle or building a player can own carries enough team markers for its owner to show on the model.
     /// </summary>
     public sealed class TeamColorRule : AuthoringRule<GameEntityAuthoring>
     {
@@ -33,14 +37,20 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                 return;
             }
 
-            if (CarriesMarkers(entity) && TeamColorSettings.TryGetMinMarkers(out var minimum))
+            if (TeamColorSettings.TryGetMinMarkers(out var minimum))
             {
-                CheckMarkers(entity, minimum, issues);
+                CheckMarkers(entity, minimum, PrefabSet.InProject(), issues);
             }
         }
 
-        internal static void CheckMarkers(GameEntityAuthoring entity, int minimum, ValidationIssues issues)
+        /// <summary>Base prefabs in <paramref name="prefabs"/> are skipped: their variants are placed, and inherit their markers.</summary>
+        internal static void CheckMarkers(GameEntityAuthoring entity, int minimum, PrefabSet prefabs, ValidationIssues issues)
         {
+            if (!CarriesMarkers(entity) || prefabs.IsBase(entity.gameObject))
+            {
+                return;
+            }
+
             var markers = entity.GetComponentsInChildren<TeamMarkerAuthoring>(true);
             foreach (var marker in markers.Where(marker => !Painted(marker)))
             {
@@ -54,16 +64,32 @@ namespace HyperRTS.Editor.Validation.Rules.Units
             }
         }
 
-        // Vehicles and aircraft (units that aren't squads) and buildings. A building painted in a team strip, as map
-        // buildings are, shows its holder through the strip instead.
+        // Vehicles and aircraft (units that aren't squads) and buildings a player can own. A building painted in a team
+        // strip, as map buildings are, shows its holder through the strip instead.
         private static bool CarriesMarkers(GameEntityAuthoring entity)
         {
+            if (!TakesAnOwner(entity))
+            {
+                return false;
+            }
+
             if (entity is UnitAuthoring)
             {
                 return !entity.TryGetComponent<SquadAuthoring>(out _);
             }
 
             return entity is BuildingAuthoring && !entity.TryGetComponent<TeamStripAuthoring>(out _);
+        }
+
+        // A neutral entity takes an owner only by capture or by a garrison moving in.
+        private static bool TakesAnOwner(GameEntityAuthoring entity)
+        {
+            if (entity.owner != Owner.Neutral || entity.TryGetComponent<CapturableAuthoring>(out _))
+            {
+                return true;
+            }
+
+            return entity.TryGetComponent<ContainerAuthoring>(out var container) && container.neutralGarrison;
         }
 
         private static bool Painted(TeamMarkerAuthoring marker) =>

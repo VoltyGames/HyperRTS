@@ -96,7 +96,8 @@ a trench, 1 otherwise. The simulation's ground never changes.
 
 **Buildings level the drawn ground.** The same pass, `CraterHeight.shader`, levels the heights under every finished, seen
 building that has a closed `NavObstacle` (neutral ones too; under construction or fog-hidden ones wait), so uneven ground
-never covers the apron of a model. Each building is a `BuildingLevel`: its rotated rectangle and base height, uploaded as a
+never covers the apron of a model. A bridge, a building with a Deck `NavArea`, is left alone: it spans the ground the map
+shaped under it. Each building is a `BuildingLevel`: its rotated rectangle and base height, uploaded as a
 structured buffer. A texel eases to the base, `BuildingLevel.Drop` (3 cm) below it, with weight 1 inside the footprint
 and a smoothstep to 0 over `BuildingLevel.Skirt` (2.5 m), then the crater depth comes off. When a building appears or changes,
 `TrampleStamps.AddFill` stamps its footprint and skirt into the tracks map once, with Min and Max passes that put alpha back
