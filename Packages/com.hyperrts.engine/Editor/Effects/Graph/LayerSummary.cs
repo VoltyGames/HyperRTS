@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Effects.Graph
                 $"  origin={Text(layer.origin)} shape={layer.shape} radius={Text(layer.radius)} rim={Bool(layer.rim)} spread={Text(layer.spread)} axis={Text(layer.axis)} shapeScale={Text(layer.shapeScale)}",
                 $"  speed={Text(layer.speed)} gravity={Text(layer.gravity)} drag={Text(layer.drag)} dragBySpeed={Bool(layer.dragBySpeed)} wind={Text(layer.wind)} drift={Text(layer.drift)} orbit={Text(layer.orbit)}",
                 $"  noise.strength={Text(layer.noise.strength)} noise.frequency={Text(layer.noise.frequency)} noise.scroll={Text(layer.noise.scroll)}",
-                $"  texture={Name(layer.texture)} motionTexture={Name(layer.motionTexture)} softness={Text(layer.softness)} upright={Bool(layer.upright)} flat={Bool(layer.flat)} pivot={Text(layer.pivot)}",
+                $"  texture={Name(layer.texture)} motionTexture={Name(layer.motionTexture)} softness={Text(layer.softness)} orient={layer.orient} pivot={Text(layer.pivot)}",
                 Flipbook(),
                 $"  sizeOverLife={Text(layer.sizeOverLife)}",
                 $"  alphaOverLife={Text(layer.alphaOverLife)}",

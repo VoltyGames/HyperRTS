@@ -41,9 +41,10 @@ list of layers, each one system of a kind (`glow`, `puff`, `sixway`, `ring`, `de
 `source`) with plain fields for bursts or rates, ranges, shape, forces, curves over life, textures and meshes. Every
 layer gets placement, `Density` and fog of war. Edit the recipe, never the graph.
 
-Quads face the camera, so smoke stays round as the camera turns: `EffectLayer.OrientMode` picks the VFX Orient
-mode per kind. Sparks turn along their velocity, an `upright` layer turns only about world up, a `flat` layer lies
-on the ground facing up, as a blast's ring does, and the rest face the camera plane. A flat `puff` is drawn as a URP
+Quads face the camera, so smoke stays round as the camera turns: `EffectLayer.OrientMode` picks the VFX Orient mode
+from the kind and the layer's `orient`. Sparks turn along their velocity, an `Upright` layer turns only about
+world up, a `Flat` layer lies on the ground facing up, as a blast's ring does, and the rest face the camera plane.
+A flat `puff` is drawn as a URP
 decal projected down onto the ground (`EffectLayer.Projected`), so it follows the terrain and takes its light; it
 needs the renderer's Decal feature. Other flat kinds stay quads. A new kind needs its mode there;
 `EffectGraphBuilderTests` fails until it has one.

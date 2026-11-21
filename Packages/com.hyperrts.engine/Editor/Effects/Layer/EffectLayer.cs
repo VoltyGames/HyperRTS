@@ -51,10 +51,10 @@ namespace HyperRTS.Editor.Effects.Layer
 
         public Texture2D texture;
         public float softness;
-        public bool upright;
 
-        [Tooltip("Lies on the ground facing up, as a blast's ring does, instead of facing the camera. A flat puff is projected onto the ground, so it follows the terrain and takes its light.")]
-        public bool flat;
+        [Tooltip("Which way the quads face. A flat puff is projected onto the ground, so it follows the terrain and takes its light.")]
+        public EffectLayerOrient orient;
+
         public float pivot;
         public Flipbook flipbook;
 
@@ -93,13 +93,16 @@ namespace HyperRTS.Editor.Effects.Layer
         {
             EffectLayerKind.Debris or EffectLayerKind.Source => null,
             EffectLayerKind.Spark => "AlongVelocity",
-            _ when upright => "FixedAxis",
-            _ when flat => "Advanced",
-            _ => "FaceCameraPlane",
+            _ => orient switch
+            {
+                EffectLayerOrient.Upright => "FixedAxis",
+                EffectLayerOrient.Flat => "Advanced",
+                _ => "FaceCameraPlane",
+            },
         };
 
         /// <summary>A flat puff, drawn as a decal projected down onto the ground rather than as a quad.</summary>
-        public bool Projected => kind == EffectLayerKind.Puff && flat;
+        public bool Projected => kind == EffectLayerKind.Puff && orient == EffectLayerOrient.Flat;
 
         /// <summary>Emits by rate while a stream plays, rather than on the Burst event.</summary>
         public bool Streams => !HasParent && HasRate;
@@ -153,11 +156,6 @@ namespace HyperRTS.Editor.Effects.Layer
 
             AddSpawnProblems(problems);
             AddAssetProblems(problems);
-            if (upright && flat)
-            {
-                problems.Add($"layer '{name}' is both upright and flat; pick one.");
-            }
-
             if (flipbook.random && flipbook.randomStart)
             {
                 problems.Add($"layer '{name}' flipbook is both random and randomStart; pick one.");

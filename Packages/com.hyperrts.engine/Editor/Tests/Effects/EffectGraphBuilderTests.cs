@@ -49,16 +49,16 @@ namespace HyperRTS.Editor.Tests.Effects
         [Test]
         public void AnUprightQuad_TurnsAboutWorldUp()
         {
-            Assert.AreEqual("FixedAxis", new EffectLayer { kind = EffectLayerKind.SixWay, upright = true }.OrientMode);
+            Assert.AreEqual("FixedAxis", new EffectLayer { kind = EffectLayerKind.SixWay, orient = EffectLayerOrient.Upright }.OrientMode);
         }
 
         [Test]
         public void AFlatPuff_IsADecalOnTheGround()
         {
-            var puff = new EffectLayer { kind = EffectLayerKind.Puff, flat = true };
+            var puff = new EffectLayer { kind = EffectLayerKind.Puff, orient = EffectLayerOrient.Flat };
             Assert.AreEqual("Advanced", puff.OrientMode);
             Assert.IsTrue(puff.Projected, "a flat puff is a decal");
-            Assert.IsFalse(new EffectLayer { kind = EffectLayerKind.Distort, flat = true }.Projected, "a flat distortion stays a quad");
+            Assert.IsFalse(new EffectLayer { kind = EffectLayerKind.Distort, orient = EffectLayerOrient.Flat }.Projected, "a flat distortion stays a quad");
         }
     }
 }
