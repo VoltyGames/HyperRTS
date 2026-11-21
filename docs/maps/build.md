@@ -57,7 +57,9 @@ world-anchored lattice, so plants never swim as the camera moves, and draws them
 on the `HyperRTS/Foliage` shader with `_GRASS_INSTANCES`, so wind and trampling work as on any Foliage plant. Grass and row crops
 share one scatter host: see [row crops](../presentation/vegetation.md#row-crops).
 
-**Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by texel height. Layers are hex-tiled and randomly
+**Terrain material.** `HyperRTS/Terrain` blends up to 16 layers by painted weight plus texel height, over the
+climate's `heightBlendDepth`: taller texels push a border about within its band, and a layer's faint outer weight
+never wins, so edges never follow the alphamap's texels. Layers are hex-tiled and randomly
 turned (`antiTiling`) to hide repeats, layers with `followsRows` turn with the row map, and a `plants` setting thins
 scattered plants where a layer is painted. Close up it adds a micro-texture grain, a sideways-projected slope layer
 and parallax; layer relief softens with distance so the ground reads by colour from the match camera. Its Meta pass

@@ -84,9 +84,9 @@ namespace HyperRTS.Editor.Maps.Climate
         public float slopeStart = 22f;
         public float slopeFull = 34f;
 
-        [Tooltip("Texel height difference (0..1) over which one layer takes over from another where they mix; smaller interlocks borders more.")]
+        [Tooltip("Difference in painted weight plus texel height (0..1) over which one layer takes over from another where they mix; smaller makes borders crisper and interlock more.")]
         [Range(0.02f, 0.5f)]
-        public float heightBlendDepth = 0.06f;
+        public float heightBlendDepth = 0.15f;
 
         public MapClimateGroundTint groundTint = new();
 

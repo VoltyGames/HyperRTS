@@ -1,5 +1,5 @@
 // HyperRTS/Terrain layer blending: a running softmax (weights normalised as layers are added) over
-// log(weight) + height / depth, so the tallest texels win where layers mix.
+// (weight + height) / depth, so the tallest texels win where layers mix.
 #ifndef HYPERRTS_TERRAIN_LAYERS_INCLUDED
 #define HYPERRTS_TERRAIN_LAYERS_INCLUDED
 
@@ -72,8 +72,9 @@ void AddLayer(inout TerrainBlend blend, uint layer, half weight, TerrainPixel pi
     half4 albedo = WithSides(LayerAlbedo(hex, st, dx, dy, pixel.far),
         TEXTURE2D_ARRAY_ARGS(_AlbedoArray, sampler_AlbedoArray), sides);
 
-    // Share = weight x e^(height / depth): equal heights keep the painted blend, taller texels win where layers mix.
-    float score = log(weight) + params.heightWeight * (albedo.a - 0.5) / _HeightBlendDepth;
+    // Weight in linear terms, not log: under log a 1/255 tail weight beat a full one at any texel 0.33 taller, so
+    // edges cut at the alphamap's outermost texels. Now height only moves the cut within the band.
+    float score = (weight + params.heightWeight * (albedo.a - 0.5)) / _HeightBlendDepth;
     float maxScore = max(blend.maxScore, score);
     FadeBlend(blend, exp(blend.maxScore - maxScore));
     blend.maxScore = maxScore;

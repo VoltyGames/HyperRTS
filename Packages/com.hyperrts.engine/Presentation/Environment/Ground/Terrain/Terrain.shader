@@ -18,7 +18,7 @@ Shader "HyperRTS/Terrain"
         [NoScaleOffset] _RowMap ("Row Direction (RG)", 2D) = "grey" {}
         [NoScaleOffset] _NoiseMap ("Noise", 2D) = "grey" {}
         [NoScaleOffset] _MicroMap ("Micro Detail", 2D) = "bump" {}
-        _HeightBlendDepth ("Height Blend Depth", Range(0.02, 0.5)) = 0.06
+        _HeightBlendDepth ("Height Blend Depth", Range(0.02, 0.5)) = 0.15
         _ControlWarp ("Layer Edge Warp (alphamap texels)", Range(0, 2)) = 0.8
         _ControlWarpSize ("Layer Edge Warp Noise Size (m)", Float) = 3
         _ReliefStart ("Relief Full Until (m)", Float) = 20
