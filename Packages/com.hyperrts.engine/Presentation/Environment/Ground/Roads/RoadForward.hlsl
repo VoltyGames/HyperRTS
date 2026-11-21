@@ -168,6 +168,9 @@ InputData Inputs(Varyings input, half3x3 tangentToWorld, half3 normalTS)
     return data;
 }
 
+// Below one step of an 8-bit target, a road pixel blends to nothing.
+#define ROAD_MIN_COVERAGE (1.0 / 255.0)
+
 half4 Frag(Varyings input) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(input);
@@ -175,6 +178,9 @@ half4 Frag(Varyings input) : SV_Target
     half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _Tint;
     half4 mask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
     float4 tracks = SampleTracks(input.positionWS.xz);
+    // Skip the shading where the road fades out entirely: its edges, ends and building yards.
+    half coverage = Coverage(input, albedo.a, tracks);
+    clip(coverage - ROAD_MIN_COVERAGE);
 
     TerrainSurface surface = (TerrainSurface)0;
     surface.albedo = RoadAlbedo(albedo.rgb, input);
@@ -192,7 +198,7 @@ half4 Frag(Varyings input) : SV_Target
         ApplyDecalToSurfaceData(input.positionCS, surfaceData, inputData, isSpecularSetup);
     #endif
     half4 color = GroundFragmentPBR(inputData, surfaceData);
-    return half4(color.rgb, Coverage(input, albedo.a, tracks));
+    return half4(color.rgb, coverage);
 }
 
 #endif
