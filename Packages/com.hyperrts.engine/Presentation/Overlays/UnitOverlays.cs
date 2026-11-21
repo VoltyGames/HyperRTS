@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Overlays.Bars;
 using HyperRTS.Presentation.Overlays.Markers;
+using HyperRTS.Presentation.Overlays.Pips;
 using HyperRTS.Simulation.Common.Infantry;
 using System;
 using HyperRTS.Presentation.Common;
@@ -22,11 +23,14 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Ground markers under selected and hovered entities, in relation colours, and health bars over the ones the
-    /// visibility setting picks. Both read the drawn pose, so they stay on moving models.
+    /// Ground markers under selected and hovered entities, owner-coloured team rings and small-unit pips on visible
+    /// mobile units, and health bars over the ones the visibility setting picks. All read the drawn pose.
     /// </summary>
     public sealed class UnitOverlays : IDisposable
     {
+        // The team rings draw a place before the selection and hover markers, which read over them.
+        private const int RingsUnderMarkers = -1;
+
         private readonly LiveQuery _living = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Health>(),
             ComponentType.ReadOnly<Owner>(),
@@ -38,22 +42,38 @@ namespace HyperRTS.Presentation.Overlays
         private readonly LiveSingleton<SquadRules> _squadRules = new();
 
         private readonly GroundMarkers _markers;
+        private readonly GroundMarkers _teamRings;
+        private readonly UnitPips _pips;
         private readonly HealthBars _bars;
         private readonly SelectionFades _fades = new();
 
-        public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial)
+        public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial,
+            Material pipMaterial)
         {
-            _markers = new GroundMarkers(grid, markerMaterial);
+            _markers = new GroundMarkers(grid, markerMaterial, 0);
+            _teamRings = new GroundMarkers(grid, markerMaterial, RingsUnderMarkers);
+            _pips = new UnitPips(billboard, pipMaterial);
             _bars = new HealthBars(billboard, barMaterial);
         }
 
-        public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, float now)
+        public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, bool teamRingsShown,
+            in ReferencePixels pixels, float now)
         {
             var entityManager = view.EntityManager;
             var handles = new UnitHandles(entityManager);
             _hovered.TryGet(entityManager, out var hovered);
             _squadRules.TryGet(entityManager, out var squadRules);
-            var pass = new GatherPass(view, style, visibility, now, hovered.Value, squadRules);
+            var pass = new GatherPass
+            {
+                View = view,
+                Style = style,
+                Visibility = visibility,
+                TeamRingsShown = teamRingsShown,
+                Pixels = pixels,
+                Now = now,
+                Hovered = hovered.Value,
+                Rules = squadRules,
+            };
             using var chunks = _living.In(entityManager).ToArchetypeChunkArray(Allocator.Temp);
             foreach (var chunk in chunks)
             {
@@ -78,41 +98,66 @@ namespace HyperRTS.Presentation.Overlays
                 }
 
                 var health = healths[i];
-                var focus = new OverlayFocus(handles.IsSelected(chunk, i), entities[i] == pass.Hovered,
-                    health.Current < health.Max);
-                var showsBar = focus.ShowsBar(pass.Visibility);
-                if (!focus.ShowsMarker && !showsBar)
+                GatherUnit(pass, new SeenUnit
                 {
-                    continue;
-                }
+                    Entity = entities[i],
+                    Owner = owners[i].Value,
+                    Health = health,
+                    World = worlds[i],
+                    Unit = units.Unit(i),
+                    Focus = new OverlayFocus(handles.IsSelected(chunk, i), entities[i] == pass.Hovered,
+                        health.Current < health.Max),
+                });
+            }
+        }
 
-                var unit = units.Unit(i);
-                if (focus.ShowsMarker)
-                {
-                    var color = pass.Style.RelationColor(pass.View.RelationTo(owners[i].Value));
-                    var pose = new MarkerPose(worlds[i], unit.Layer);
-                    var seconds = focus.Selected ? _fades.Elapsed(entities[i], pass.Now) : 0f;
-                    AddMarker(pose, MarkerSize(unit, pass.Style), color, focus.Selected, seconds, pass.Style);
-                }
+        private void GatherUnit(in GatherPass pass, in SeenUnit seen)
+        {
+            var showsBar = seen.Focus.ShowsBar(pass.Visibility);
+            var teamMarked = seen.TeamMarked;
+            if (!seen.Focus.ShowsMarker && !showsBar && !teamMarked)
+            {
+                return;
+            }
 
-                if (showsBar)
-                {
-                    var position = worlds[i].Position;
-                    var top = EntityExtent.Top(pass.View.EntityManager, entities[i], position, unit.Radius);
-                    AddBar(unit, new Vector3(position.x, top, position.z), health, pass.Rules, pass.Style);
-                }
+            var style = pass.Style;
+            var position = seen.World.Position;
+            var pose = new MarkerPose(seen.World, seen.Unit.Layer);
+            var footprint = MarkerSize(seen.Unit, style);
+            var top = EntityExtent.Top(pass.View.EntityManager, seen.Entity, position, seen.Unit.Radius);
+            var anchor = new Vector3(position.x, top, position.z);
+            if (teamMarked)
+            {
+                AddTeamMarkers(pass, pose, footprint, anchor, pass.View.GetColor(seen.Owner));
+            }
+
+            if (seen.Focus.ShowsMarker)
+            {
+                var color = style.RelationColor(pass.View.RelationTo(seen.Owner));
+                var selected = seen.Focus.Selected;
+                var seconds = selected ? _fades.Elapsed(seen.Entity, pass.Now) : 0f;
+                AddMarker(pose, footprint, color, selected, seconds, style);
+            }
+
+            if (showsBar)
+            {
+                AddBar(seen.Unit, anchor, seen.Health, pass.Rules, style);
             }
         }
 
         public void Draw(OverlayStyle style, float uiScale, int layer)
         {
+            _teamRings.Draw(layer);
             _markers.Draw(layer);
+            _pips.Draw(style, uiScale, layer);
             _bars.Draw(style, uiScale, layer);
         }
 
         public void Dispose()
         {
             _markers.Dispose();
+            _teamRings.Dispose();
+            _pips.Dispose();
             _bars.Dispose();
         }
 
@@ -121,6 +166,23 @@ namespace HyperRTS.Presentation.Overlays
             return unit.IsSquad
                 ? MarkerFootprint.Round(unit.Spread, style.markerMargin)
                 : unit.Footprint(style.markerMargin);
+        }
+
+        private void AddTeamMarkers(in GatherPass pass, in MarkerPose pose, in MarkerFootprint footprint, Vector3 top,
+            Color owner)
+        {
+            if (pass.TeamRingsShown)
+            {
+                var ring = owner;
+                ring.a *= pass.Style.teamRingOpacity;
+                _teamRings.Add(pose, footprint, ring, pass.Style.TeamRing);
+            }
+
+            var foot = new Vector3(top.x, pose.Position.y, top.z);
+            if (UnitPips.Shows(pass.Pixels.Projected(foot, top), pass.Style))
+            {
+                _pips.Add(top, owner);
+            }
         }
 
         private void AddMarker(in MarkerPose pose, MarkerFootprint footprint, Color color, bool selected, float selectedFor,
@@ -147,25 +209,29 @@ namespace HyperRTS.Presentation.Overlays
             _bars.Add(anchor, bar, style);
         }
 
-        private readonly struct GatherPass
+        private struct GatherPass
         {
-            public readonly MatchView View;
-            public readonly OverlayStyle Style;
-            public readonly HealthBarVisibility Visibility;
-            public readonly float Now;
-            public readonly Entity Hovered;
-            public readonly SquadRules Rules;
+            public MatchView View;
+            public OverlayStyle Style;
+            public HealthBarVisibility Visibility;
+            public bool TeamRingsShown;
+            public ReferencePixels Pixels;
+            public float Now;
+            public Entity Hovered;
+            public SquadRules Rules;
+        }
 
-            public GatherPass(MatchView view, OverlayStyle style, HealthBarVisibility visibility, float now,
-                Entity hovered, SquadRules rules)
-            {
-                View = view;
-                Style = style;
-                Visibility = visibility;
-                Now = now;
-                Hovered = hovered;
-                Rules = rules;
-            }
+        private struct SeenUnit
+        {
+            public Entity Entity;
+            public byte Owner;
+            public Health Health;
+            public LocalToWorld World;
+            public OverlayUnit Unit;
+            public OverlayFocus Focus;
+
+            // Owned mobile units only: buildings and map props carry no nav agent, and neutral ones have no team.
+            public bool TeamMarked => Unit.Agent.HasValue && Owner != 0;
         }
     }
 }

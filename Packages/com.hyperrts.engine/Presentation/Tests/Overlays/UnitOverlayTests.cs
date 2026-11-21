@@ -1,6 +1,7 @@
 using HyperRTS.Presentation.Overlays;
 using HyperRTS.Presentation.Overlays.Bars;
 using HyperRTS.Presentation.Overlays.Markers;
+using HyperRTS.Presentation.Overlays.Pips;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -14,7 +15,10 @@ using UnityEngine;
 
 namespace HyperRTS.Presentation.Tests.Overlays
 {
-    /// <summary>Ground marker shapes and poses, the select-in animation and which units show a health bar.</summary>
+    /// <summary>
+    /// Ground marker shapes and poses, the select-in animation, which units show a health bar or a small-unit pip,
+    /// and the bars' smallest size.
+    /// </summary>
     public class UnitOverlayTests
     {
         private const float Margin = 0.35f;
@@ -148,6 +152,36 @@ namespace HyperRTS.Presentation.Tests.Overlays
             Assert.AreEqual(5, squad.Segments);
             Assert.AreEqual(_style.maxSegments, fortress.Segments);
             Assert.AreEqual(_style.barWidthRange.y, fortress.Width, 1e-4f);
+        }
+
+        [Test]
+        public void Pip_ShowsOnceASoldierShrinksBelowTheThresholdWithDistanceOrASteepView()
+        {
+            var camera = new GameObject("Camera").AddComponent<Camera>();
+            camera.fieldOfView = 45f;
+            camera.aspect = 16f / 9f;
+            var head = Vector3.up * 1.8f;
+
+            var near = new ReferencePixels(camera).Projected(new Vector3(0f, 0f, 30f), new Vector3(0f, 0f, 30f) + head);
+            var far = new ReferencePixels(camera).Projected(new Vector3(0f, 0f, 300f), new Vector3(0f, 0f, 300f) + head);
+            camera.transform.SetPositionAndRotation(new Vector3(0f, 26f, 15f), Quaternion.Euler(60f, 0f, 0f));
+            var steep = new ReferencePixels(camera).Projected(new Vector3(0f, 0f, 30f), new Vector3(0f, 0f, 30f) + head);
+            Object.DestroyImmediate(camera.gameObject);
+
+            Assert.AreEqual(near / 10f, far, 0.05f);
+            Assert.Less(steep, near * 0.6f);
+            Assert.IsFalse(UnitPips.Shows(near, _style));
+            Assert.IsTrue(UnitPips.Shows(far, _style));
+        }
+
+        [Test]
+        public void HealthBar_KeepsItsMinimumHeightOnSmallScreensAndScales()
+        {
+            var fullHD = HealthBars.PixelScale(1080f, 1f, _style);
+            var small = HealthBars.PixelScale(540f, 0.8f, _style);
+
+            Assert.AreEqual(1f, fullHD, 1e-4f);
+            Assert.AreEqual(_style.barMinHeight, _style.barHeight * small, 1e-4f);
         }
     }
 }

@@ -76,9 +76,16 @@ the OS pointer stays.
 
 - **Ground markers** (`GroundMarker.shader`) drape on the terrain for selected and hovered entities: a rounded
   rectangle round a vehicle, a circle round infantry, corner brackets round a building. Colours follow the relation.
-- **Health bars** are screen-aligned quads of fixed pixel size. `OverlayRenderer.HealthBars` picks who shows one:
-  everyone, damaged units, or only selected ones. They draw after upscaling, through the
-  [screen overlay](rendering.md#screen-overlay), so they stay crisp at any resolution scale.
+- **Team rings** are thinner, fainter ground markers on the same footprint under every visible owned mobile unit,
+  one per squad, in the owner's colour from `MatchView.GetColor`, the colour `HyperRTS/LitTeam` gets, so a
+  `TeamColorOverride` recolours both. They draw one queue place under the selection markers, which read over them,
+  and stay out of silhouettes since their shader has no unit mask pass. `OverlayRenderer.TeamRingsShown` hides them.
+- **Small-unit pips** (`UnitPip.shader`) mark a mobile unit drawn shorter on screen than the style's
+  `smallUnitHeight` with an owner-coloured dot in the gap above the model, under its health bar.
+- **Health bars** are screen-aligned quads of fixed pixel size, which zoom doesn't change. `OverlayRenderer.HealthBars`
+  picks who shows one: everyone, damaged units, or only selected ones. Sizes are pixels at 1080p, scaled by
+  resolution and `OverlayRenderer.UIScale` but never below the style's `barMinHeight`. Bars and pips draw after
+  upscaling, through the [screen overlay](rendering.md#screen-overlay), so they stay crisp at any resolution scale.
 - **`FireMissionOverlay`** draws while a fire mission is pending, through a `GroundMarkers` on a finer grid so
   long rings follow the terrain: round each selected launcher an outline at its maximum range and a soft red disc
   inside its minimum range, and at the pointer the circle one salvo covers (`FireMissionReach`: spread plus splash

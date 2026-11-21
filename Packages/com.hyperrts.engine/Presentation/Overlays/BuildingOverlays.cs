@@ -29,9 +29,6 @@ namespace HyperRTS.Presentation.Overlays
         private const float BackRim = 1.2f;
         private const float PipPitch = 1.5f;
 
-        // Marker sizes are pixels at this screen height, so they keep their share of the screen at any resolution.
-        private const float ReferenceHeight = 1080f;
-
         private static readonly Quaternion[] DialRotations = BuildDialRotations();
 
         private readonly LiveQuery _captures = new(entityManager => entityManager.CreateEntityQuery(
@@ -58,13 +55,9 @@ namespace HyperRTS.Presentation.Overlays
         private LocalFogView _view;
         private FogOfWar _fog;
         private bool _fogRead;
-        private Vector3 _cameraPosition;
-        private Vector3 _cameraForward;
         private Vector3 _cameraRight;
         private Quaternion _cameraRotation;
-        private bool _orthographic;
-        private float _orthographicPixel;
-        private float _pixelPerDepth;
+        private ReferencePixels _pixels;
 
         public BuildingOverlays(Mesh dialSegment, Mesh disc, Mesh billboard)
         {
@@ -120,7 +113,7 @@ namespace HyperRTS.Presentation.Overlays
                 }
 
                 var top = Top(entityManager, entities[i], position);
-                var pixel = PixelSize(top);
+                var pixel = _pixels.WorldSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.dialRadius * BackRim));
                 AddDial(center, view.GetColor(capture.Owner), capture.Value, pixel * style.dialRadius, style);
             }
@@ -159,7 +152,7 @@ namespace HyperRTS.Presentation.Overlays
                 }
 
                 var top = Top(entityManager, entities[i], position);
-                var pixel = PixelSize(top);
+                var pixel = _pixels.WorldSize(top);
                 var center = top + Vector3.up * (pixel * (style.markerOffset + style.pipSize));
                 AddPips(center, view.GetColor(owner), used, containers[i].Capacity, pixel * style.pipSize, style);
             }
@@ -183,24 +176,9 @@ namespace HyperRTS.Presentation.Overlays
         private void ReadCamera(Camera camera)
         {
             var transform = camera.transform;
-            _cameraPosition = transform.position;
-            _cameraForward = transform.forward;
             _cameraRight = transform.right;
             _cameraRotation = transform.rotation;
-            _orthographic = camera.orthographic;
-            _orthographicPixel = camera.orthographicSize * 2f / ReferenceHeight;
-            _pixelPerDepth = Mathf.Tan(camera.fieldOfView * 0.5f * Mathf.Deg2Rad) * 2f / ReferenceHeight;
-        }
-
-        /// <summary>World units one reference pixel covers at <paramref name="point"/>.</summary>
-        private float PixelSize(Vector3 point)
-        {
-            if (_orthographic)
-            {
-                return _orthographicPixel;
-            }
-
-            return Vector3.Dot(point - _cameraPosition, _cameraForward) * _pixelPerDepth;
+            _pixels = new ReferencePixels(camera);
         }
 
         private static Quaternion[] BuildDialRotations()

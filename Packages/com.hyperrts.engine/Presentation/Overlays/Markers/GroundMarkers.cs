@@ -19,10 +19,15 @@ namespace HyperRTS.Presentation.Overlays.Markers
         private Terrain _terrain;
         private TerrainHeightInput _heights;
 
-        public GroundMarkers(Mesh grid, Material material)
+        /// <summary>Markers drawn <paramref name="queueShift"/> places after the material's queue, so lower ones lie under.</summary>
+        public GroundMarkers(Mesh grid, Material material, int queueShift)
         {
             _markers = new InstanceBuffer<MarkerInstance>(grid);
-            _material = new Material(material) { hideFlags = HideFlags.DontSave };
+            _material = new Material(material)
+            {
+                renderQueue = material.renderQueue + queueShift,
+                hideFlags = HideFlags.DontSave,
+            };
             BindFlatGround();
         }
 

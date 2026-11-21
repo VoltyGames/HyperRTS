@@ -8,9 +8,6 @@ namespace HyperRTS.Presentation.Overlays.Bars
     /// <summary>One frame's screen-aligned health bars, all in one draw.</summary>
     public sealed class HealthBars : IDisposable
     {
-        // Sizes are authored in pixels on a 1080p screen.
-        private const float ReferenceHeight = 1080f;
-
         private static readonly int PixelScaleId = Shader.PropertyToID("_PixelScale");
         private static readonly int OffsetId = Shader.PropertyToID("_Offset");
         private static readonly int BackId = Shader.PropertyToID("_Back");
@@ -37,8 +34,12 @@ namespace HyperRTS.Presentation.Overlays.Bars
             _material = new Material(material) { hideFlags = HideFlags.DontSave };
         }
 
-        /// <summary>Reference pixels to screen pixels at the current resolution and UI scale.</summary>
-        public static float PixelScale(float screenHeight, float uiScale) => screenHeight / ReferenceHeight * uiScale;
+        /// <summary>
+        /// Reference pixels to screen pixels at the current resolution and UI scale, kept large enough that a bar is
+        /// never shorter than the style's minimum.
+        /// </summary>
+        public static float PixelScale(float screenHeight, float uiScale, OverlayStyle style) => Mathf.Max(
+            screenHeight / ReferencePixels.ScreenHeight * uiScale, style.barMinHeight / style.barHeight);
 
         public void Add(Vector3 anchor, in HealthBarData bar, OverlayStyle style)
         {
@@ -59,7 +60,7 @@ namespace HyperRTS.Presentation.Overlays.Bars
                 return;
             }
 
-            var pixelScale = PixelScale(Screen.height, uiScale);
+            var pixelScale = PixelScale(Screen.height, uiScale, style);
             var stale = style != _appliedStyle || style.Version != _appliedVersion || pixelScale != _appliedPixelScale;
             if (stale)
             {

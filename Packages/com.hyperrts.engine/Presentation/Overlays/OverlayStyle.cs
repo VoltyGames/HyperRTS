@@ -52,6 +52,28 @@ namespace HyperRTS.Presentation.Overlays
         [Min(1f)]
         public float selectStartScale = 1.18f;
 
+        [Header("Team Markers")]
+        [Tooltip("Line width of the owner-coloured ring under visible mobile units; keep it under the marker line.")]
+        [Unit("m")]
+        [Min(0.01f)]
+        public float teamRingLine = 0.07f;
+
+        [Tooltip("Opacity of the team ring.")]
+        [Range(0f, 1f)]
+        public float teamRingOpacity = 0.5f;
+
+        [Tooltip("A mobile unit drawn shorter than this many pixels at 1080p, feet to top, gets an owner-coloured pip above it.")]
+        [Min(0f)]
+        public float smallUnitHeight = 20f;
+
+        [Tooltip("Diameter of the small-unit pip in pixels at 1080p.")]
+        [Min(2f)]
+        public float unitPipSize = 6f;
+
+        [Tooltip("Gap in pixels at 1080p between the top of the model and the pip; keep it below the bar offset.")]
+        [Min(0f)]
+        public float unitPipOffset = 2f;
+
         [Header("Health Bars")]
         [Tooltip("Bar width in pixels at 1080p per metre of unit radius, before the clamp below.")]
         [Min(0f)]
@@ -63,6 +85,10 @@ namespace HyperRTS.Presentation.Overlays
         [Tooltip("Bar height in pixels at 1080p.")]
         [Min(2f)]
         public float barHeight = 6f;
+
+        [Tooltip("Fewest screen pixels a health bar is tall at any resolution or UI scale; unit pips grow with it.")]
+        [Min(1f)]
+        public float barMinHeight = 5f;
 
         [Tooltip("Gap in pixels at 1080p between the top of the model and the bar.")]
         [Min(0f)]
@@ -182,6 +208,9 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Segments for a bar of <paramref name="maxHealth"/>, or one per member for squads.</summary>
         public int Segments(float maxHealth, int members) =>
             members > 0 ? members : Mathf.Clamp(Mathf.CeilToInt(maxHealth / healthPerSegment), 1, maxSegments);
+
+        /// <summary>The team ring: a thin rim with no fill.</summary>
+        public MarkerLook TeamRing => new(teamRingLine, markerFade, 0f);
 
         /// <summary>A marker drawn as its rim alone.</summary>
         public MarkerLook Outline => new(markerLine, markerFade, 0f);

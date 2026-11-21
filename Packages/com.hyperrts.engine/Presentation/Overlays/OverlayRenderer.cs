@@ -9,8 +9,9 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Draws ground markers, health bars, capture dials, garrison pips, the placement outline and rally points, the
-    /// cover preview and fire mission ranges with instanced meshes, and keeps the placement ghost's model copies.
+    /// Draws ground markers, team rings, health bars, small-unit pips, capture dials, garrison pips, the placement
+    /// outline and rally points, the cover preview and fire mission ranges with instanced meshes, and keeps the
+    /// placement ghost's model copies.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Overlay Renderer")]
     [Icon(HyperRTSIcons.OverlayRenderer)]
@@ -37,6 +38,10 @@ namespace HyperRTS.Presentation.Overlays
         private Material barMaterial;
 
         [SerializeField]
+        [Tooltip("HyperRTS/UnitPip material for the pips over units too small on screen.")]
+        private Material pipMaterial;
+
+        [SerializeField]
         [Tooltip("HyperRTS/PlacementGhost material drawn over the placed building's real meshes.")]
         private Material ghostMaterial;
 
@@ -59,13 +64,17 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Multiplies the pixel size of health bars, from the game's UI scale.</summary>
         public float UIScale { get; set; } = 1f;
 
+        /// <summary>Whether visible mobile units show an owner-coloured ring; a game sets it from its settings.</summary>
+        public bool TeamRingsShown { get; set; } = true;
+
         protected override void OnAwake()
         {
             var missing = material == null || markerMaterial == null || barMaterial == null || ghostMaterial == null;
-            if (missing || style == null)
+            if (missing || pipMaterial == null || style == null)
             {
                 throw new InvalidOperationException(
-                    $"Overlay Renderer on '{name}' needs its material, markerMaterial, barMaterial, ghostMaterial and style set.");
+                    $"Overlay Renderer on '{name}' needs its material, markerMaterial, barMaterial, pipMaterial, " +
+                    "ghostMaterial and style set.");
             }
 
             var ring = OverlayMeshes.Ring(48, 0.82f);
@@ -76,7 +85,7 @@ namespace HyperRTS.Presentation.Overlays
             var grid = OverlayMeshes.Grid(MarkerGridCells);
             var rangeGrid = OverlayMeshes.Grid(RangeGridCells);
             _meshes = new[] { ring, billboard, flat, dial, disc, grid, rangeGrid };
-            _units = new UnitOverlays(grid, billboard, markerMaterial, barMaterial);
+            _units = new UnitOverlays(grid, billboard, markerMaterial, barMaterial, pipMaterial);
             _buildings = new BuildingOverlays(dial, disc, billboard);
             _commands = new CommandOverlays(ring, flat);
             _fireMissions = new FireMissionOverlay(rangeGrid, markerMaterial);
@@ -94,7 +103,7 @@ namespace HyperRTS.Presentation.Overlays
 
             _materials ??= new OverlayMaterials(material);
 
-            _units.Gather(view, style, HealthBars, Time.unscaledTime);
+            _units.Gather(view, style, HealthBars, TeamRingsShown, new ReferencePixels(camera), Time.unscaledTime);
             _buildings.Gather(view, style, camera);
             _commands.Gather(view, style);
             _fireMissions.Gather(view, style);
