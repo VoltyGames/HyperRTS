@@ -80,6 +80,7 @@ file is named after the component it marks.
 | BuildLimitAuthoring | lorc/padlock | Lorc |
 | BuilderAuthoring | lorc/claw-hammer | Lorc |
 | BuildingAuthoring | delapouite/house | Delapouite |
+| BuildingDecalsAuthoring | delapouite/tire-tracks | Delapouite |
 | CameraController | delapouite/video-camera | Delapouite |
 | CapturableAuthoring | delapouite/tower-flag | Delapouite |
 | CapturerAuthoring | delapouite/flag-objective | Delapouite |

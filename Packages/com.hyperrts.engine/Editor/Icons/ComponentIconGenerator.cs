@@ -41,9 +41,9 @@ namespace HyperRTS.Editor.Icons
         (new Color(0.45f, 0.50f, 0.58f), new[]
         {
             "AIFieldWorkAuthoring", "AirfieldAuthoring", "BuildLimitAuthoring", "BuilderAuthoring",
-            "BuildingAuthoring", "CapturableAuthoring", "ConstructionSiteAuthoring", "FlagMountAuthoring",
-            "GarrisonPartAuthoring", "ModelVariantsAuthoring", "ProducerAuthoring", "TeamMarkerAuthoring",
-            "TeamStripAuthoring",
+            "BuildingAuthoring", "BuildingDecalsAuthoring", "CapturableAuthoring", "ConstructionSiteAuthoring",
+            "FlagMountAuthoring", "GarrisonPartAuthoring", "ModelVariantsAuthoring", "ProducerAuthoring",
+            "TeamMarkerAuthoring", "TeamStripAuthoring",
         }),
         // Cameras
         (new Color(0.55f, 0.40f, 0.85f), new[]

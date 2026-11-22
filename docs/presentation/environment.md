@@ -126,6 +126,18 @@ with the tracks map's scorch and takes the ash, rubble and mud stains and the cr
 but with less than half the ash (`ROAD_ASH`), so it still reads as a road through a burn,
 guarded like the terrain by whether the maps are published. A road material sets the same `_Stain*` properties as the terrain's.
 
+## Building decals
+
+`BuildingDecalsAuthoring` on a Building lists decals for its apron, such as oil stains and tyre tracks at its doors:
+each a material, a centre in the building's space at the apron's top, a width and length, and a yaw of the texture's
+top from the building's front. `BuildingDecalSystem` shows them as pooled URP decal projectors while the building
+stands finished and the local player sees it, and takes them back when it is fogged, dies or goes. Each projects
+straight down through a short `depth` (0.6 m by default) and shares the impact marks' angle fade, so it marks the
+apron and the ground just past it but not the walls. A building's meshes hide through `MaterialMeshInfo` and not by
+`Disabled`, so a `DecalProjector` baked on a prefab child as an Entities Graphics companion would keep drawing in
+fog and under construction: building decals go through this list instead. LitTeam's forward pass applies the DBuffer
+as URP Lit does, so decals land on model aprons as well as on the terrain.
+
 ## Building footprints
 
 `BuildingFootprintSystem` draws every building's obstacle box into an R8 mask at 0.5 m texels, so a turned wall is not a

@@ -20,6 +20,7 @@ namespace HyperRTS.Simulation.Common.Authoring
         public const string BuildLimitAuthoring = Dir + "BuildLimitAuthoring.png";
         public const string BuilderAuthoring = Dir + "BuilderAuthoring.png";
         public const string BuildingAuthoring = Dir + "BuildingAuthoring.png";
+        public const string BuildingDecalsAuthoring = Dir + "BuildingDecalsAuthoring.png";
         public const string CameraController = Dir + "CameraController.png";
         public const string CapturableAuthoring = Dir + "CapturableAuthoring.png";
         public const string CapturerAuthoring = Dir + "CapturerAuthoring.png";
