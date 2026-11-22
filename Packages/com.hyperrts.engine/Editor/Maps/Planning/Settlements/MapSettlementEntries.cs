@@ -46,7 +46,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
         /// <summary>Climate tree index of the orchard, -1 for a meadow back.</summary>
         public int OrchardTree { get; }
 
-        /// <summary>Extra yard behind the house that outbuildings stand in.</summary>
+        /// <summary>Depth behind the house that outbuildings may stand in; the yard keeps only what they take.</summary>
         public float OutbuildingDepth { get; }
 
         private static MapProp Optional(MapPalette palette, string key) =>

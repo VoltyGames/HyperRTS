@@ -88,8 +88,9 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return problem;
             }
 
+            builder.BuildYard(plot, house);
             settlement.Claims.Claim(plot, seed);
-            builder.Build(plot, house, seed);
+            builder.Furnish(plot, house, seed);
             return null;
         }
     }

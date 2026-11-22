@@ -114,6 +114,7 @@ namespace HyperRTS.Editor.Maps.Tests.Settlements
             palette.baseRadius = BaseRadius;
             palette.entries.Add(Entry("House", 10f, 8f));
             palette.entries.Add(Entry("Barn", 6f, 5f));
+            palette.entries.Add(Entry("WideShed", 30f, 10f));
             palette.entries.Add(Entry("Fence", 1f, 2.5f));
             palette.entries.Add(Entry("Gate", 1.2f, 3f));
             palette.entries.Add(Entry("Pole", 1.5f, 1.5f));

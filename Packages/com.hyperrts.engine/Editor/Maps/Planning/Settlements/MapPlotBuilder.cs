@@ -37,10 +37,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 
         private MapClearance Clearance => _context.Placements.Clearance;
 
-        /// <summary>
-        /// Picks the plot's house and fixes its zones, or returns null with the reason the plot is unusable. Nothing
-        /// is placed yet.
-        /// </summary>
+        /// <summary>Picks the plot's house, or returns null with the reason the plot is unusable. Nothing is placed yet.</summary>
         public MapPlacement Choose(MapPlot plot, out string problem)
         {
             var entry = _entries.Houses[_random.Next(_entries.Houses.Count)];
@@ -62,18 +59,26 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return null;
             }
 
-            plot.YardEnd = Mathf.Min(plot.Depth, _kit.frontYard + depth + _entries.OutbuildingDepth);
-            plot.GardenEnd = plot.YardEnd + _kit.gardenShare * (plot.Depth - plot.YardEnd);
             problem = null;
             return new MapPlacement(entry, position, plot.FacingYaw + Jitter(entry), 1f) { Scale = scale };
         }
 
-        /// <summary>Places the house and everything else on a plot whose land has been claimed, and wears its paths.</summary>
-        public void Build(MapPlot plot, MapPlacement house, int seed)
+        /// <summary>
+        /// Places the house and outbuildings, then fixes the plot's zones: the yard ends behind the deepest of them,
+        /// so room kept for an outbuilding that didn't fit goes to the garden.
+        /// </summary>
+        public void BuildYard(MapPlot plot, MapPlacement house)
         {
             _spots.Clear();
             Add(house.Entry, house.Position, house.Yaw, house.Scale);
-            Outbuildings(plot);
+            var houseBack = _kit.frontYard + house.Entry.size.y * house.Scale;
+            plot.YardEnd = Outbuildings(plot, houseBack);
+            plot.GardenEnd = plot.YardEnd + _kit.gardenShare * (plot.Depth - plot.YardEnd);
+        }
+
+        /// <summary>Places the orchard, extras and fences on a plot whose yard is built and land claimed, and wears its paths.</summary>
+        public void Furnish(MapPlot plot, MapPlacement house, int seed)
+        {
             Orchard(plot);
             Extras(plot);
             plot.Local(house.Position, out var houseU, out _);
@@ -82,26 +87,36 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
             _paths.MarkDoor(plot, house);
         }
 
-        private void Outbuildings(MapPlot plot)
+        /// <summary>Places the outbuildings and returns the depth of the back of the yard.</summary>
+        private float Outbuildings(MapPlot plot, float houseBack)
         {
+            var yardBack = houseBack;
             if (_entries.Outbuildings.Count == 0)
             {
-                return;
+                return yardBack;
             }
 
+            var room = Mathf.Min(plot.Depth, houseBack + _entries.OutbuildingDepth);
             var placed = 0;
             for (var attempt = 0; attempt < Tries * _kit.maxOutbuildings && placed < _kit.maxOutbuildings; attempt++)
             {
-                if (TryOutbuilding(plot))
+                if (TryOutbuilding(plot, room, out var back))
                 {
+                    yardBack = Mathf.Max(yardBack, back);
                     placed++;
                 }
             }
+
+            return yardBack;
         }
 
-        /// <summary>One try at a spot in the yard beside or behind the house, level with its front or further back.</summary>
-        private bool TryOutbuilding(MapPlot plot)
+        /// <summary>
+        /// One try at a spot beside or behind the house, level with its front or further back but within
+        /// <paramref name="room"/>; <paramref name="back"/> is the depth of its back wall.
+        /// </summary>
+        private bool TryOutbuilding(MapPlot plot, float room, out float back)
         {
+            back = 0f;
             var entry = _entries.Outbuildings[_random.Next(_entries.Outbuildings.Count)];
             var scale = Scale(entry);
             var halfWidth = entry.size.x * scale * 0.5f;
@@ -112,7 +127,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
                 return false;
             }
 
-            if (!Between(_kit.frontYard + halfDepth, plot.YardEnd - halfDepth, out var v))
+            if (!Between(_kit.frontYard + halfDepth, room - halfDepth, out var v))
             {
                 return false;
             }
@@ -125,6 +140,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements
 
             Add(entry, position, plot.FacingYaw + Jitter(entry), scale);
             _spots.Add(position);
+            back = v + halfDepth;
             return true;
         }
 
