@@ -44,11 +44,14 @@ object space, in metres:
 ## Water
 
 `HyperRTS/Water` is a refracting water shader with absorption, caustics, wind-wave ripples (`WaterRipples.png`, made
-by `WaterSpectrum`), reflection, foam and unit wakes (`SampleWake`). It needs Depth and Opaque Textures. Its `Scatter
-Color` is the silt's albedo, lit by the sun and sky like the ground, so deep water follows each weather's light.
-Vertex colours shape the flow: alpha thins fords, green streaks rapids foam, red trails foam lines downstream of
-fords. Bridge piers come from `WaterPiers` on the water object, up to 16 per map: the shader draws a cushion of foam
-round each and a wake that widens and fades over `Pier Wake Length`.
+by `WaterSpectrum`), reflection, foam and unit wakes (`SampleWake`). It needs Depth and Opaque Textures. `Shallow Color`
+and `Deep Color` are albedos lit by the sun and sky like the ground, blended by the depth of the bed over `Deep Depth`,
+so the river shades from bank to channel and follows each weather's light. `WaterLace.png` (`FoamLace`) holds lace
+strands, foam clumps and broad blobs: the blobs drift calm slicks down the current and sweep wind gusts across it,
+and every foam source (banks, slick edges, fords, wakes, piers) is an amount drawn through the lace, so thin foam
+breaks into strands rather than fading. Vertex colours shape the flow: alpha thins fords, green marks rapids, red
+trails foam below fords. Bridge piers come from `WaterPiers` on the water object, up to 16 per map: the shader draws
+a cushion upstream of each, a short wake below it and rougher water round the wake.
 `WaterCaustics` off in [quality](README.md#quality) compiles the caustics out.
 
 ## Trample maps

@@ -6,6 +6,7 @@
 #define WATER_FLOW_PERIOD 3.0 // seconds before a drifting ripple layer fades back to its start
 #define WATER_CAUSTIC_DEPTH 1.2 // metres of water caustics reach through
 #define WATER_BANK_CURRENT 0.35 // share of the current left at the bank
+#define WATER_RIPPLE_DRAWN 0.4 // how much shorter ripples are across the current than along it
 
 // 1 before start metres, 0 past end.
 half Fade(float metres, float start, float end)
@@ -40,7 +41,9 @@ half3 Ripples(float2 uv, half strength, float speed, float cameraDistance)
     const float2x2 turnB = float2x2(-0.28, -0.96, 0.96, -0.28);
     const float2x2 straight = float2x2(1.0, 0.0, 0.0, 1.0);
     half2 slope = FlowLayer(uv, _RippleSize * 1.7, turnA, speed * 0.8, strength * 0.55);
-    slope += FlowLayer(uv, _RippleSize * 0.45, straight, speed, strength * 0.8);
+    // The current draws the ripples out along it, so the surface streaks down the river as it does from the air.
+    const float2 drawn = float2(1.0, WATER_RIPPLE_DRAWN);
+    slope += FlowLayer(uv * drawn, _RippleSize * 0.45, straight, speed * WATER_RIPPLE_DRAWN, strength * 0.8) * drawn;
     half chop = Fade(cameraDistance, 30.0, 70.0);
     slope += FlowLayer(uv, _RippleSize * 0.12, turnB, speed * 1.2, strength * 0.45 * chop);
     return normalize(half3(slope, 1.0));

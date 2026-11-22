@@ -1,4 +1,4 @@
-// Water.shader's material properties: the ripple normal map and the UnityPerMaterial layout every pass shares.
+// Water.shader's material properties: the ripple and foam maps and the UnityPerMaterial layout every pass shares.
 #ifndef HYPERRTS_WATER_INPUT_INCLUDED
 #define HYPERRTS_WATER_INPUT_INCLUDED
 
@@ -6,9 +6,13 @@
 
 TEXTURE2D(_NormalMap);
 SAMPLER(sampler_NormalMap);
+TEXTURE2D(_FoamMap);
+SAMPLER(sampler_FoamMap);
 
 CBUFFER_START(UnityPerMaterial)
-    half4 _ScatterColor;
+    half4 _ShallowColor;
+    half4 _DeepColor;
+    float _DeepDepth;
     half4 _Absorption;
     half _BedDarkening;
     half _Caustics;
@@ -19,6 +23,12 @@ CBUFFER_START(UnityPerMaterial)
     float _RippleFadeEnd;
     half _RippleStrengthFar;
     float _FlowSpeed;
+    float _SlickWidth;
+    float _SlickLength;
+    half _SlickCalm;
+    float _GustSize;
+    float _GustSpeed;
+    half _GustStrength;
     half _Smoothness;
     half _SmoothnessFar;
     float _SmoothnessFarDistance;
@@ -29,11 +39,9 @@ CBUFFER_START(UnityPerMaterial)
     float _GlintFadeEnd;
     float _ShoreFadeDepth;
     half4 _FoamColor;
+    float _FoamSize;
     half _FordAlpha;
-    float _RapidsFoamWidth;
-    float _RapidsFoamLength;
     half _FlowFoamAmount;
-    float _FlowFoamScale;
     float _BankFoamWidth;
     half _BankFoamAmount;
     half _ShoreWaveFoam;
@@ -49,6 +57,7 @@ CBUFFER_START(UnityPerMaterial)
     half _ReflectionDistortion;
     float _PierWakeLength;
     half _PierWakeFoam;
+    half _PierChop;
     float _PierCushionWidth;
 CBUFFER_END
 

@@ -1,31 +1,26 @@
-// Water.shader's foam, all from the ripple normal map. Include after the water's CBUFFER, _NormalMap and Trample.hlsl.
+// Water.shader's foam. Each source gives an amount; FoamCover draws the strongest through the foam map's lace, so thick
+// foam is solid and thin foam breaks into strands and flecks. Include after the water's CBUFFER and Trample.hlsl.
 #ifndef HYPERRTS_WATER_FOAM_INCLUDED
 #define HYPERRTS_WATER_FOAM_INCLUDED
 
-half2 FoamSample(float2 uv, float2 tile, float2 dx, float2 dy)
+#define WATER_GUST_DIRECTION float2(0.8, 0.6) // the wind the ripple spectrum was made for
+
+// The foam map's broad blobs (B): smooth enough to read at the top mip, so branches may call it.
+half Blobs(float2 p)
 {
-    float2 scale = 1.0 / tile;
-    return UnpackNormal(SAMPLE_TEXTURE2D_GRAD(_NormalMap, sampler_NormalMap, uv * scale, dx * scale, dy * scale)).xy;
+    return SAMPLE_TEXTURE2D_LOD(_FoamMap, sampler_FoamMap, p, 0).b;
 }
 
-// Fast water (vertex G), broken into patches so the ford doesn't read as a striped block.
-// Gradients taken before the branch keep the fetches valid inside it.
-half RapidsFoam(float2 uv, half fast)
+// 1 along calm slicks: long streaks drifting down the current (V), where the surface film smooths the ripples.
+half Slick(float2 uv, float drift)
 {
-    float2 dx = ddx(uv);
-    float2 dy = ddy(uv);
-    half foam = 0.0;
-    [branch] if (fast >= 0.001)
-    {
-        float drift = _Time.y * _FlowSpeed * 2.5;
-        half streak = FoamSample(float2(uv.x, uv.y - drift), float2(_RapidsFoamWidth, _RapidsFoamLength), dx, dy).x;
-        float2 squeeze = float2(0.37, 1.0);
-        half breakup = FoamSample(float2(uv.x * 0.37 + 0.21, uv.y - drift * 0.6), _RapidsFoamLength * 1.7,
-            dx * squeeze, dy * squeeze).y;
-        foam = fast * smoothstep(0.1, 0.45, streak) * smoothstep(-0.1, 0.35, breakup);
-    }
+    return Blobs(float2(uv.x / _SlickWidth, (uv.y - drift * 0.8) / _SlickLength));
+}
 
-    return foam;
+// 0..1 wind gusts darkening the water as patches that sweep across it, whatever way the river runs.
+half Gust(float3 positionWS)
+{
+    return Blobs((positionWS.xz - WATER_GUST_DIRECTION * _Time.y * _GustSpeed) / _GustSize);
 }
 
 // Metres to the waterline from depth and screen derivatives: the ribbon's edge lies buried past the bank, so uv.x
@@ -49,12 +44,32 @@ float ShoreLap(float2 uv)
     return -(0.5 + 0.5 * sin((_Time.y / _ShoreWavePeriod + uv.y * 0.07) * TWO_PI)) * _ShoreLap * _ShoreFadeDepth;
 }
 
+// A broken line at the waterline, a looser band behind it and swells running in to the bank.
+half BankFoam(float2 uv, float shoreDistance)
+{
+    half amount = 0.0;
+    [branch] if (shoreDistance < _BankFoamWidth * 1.4)
+    {
+        half wander = Blobs(float2(0.21, uv.y / 40.0));
+        float bandWidth = _BankFoamWidth * (0.6 + 0.8 * wander);
+        half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
+        half waterline = 1.0 - smoothstep(0.1, 0.6, shoreDistance);
+        // The phase falls with distance, so crests travel shoreward; the wander bends them off straight lines.
+        float phase = shoreDistance / _ShoreWaveLength + _Time.y / _ShoreWavePeriod + wander * 0.6;
+        half crest = pow(saturate(sin(phase * TWO_PI) * 0.5 + 0.5), 6.0) * band;
+        amount = max(max(waterline * 0.5, band * band * 0.3) * _BankFoamAmount, crest * _ShoreWaveFoam);
+    }
+
+    return amount;
+}
+
 // Foam round each bridge pier, which the water's mesh frame orients: down is its V on the water plane, across its U.
-// Water piles into a thin rim upstream of the pier; behind it a wake as wide as the pier widens slowly and dies out
-// by _PierWakeLength, broken into drifting patches by `broken` but never gone, with brighter shear lines down its edges.
-half PierFoam(float3 positionWS, float2 down, float2 across, half broken)
+// x: a thin cushion upstream and a short wake that widens and thins out by _PierWakeLength. y: choppy water round it,
+// twice as long.
+half2 PierWake(float3 positionWS, float2 down, float2 across)
 {
     half foam = 0.0;
+    half chop = 0.0;
     for (int i = 0; i < min((int)_HyperRTSWaterPierCount, MAX_WATER_PIERS); i++)
     {
         float2 offset = positionWS.xz - _HyperRTSWaterPiers[i].xy;
@@ -63,66 +78,46 @@ half PierFoam(float3 positionWS, float2 down, float2 across, half broken)
         float v = dot(offset, down);
 
         float rim = length(float2(u, min(v, 0.0))) - halfWidth;
-        half cushion = step(0.0, rim) * (1.0 - smoothstep(0.0, _PierCushionWidth, rim)) * step(v, 0.0);
+        half cushion = (1.0 - smoothstep(0.0, _PierCushionWidth, rim)) * step(0.0, rim) * step(v, 0.0);
 
-        float spread = halfWidth + v * 0.12;
-        half body = 1.0 - smoothstep(0.6, 1.0, u / spread);
-        float edge = (u - spread) / 0.45;
-        half shear = exp(-edge * edge);
-        // Held near full for the first third, past the deck that hides the wake's start, then fading.
-        half fade = (1.0 - smoothstep(0.3, 1.0, v / _PierWakeLength)) * step(0.0, v);
-        half wake = fade * max(body * lerp(0.25, 1.0, broken), shear * lerp(0.45, 1.0, broken));
-        foam = max(foam, max(cushion, wake));
+        float spread = halfWidth * 1.3 + max(v, 0.0) * 0.18;
+        half behind = step(0.0, v);
+        half along = 1.0 - smoothstep(0.0, _PierWakeLength, v);
+        half wake = (1.0 - smoothstep(0.4, 1.0, u / spread)) * along * behind;
+        half rough = (1.0 - smoothstep(0.5, 1.0, u / (spread * 1.6))) * (1.0 - smoothstep(0.0, _PierWakeLength * 2.0, v)) * behind;
+
+        foam = max(foam, max(cushion * 0.85, wake * 0.9));
+        chop = max(chop, rough);
     }
 
-    return foam * _PierWakeFoam;
+    return half2(foam * _PierWakeFoam, chop * _PierChop);
 }
 
-// Calm-water foam: drifting patches in the trails below fords (vertex R), bands along the banks and bridge pier
-// wakes. Ground detail Low drops it.
-half CalmFoam(float2 uv, float3 positionWS, half3 bitangent, half3 tangent, float shoreDistance, half trail)
+// Foam lines where slicks meet rougher water, which gathers the surface film, plus the trails below fords (vertex R).
+half FlowFoam(half slick, half trail)
 {
-    #if defined(_TERRAIN_SIMPLE)
-        return 0.0;
-    #else
-        float2 dx = ddx(uv);
-        float2 dy = ddy(uv);
-        float drift = _Time.y * _FlowSpeed;
-        // Barely longer than wide, so trails break into drifting patches instead of straight white lines.
-        float2 streakTile = float2(1.0, 1.6) * _FlowFoamScale;
-        half streak = FoamSample(float2(uv.x, uv.y - drift), streakTile, dx, dy).x;
-        half patches = FoamSample(float2(uv.x + 0.37 * _FlowFoamScale, uv.y - drift * 0.85), streakTile * 6.0, dx, dy).x;
-        half flow = smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches) * _FlowFoamAmount * trail;
+    half seam = 1.0 - smoothstep(0.0, 0.08, abs(slick - 0.62));
+    return max(seam * _FlowFoamAmount, trail * 0.7);
+}
 
-        // The band is at most 1.4 widths wide and the waterline 0.7 m: open water skips the edgeWander fetch.
-        half bank = 0.0;
-        [branch] if (shoreDistance < max(_BankFoamWidth * 1.4, 0.7))
-        {
-            half edgeWander = FoamSample(float2(0.21, uv.y), float2(1.0, 40.0), float2(0.0, dx.y), float2(0.0, dy.y)).x;
-            float bandWidth = _BankFoamWidth * (0.6 + 0.8 * saturate(edgeWander * 1.5 + 0.5));
-            half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
-            half broken = smoothstep(0.0, 0.35, streak) * smoothstep(-0.1, 0.3, patches);
-            half waterline = 1.0 - smoothstep(0.2, 0.7, shoreDistance);
+// How much of the surface foam covers for an amount: thick foam is whole, thinner foam keeps only the clumps (G) and
+// then the lace strands (R) inside them, drifting down the current.
+half FoamCover(half amount, float2 uv, float drift)
+{
+    // Gradients taken before the branch keep the fetch valid inside it.
+    float2 scale = 1.0 / float2(_FoamSize, _FoamSize * 1.6);
+    float2 dx = ddx(uv) * scale;
+    float2 dy = ddy(uv) * scale;
+    half cover = 0.0;
+    [branch] if (amount > 0.01)
+    {
+        half3 lace = SAMPLE_TEXTURE2D_GRAD(_FoamMap, sampler_FoamMap, float2(uv.x, uv.y - drift) * scale, dx, dy).rgb;
+        half prone = lace.g * 0.6 + lace.r * 0.4;
+        half edge = 1.0 - amount;
+        cover = smoothstep(edge - 0.05, edge + 0.05, prone) * (0.7 + 0.3 * lace.r);
+    }
 
-            // The phase falls with distance, so crests travel shoreward; the edgeWander bends them off straight lines.
-            float phase = shoreDistance / _ShoreWaveLength + _Time.y / _ShoreWavePeriod + edgeWander * 0.6;
-            half crest = pow(saturate(sin(phase * TWO_PI) * 0.5 + 0.5), 6.0) * band;
-            bank = max(max(band * band, waterline * 0.35) * _BankFoamAmount, crest * _ShoreWaveFoam) * broken;
-        }
-
-        float2 down = normalize(bitangent.xz + 1e-5);
-        float2 across = normalize(tangent.xz + 1e-5);
-        half pier = 0.0;
-        [branch] if (_HyperRTSWaterPierCount > 0.5)
-        {
-            // Flecks about a metre across, stretched down the current and clumped, so a wake reads as churned water.
-            half fleck = FoamSample(float2(uv.x, uv.y - drift * 1.4), float2(0.9, 2.2), dx, dy).x;
-            half clump = FoamSample(float2(uv.x + 0.61, uv.y - drift * 1.2), float2(3.0, 5.0), dx, dy).y;
-            pier = PierFoam(positionWS, down, across, smoothstep(-0.15, 0.35, fleck) * smoothstep(-0.3, 0.3, clump));
-        }
-
-        return max(max(flow, bank), pier);
-    #endif
+    return cover;
 }
 
 struct WakeSample
@@ -131,11 +126,9 @@ struct WakeSample
     half2 slope; // wake per metre in x and z, read as a height to tilt the surface
 };
 
-// Foam where units moved through the water, broken up at its fading edges. Water with no wake skips the slope reads.
-WakeSample SampleWakeFoam(float3 positionWS, float2 uv)
+// Foam where units moved through the water. Water with no wake skips the slope reads.
+WakeSample SampleWakeFoam(float3 positionWS)
 {
-    float2 dx = ddx(uv);
-    float2 dy = ddy(uv);
     WakeSample wake;
     wake.foam = 0.0;
     wake.slope = half2(0.0, 0.0);
@@ -146,8 +139,7 @@ WakeSample SampleWakeFoam(float3 positionWS, float2 uv)
         half aheadX = SampleWake(positionWS + float3(spacing, 0.0, 0.0));
         half aheadZ = SampleWake(positionWS + float3(0.0, 0.0, spacing));
         wake.slope = (half2(aheadX, aheadZ) - amount) / spacing;
-        half breakup = FoamSample(float2(uv.x, uv.y - _Time.y * _FlowSpeed), _FlowFoamScale * 0.5, dx, dy).x;
-        wake.foam = smoothstep(0.15, 0.6, amount * (0.65 + 0.7 * saturate(breakup + 0.5))) * _WakeFoam;
+        wake.foam = saturate(amount * 1.4) * _WakeFoam;
     }
 
     return wake;

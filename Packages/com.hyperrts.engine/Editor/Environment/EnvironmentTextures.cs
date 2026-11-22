@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Environment
 {
     /// <summary>
     /// Bakes tileable textures into Presentation/Environment: the cloud shadow cookie, road edge noise, terrain
-    /// variation noise and the river ripple normal map.
+    /// variation noise, and the river's ripple normal map and lace foam.
     /// </summary>
     public sealed class EnvironmentTextures : Generator
     {
@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Environment
         public const string EdgeNoisePath = Folder + "EdgeNoise.png";
         public const string TerrainNoisePath = Folder + "Ground/Terrain/TerrainNoise.png";
         public const string WaterRipplesPath = Folder + "Water/WaterRipples.png";
+        public const string WaterLacePath = Folder + "Water/WaterLace.png";
 
         private const int CloudSize = 512;
         private const int CloudPeriod = 2;
@@ -34,6 +35,8 @@ namespace HyperRTS.Editor.Environment
         private const uint RippleSeed = 7u;
         private const float RipplePeakCycles = 7f;
         private const float RippleSlope = 0.4f;
+        private const int LaceSize = 512;
+        private const uint LaceSeed = 11u;
 
         public override string Name => "Environment textures";
 
@@ -42,13 +45,13 @@ namespace HyperRTS.Editor.Environment
         public override int Order => 20;
 
         public override string Description =>
-            "Cloud shadow cookie, road edge noise, terrain noise and water ripple normals.";
+            "Cloud shadow cookie, road edge noise, terrain noise, water ripple normals and water foam.";
 
         public override string Sources => "Seeds and settings in EnvironmentTextures.cs";
 
         public override IEnumerable<string> Inputs => new[] { ScriptPath() };
 
-        public override string Outputs => $"{CloudCookiePath}, {EdgeNoisePath}, {TerrainNoisePath}, {WaterRipplesPath}";
+        public override string Outputs => $"{CloudCookiePath}, {EdgeNoisePath}, {TerrainNoisePath}, {WaterRipplesPath}, {WaterLacePath}";
 
         public override bool Available => EnginePackage.Writable;
 
@@ -57,9 +60,11 @@ namespace HyperRTS.Editor.Environment
             WriteGray(CloudCookiePath, Clouds(), CloudSize);
             WriteGray(EdgeNoisePath, EdgeNoise(), NoiseSize);
             WriteRGB(TerrainNoisePath, TerrainSize, TerrainNoise(), v => (byte)Mathf.Floor(Mathf.Clamp01(v) * 255f + 0.5f),
-                ConfigureTerrainNoise);
+                ConfigureChannels);
             WriteRGB(WaterRipplesPath, RippleSize, RippleNormals(), v => (byte)Mathf.Floor((v * 0.5f + 0.5f) * 255f),
                 ConfigureWaterRipples);
+            WriteRGB(WaterLacePath, LaceSize, FoamLace.Texels(LaceSize, LaceSeed),
+                v => (byte)Mathf.Floor(Mathf.Clamp01(v) * 255f + 0.5f), ConfigureChannels);
         }
 
         /// <summary>
@@ -192,8 +197,8 @@ namespace HyperRTS.Editor.Environment
             importer.sRGBTexture = false;
         }
 
-        /// <summary>Linear and uncompressed, since the terrain shader reads each channel as separate data.</summary>
-        private static void ConfigureTerrainNoise(TextureImporter importer)
+        /// <summary>Linear and uncompressed, since the terrain and water shaders read each channel as separate data.</summary>
+        private static void ConfigureChannels(TextureImporter importer)
         {
             importer.textureType = TextureImporterType.Default;
             importer.sRGBTexture = false;
