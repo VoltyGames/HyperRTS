@@ -66,7 +66,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             Assert.AreEqual(8.6f, tracks[0].Center.x, 1e-5f);
             Assert.AreEqual(11.4f, tracks[1].Center.x, 1e-5f);
             MathAssert.Near(new float2(0.3f, 0.3f), tracks[0].HalfSize);
-            Assert.AreEqual(1f, tracks[0].Value.x);
+            Assert.AreEqual(TrampleStamps.RutLoneShare, tracks[0].Value.x, 1e-6f);
             Assert.AreEqual(1, trample.Count);
             Assert.AreEqual(1.7f, trample[0].HalfSize.x, 1e-5f);
             Assert.AreEqual(new float4(1f, 1f, 1f, 0f), trample[0].Value);
@@ -82,6 +82,21 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
 
             Assert.AreEqual(center, stamps.Tracks[0].Center.y, 1e-5f);
             Assert.AreEqual(1.3f, stamps.Tracks[0].HalfSize.y, 1e-5f);
+        }
+
+        // Wheels share a pass between their axles, and a stamp deepens only the ground it is new on.
+        [Test]
+        public void AddRuts_DeepenOnlyNewGround_AndSplitTheDeepeningBetweenAxles()
+        {
+            var stamps = new TrampleStamps();
+
+            stamps.AddRuts(Tank, new float2(0f, 10f), new float2(0f, 1f), 0.6f, 1);
+            stamps.AddRuts(Tank, new float2(0f, 10f), new float2(0f, 1f), 0.6f, 2);
+
+            var whole = stamps.Tracks[0];
+            Assert.AreEqual(TrampleStamps.RutLoneShare * TrampleStamps.RutDeepening, whole.Value.z, 1e-6f);
+            Assert.AreEqual(whole.Value.z * 0.5f, stamps.Tracks[2].Value.z, 1e-6f);
+            Assert.AreEqual(0.6f / (0.6f + 0.6f), whole.Rim, 1e-6f);
         }
 
         [Test]

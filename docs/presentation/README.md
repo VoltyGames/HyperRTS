@@ -65,7 +65,8 @@ handles Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInter
 | [HUD and overlays](hud.md) | HUD panels, command card, cursors, ground markers and health bars |
 | [Animation](animation.md) | Bone and vertex animation, machines, motion rig, squad figures |
 | [Rendering](rendering.md) | Team colour, visibility, fog of war, destruction visuals, shader conventions |
-| [Environment](environment.md) | Atmosphere, fog, wind, water, trample maps and craters, field fires, ambient life |
+| [Environment](environment.md) | Atmosphere, fog, wind, water, field fires, ambient life |
+| [Ground](ground.md) | Trample maps, ruts and craters, stains, building decals and footprints |
 | [Vegetation](vegetation.md) | Row crops and the shared scatter host |
 | [Effects](effects.md) | Effect rigs, generated VFX graphs, pools, loop lights |
 

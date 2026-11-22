@@ -63,6 +63,35 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
         }
 
         [Test]
+        public void Ruts_DeepenWithEachPass_UpToTheCap()
+        {
+            var lone = TrampleStamps.RutLoneShare;
+            var pass = new TrampleStamp
+            {
+                Center = new float2(50f, 120f), Forward = new float2(0f, 1f), HalfSize = new float2(3f),
+                Value = new float4(lone, 1f, lone * TrampleStamps.RutDeepening, 0f), Rim = 1f,
+            };
+
+            DrawPass(pass);
+            Assert.AreEqual(lone, Sample(_surfaces.Tracks, Red)[0], 2f / 255f, "a lone pass is not stored at its share");
+
+            DrawPass(pass);
+            Assert.AreEqual(lone * (1f + TrampleStamps.RutDeepening), Sample(_surfaces.Tracks, Red)[0], 2f / 255f, "a second pass did not deepen");
+
+            for (var i = 0; i < 20; i++)
+            {
+                DrawPass(pass);
+            }
+
+            Assert.AreEqual(lone * TrampleStamps.RutCap, Sample(_surfaces.Tracks, Red)[0], 2f / 255f, "the rut went past its cap");
+
+            var light = pass;
+            light.Value = new float4(lone * 0.3f, 1f, lone * 0.3f * TrampleStamps.RutDeepening, 0f);
+            DrawPass(light);
+            Assert.AreEqual(lone * TrampleStamps.RutCap, Sample(_surfaces.Tracks, Red)[0], 2f / 255f, "a light vehicle made a deep rut shallower");
+        }
+
+        [Test]
         public void Scars_OutlastTheFade_WhileRutsFade()
         {
             Assert.AreEqual(TrampleStamps.GroundLevelBias, Sample(_surfaces.Tracks, Alpha)[0], 1e-3f, "cleared ground is not level");
@@ -138,6 +167,13 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
 
             Draw(new TrampleStamps(), 0, 0, TrampleBrush.Levels);
             Assert.Less(Sample(_surfaces.Wake, Red)[0], 0.01f, "the wake never faded");
+        }
+
+        private void DrawPass(TrampleStamp stamp)
+        {
+            var stamps = new TrampleStamps();
+            stamps.Tracks.Add(stamp);
+            Draw(stamps, 0, 0);
         }
 
         private void Draw(TrampleStamps stamps, int recovery, int fade, int wakeFade = 0)

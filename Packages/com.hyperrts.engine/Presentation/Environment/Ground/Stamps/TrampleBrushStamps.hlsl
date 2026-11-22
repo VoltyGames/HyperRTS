@@ -84,6 +84,18 @@ half4 TracksFragment(StampVaryings input) : SV_Target
     return half4(input.value.x * ramp, input.value.y * Footprint(input, 0.6), 0.0, 0.0);
 }
 
+// Each pass over a rut adds a share of its depth, drawn over the new ground only (the rim holds that share of the
+// stamp's length). Consecutive frames' stamps overlap, but their new ground never does, so a pass adds once.
+half4 RutDeepenFragment(StampVaryings input) : SV_Target
+{
+    if (abs(input.local.y) > input.rim)
+    {
+        discard;
+    }
+
+    return half4(input.value.z * saturate((1.0 - abs(input.local.x)) * RUT_RAMP), 0.0, 0.0, 0.0);
+}
+
 ScarPoint ScarAt(StampVaryings input)
 {
     ScarPoint p;

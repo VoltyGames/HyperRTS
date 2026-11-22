@@ -27,6 +27,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private readonly int _scarRimsPass;
         private readonly int _fillCapPass;
         private readonly int _fillFloorPass;
+        private readonly int _rutDeepenPass;
         private readonly int _wakePass;
         private readonly int _stainPass;
         private readonly int _fadePass;
@@ -40,6 +41,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             _trampleDirectionPass = FindPass("TrampleDirection");
             _trampleAmountPass = FindPass("TrampleAmount");
             _tracksPass = FindPass("Tracks");
+            _rutDeepenPass = FindPass("RutDeepen");
             _scarsPass = FindPass("Scars");
             _scarRimsPass = FindPass("ScarRims");
             _fillCapPass = FindPass("FillCap");
@@ -87,6 +89,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             // Scars (BA, and the ground level in A) never fade: they last the match.
             _commands.SetRenderTarget(surfaces.Tracks);
             Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / Levels);
+            // Deepening first, so a rut's first pass holds only its lone depth.
+            DrawStamps(_rutDeepenPass, offset, stamps.Tracks.Count);
             DrawStamps(_tracksPass, offset, stamps.Tracks.Count);
             offset += stamps.Tracks.Count;
             DrawStamps(_scarsPass, offset, stamps.Scars.Count);

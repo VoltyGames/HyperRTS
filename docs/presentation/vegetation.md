@@ -3,7 +3,7 @@
 [Docs](../README.md) ▸ [Presentation](README.md) ▸ Vegetation
 
 Row crops and grass: plants placed and drawn on the GPU. For game developers adding a crop or another scattered thing.
-Wind, trample and fire that act on plants are in [environment](environment.md).
+Wind and fire that act on plants are in [environment](environment.md), trample in [ground](ground.md).
 
 ## Row crops
 

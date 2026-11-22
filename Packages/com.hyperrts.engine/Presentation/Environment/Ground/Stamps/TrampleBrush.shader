@@ -51,6 +51,19 @@ Shader "Hidden/HyperRTS/TrampleBrush"
             ENDHLSL
         }
 
+        // Each pass over a rut adds a share of its depth; the 8-bit R saturates at the deepest rut (RUT_CAP), the same for every vehicle.
+        Pass
+        {
+            Name "RutDeepen"
+            ColorMask R
+            BlendOp Add
+            Blend One One
+            HLSLPROGRAM
+            #pragma vertex StampVertex
+            #pragma fragment RutDeepenFragment
+            ENDHLSL
+        }
+
         // Scars only deepen: they last the match.
         Pass
         {

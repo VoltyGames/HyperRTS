@@ -162,13 +162,13 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             var pose = chassis.Pose(position, forward);
             var lastPose = chassis.Pose(last.xy, last.zw);
             var rearStep = pose.Position - lastPose.Position;
-            Stamps.AddRuts(marks, pose.Position, forward, math.dot(rearStep, forward));
+            Stamps.AddRuts(marks, pose.Position, forward, math.dot(rearStep, forward), 2);
 
             var front = chassis.FrontAxle(pose);
             var frontStep = front - chassis.FrontAxle(lastPose);
             var gear = math.dot(frontStep, forward) >= 0f ? 1f : -1f;
             var heading = math.lengthsq(frontStep) > 1e-6f ? math.normalize(frontStep) * gear : forward;
-            Stamps.AddRuts(marks, front, heading, math.dot(frontStep, heading));
+            Stamps.AddRuts(marks, front, heading, math.dot(frontStep, heading), 2);
         }
 
         // Stamped every frame: max blending is idempotent and holds grass down.

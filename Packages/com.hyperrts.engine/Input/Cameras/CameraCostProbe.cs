@@ -12,7 +12,7 @@ namespace HyperRTS.Input.Cameras
     /// match camera at each point and height of the <see cref="CameraCostPlan"/>, records GPU and main-thread frame times,
     /// writes a <see cref="CameraCostReport"/> and quits with 0, or logs why not and quits with 1.
     /// </summary>
-    public sealed class CameraCostProbe : MonoBehaviour
+    public sealed class CameraCostProbe : PresentationBehaviour
     {
         public const string PointsFlag = "-camera-cost";
         public const string ReportFlag = "-camera-cost-report";

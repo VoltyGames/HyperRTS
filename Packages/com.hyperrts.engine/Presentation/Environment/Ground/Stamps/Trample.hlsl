@@ -64,14 +64,14 @@ TrackSample ReadTracks(float2 positionXZ)
     TrackSample s;
     // Full precision: the ground level sits at a bias that half would blur.
     float4 tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, uv, 0);
-    s.depth = RutCoverage(tracks.r);
+    s.depth = RutCoverage(tracks.r / RUT_LONE_SHARE);
     s.churn = tracks.g;
     s.scorch = tracks.b;
     s.crater = GroundSunk(tracks.a);
     s.craterSlope = 0.0;
 
     // Gather order: x (u0, v1), y (u1, v1), z (u1, v0), w (u0, v0).
-    float4 ruts = GATHER_RED_TEXTURE2D(_HyperRTSTracks, sampler_LinearClamp, uv);
+    float4 ruts = GATHER_RED_TEXTURE2D(_HyperRTSTracks, sampler_LinearClamp, uv) / RUT_LONE_SHARE;
     float2 t = frac(uv * _HyperRTSTracksTexel.xy - 0.5);
     float alongX = lerp(ruts.z - ruts.w, ruts.y - ruts.x, t.y);
     float alongZ = lerp(ruts.x - ruts.w, ruts.y - ruts.z, t.x);

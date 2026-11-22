@@ -19,12 +19,15 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public float2 HalfSize;
 
         /// <summary>
-        /// Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, unused, round). Stains: (rubble, ash, fuel, wet mud).
+        /// Trample: (flatten, crop damage, direction weight, round). Tracks: (rut, soil, depth each pass adds, round). Stains: (rubble, ash, fuel, wet mud).
         /// Scars: (depth, scorch, bowl share of the stamp, churn), with a negative share for a trench. Fills: (inner half width, inner half length, skirt, unused).
         /// </summary>
         public float4 Value;
 
-        /// <summary>Scars: the bowl's lip height as a share of <see cref="TrampleStamps.GroundRange"/>; 0 for none.</summary>
+        /// <summary>
+        /// Scars: the bowl's lip height as a share of <see cref="TrampleStamps.GroundRange"/>; 0 for none.
+        /// Tracks: the share of the stamp's length that is new ground, where a pass deepens the rut.
+        /// </summary>
         public float Rim;
 
         /// <summary>Half the size of the world-axis box round the turned quad.</summary>

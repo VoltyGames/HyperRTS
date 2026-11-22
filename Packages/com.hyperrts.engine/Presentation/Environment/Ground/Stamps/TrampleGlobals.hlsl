@@ -17,6 +17,12 @@
 #define RUT_EDGE 0.1
 #define RUT_FULL 0.4
 
+// A lone pass stores its rut depth times RUT_LONE_SHARE, so repeated passes have room to deepen it. The 8-bit R tops out at
+// 1, the same ceiling for every vehicle (RUT_CAP times the deepest lone pass), so nothing lighter ever cuts a deep rut.
+// Readers divide the stored rut by RUT_LONE_SHARE. Match TrampleStamps.RutLoneShare.
+#define RUT_LONE_SHARE 0.4
+#define RUT_CAP (1.0 / RUT_LONE_SHARE)
+
 TEXTURE2D(_HyperRTSTrample);
 TEXTURE2D(_HyperRTSTracks);
 TEXTURE2D(_HyperRTSWake);

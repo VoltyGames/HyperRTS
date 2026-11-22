@@ -22,6 +22,15 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>A rim fades out by this multiple of the bowl radius, so a stamp holding one reaches that far.</summary>
         public const float RimReach = 1.3f;
 
+        /// <summary>A lone pass stores its rut depth times this, leaving room to deepen. Matches RUT_LONE_SHARE.</summary>
+        public const float RutLoneShare = 0.4f;
+
+        /// <summary>The deepest a rut gets, as a multiple of the deepest lone pass: where the stored R saturates, for every vehicle. Matches RUT_CAP.</summary>
+        public const float RutCap = 1f / RutLoneShare;
+
+        /// <summary>The share of a lone pass's depth that each further pass adds.</summary>
+        public const float RutDeepening = 0.3f;
+
         public const float FullWakeSpeed = 8f;
         public const float WakeReachSeconds = 0.5f;
 
@@ -130,7 +139,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public void AddVehicle(in TrackMarks marks, float2 position, float2 forward, float advance)
         {
             AddTrample(marks, position, forward, advance);
-            AddRuts(marks, position, forward, advance);
+            AddRuts(marks, position, forward, advance, 1);
         }
 
         /// <summary>The grass flattened across the vehicle's whole width this frame.</summary>
@@ -142,17 +151,26 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Trample.Add(Stamp(center, forward, new float2(span, math.max(halfLength, span)), new float4(1f, 1f, 1f, 0f)));
         }
 
-        /// <summary>A rut under each side of one axle, or of the tracks, heading along <paramref name="forward"/>.</summary>
-        public void AddRuts(in TrackMarks marks, float2 axle, float2 forward, float advance)
+        /// <summary>
+        /// A rut under each side of one axle, or of the tracks, heading along <paramref name="forward"/>. The vehicle's
+        /// <paramref name="axles"/> share one pass over the same path, so each adds its share of the deepening.
+        /// </summary>
+        public void AddRuts(in TrackMarks marks, float2 axle, float2 forward, float advance, int axles)
         {
             var center = axle - forward * (advance * 0.5f);
             var halfLength = (marks.Width + math.abs(advance)) * 0.5f;
-            var rut = new float4(marks.RutDepth, 0.5f + 0.5f * marks.RutDepth, 0f, 0f);
+            var depth = marks.RutDepth * RutLoneShare;
+            var rut = new float4(depth, 0.5f + 0.5f * marks.RutDepth, depth * RutDeepening / axles, 0f);
             var halfSize = new float2(marks.Width * 0.5f, halfLength);
             var right = new float2(forward.y, -forward.x);
             var offset = right * (marks.Gauge * 0.5f);
-            Tracks.Add(Stamp(center - offset, forward, halfSize, rut));
-            Tracks.Add(Stamp(center + offset, forward, halfSize, rut));
+            var newGround = math.abs(advance) / (marks.Width + math.abs(advance));
+            for (var side = -1; side <= 1; side += 2)
+            {
+                var stamp = Stamp(center + offset * side, forward, halfSize, rut);
+                stamp.Rim = newGround;
+                Tracks.Add(stamp);
+            }
         }
 
         /// <summary>A soldier's path this frame: a narrow strip that leans plants along the way, without flattening them.</summary>
