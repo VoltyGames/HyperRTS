@@ -16,11 +16,15 @@ namespace HyperRTS.Editor.Maps.Palette
         /// <summary>Length between the abutment faces, measured from the abutments its Nav Area lists (<see cref="NavAreaAuthoring.abutments"/>).</summary>
         public readonly float ClearSpan;
 
-        private MapDeck(Vector2 size, float landing, float clearSpan)
+        /// <summary>Each pier standing in the water as (x along the river, z across it, half-width across the flow), from the deck's middle (<see cref="NavAreaAuthoring.piers"/>).</summary>
+        public readonly Vector3[] Piers;
+
+        private MapDeck(Vector2 size, float landing, float clearSpan, Vector3[] piers)
         {
             Size = size;
             Landing = landing;
             ClearSpan = clearSpan;
+            Piers = piers;
         }
 
         /// <summary>Whether the abutments stand inside the deck, as the height shaper needs.</summary>
@@ -33,12 +37,13 @@ namespace HyperRTS.Editor.Maps.Palette
             var area = prefab.GetComponent<NavAreaAuthoring>();
             var size = area.size;
             var clearSpan = area.ClearSpan();
+            var piers = area.PierPoints();
             if (!prefab.TryGetComponent<BuildingAuthoring>(out var building))
             {
-                return new MapDeck(size, 0f, clearSpan);
+                return new MapDeck(size, 0f, clearSpan, piers);
             }
 
-            return new MapDeck(size, Mathf.Max(0f, (building.footprint.y - size.y) * 0.5f), clearSpan);
+            return new MapDeck(size, Mathf.Max(0f, (building.footprint.y - size.y) * 0.5f), clearSpan, piers);
         }
     }
 }

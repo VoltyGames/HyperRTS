@@ -49,9 +49,37 @@ float ShoreLap(float2 uv)
     return -(0.5 + 0.5 * sin((_Time.y / _ShoreWavePeriod + uv.y * 0.07) * TWO_PI)) * _ShoreLap * _ShoreFadeDepth;
 }
 
-// Calm-water foam: drifting patches in the trails below crossings (vertex R), and bands along the banks. Ground
-// detail Low drops it.
-half CalmFoam(float2 uv, float shoreDistance, half trail)
+// Foam round each bridge pier, which the water's mesh frame orients: down is its V on the water plane, across its U.
+// Water piles into a thin rim upstream of the pier; behind it a wake as wide as the pier widens slowly and fades over
+// _PierWakeLength, broken into drifting patches by `broken` but never gone, with brighter shear lines down its edges.
+half PierFoam(float3 positionWS, float2 down, float2 across, half broken)
+{
+    half foam = 0.0;
+    for (int i = 0; i < min((int)_HyperRTSWaterPierCount, MAX_WATER_PIERS); i++)
+    {
+        float2 offset = positionWS.xz - _HyperRTSWaterPiers[i].xy;
+        float halfWidth = _HyperRTSWaterPiers[i].z;
+        float u = abs(dot(offset, across));
+        float v = dot(offset, down);
+
+        float rim = length(float2(u, min(v, 0.0))) - halfWidth;
+        half cushion = step(0.0, rim) * (1.0 - smoothstep(0.0, _PierCushionWidth, rim)) * step(v, 0.0);
+
+        float spread = halfWidth + v * 0.12;
+        half body = 1.0 - smoothstep(0.6, 1.0, u / spread);
+        float edge = (u - spread) / 0.35;
+        half shear = exp(-edge * edge);
+        half fade = pow(saturate(1.0 - v / _PierWakeLength), 2.0) * step(0.0, v);
+        half wake = fade * max(body * lerp(0.3, 1.0, broken), shear * lerp(0.55, 1.0, broken));
+        foam = max(foam, max(cushion, wake));
+    }
+
+    return foam * _PierWakeFoam;
+}
+
+// Calm-water foam: drifting patches in the trails below fords (vertex R), bands along the banks and bridge pier
+// wakes. Ground detail Low drops it.
+half CalmFoam(float2 uv, float3 positionWS, half3 bitangent, half3 tangent, float shoreDistance, half trail)
 {
     #if defined(_TERRAIN_SIMPLE)
         return 0.0;
@@ -81,7 +109,15 @@ half CalmFoam(float2 uv, float shoreDistance, half trail)
             bank = max(max(band * band, waterline * 0.35) * _BankFoamAmount, crest * _ShoreWaveFoam) * broken;
         }
 
-        return max(flow, bank);
+        float2 down = normalize(bitangent.xz + 1e-5);
+        float2 across = normalize(tangent.xz + 1e-5);
+        half pier = 0.0;
+        [branch] if (_HyperRTSWaterPierCount > 0.5)
+        {
+            pier = PierFoam(positionWS, down, across, smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches));
+        }
+
+        return max(max(flow, bank), pier);
     #endif
 }
 

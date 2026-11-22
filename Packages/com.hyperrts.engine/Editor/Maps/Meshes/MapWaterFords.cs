@@ -6,8 +6,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Meshes
 {
     /// <summary>
-    /// River vertex colour at crossings: A is how shallow a ford's bed is, G marks a ford's fast water and R the foam
-    /// lines trailing downstream of fords and bridges (B, set by ponds, marks still water), all from the climate's ford and crossing foam distances.
+    /// River vertex colour at fords: A is how shallow the bed is, G marks fast water and R the foam lines trailing
+    /// downstream (B, set by ponds, marks still water), all from the climate's ford and crossing foam distances. Bridges
+    /// leave none: their piers carry their own wakes (WaterPiers).
     /// </summary>
     public static class MapWaterFords
     {
@@ -17,6 +18,11 @@ namespace HyperRTS.Editor.Maps.Meshes
             var (shallow, fast, trail) = (0f, 0f, 0f);
             foreach (var crossing in crossings)
             {
+                if (crossing.IsBridge)
+                {
+                    continue;
+                }
+
                 var local = crossing.Local(point);
                 if (Mathf.Abs(local.y) > crossing.Span * 0.5f)
                 {
@@ -28,11 +34,6 @@ namespace HyperRTS.Editor.Maps.Meshes
                 if (below && climate.crossingFoamLength > 0f)
                 {
                     trail = Mathf.Max(trail, 1f - MapGeometry.Smooth(edge / climate.crossingFoamLength));
-                }
-
-                if (crossing.IsBridge)
-                {
-                    continue;
                 }
 
                 var run = below ? climate.fordRapidsLength : climate.fordShallowsWidth;

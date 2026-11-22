@@ -28,6 +28,9 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>A bridge's length between its abutment faces, where the ground keeps the river's banks; 0 for a ford.</summary>
         public float ClearSpan { get; set; }
 
+        /// <summary>A bridge's piers in map space as (x, z, half-width across the flow); empty for a ford or a single span.</summary>
+        public Vector3[] Piers { get; private set; } = System.Array.Empty<Vector3>();
+
         /// <summary>Surface height units cross at: a bridge deck, or just under the water over a ford.</summary>
         public float Height { get; set; }
 
@@ -52,6 +55,18 @@ namespace HyperRTS.Editor.Maps.Geometry
             var shoulder = Width * 0.5f + MapShapes.RoadShoulder;
             var side = MapGeometry.Smooth((Mathf.Abs(local.x) - shoulder) / MapShapes.RoadShoulder);
             return (1f - along) * (1f - side);
+        }
+
+        /// <summary>Sets <see cref="Piers"/> from a deck's piers, which sit in the deck's frame: x along the river, z across it.</summary>
+        public void PlacePiers(Vector3[] deckPiers)
+        {
+            var along = MapGeometry.Right(Across);
+            Piers = new Vector3[deckPiers.Length];
+            for (var i = 0; i < deckPiers.Length; i++)
+            {
+                var point = Position + along * deckPiers[i].x + Across * deckPiers[i].y;
+                Piers[i] = new Vector3(point.x, point.y, deckPiers[i].z);
+            }
         }
 
         public float Yaw => MapGeometry.Yaw(Across);

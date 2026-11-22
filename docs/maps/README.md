@@ -100,9 +100,9 @@ All arrays are optional and authored for the sector only. Land is claimed in the
 
 A river crossing has `along` (0 to 1 down the authored river), `kind` (`bridge` or `ford`), `width` and `prop`: a
 bridge's prefab carries the walkable deck, a Nav Area of kind Deck on its root, whose size sets the deck's length and
-width, and whose `abutments` list the two abutment renderers: the gap between their inner faces along the deck is
-the open length between them
-([ground](build.md#ground-and-rendering)). The ground under the span is the river bank, so Nav Obstacles along both
+width. Its `abutments` list the two abutment renderers, and the gap between their inner faces along the deck is the
+open length between them ([ground](build.md#ground-and-rendering)); its `piers` list the renderers standing in the
+water, and the river draws a wake below each. The ground under the span is the river bank, so Nav Obstacles along both
 sides of the deck keep ground units from stepping onto it from below. A ford's bed sits just under the water.
 
 Surfaces grow their own lone trees and props by rule, so use `scatters` and `rows` only for what no rule makes.

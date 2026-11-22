@@ -47,6 +47,15 @@ CBUFFER_START(UnityPerMaterial)
     float _ReflectionDistance;
     float _ReflectionThickness;
     half _ReflectionDistortion;
+    float _PierWakeLength;
+    half _PierWakeFoam;
+    float _PierCushionWidth;
 CBUFFER_END
+
+// The map's bridge piers as (world x, world z, half-width across the flow), set as globals by WaterPiers, whose
+// Capacity MAX_WATER_PIERS matches.
+#define MAX_WATER_PIERS 16
+float4 _HyperRTSWaterPiers[MAX_WATER_PIERS];
+float _HyperRTSWaterPierCount;
 
 #endif

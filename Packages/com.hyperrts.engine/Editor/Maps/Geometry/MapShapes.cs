@@ -220,18 +220,22 @@ namespace HyperRTS.Editor.Maps.Geometry
             Crossings.Add(Bridge(spec, position, across, decks.Find(spec.prop), water));
         }
 
-        private static MapCrossing Bridge(MapCrossingSpec spec, Vector2 position, Vector2 across, MapDeck deck,
-            float water) => new()
+        private static MapCrossing Bridge(MapCrossingSpec spec, Vector2 position, Vector2 across, MapDeck deck, float water)
         {
-            Kind = spec.kind,
-            Prop = spec.prop,
-            Position = position,
-            Across = across,
-            Width = deck.Size.x,
-            Span = deck.Size.y,
-            Landing = deck.Landing,
-            ClearSpan = deck.ClearSpan,
-            Height = water + DeckClearance,
-        };
+            var crossing = new MapCrossing
+            {
+                Kind = spec.kind,
+                Prop = spec.prop,
+                Position = position,
+                Across = across,
+                Width = deck.Size.x,
+                Span = deck.Size.y,
+                Landing = deck.Landing,
+                ClearSpan = deck.ClearSpan,
+                Height = water + DeckClearance,
+            };
+            crossing.PlacePiers(deck.Piers);
+            return crossing;
+        }
     }
 }

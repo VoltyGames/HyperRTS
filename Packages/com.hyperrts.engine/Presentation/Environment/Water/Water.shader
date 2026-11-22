@@ -1,5 +1,5 @@
 // River and lake surface: three scales of spectrum ripples flowing along V (metres), faster mid-channel. Vertex A is
-// how shallow a ford is, G fast water, B still water (ponds).
+// how shallow a ford is, G fast water, R foam trailing a ford, B still water (ponds).
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
@@ -39,6 +39,9 @@ Shader "HyperRTS/Water"
         _ShoreLap ("Shore Lap (fraction of fade depth)", Range(0, 1)) = 0.6
         _WakeFoam ("Wake Foam", Range(0, 1)) = 0.8
         _WakeRipple ("Wake Ripple Strength", Range(0, 2)) = 0.5
+        _PierWakeLength ("Pier Wake Length (m)", Float) = 14
+        _PierWakeFoam ("Pier Wake Foam", Range(0, 1)) = 0.7
+        _PierCushionWidth ("Pier Cushion Width (m)", Float) = 0.5
         _ReflectionStrength ("Scene Reflection Strength", Range(0, 1)) = 1
         _ReflectionFloor ("Reflection Looking Straight Down (water is 0.02)", Range(0.02, 0.5)) = 0.02
         _ReflectionDistance ("Scene Reflection Reach (m)", Float) = 40
@@ -196,7 +199,7 @@ Shader "HyperRTS/Water"
                 // Calm and wake foam thin out on the last few centimetres so they never paint over the dry bank.
                 half rapids = RapidsFoam(input.uv, input.color.g) * 0.5;
                 half shallowFade = saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
-                half calm = max(CalmFoam(input.uv, shoreDistance, input.color.r), wake.foam) * shallowFade;
+                half calm = max(CalmFoam(input.uv, input.positionWS, bitangent, input.tangentWS.xyz, shoreDistance, input.color.r), wake.foam) * shallowFade;
                 half foam = max(rapids, calm);
                 color = lerp(color, _FoamColor.rgb * (sun.color * sun.shadowAttenuation * 0.6 + 0.4), foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);

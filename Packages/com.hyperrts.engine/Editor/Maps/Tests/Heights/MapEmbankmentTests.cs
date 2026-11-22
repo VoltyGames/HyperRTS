@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
@@ -28,6 +29,17 @@ namespace HyperRTS.Editor.Maps.Tests.Heights
             deck.kind = NavAreaKind.Deck;
             deck.size = new Vector2(7f, DeckLength);
             deck.abutments = new[] { Abutment(-1f), Abutment(1f) };
+            deck.piers = new[] { Pier(-5f), Pier(5f) };
+        }
+
+        // A 1 m wide, 2 m long block 1.5 m off the deck's middle along the river, so its half-width across the flow is 1.
+        private Renderer Pier(float z)
+        {
+            var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.transform.SetParent(_bridge.transform);
+            block.transform.localScale = new Vector3(1f, 3f, 2f);
+            block.transform.localPosition = new Vector3(1.5f, 0f, z);
+            return block.GetComponent<Renderer>();
         }
 
         // A 3 m thick block whose inner face sits half the clear span from the deck's middle.
@@ -57,6 +69,15 @@ namespace HyperRTS.Editor.Maps.Tests.Heights
                     var p = crossing.Position + crossing.Across * along + new Vector2(aside, 0f);
                     Assert.AreEqual(open.Height(p), bridged.Height(p), 1e-3f, $"the river's own ground {along} m along, {aside} m aside");
                 }
+            }
+
+            Assert.AreEqual(2, crossing.Piers.Length);
+            foreach (var (pier, z) in crossing.Piers.Zip(new[] { -5f, 5f }, (pier, z) => (pier, z)))
+            {
+                var expected = crossing.Position + MapGeometry.Right(crossing.Across) * 1.5f + crossing.Across * z;
+                Assert.AreEqual(expected.x, pier.x, 1e-3f, "the pier's map x");
+                Assert.AreEqual(expected.y, pier.y, 1e-3f, "the pier's map z");
+                Assert.AreEqual(1f, pier.z, 1e-3f, "its half-width across the flow");
             }
 
             foreach (var sign in new[] { -1f, 1f })

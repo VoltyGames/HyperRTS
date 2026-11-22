@@ -1,3 +1,4 @@
+using System.Linq;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
@@ -7,6 +8,7 @@ using HyperRTS.Editor.Maps.Vegetation;
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
+using HyperRTS.Presentation.Environment.Water;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -200,6 +202,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             var renderer = water.AddComponent<MeshRenderer>();
             renderer.sharedMaterial = generation.Project.Climate.water;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
+            water.AddComponent<WaterPiers>().points = shapes.Crossings.Where(c => c.IsBridge).SelectMany(c => c.Piers).ToArray();
         }
 
         /// <summary>The climate's weathers on a <see cref="WeatherSet"/>, the spec's instanced under it to light the bake.</summary>

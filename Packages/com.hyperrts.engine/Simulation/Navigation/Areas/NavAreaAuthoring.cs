@@ -24,6 +24,9 @@ namespace HyperRTS.Simulation.Navigation.Areas
         [Tooltip("Deck only: the renderers of the bridge's two abutments, or empty for a deck with none. The gap between their inner faces along this transform's Z is the open length map building keeps for the river.")]
         public Renderer[] abutments = System.Array.Empty<Renderer>();
 
+        [Tooltip("Deck only: the renderers of the bridge's piers standing in the water, or empty for a single span. Each makes foam where the current meets it.")]
+        public Renderer[] piers = System.Array.Empty<Renderer>();
+
         /// <summary>The gap between the abutments' inner faces along Z in this transform's space; 0 with no abutments, negative when they overlap.</summary>
         public float ClearSpan()
         {
@@ -37,25 +40,42 @@ namespace HyperRTS.Simulation.Navigation.Areas
                 throw new System.InvalidOperationException($"{name}: a Nav Area lists no abutments or exactly two renderers.");
             }
 
-            var first = ZRange(abutments[0]);
-            var second = ZRange(abutments[1]);
-            return Mathf.Max(first.x, second.x) - Mathf.Min(first.y, second.y);
+            var first = LocalBounds(abutments[0]);
+            var second = LocalBounds(abutments[1]);
+            return Mathf.Max(first.min.z, second.min.z) - Mathf.Min(first.max.z, second.max.z);
         }
 
-        private Vector2 ZRange(Renderer renderer)
+        /// <summary>Each pier as (centre x, centre z, half-extent along Z) in this transform's space: the width it blocks across the flow.</summary>
+        public Vector3[] PierPoints()
+        {
+            var points = new Vector3[piers.Length];
+            for (var i = 0; i < piers.Length; i++)
+            {
+                if (piers[i] == null)
+                {
+                    throw new System.InvalidOperationException($"{name}: pier {i} of the Nav Area is empty.");
+                }
+
+                var bounds = LocalBounds(piers[i]);
+                points[i] = new Vector3(bounds.center.x, bounds.center.z, bounds.extents.z);
+            }
+
+            return points;
+        }
+
+        private Bounds LocalBounds(Renderer renderer)
         {
             var toLocal = transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
-            var bounds = renderer.localBounds;
-            var range = new Vector2(float.MaxValue, float.MinValue);
+            var source = renderer.localBounds;
+            var bounds = new Bounds(toLocal.MultiplyPoint3x4(source.center), Vector3.zero);
             for (var corner = 0; corner < 8; corner++)
             {
                 var offset = new Vector3(
                     (corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
-                var z = toLocal.MultiplyPoint3x4(bounds.center + Vector3.Scale(bounds.extents, offset)).z;
-                range = new Vector2(Mathf.Min(range.x, z), Mathf.Max(range.y, z));
+                bounds.Encapsulate(toLocal.MultiplyPoint3x4(source.center + Vector3.Scale(source.extents, offset)));
             }
 
-            return range;
+            return bounds;
         }
 
         public class Baker : Baker<NavAreaAuthoring>
