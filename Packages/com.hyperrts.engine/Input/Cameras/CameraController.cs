@@ -94,6 +94,9 @@ namespace HyperRTS.Input.Cameras
         private Vector3 _focus;
         private float _groundVelocity;
 
+        /// <summary>While set, only <see cref="LookAt"/> and <see cref="FocusOn"/> move the view: no pointer, keys, home search or shake.</summary>
+        public bool Pinned { get; set; }
+
         /// <summary>Jumps to look at a world point from a height within the zoom range, turned to <paramref name="yaw"/> degrees if given.</summary>
         public void LookAt(Vector3 worldPoint, float height, float? yaw)
         {
@@ -138,6 +141,11 @@ namespace HyperRTS.Input.Cameras
 
         private void Update()
         {
+            if (Pinned)
+            {
+                return;
+            }
+
             if (TryTakeFocusRequest(out var point) || TryFindHomeOnce(out point))
             {
                 FocusOn(point);

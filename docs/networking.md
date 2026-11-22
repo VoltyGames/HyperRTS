@@ -57,6 +57,14 @@ It configures slots, teams, AI, resources, fog and weather. See [Match](simulati
 | `-time-limit <minutes>` | Server only: quit after this much server time |
 | `-report <path>` | Server only, with one of the two above: write a JSON cost report on quit |
 
+A rendering player started with `-camera-cost <points file>` and `-camera-cost-report <path>` runs `CameraCostProbe`:
+once the match camera is live it pins the `CameraController`, so the pointer never pans it, and visits each point of the
+file at each height. The file is JSON, `{"points": [{"name", "x", "z", "yaw"}], "heights": [m], "sampleFrames": n,
+"settleFrames": n}`. After the settle frames it samples that many `FrameTimingManager` frames and writes
+`{"results": [{"point", "height", "samples", "gpuMedianMs", "gpuP95Ms", "cpuMedianMs", "cpuP95Ms"}]}`, then quits with 0.
+Frame Timing Stats off, no GPU times or a bad file logs the reason and quits with 1. The game starts its own match, as
+for `NetworkLauncher.DefaultScene`.
+
 A bad flag or a failed start logs the reason and exits with 1. A typical dedicated server:
 
 ```text
