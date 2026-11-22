@@ -1,5 +1,6 @@
 using HyperRTS.Presentation.Overlays;
 using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.TeamOutline;
 using UnityEngine;
 using UnityEngine.UIElements;
 
@@ -25,6 +26,8 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps
             }
 
             UnitSilhouettes.Hide(_clean);
+            // Without silhouettes the stencil no longer marks hidden parts, so the outlines go with them.
+            TeamOutlines.Hide(_clean);
         }
     }
 }

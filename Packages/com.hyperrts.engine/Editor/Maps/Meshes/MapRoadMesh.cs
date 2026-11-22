@@ -92,23 +92,13 @@ namespace HyperRTS.Editor.Maps.Meshes
             }
 
             var (first, end) = atStart ? (0, reach) : (last - reach, last);
-            var columns = Mathf.Max(3, Mathf.CeilToInt(road.Width / AcrossStep) + 1);
-            var previous = -1;
-            for (var i = first; i <= end; i++)
+            AddStrip(points, along, (first, end), road.Width, i =>
             {
                 var distance = higher.Line.Distance(points[i]);
                 var onto = Mathf.Clamp01((distance - (half - SpillIn)) / SpillIn);
                 var alongRoad = Mathf.Clamp01((half + SpillOut - distance) / SpillOut);
-                var ahead = points[Mathf.Min(i + 1, last)] - points[Mathf.Max(i - 1, 0)];
-                var row = Count;
-                AddRow(points[i], ahead.normalized, road.Width, columns, along[i], Mathf.Min(onto, alongRoad));
-                if (previous >= 0)
-                {
-                    AddQuads(previous, row, columns);
-                }
-
-                previous = row;
-            }
+                return Mathf.Min(onto, alongRoad);
+            });
         }
 
         public Mesh ToMesh(string name)
@@ -128,14 +118,20 @@ namespace HyperRTS.Editor.Maps.Meshes
         private void AddRun(List<Vector2> points, List<float> along, (int First, int Last, bool In, bool Out) run,
             float width)
         {
+            AddStrip(points, along, (run.First, run.Last), width, i => Alpha(along, run, i));
+        }
+
+        /// <summary>Rows <paramref name="span"/> of the points as one strip of quads, each row's vertex alpha from <paramref name="alphaAt"/>.</summary>
+        private void AddStrip(List<Vector2> points, List<float> along, (int First, int Last) span, float width,
+            Func<int, float> alphaAt)
+        {
             var columns = Mathf.Max(3, Mathf.CeilToInt(width / AcrossStep) + 1);
             var previous = -1;
-            for (var i = run.First; i <= run.Last; i++)
+            for (var i = span.First; i <= span.Last; i++)
             {
                 var ahead = points[Mathf.Min(i + 1, points.Count - 1)] - points[Mathf.Max(i - 1, 0)];
                 var row = Count;
-                var alpha = Alpha(along, run, i);
-                AddRow(points[i], ahead.normalized, width, columns, along[i], alpha);
+                AddRow(points[i], ahead.normalized, width, columns, along[i], alphaAt(i));
                 if (previous >= 0)
                 {
                     AddQuads(previous, row, columns);

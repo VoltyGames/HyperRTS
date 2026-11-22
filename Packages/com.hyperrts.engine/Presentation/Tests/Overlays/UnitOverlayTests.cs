@@ -177,8 +177,8 @@ namespace HyperRTS.Presentation.Tests.Overlays
         [Test]
         public void HealthBar_KeepsItsMinimumHeightOnSmallScreensAndScales()
         {
-            var fullHD = HealthBars.PixelScale(1080f, 1f, _style);
-            var small = HealthBars.PixelScale(540f, 0.8f, _style);
+            var fullHD = _style.PixelScale(1080f, 1f);
+            var small = _style.PixelScale(540f, 0.8f);
 
             Assert.AreEqual(1f, fullHD, 1e-4f);
             Assert.AreEqual(_style.barMinHeight, _style.barHeight * small, 1e-4f);

@@ -37,16 +37,10 @@ half TeamMask(float2 uv0, float objectY)
 #define TEAM_PAINT_VALUE 0.9
 #define TEAM_PAINT_COVER 0.9
 
-// Repaints masked albedo in the team colour, keeping its shading; _TeamColor.a 0 (neutral) leaves it untouched.
-half3 ApplyTeamColor(half3 albedo, float2 uv0, float3 positionWS)
+// Repaints albedo under teamMask in the team colour, keeping its shading; _TeamColor.a 0 (neutral) leaves it untouched.
+half3 ApplyTeamColor(half3 albedo, half teamMask)
 {
-    // Uncoloured meshes (neutral, no player yet) skip the mask sample and object-space transform.
-    if (_TeamColor.a == 0)
-    {
-        return albedo;
-    }
-
-    half amount = TeamMask(uv0, TransformWorldToObject(positionWS).y) * half(_TeamColor.a);
+    half amount = teamMask * half(_TeamColor.a);
     half3 team = half3(_TeamColor.rgb);
     half3 coat = lerp(Luminance(team).xxx, team, half(TEAM_PAINT_CHROMA)) * half(TEAM_PAINT_VALUE);
     half3 painted = coat * saturate(Luminance(albedo) * half(2.2));

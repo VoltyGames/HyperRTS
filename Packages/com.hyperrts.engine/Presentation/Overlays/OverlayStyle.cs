@@ -193,6 +193,13 @@ namespace HyperRTS.Presentation.Overlays
 
         private void OnValidate() => Version++;
 
+        /// <summary>
+        /// Reference pixels to screen pixels at the current resolution and UI scale, kept large enough that a bar is
+        /// never shorter than the minimum.
+        /// </summary>
+        public float PixelScale(float screenHeight, float uiScale) => Mathf.Max(
+            screenHeight / ReferencePixels.ScreenHeight * uiScale, barMinHeight / barHeight);
+
         public Color RelationColor(Relation relation) => relation switch
         {
             Relation.Own => own,

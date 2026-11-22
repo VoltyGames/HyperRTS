@@ -51,7 +51,7 @@ units layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visib
 `HyperRTSSilhouette` pass where the unit is hidden, which also sets bit 32 for the
 [team outline](hud.md#team-outlines). Buildings stay off the
 units layer, or one in front of a unit would mark it seen. The validator adds both features in that order;
-`UnitSilhouettes.Hide` turns them and the team outlines off for footage. Scattered grass and row crops write stencil bit
+the staging clean step turns them off with `UnitSilhouettes.Hide` and the outlines with `TeamOutlines.Hide`. Scattered grass and row crops write stencil bit
 64 (ground cover), which the silhouette pass and the ground markers skip, so plants cover a marker line and hide no unit
 behind them.
 

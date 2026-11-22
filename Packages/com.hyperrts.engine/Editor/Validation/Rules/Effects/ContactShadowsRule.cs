@@ -1,50 +1,25 @@
 using System.Linq;
 using HyperRTS.Editor.Validation.Issues;
-using HyperRTS.Editor.Validation.Project;
-using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Presentation.Rendering.ContactShadows;
-using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Validation.Rules.Effects
 {
     /// <summary>A match scene needs contact shadows, with URP's Screen Space Shadows, on every active renderer.</summary>
-    public sealed class ContactShadowsRule : ISceneRule
+    public sealed class ContactShadowsRule : RendererFeatureRule<ContactShadowsFeature>
     {
-        private const string FeatureName = "Contact Shadows";
-
         // URP keeps the Screen Space Shadows feature internal.
         private const string ScreenShadowsType = "ScreenSpaceShadows";
 
-        public void Check(SceneSet scenes, ValidationIssues issues)
+        protected override string FeatureName => "Contact Shadows";
+
+        protected override string MissingMessage => "No Contact Shadows feature: small things lose their shadows at the ground.";
+
+        protected override string SettingsProblem(ContactShadowsFeature feature) => feature.SettingsProblem();
+
+        protected override void CheckRenderer(UniversalRendererData renderer, ContactShadowsFeature feature, ValidationIssues issues)
         {
-            if (!scenes.HostsSubScene)
-            {
-                return;
-            }
-
-            foreach (var renderer in RendererFeatures.ActiveRenderers())
-            {
-                CheckRenderer(renderer, issues);
-            }
-        }
-
-        private static void CheckRenderer(UniversalRendererData renderer, ValidationIssues issues)
-        {
-            var feature = RendererFeatures.Find<ContactShadowsFeature>(renderer);
-            if (feature == null)
-            {
-                issues.Warn(renderer, "No Contact Shadows feature: small things lose their shadows at the ground.",
-                    "Add Feature", () => AddFeature(renderer));
-                return;
-            }
-
-            var problem = feature.SettingsProblem();
-            if (problem.Length > 0)
-            {
-                issues.Error(renderer, problem);
-            }
-
+            base.CheckRenderer(renderer, feature, issues);
             if (renderer.renderingMode is RenderingMode.Deferred or RenderingMode.DeferredPlus)
             {
                 issues.Error(renderer, "Contact shadows run after the depth prepass, so the renderer must be Forward or Forward+.");
@@ -54,12 +29,6 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
             {
                 issues.Error(renderer, "Contact shadows darken URP's screen-space shadows: add its Screen Space Shadows feature.");
             }
-        }
-
-        private static void AddFeature(UniversalRendererData renderer)
-        {
-            var feature = ScriptableObject.CreateInstance<ContactShadowsFeature>();
-            RendererFeatures.Add(renderer, feature, FeatureName);
         }
     }
 }

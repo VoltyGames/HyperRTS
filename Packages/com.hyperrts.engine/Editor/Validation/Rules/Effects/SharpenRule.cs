@@ -1,51 +1,15 @@
-using HyperRTS.Editor.Validation.Issues;
-using HyperRTS.Editor.Validation.Project;
-using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Presentation.Rendering.Sharpen;
-using UnityEngine;
-using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Validation.Rules.Effects
 {
     /// <summary>A match scene needs the sharpen feature, with sane settings, on every active renderer.</summary>
-    public sealed class SharpenRule : ISceneRule
+    public sealed class SharpenRule : RendererFeatureRule<SharpenFeature>
     {
-        private const string FeatureName = "Sharpen";
+        protected override string FeatureName => "Sharpen";
 
-        public void Check(SceneSet scenes, ValidationIssues issues)
-        {
-            if (!scenes.HostsSubScene)
-            {
-                return;
-            }
+        protected override string MissingMessage =>
+            "No Sharpen feature: temporal anti-aliasing leaves ground and leaves soft.";
 
-            foreach (var renderer in RendererFeatures.ActiveRenderers())
-            {
-                CheckRenderer(renderer, issues);
-            }
-        }
-
-        private static void CheckRenderer(UniversalRendererData renderer, ValidationIssues issues)
-        {
-            var feature = RendererFeatures.Find<SharpenFeature>(renderer);
-            if (feature == null)
-            {
-                issues.Warn(renderer, "No Sharpen feature: temporal anti-aliasing leaves ground and leaves soft.",
-                    "Add Feature", () => AddFeature(renderer));
-                return;
-            }
-
-            var problem = feature.SettingsProblem();
-            if (problem.Length > 0)
-            {
-                issues.Error(renderer, problem);
-            }
-        }
-
-        private static void AddFeature(UniversalRendererData renderer)
-        {
-            var feature = ScriptableObject.CreateInstance<SharpenFeature>();
-            RendererFeatures.Add(renderer, feature, FeatureName);
-        }
+        protected override string SettingsProblem(SharpenFeature feature) => feature.SettingsProblem();
     }
 }

@@ -43,11 +43,12 @@ void LitTeamPassFragment(
     float3 viewDirTS = float3(dot(viewWS, input.tangentWS.xyz), dot(viewWS, bitangentWS), dot(viewWS, input.normalWS.xyz));
     surfaceData.emission = InteriorEmission(input.uv, viewDirTS);
 #endif
-    surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);
-#if defined(_WEATHERING)
     float3 positionOS = TransformWorldToObject(input.positionWS);
+    half teamMask = TeamMask(uv0, positionOS.y);
+    surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, teamMask);
+#if defined(_WEATHERING)
     float3 normalOS = normalize(TransformWorldToObjectNormal(input.normalWS.xyz));
-    ApplyWeathering(positionOS, normalOS, TeamMask(uv0, positionOS.y), surfaceData);
+    ApplyWeathering(positionOS, normalOS, teamMask, surfaceData);
 #endif
     ApplyGrime(input.positionWS, surfaceData);
     ApplyRain(input.normalWS.xyz, surfaceData);

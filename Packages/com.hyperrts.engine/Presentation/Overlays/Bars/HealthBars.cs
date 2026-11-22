@@ -1,14 +1,10 @@
-using System;
-using HyperRTS.Presentation.Rendering;
 using UnityEngine;
-using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Overlays.Bars
 {
     /// <summary>One frame's screen-aligned health bars, all in one draw.</summary>
-    public sealed class HealthBars : IDisposable
+    public sealed class HealthBars : OverlayBatch<HealthBarInstance>
     {
-        private static readonly int PixelScaleId = Shader.PropertyToID("_PixelScale");
         private static readonly int OffsetId = Shader.PropertyToID("_Offset");
         private static readonly int BackId = Shader.PropertyToID("_Back");
         private static readonly int HighId = Shader.PropertyToID("_High");
@@ -22,28 +18,13 @@ namespace HyperRTS.Presentation.Overlays.Bars
         private static readonly int HeavyCoverId = Shader.PropertyToID("_HeavyCover");
         private static readonly int LightCoverId = Shader.PropertyToID("_LightCover");
 
-        private readonly InstanceBuffer<HealthBarInstance> _bars;
-        private readonly Material _material;
-        private OverlayStyle _appliedStyle;
-        private float _appliedPixelScale;
-        private int _appliedVersion;
-
-        public HealthBars(Mesh billboard, Material material)
+        public HealthBars(Mesh billboard, Material material) : base(billboard, material)
         {
-            _bars = new InstanceBuffer<HealthBarInstance>(billboard);
-            _material = new Material(material) { hideFlags = HideFlags.DontSave };
         }
-
-        /// <summary>
-        /// Reference pixels to screen pixels at the current resolution and UI scale, kept large enough that a bar is
-        /// never shorter than the style's minimum.
-        /// </summary>
-        public static float PixelScale(float screenHeight, float uiScale, OverlayStyle style) => Mathf.Max(
-            screenHeight / ReferencePixels.ScreenHeight * uiScale, style.barMinHeight / style.barHeight);
 
         public void Add(Vector3 anchor, in HealthBarData bar, OverlayStyle style)
         {
-            _bars.Add(new HealthBarInstance
+            Add(new HealthBarInstance
             {
                 Bar = new Vector4(bar.Fraction, bar.Segments, bar.Rank, 1f),
                 Size = new Vector4(bar.Width, style.barHeight, bar.Squad.Members, bar.Squad.Alive),
@@ -53,48 +34,20 @@ namespace HyperRTS.Presentation.Overlays.Bars
             });
         }
 
-        public void Draw(OverlayStyle style, float uiScale, int layer)
+        protected override void ApplyStyle(OverlayStyle style, Material material)
         {
-            if (_bars.Count == 0)
-            {
-                return;
-            }
-
-            var pixelScale = PixelScale(Screen.height, uiScale, style);
-            var stale = style != _appliedStyle || style.Version != _appliedVersion || pixelScale != _appliedPixelScale;
-            if (stale)
-            {
-                Apply(style, pixelScale);
-            }
-
-            _bars.Draw(_material, layer);
-        }
-
-        public void Dispose()
-        {
-            _bars.Dispose();
-            Object.Destroy(_material);
-        }
-
-        // Style values are read once per style version, not every frame.
-        private void Apply(OverlayStyle style, float pixelScale)
-        {
-            _material.SetFloat(PixelScaleId, pixelScale);
-            _material.SetFloat(OffsetId, style.barOffset);
-            _material.SetColor(BackId, style.healthBack);
-            _material.SetColor(HighId, style.healthHigh);
-            _material.SetColor(MidId, style.healthMid);
-            _material.SetColor(LowId, style.healthLow);
-            _material.SetColor(RankPipId, style.rankPip);
-            _material.SetColor(MemberPipId, style.memberPip);
-            _material.SetColor(SuppressedId, style.suppressed);
-            _material.SetColor(PinnedId, style.pinned);
-            _material.SetColor(RetreatId, style.retreating);
-            _material.SetColor(HeavyCoverId, style.heavyCover);
-            _material.SetColor(LightCoverId, style.lightCover);
-            _appliedStyle = style;
-            _appliedPixelScale = pixelScale;
-            _appliedVersion = style.Version;
+            material.SetFloat(OffsetId, style.barOffset);
+            material.SetColor(BackId, style.healthBack);
+            material.SetColor(HighId, style.healthHigh);
+            material.SetColor(MidId, style.healthMid);
+            material.SetColor(LowId, style.healthLow);
+            material.SetColor(RankPipId, style.rankPip);
+            material.SetColor(MemberPipId, style.memberPip);
+            material.SetColor(SuppressedId, style.suppressed);
+            material.SetColor(PinnedId, style.pinned);
+            material.SetColor(RetreatId, style.retreating);
+            material.SetColor(HeavyCoverId, style.heavyCover);
+            material.SetColor(LightCoverId, style.lightCover);
         }
     }
 }

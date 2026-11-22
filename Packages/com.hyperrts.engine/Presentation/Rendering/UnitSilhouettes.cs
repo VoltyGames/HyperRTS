@@ -4,7 +4,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
-    /// Hides the team-colour silhouettes of units behind cover, and the team outlines with them, for footage. URP's
+    /// Hides the team-colour silhouettes of units behind cover, for footage. URP's
     /// Render Objects features on the units rendering layer draw them; every Play session starts with them shown.
     /// </summary>
     public static partial class UnitSilhouettes

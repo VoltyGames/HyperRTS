@@ -95,8 +95,6 @@ half4 TeamOutlineFragment(SilhouetteVaryings input) : SV_Target
     ClipSilhouette(input);
 
     clip(_TeamColor.a - 0.001);
-    // Without silhouettes the stencil no longer marks hidden parts, so footage loses the outlines with them.
-    clip(0.5 - _HyperRTSHideSilhouettes);
 #ifdef BUILDING_OUTLINE_ON
     return half4(_TeamColor.rgb, 0.75);
 #else
