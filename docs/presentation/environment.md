@@ -76,6 +76,14 @@ the same hex tiling as its layers (`TerrainStains.hlsl`), so a burnt field never
 (`AshDrift`): noise thins its cover in patches, so the char and soil under a wide burn show through it. Ash and rubble
 slide off slopes steeper than about 32 degrees and are gone past about 53, so a crater wall never shows them stretched.
 
+**Buildings wear the ground round them.** A Building with a `wornGroundWidth` above 0 gets a `WornGround`. The first
+time it is seen finished, `WornGroundStampSystem` lays wet mud of its `wornGroundStrength` into the stain map round
+its turned footprint through `TrampleStamps.AddWornGround`: ragged stain discs about as wide as the band, overlapping
+along each side and jittered from the building's position, so the mud reaches about the width past the footprint
+with an uneven edge. Like every stain it lasts the match. The system keeps the buildings it stamped and forgets them
+on a replay seek back, as `TrenchStampSystem` does, so the cleared maps get the mud again. Plants ignore mud. A
+`Trench` never gets it: it is dug earth already.
+
 **Craters dent and raise the drawn ground.** A scar stamp draws a blast bowl (`ScarShape.hlsl`): a flat floor and a wall
 that eases up to the crest, no steeper than the heightmap draws cleanly, with slumped earth part way up and lumpy
 value noise over it, deepest kept (Max). The same

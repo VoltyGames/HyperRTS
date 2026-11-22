@@ -30,6 +30,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         private const float FootFlatten = 0.4f;
         private const float FootCropDamage = 0.15f;
 
+        // Worn ground discs sit this share of the band's width apart along a side, so neighbours overlap.
+        private const float WornSpacing = 0.7f;
+
         public readonly List<TrampleStamp> Trample = new();
         public readonly List<TrampleStamp> Tracks = new();
 
@@ -92,6 +95,29 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Rubble, ash, fuel and wet mud (0 to 1 each) left in a ragged disc for the rest of the match.</summary>
         public void AddStain(float2 center, float radius, float4 amounts) =>
             Stains.Add(Disc(center, radius, math.saturate(amounts)));
+
+        /// <summary>
+        /// Wet mud of <paramref name="strength"/> round a footprint, out to about <paramref name="width"/> metres past it:
+        /// overlapping ragged discs along each side, jittered from <paramref name="seed"/> so the edge is never straight.
+        /// </summary>
+        public void AddWornGround(in TurnedRect footprint, float width, float strength, uint seed)
+        {
+            var random = new Unity.Mathematics.Random(seed | 1u);
+            var mud = new float4(0f, 0f, 0f, strength);
+            for (var side = 0; side < 4; side++)
+            {
+                var from = Corner(footprint, side);
+                var to = Corner(footprint, side + 1);
+                var outward = math.normalize((from + to) * 0.5f - footprint.Center);
+                var discs = (int)math.ceil(math.distance(from, to) / (width * WornSpacing));
+                for (var i = 0; i < discs; i++)
+                {
+                    var along = math.lerp(from, to, (i + random.NextFloat(0.2f, 0.8f)) / discs);
+                    var center = along + outward * (width * random.NextFloat(0f, 0.25f));
+                    AddStain(center, width * random.NextFloat(0.8f, 1.2f), mud);
+                }
+            }
+        }
 
         public void AddWake(float2 position, float2 direction, float speed, float radius)
         {
@@ -157,6 +183,19 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             }
 
             return rim > 0f ? RimReach : 1f;
+        }
+
+        // Corners in turn round the rectangle, so corner i to i + 1 is one side.
+        private static float2 Corner(in TurnedRect area, int index)
+        {
+            var signs = (index % 4) switch
+            {
+                0 => new float2(-1f, -1f),
+                1 => new float2(1f, -1f),
+                2 => new float2(1f, 1f),
+                _ => new float2(-1f, 1f),
+            };
+            return area.Center + area.Right * (signs.x * area.Half.x) + area.Forward * (signs.y * area.Half.y);
         }
 
         private static TrampleStamp Stamp(float2 center, float2 forward, float2 halfSize, float4 value) =>

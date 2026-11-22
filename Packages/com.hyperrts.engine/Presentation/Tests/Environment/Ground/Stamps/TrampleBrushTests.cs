@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues.Effects;
@@ -93,6 +94,20 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             var scorch = Sample(_surfaces.Tracks, Blue);
             Assert.Greater(scorch[0], 0.9f, "the corner is not scorched");
             Assert.Less(scorch[1], 0.01f);
+        }
+
+        // The first point lies just past one footprint's edge, the second past the other band's widest reach.
+        [Test]
+        public void WornGround_IsMudAtTheFootprint_AndGoneWellPastItsWidth()
+        {
+            var stamps = new TrampleStamps();
+            stamps.AddWornGround(new TurnedRect(new float2(50f, 115f), new float2(1f, 0f), new float2(8f, 9.6f)), 3f, 1f, 7u);
+            stamps.AddWornGround(new TurnedRect(new float2(50f, -112f), new float2(1f, 0f), new float2(8f, 6f)), 3f, 1f, 7u);
+            Draw(stamps, 0, 0);
+
+            var mud = Sample(_surfaces.Stains, Alpha);
+            Assert.Greater(mud[0], 0.5f, "no mud at the footprint's edge");
+            Assert.Less(mud[1], 0.01f, "the mud reaches far past its width");
         }
 
         [Test]

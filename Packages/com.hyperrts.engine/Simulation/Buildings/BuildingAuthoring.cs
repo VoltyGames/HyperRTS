@@ -41,6 +41,15 @@ namespace HyperRTS.Simulation.Buildings
         [Tooltip("Placed by dragging a line of segments, for walls. Footprint X is each segment's length.")]
         public bool placedInLines;
 
+        [Header("Worn ground")]
+        [Tooltip("Metres of trodden mud round the footprint, laid in ragged overlapping patches once the building is built and seen, for the rest of the match; 0 for none. Trenches never get it.")]
+        [Min(0f)]
+        public float wornGroundWidth;
+
+        [Tooltip("How thick the trodden mud lies, from a faint patchy darkening at 0.3 to solid wet mud at 1.")]
+        [Range(0f, 1f)]
+        public float wornGroundStrength = 0.5f;
+
         public override float Radius => EntityRadius.Get(new NavObstacle { Size = footprint });
 
         public class Baker : Baker<BuildingAuthoring>
@@ -68,6 +77,11 @@ namespace HyperRTS.Simulation.Buildings
                 if (authoring.placedInLines)
                 {
                     writer.Add<LinePlacement>();
+                }
+
+                if (authoring.wornGroundWidth > 0f)
+                {
+                    writer.Add(new WornGround { Width = authoring.wornGroundWidth, Strength = authoring.wornGroundStrength });
                 }
             }
         }
