@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Overlays;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -16,8 +17,6 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
 
         /// <summary>The LightMode of LitTeam's pass that draws a building into the outline mask.</summary>
         public const string BuildingPass = "HyperRTSBuildingOutline";
-
-        private const float ReferenceHeight = 1080f;
 
         [Tooltip("Line width in pixels on a 1080-pixel-high screen; taller screens scale it up. 0.5 to 4.")]
         public float width = 1.5f;
@@ -48,8 +47,8 @@ namespace HyperRTS.Presentation.Rendering.TeamOutline
             return buildingGap is < 0f or > 24f ? $"Team outline building gap {buildingGap} must be 0 to 24 pixels." : string.Empty;
         }
 
-        /// <summary>Converts pixels on a 1080-pixel-high screen to pixels on one <paramref name="screenHeight"/> high.</summary>
-        public static float Scaled(float pixels, int screenHeight) => pixels * screenHeight / ReferenceHeight;
+        // Pixels on a 1080-pixel-high screen to pixels on one screenHeight high.
+        private static float Scaled(float pixels, int screenHeight) => pixels * screenHeight / ReferencePixels.ScreenHeight;
 
         public override void Create()
         {

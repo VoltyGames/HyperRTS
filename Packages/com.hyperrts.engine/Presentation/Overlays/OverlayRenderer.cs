@@ -103,8 +103,9 @@ namespace HyperRTS.Presentation.Overlays
 
             _materials ??= new OverlayMaterials(material);
 
-            _units.Gather(view, style, HealthBars, TeamRingsShown, new ReferencePixels(camera), Time.unscaledTime);
-            _buildings.Gather(view, style, camera);
+            var pixels = new ReferencePixels(camera);
+            _units.Gather(view, style, HealthBars, TeamRingsShown, pixels, Time.unscaledTime);
+            _buildings.Gather(view, style, camera, pixels);
             _commands.Gather(view, style);
             _fireMissions.Gather(view, style);
             _cover.Gather(view, style);

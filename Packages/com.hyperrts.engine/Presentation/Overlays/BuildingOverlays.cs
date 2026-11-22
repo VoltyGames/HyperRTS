@@ -69,10 +69,11 @@ namespace HyperRTS.Presentation.Overlays
 
         public static Mesh DialSegment() => OverlayMeshes.DialSegment(DialSteps, DialInner);
 
-        public void Gather(MatchView view, OverlayStyle style, Camera camera)
+        public void Gather(MatchView view, OverlayStyle style, Camera camera, in ReferencePixels pixels)
         {
             _fogRead = false;
             ReadCamera(camera);
+            _pixels = pixels;
             GatherDials(view, style);
             GatherPips(view, style);
         }
@@ -178,7 +179,6 @@ namespace HyperRTS.Presentation.Overlays
             var transform = camera.transform;
             _cameraRight = transform.right;
             _cameraRotation = transform.rotation;
-            _pixels = new ReferencePixels(camera);
         }
 
         private static Quaternion[] BuildDialRotations()

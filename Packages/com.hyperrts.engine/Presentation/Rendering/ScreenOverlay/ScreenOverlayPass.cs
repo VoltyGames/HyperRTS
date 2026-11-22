@@ -16,8 +16,9 @@ namespace HyperRTS.Presentation.Rendering.ScreenOverlay
         {
             _lightMode = new ShaderTagId(lightMode);
             profilingSampler = new ProfilingSampler("Screen Overlay");
-            // After URP's final post and blit, so at the screen's size whatever the upscaler, and before it draws the UI.
-            renderPassEvent = RenderPassEvent.AfterRendering;
+            // After URP's final post and blit, so at the screen's size whatever the upscaler, and before it draws the UI;
+            // one step after the team outlines, so health bars draw over their lines.
+            renderPassEvent = RenderPassEvent.AfterRendering + 1;
         }
 
         public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)

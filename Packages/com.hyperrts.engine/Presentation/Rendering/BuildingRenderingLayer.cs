@@ -7,7 +7,6 @@ namespace HyperRTS.Presentation.Rendering
     public static class BuildingRenderingLayer
     {
         public const int Index = 9;
-        public const string Name = "Buildings";
 
         public const uint Mask = 1u << Index;
     }

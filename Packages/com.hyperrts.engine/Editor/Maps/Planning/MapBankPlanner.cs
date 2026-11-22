@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Maps.Planning
         private float ShoreWidth(MapNoise noise, Vector2 p)
         {
             // Map noise sits about 0.2 either side of -0.1 (MapNoise.Blotches), so this spreads it over -1 to 1.
-            var swing = Mathf.Clamp01((noise.Sample(p, 70f) + 0.1f) / 0.4f + 0.5f) * 2f - 1f;
+            var swing = Mathf.Clamp((noise.Sample(p, 70f) + 0.1f) / 0.2f, -1f, 1f);
             return Climate.shoreWidth * (1f + Climate.shoreWidthVariation * swing);
         }
     }
