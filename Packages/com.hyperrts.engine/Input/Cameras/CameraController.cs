@@ -222,8 +222,7 @@ namespace HyperRTS.Input.Cameras
             return new Vector2(state.Direction.x, state.Direction.y);
         }
 
-        /// <summary>Looks at <paramref name="focus"/> (its y is the ground there) from <paramref name="height"/> above it,
-        /// pitched for that height and lifted clear of the terrain. The focus stays put, so zooming never slides the view.</summary>
+        /// <summary>Looks at <paramref name="focus"/> (y on the ground) from <paramref name="height"/>, clear of the terrain; zooming never slides it.</summary>
         private void PlaceAt(Vector3 focus, float height)
         {
             _focus = focus;
@@ -246,8 +245,7 @@ namespace HyperRTS.Input.Cameras
         }
 
         /// <summary>Lifts a camera height to <paramref name="clearance"/> above the terrain beneath it.</summary>
-        public static float ClearedHeight(float cameraY, float terrainY, float clearance) =>
-            Mathf.Max(cameraY, terrainY + clearance);
+        public static float ClearedHeight(float cameraY, float terrainY, float clearance) => Mathf.Max(cameraY, terrainY + clearance);
 
         /// <summary>The terrain height under <paramref name="point"/>; flat y = 0 before a world or terrain exists.</summary>
         private float GroundAt(Vector3 point)
@@ -261,11 +259,9 @@ namespace HyperRTS.Input.Cameras
             Mathf.SmoothDamp(_focus.y, GroundAt(focus), ref _groundVelocity, groundSmoothTime, float.PositiveInfinity,
                 Time.unscaledDeltaTime);
 
-        private Vector3 ClampToMap(Vector3 point) =>
-            _map.TryGetInDefaultWorld(out var map) ? (Vector3)map.Clamp(point) : point;
+        private Vector3 ClampToMap(Vector3 point) => _map.TryGetInDefaultWorld(out var map) ? (Vector3)map.Clamp(point) : point;
 
-        /// <summary>The local player's base, searched for over <see cref="homeSearchSeconds"/> when <see cref="startAtHome"/>
-        /// is set. A player with no buildings by then keeps the view.</summary>
+        /// <summary>The local player's base, sought over <see cref="homeSearchSeconds"/> if <see cref="startAtHome"/>; none keeps the view.</summary>
         private bool TryFindHomeOnce(out Vector3 home)
         {
             home = default;
