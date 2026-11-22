@@ -5,8 +5,7 @@ Shader "HyperRTS/Water"
 {
     Properties
     {
-        _ScatterColor ("Scatter Color (deep water)", Color) = (0.07, 0.15, 0.14, 1)
-        _ScatterInShadow ("Scatter Color In Sun Shadow (fraction)", Range(0, 1)) = 0.5
+        _ScatterColor ("Scatter Color (silt albedo, lit by sun and sky)", Color) = (0.22, 0.235, 0.11, 1)
         _Absorption ("Absorption per m (RGB)", Vector) = (0.9, 0.5, 0.55, 0)
         _BedDarkening ("Bed Brightness Under Water", Range(0, 1)) = 0.5
         _Caustics ("Caustics In Shallows", Range(0, 2)) = 0.6
@@ -41,7 +40,7 @@ Shader "HyperRTS/Water"
         _WakeFoam ("Wake Foam", Range(0, 1)) = 0.8
         _WakeRipple ("Wake Ripple Strength", Range(0, 2)) = 0.5
         _ReflectionStrength ("Scene Reflection Strength", Range(0, 1)) = 1
-        _ReflectionFloor ("Reflection Looking Straight Down", Range(0.02, 0.5)) = 0.06
+        _ReflectionFloor ("Reflection Looking Straight Down (water is 0.02)", Range(0.02, 0.5)) = 0.02
         _ReflectionDistance ("Scene Reflection Reach (m)", Float) = 40
         _ReflectionThickness ("Scene Reflection Hit Thickness (m)", Float) = 2
         _ReflectionDistortion ("Scene Reflection Ripple Distortion", Range(0, 1)) = 0.4
@@ -167,8 +166,11 @@ Shader "HyperRTS/Water"
                 bottom *= lerp(1.0, _BedDarkening, saturate(depth / _ShoreFadeDepth));
                 // Light through the water fades the bed into the colour its silt scatters.
                 half3 transmitted = exp(-_Absorption.rgb * depth);
-                // Silt scatters sunlight, so trees and bridges shade deep water as they shade the bed.
-                half3 scatter = _ScatterColor.rgb * CloudShade(input.positionWS) * lerp(_ScatterInShadow, 1.0, sun.shadowAttenuation);
+                // Silt scatters the light that reaches it: the sky, and the sun where clouds, trees and bridges
+                // let it through. URP's sun colour holds the whole cloud cookie, so the bare light is taken here.
+                half3 sunlight = _MainLightColor.rgb * saturate(sun.direction.y) * sun.shadowAttenuation;
+                half3 light = sunlight * CloudShade(input.positionWS) + SampleSH(half3(0.0, 1.0, 0.0));
+                half3 scatter = _ScatterColor.rgb * light;
                 half3 body = bottom * transmitted + scatter * (1.0 - transmitted);
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
