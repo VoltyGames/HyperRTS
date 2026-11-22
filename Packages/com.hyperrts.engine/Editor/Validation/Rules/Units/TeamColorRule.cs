@@ -37,9 +37,11 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                 return;
             }
 
-            if (TeamColorSettings.TryGetMinMarkers(out var minimum))
+            // TeamColorSettingsRule reports a project without exactly one asset, once.
+            var settings = AssetSet.InProject().All<TeamColorSettings>();
+            if (settings.Count == 1)
             {
-                CheckMarkers(entity, minimum, PrefabSet.InProject(), issues);
+                CheckMarkers(entity, settings[0].minMarkers, PrefabSet.InProject(), issues);
             }
         }
 

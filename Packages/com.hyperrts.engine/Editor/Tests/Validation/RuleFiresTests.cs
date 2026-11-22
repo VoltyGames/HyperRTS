@@ -29,7 +29,6 @@ namespace HyperRTS.Editor.Tests.Validation
             [typeof(ContactShadowsRule)] = "Fires only when the project's active URP renderer lacks the features.",
             [typeof(ScreenOverlayRule)] = "Fires only when the project's active URP renderer lacks the feature.",
             [typeof(SharpenRule)] = "Fires only when the project's active URP renderer lacks the feature.",
-            [typeof(TeamOutlineRule)] = "Fires only when the project's active URP renderer lacks the feature.",
             [typeof(UnitSilhouetteRule)] = "Fires only on the project's renderer assets and rendering layer names.",
         };
 
@@ -120,6 +119,25 @@ namespace HyperRTS.Editor.Tests.Validation
             {
                 AssetDatabase.DeleteAsset(folder);
             }
+        }
+
+        [Test]
+        public void TeamColorSettingsRule_ReportsNoAsset_AndTwoAssets_OnceEach()
+        {
+            Assert.AreEqual(1, TeamColorSettingsIssues().Count(issue => issue.Contains("No TeamColorSettings")));
+
+            var first = Track(ScriptableObject.CreateInstance<TeamColorSettings>());
+            Assert.IsEmpty(TeamColorSettingsIssues(first));
+
+            var second = Track(ScriptableObject.CreateInstance<TeamColorSettings>());
+            Assert.AreEqual(1, TeamColorSettingsIssues(first, second).Count(issue => issue.Contains("2 TeamColorSettings")));
+        }
+
+        private static string[] TeamColorSettingsIssues(params TeamColorSettings[] assets)
+        {
+            var issues = new ValidationIssues();
+            new TeamColorSettingsRule().Check(AssetSet.From(assets), issues);
+            return issues.Select(issue => issue.Message).ToArray();
         }
 
         private static void AddMarker(UnitAuthoring unit, Material material)
