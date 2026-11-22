@@ -4,15 +4,17 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 
-// How readily water stands here: low texels, damp hollows and ruts, broken up by two octaves of world noise.
-// Explicit gradients (texture detail level), as it runs inside a branch.
+// How readily water stands here: broad world noise, damp hollows and ruts place whole pools; the fine noise and low
+// texels only ragged their edges, or every texel dip would hold a fleck. The broad noise mixes two unrelated scales
+// so the pools never line up on the tile. Explicit gradients, as it runs in a branch.
 half PuddleCollect(TerrainSurface surface, half dampness, half rut, float2 st, float2 dx, float2 dy)
 {
-    half broad = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, st, dx, dy).g;
+    half near = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, st, dx, dy).g;
+    half wide = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, st * 0.41 + 0.37, dx * 0.41, dy * 0.41).g;
     half fine = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, st * 2.7, dx * 2.7, dy * 2.7).b;
-    half low = saturate((0.55 - surface.height) * 2.5);
-    half noise = (broad - 0.5) * 1.2 + (fine - 0.5) * 0.5;
-    return low * 0.5 + dampness * 0.5 + rut * 1.2 + noise;
+    half broad = (near + wide) * 0.5;
+    half edge = (fine - 0.5) * 0.3 + (0.5 - surface.height) * 0.3;
+    return (broad - 0.5) * 2.0 + dampness * 0.6 + rut * 1.2 + edge;
 }
 
 void ApplyWetness(inout TerrainSurface surface, half dampness, half rut, float2 positionXZ)
