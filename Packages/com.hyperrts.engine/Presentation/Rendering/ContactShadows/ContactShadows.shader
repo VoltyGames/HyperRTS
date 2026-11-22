@@ -18,9 +18,9 @@ Shader "Hidden/HyperRTS/ContactShadows"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Random.hlsl"
             #include "Packages/com.unity.render-pipelines.core/Runtime/Utilities/Blit.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Dither.hlsl"
 
             TEXTURE2D(_ScreenSpaceShadowmapTexture);
             float4x4 _ContactShadowProjection;
@@ -105,8 +105,8 @@ Shader "Hidden/HyperRTS/ContactShadows"
                     return shadow;
                 }
 
-                // Fixed per pixel rather than per frame, so the trace's banding doesn't crawl.
-                float jitter = InterleavedGradientNoise(input.positionCS.xy, 0);
+                // Grazing slopes hit or miss by the start offset alone; a moving one lets the upscaler average them.
+                float jitter = TemporalDither(input.positionCS.xy);
                 return shadow * (1.0h - half(_ContactShadowTrace.w) * fade * Occlusion(start, jitter));
             }
             ENDHLSL

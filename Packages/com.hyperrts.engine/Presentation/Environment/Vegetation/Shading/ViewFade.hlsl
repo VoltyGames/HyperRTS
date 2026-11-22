@@ -4,6 +4,7 @@
 #define HYPERRTS_VIEW_FADE_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Dither.hlsl"
 
 // Camera: xyz position, w radius of the faded ball. Focus: xyz point, w radius of the faded line. Reach: metres the
 // line runs on past the focus, so trees over the ground in view fade too. Zero amount is off.
@@ -35,8 +36,7 @@ void TreeViewFade(float4 positionCS)
 
     float2 uv = positionCS.xy / _ScaledScreenParams.xy;
     float3 positionWS = ComputeWorldSpacePosition(uv, positionCS.z, UNITY_MATRIX_I_VP);
-    float noise = frac(52.9829189 * frac(dot(positionCS.xy, float2(0.06711056, 0.00583715))));
-    clip(1.0 - ViewFadeAt(positionWS) - (noise * 0.98 + 0.01));
+    clip(1.0 - ViewFadeAt(positionWS) - (TemporalDither(positionCS.xy) * 0.98 + 0.01));
 }
 
 #endif
