@@ -67,10 +67,6 @@ namespace HyperRTS.Editor.Maps.Palette
         [Tooltip("Diameter of the ground decal (metres), scaled with the prop; required above 0 when groundDecal is set.")]
         public float groundDecalSize;
 
-        [Tooltip("Bridges: metres along the deck between the faces of its two abutments. The ground keeps the river's banks between them and rises to the deck only behind them; above 0 and under the deck's length.")]
-        [Min(0f)]
-        public float clearSpan;
-
         public float Radius => Mathf.Max(size.x, size.y) * 0.5f;
 
         /// <summary>Prefabs with HyperRTS authoring bake into the SubScene; the rest are scenery in the main scene.</summary>

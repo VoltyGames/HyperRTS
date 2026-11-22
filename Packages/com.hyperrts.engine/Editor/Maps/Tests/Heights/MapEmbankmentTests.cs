@@ -27,6 +27,17 @@ namespace HyperRTS.Editor.Maps.Tests.Heights
             var deck = _bridge.AddComponent<NavAreaAuthoring>();
             deck.kind = NavAreaKind.Deck;
             deck.size = new Vector2(7f, DeckLength);
+            deck.abutments = new[] { Abutment(-1f), Abutment(1f) };
+        }
+
+        // A 3 m thick block whose inner face sits half the clear span from the deck's middle.
+        private Renderer Abutment(float side)
+        {
+            var block = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            block.transform.SetParent(_bridge.transform);
+            block.transform.localScale = new Vector3(8f, 3f, 3f);
+            block.transform.localPosition = new Vector3(0f, 0f, side * (ClearSpan * 0.5f + 1.5f));
+            return block.GetComponent<Renderer>();
         }
 
         [TearDown]
@@ -83,7 +94,6 @@ namespace HyperRTS.Editor.Maps.Tests.Heights
             {
                 i.prefab = _bridge;
                 i.size = new Vector2(9f, DeckLength);
-                i.clearSpan = ClearSpan;
             }));
             var shapes = MapFixture.Shapes(layout, palette, MapFixture.Item<MapClimate>("Climate"));
             return (MapHeightShaper.Shape(layout, shapes), shapes);

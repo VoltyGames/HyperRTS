@@ -140,7 +140,7 @@ namespace HyperRTS.Editor.Maps.Checks
             var deck = MapDeck.Read(entry);
             if (!deck.HasAbutments)
             {
-                Issues.Error($"{name}: bridge '{entry.key}' needs a clearSpan above 0 and under its {deck.Size.y} m deck.",
+                Issues.Error($"{name}: bridge '{entry.key}' needs abutments in its Nav Area, with a clear span above 0 and under its {deck.Size.y} m deck.",
                     Feature);
                 return;
             }

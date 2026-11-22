@@ -39,7 +39,7 @@ short of another is joined onto it.
 Heights come from relief, hills, river valleys, ponds and ravines. Roads of a levelling class sit on embankments.
 A bridge stands on an embankment behind each abutment: level under its approach slabs, then a ramp as long as an
 easy grade needs, with side slopes that widen with the embankment's height and wrap round the abutment's ends.
-Between the abutments, the length the bridge prop's `clearSpan` sets, the ground keeps the river's banks as they lie
+Between the abutments, the gap the deck's Nav Area `abutments` measure, the ground keeps the river's banks as they lie
 without the bridge, and no road ribbon is drawn there. Every surface sets an `edgeWidth` (the blend band) and an `edgeWander`; where two surfaces
 meet the crisper one wins, and the wander turns with the symmetry.
 
