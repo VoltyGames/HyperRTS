@@ -5,6 +5,7 @@
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamGrime.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDetail.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamWeathering.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInterior.hlsl"
 #if defined(_INTERIOR)
     #define REQUIRES_WORLD_SPACE_TANGENT_INTERPOLATOR 1
@@ -43,6 +44,11 @@ void LitTeamPassFragment(
     surfaceData.emission = InteriorEmission(input.uv, viewDirTS);
 #endif
     surfaceData.albedo = ApplyTeamColor(surfaceData.albedo, uv0, input.positionWS);
+#if defined(_WEATHERING)
+    float3 positionOS = TransformWorldToObject(input.positionWS);
+    float3 normalOS = normalize(TransformWorldToObjectNormal(input.normalWS.xyz));
+    ApplyWeathering(positionOS, normalOS, TeamMask(uv0, positionOS.y), surfaceData);
+#endif
     ApplyGrime(input.positionWS, surfaceData);
     ApplyRain(input.normalWS.xyz, surfaceData);
 

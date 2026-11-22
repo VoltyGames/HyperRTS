@@ -22,9 +22,8 @@ remains are their own prefab. A building's marker turns `_BUILD` on with UV3 at 
 rises.
 
 **Glass.** The `_Transparent` toggle blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
-diffuse while reflections stay whole, which is what glass looks like. A transparent material writes no depth, casts no
-shadow and skips the depth, depth-normals and motion-vector passes, so whatever the model shows behind it, such as a
-cab, must be modelled. Opaque glass (periscopes, building windows) stays opaque with a high smoothness.
+diffuse while reflections stay whole. A transparent material writes no depth, casts no shadow and skips the
+prepasses, so whatever the model shows behind it, such as a cab, must be modelled. Opaque glass (periscopes, building windows) stays opaque with a high smoothness.
 
 **Interiors.** The `_INTERIOR` toggle shows a room behind a window. The emission map is an atlas of front-on room photos
 in an `_InteriorAtlas` grid, and each window's UVs fill one cell, less the cell margin. The shader traces the view ray
@@ -37,6 +36,10 @@ projected in object space from three sides at `_DetailTiling` repeats per metre,
 island of an atlased mesh. Both fade out between `_DetailFadeStart` and `_DetailFadeEnd` metres from the camera. They
 cost six texture samples in the forward pass only, nothing with the toggle off. The detail normal needs the normal path,
 so the toggle turns `_NORMALMAP` on; the depth-normals buffer keeps the base normal.
+
+**Weathering.** The `_WEATHERING` toggle dirties building materials from noise: dirt up wall bases to
+`_WeatheringBaseHeight` above object y 0, streaks growing with height, and mottled, pooled roofs. Object space keeps
+the Meta pass's GI dirt matching. Team paint and glass stay clean. Base dirt needs mesh pivots on the ground.
 
 Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`). After rain (`_HyperRTSWetness`, from the
 `Atmosphere`) every LitTeam surface is wet where the sky reaches it, as the ground is: darker and glossier, metal

@@ -20,6 +20,7 @@ namespace HyperRTS.Editor.Rendering
         private static readonly int AlphaClip = Shader.PropertyToID("_AlphaClip");
         private static readonly int Transparent = Shader.PropertyToID("_Transparent");
         private static readonly int ReceiveFog = Shader.PropertyToID("_ReceiveFog");
+        private static readonly int Weathering = Shader.PropertyToID("_Weathering");
         private static readonly int SrcBlend = Shader.PropertyToID("_SrcBlend");
         private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
         private static readonly int ZWrite = Shader.PropertyToID("_ZWrite");
@@ -55,8 +56,8 @@ namespace HyperRTS.Editor.Rendering
 
         /// <summary>
         /// A transparent material blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
-        /// diffuse while reflections stay whole, which is glass. It casts no shadow, stays out of the depth passes and
-        /// mixes in the volumetric fog unless Receive Fog is off.
+        /// diffuse while reflections stay whole, which is glass. It casts no shadow, stays out of the depth passes,
+        /// mixes in the volumetric fog unless Receive Fog is off and takes no weathering.
         /// </summary>
         private static void FollowSurface(Material material)
         {
@@ -64,6 +65,7 @@ namespace HyperRTS.Editor.Rendering
             Follow(material, "_SURFACE_TYPE_TRANSPARENT", transparent);
             Follow(material, "_ALPHAPREMULTIPLY_ON", transparent);
             Follow(material, "_TRANSPARENT_RECEIVE_FOG", transparent && material.GetFloat(ReceiveFog) > 0.5f);
+            Follow(material, "_WEATHERING", !transparent && material.GetFloat(Weathering) > 0.5f);
             material.SetFloat(SrcBlend, (float)BlendMode.One);
             material.SetFloat(DstBlend, (float)(transparent ? BlendMode.OneMinusSrcAlpha : BlendMode.Zero));
             material.SetFloat(ZWrite, transparent ? 0f : 1f);

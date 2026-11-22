@@ -1,4 +1,4 @@
-// Units and buildings: URP Lit with the albedo repainted in the owner's colour, plus build-up, grime and animation.
+// Units and buildings: URP Lit with the albedo repainted in the owner's colour, plus build-up, grime, weathering and animation.
 // Forward or Forward+ only (no GBuffer).
 Shader "HyperRTS/LitTeam"
 {
@@ -34,6 +34,14 @@ Shader "HyperRTS/LitTeam"
         _DetailNormalStrength("Detail Normal Strength", Range(0, 2)) = 1
         _DetailFadeStart("Detail Fade Start (camera distance, m)", Float) = 12
         _DetailFadeEnd("Detail Fade End (camera distance, m)", Float) = 30
+
+        [Header(Weathering)]
+        [Toggle(_WEATHERING)] _Weathering("Weathering (dirt at wall bases, streaks down walls, mottled roofs; opaque only)", Float) = 0
+        _WeatheringStrength("Weathering Strength", Range(0, 1)) = 0.8
+        _WeatheringBaseHeight("Weathering Base Dirt Height (m above the mesh's y 0)", Range(0.1, 3)) = 1.2
+        _WeatheringStreaks("Weathering Streaks", Range(0, 1)) = 0.5
+        _WeatheringRoofMottle("Weathering Roof Mottle", Range(0, 1)) = 0.5
+        _WeatheringDirtColor("Weathering Dirt Color", Color) = (0.45, 0.37, 0.27, 1)
 
         [HideInInspector] _TrackLift0("Track Lift (stations 0 to 3, m)", Vector) = (0, 0, 0, 0)
         [HideInInspector] _TrackLift1("Track Lift (stations 4 to 7, m)", Vector) = (0, 0, 0, 0)
@@ -301,15 +309,15 @@ Shader "HyperRTS/LitTeam"
 
             HLSLPROGRAM
             #pragma target 2.0
-            #pragma vertex UniversalVertexMeta
-            #pragma fragment UniversalFragmentMetaLit
+            #pragma vertex LitTeamMetaVertex
+            #pragma fragment LitTeamMetaFragment
             #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
             #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _WEATHERING
             #pragma shader_feature EDITOR_VISUALIZATION
             // GI extraction gates emission by the material's GI flags, not this keyword.
             #define _EMISSION 1
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/LitMetaPass.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamMetaPass.hlsl"
             ENDHLSL
         }
 

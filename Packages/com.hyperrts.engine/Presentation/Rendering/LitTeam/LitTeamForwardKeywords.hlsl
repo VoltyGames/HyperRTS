@@ -10,6 +10,7 @@
 #pragma shader_feature_local_fragment _METALLICSPECGLOSSMAP
 #pragma shader_feature_local_fragment _OCCLUSIONMAP
 #pragma shader_feature_local_fragment _DETAIL
+#pragma shader_feature_local_fragment _WEATHERING
 #pragma shader_feature_local _INTERIOR
 #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ForwardLightingKeywords.hlsl"
 #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ObjectLightingKeywords.hlsl"

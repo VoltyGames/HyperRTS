@@ -48,6 +48,11 @@ float _DetailAlbedoStrength;
 float _DetailNormalStrength;
 float _DetailFadeStart;
 float _DetailFadeEnd;
+half4 _WeatheringDirtColor;
+float _WeatheringStrength;
+float _WeatheringBaseHeight;
+float _WeatheringStreaks;
+float _WeatheringRoofMottle;
 float4 _InteriorAtlas;
 half _LightLevel;
 half _Cutoff;
@@ -174,7 +179,6 @@ static const half _Blend = 1.0;
 
 // Drops a growing share of pixels in a 4 by 4 ordered pattern as _Reveal falls, so a unit fading into the fog thins
 // out instead of popping. 1 keeps every pixel.
-// fog thins out instead of popping. 1 keeps every pixel.
 void ClipReveal(float4 positionCS)
 {
     static const float pattern[16] = { 0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5 };
