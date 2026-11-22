@@ -50,8 +50,8 @@ float ShoreLap(float2 uv)
 }
 
 // Foam round each bridge pier, which the water's mesh frame orients: down is its V on the water plane, across its U.
-// Water piles into a thin rim upstream of the pier; behind it a wake as wide as the pier widens slowly and fades over
-// _PierWakeLength, broken into drifting patches by `broken` but never gone, with brighter shear lines down its edges.
+// Water piles into a thin rim upstream of the pier; behind it a wake as wide as the pier widens slowly and dies out
+// by _PierWakeLength, broken into drifting patches by `broken` but never gone, with brighter shear lines down its edges.
 half PierFoam(float3 positionWS, float2 down, float2 across, half broken)
 {
     half foam = 0.0;
@@ -67,10 +67,11 @@ half PierFoam(float3 positionWS, float2 down, float2 across, half broken)
 
         float spread = halfWidth + v * 0.12;
         half body = 1.0 - smoothstep(0.6, 1.0, u / spread);
-        float edge = (u - spread) / 0.35;
+        float edge = (u - spread) / 0.45;
         half shear = exp(-edge * edge);
-        half fade = pow(saturate(1.0 - v / _PierWakeLength), 2.0) * step(0.0, v);
-        half wake = fade * max(body * lerp(0.3, 1.0, broken), shear * lerp(0.55, 1.0, broken));
+        // Held near full for the first third, past the deck that hides the wake's start, then fading.
+        half fade = (1.0 - smoothstep(0.3, 1.0, v / _PierWakeLength)) * step(0.0, v);
+        half wake = fade * max(body * lerp(0.25, 1.0, broken), shear * lerp(0.45, 1.0, broken));
         foam = max(foam, max(cushion, wake));
     }
 
@@ -114,7 +115,10 @@ half CalmFoam(float2 uv, float3 positionWS, half3 bitangent, half3 tangent, floa
         half pier = 0.0;
         [branch] if (_HyperRTSWaterPierCount > 0.5)
         {
-            pier = PierFoam(positionWS, down, across, smoothstep(0.22, 0.5, streak) * smoothstep(0.05, 0.35, patches));
+            // Flecks about a metre across, stretched down the current and clumped, so a wake reads as churned water.
+            half fleck = FoamSample(float2(uv.x, uv.y - drift * 1.4), float2(0.9, 2.2), dx, dy).x;
+            half clump = FoamSample(float2(uv.x + 0.61, uv.y - drift * 1.2), float2(3.0, 5.0), dx, dy).y;
+            pier = PierFoam(positionWS, down, across, smoothstep(-0.15, 0.35, fleck) * smoothstep(-0.3, 0.3, clump));
         }
 
         return max(max(flow, bank), pier);
