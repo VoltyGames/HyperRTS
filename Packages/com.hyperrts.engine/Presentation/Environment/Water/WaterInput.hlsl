@@ -9,6 +9,7 @@ SAMPLER(sampler_NormalMap);
 
 CBUFFER_START(UnityPerMaterial)
     half4 _ScatterColor;
+    half _ScatterInShadow;
     half4 _Absorption;
     half _BedDarkening;
     half _Caustics;

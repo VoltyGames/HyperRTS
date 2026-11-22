@@ -6,6 +6,7 @@ Shader "HyperRTS/Water"
     Properties
     {
         _ScatterColor ("Scatter Color (deep water)", Color) = (0.07, 0.15, 0.14, 1)
+        _ScatterInShadow ("Scatter Color In Sun Shadow (fraction)", Range(0, 1)) = 0.5
         _Absorption ("Absorption per m (RGB)", Vector) = (0.9, 0.5, 0.55, 0)
         _BedDarkening ("Bed Brightness Under Water", Range(0, 1)) = 0.5
         _Caustics ("Caustics In Shallows", Range(0, 2)) = 0.6
@@ -24,7 +25,7 @@ Shader "HyperRTS/Water"
         _GlintPeak ("Glint Peak (HDR clamp, a little past the bloom threshold)", Range(0, 4)) = 1.3
         _GlintFadeStart ("Glint Fade Start (m)", Float) = 80
         _GlintFadeEnd ("Glint Fade End (m)", Float) = 300
-        _ShoreFadeDepth ("Shore Fade Depth (m)", Float) = 0.15
+        _ShoreFadeDepth ("Shore Fade Depth (m, surface and wet bed fade in)", Float) = 0.3
         _FordAlpha ("Water Alpha Mid-Ford", Range(0, 1)) = 0.25
         _FoamColor ("Foam Color", Color) = (0.82, 0.82, 0.76, 1)
         _RapidsFoamWidth ("Rapids Foam Width (m)", Float) = 1.5
@@ -161,11 +162,14 @@ Shader "HyperRTS/Water"
                 Light sun = SunLight(input.positionWS, input.normalWS);
                 bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
 
-                // Light through the water loses red first, so the bed fades into the silt-green the water scatters.
-                // A wet bed is darker than the dry ground the opaque texture shows, from the first centimetres.
-                bottom *= lerp(1.0, _BedDarkening, saturate(depth / 0.1));
+                // A wet bed is darker than the dry ground; it darkens over the depth the surface fades in, so the
+                // waterline stays soft.
+                bottom *= lerp(1.0, _BedDarkening, saturate(depth / _ShoreFadeDepth));
+                // Light through the water fades the bed into the colour its silt scatters.
                 half3 transmitted = exp(-_Absorption.rgb * depth);
-                half3 body = bottom * transmitted + _ScatterColor.rgb * CloudShade(input.positionWS) * (1.0 - transmitted);
+                // Silt scatters sunlight, so trees and bridges shade deep water as they shade the bed.
+                half3 scatter = _ScatterColor.rgb * CloudShade(input.positionWS) * lerp(_ScatterInShadow, 1.0, sun.shadowAttenuation);
+                half3 body = bottom * transmitted + scatter * (1.0 - transmitted);
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
