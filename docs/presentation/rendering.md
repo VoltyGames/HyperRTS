@@ -15,7 +15,7 @@ in step with the maps and toggles.
 
 **Team markers.** A team marker is a child mesh (a roof panel, pennant, flag or placard) on a LitTeam material with a
 white team mask, which `TeamColorSystem` paints like every mesh under the root. `TeamMarkerAuthoring` bakes nothing; it
-lets `TeamColorRule` count markers against `TeamColorSettings.minMarkers` on vehicles and buildings that can take an
+lets `TeamColorRule` count markers against `TeamColorSettings.minMarkers` (the project keeps exactly one such asset, which `TeamColorSettingsRule` requires) on vehicles and buildings that can take an
 owner (not neutral, or capturable, or a neutral garrison), have no team strip and are no base prefab that variants
 derive from; a variant's inherited markers count. A marker hides with the damage stage it sits under and dies with its entity, since
 remains are their own prefab. A building's marker turns `_BUILD` on with UV3 at 1, or it shows before the building
@@ -46,12 +46,10 @@ Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`). After rain 
 not darker.
 
 **Silhouettes.** A unit hidden behind cover shows as a team-colour silhouette. Units bake onto the `UnitRenderingLayer`
-and buildings onto the `BuildingRenderingLayer` (`RenderingLayerBakingSystem`). Two URP Render Objects features on the
-units layer draw LitTeam's `HyperRTSUnitMask` pass, which marks the unit's visible pixels in stencil bit 128, then its
-`HyperRTSSilhouette` pass where the unit is hidden, which also sets bit 32 for the
-[team outline](hud.md#team-outlines). Buildings stay off the
-units layer, or one in front of a unit would mark it seen. The validator adds both features in that order;
-the staging clean step turns them off with `UnitSilhouettes.Hide` and the outlines with `TeamOutlines.Hide`. Scattered grass and row crops write stencil bit
+(`RenderingLayerBakingSystem`). Two URP Render Objects features on the units layer draw LitTeam's `HyperRTSUnitMask`
+pass, which marks the unit's visible pixels in stencil bit 128, then its `HyperRTSSilhouette` pass where the unit is
+hidden. The validator adds both features in that order; the staging clean step turns them off with
+`UnitSilhouettes.Hide`. Scattered grass and row crops write stencil bit
 64 (ground cover), which the silhouette pass and the ground markers skip, so plants cover a marker line and hide no unit
 behind them.
 

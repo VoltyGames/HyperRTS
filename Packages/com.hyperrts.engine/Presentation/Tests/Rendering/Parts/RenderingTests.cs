@@ -92,7 +92,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
         }
 
         [Test]
-        public void UnitAndBuildingParts_GetTheirLayers_OtherRenderersKeepTheirs()
+        public void UnitParts_GetTheUnitsLayer_BuildingsAndSceneryKeepTheirs()
         {
             var unit = _em.CreateEntity(typeof(UnitTag), typeof(Prefab));
             var part = Rendered(1u);
@@ -105,7 +105,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             Update<RenderingLayerBakingSystem>();
 
             Assert.AreEqual(1u | UnitRenderingLayer.Mask, _em.GetSharedComponent<RenderFilterSettings>(part).RenderingLayerMask);
-            Assert.AreEqual(1u | BuildingRenderingLayer.Mask, _em.GetSharedComponent<RenderFilterSettings>(wall).RenderingLayerMask);
+            Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(wall).RenderingLayerMask);
             Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(scenery).RenderingLayerMask);
         }
 

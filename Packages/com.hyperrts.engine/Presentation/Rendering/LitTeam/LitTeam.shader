@@ -228,8 +228,7 @@ Shader "HyperRTS/LitTeam"
         }
 
         // Render Objects pass: team colour where something hides the unit, skipping grass and row crops (ground cover, bit 64).
-        // Inverting the clear bits 128 and 32 sets them: 128 so each pixel blends once, 32 so the team outline keeps off
-        // a hidden unit's pixels.
+        // Inverting the clear bit 128 sets it, so each pixel blends once.
         Pass
         {
             Name "UnitSilhouette"
@@ -239,7 +238,7 @@ Shader "HyperRTS/LitTeam"
             ZTest Greater
             ZWrite Off
             Cull[_Cull]
-            Stencil { Ref 0 ReadMask 192 WriteMask 160 Comp Equal Pass Invert }
+            Stencil { Ref 0 ReadMask 192 WriteMask 128 Comp Equal Pass Invert }
 
             HLSLPROGRAM
             #pragma target 2.0
@@ -247,52 +246,6 @@ Shader "HyperRTS/LitTeam"
             #pragma fragment SilhouetteFragment
             #pragma shader_feature_local_fragment _ALPHATEST_ON
             #define SILHOUETTE_SLACK_ON
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"
-            ENDHLSL
-        }
-
-        // TeamOutlineFeature's mask: a unit's whole shape but its silhouette pixels (stencil bit 32), so grass and row
-        // crops in front of it don't cut its outline.
-        Pass
-        {
-            Name "UnitOutline"
-            Tags { "LightMode" = "HyperRTSUnitOutline" }
-
-            ZTest Always
-            ZWrite Off
-            Cull[_Cull]
-            Stencil { Ref 0 ReadMask 32 Comp Equal }
-
-            HLSLPROGRAM
-            #pragma target 2.0
-            #pragma vertex SilhouetteVertex
-            #pragma fragment TeamOutlineFragment
-            #pragma shader_feature_local_fragment _ALPHATEST_ON
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
-            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"
-            ENDHLSL
-        }
-
-        // TeamOutlineFeature's mask for buildings, which have no silhouette: their visible pixels, by depth.
-        Pass
-        {
-            Name "BuildingOutline"
-            Tags { "LightMode" = "HyperRTSBuildingOutline" }
-
-            ZTest LEqual
-            ZWrite Off
-            Cull[_Cull]
-
-            HLSLPROGRAM
-            #pragma target 2.0
-            #pragma vertex SilhouetteVertex
-            #pragma fragment TeamOutlineFragment
-            #pragma shader_feature_local_fragment _ALPHATEST_ON
-            #define SILHOUETTE_SLACK_ON
-            #define BUILDING_OUTLINE_ON
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamVertexKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamSilhouettePass.hlsl"

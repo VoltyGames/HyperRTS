@@ -7,9 +7,8 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Rendering
 {
     /// <summary>
-    /// Puts every rendered part of a unit on <see cref="UnitRenderingLayer"/> and of a building on
-    /// <see cref="BuildingRenderingLayer"/> at bake time, so prefabs need no authored rendering layer for the unit
-    /// silhouettes and team outlines to find them.
+    /// Puts every rendered part of a unit on <see cref="UnitRenderingLayer"/> at bake time, so prefabs
+    /// need no authored rendering layer for the unit silhouettes to find them.
     /// </summary>
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial struct RenderingLayerBakingSystem : ISystem
@@ -24,58 +23,50 @@ namespace HyperRTS.Presentation.Rendering
 
         public void OnUpdate(ref SystemState state)
         {
-            var roots = new RootKinds
+            var roots = new UnitRoots
             {
                 Parents = SystemAPI.GetComponentLookup<Parent>(true),
                 Units = SystemAPI.GetComponentLookup<UnitTag>(true),
-                Buildings = SystemAPI.GetComponentLookup<BuildingTag>(true),
             };
             var em = state.EntityManager;
-            var parts = new NativeList<(Entity Part, uint Layer)>(Allocator.Temp);
+            var parts = new NativeList<Entity>(Allocator.Temp);
             using var rendered = _rendered.ToEntityArray(Allocator.Temp);
             foreach (var entity in rendered)
             {
-                var layer = roots.Layer(entity);
-                var onLayer = (em.GetSharedComponent<RenderFilterSettings>(entity).RenderingLayerMask & layer) == layer;
-                if (!onLayer)
+                var onLayer = (em.GetSharedComponent<RenderFilterSettings>(entity).RenderingLayerMask & UnitRenderingLayer.Mask) != 0;
+                if (!onLayer && roots.IsUnitPart(entity))
                 {
-                    parts.Add((entity, layer));
+                    parts.Add(entity);
                 }
             }
 
             // Setting a shared component moves the entity, so collect first.
-            foreach (var (part, layer) in parts)
+            foreach (var part in parts)
             {
                 var settings = em.GetSharedComponent<RenderFilterSettings>(part);
-                settings.RenderingLayerMask |= layer;
+                settings.RenderingLayerMask |= UnitRenderingLayer.Mask;
                 em.SetSharedComponent(part, settings);
             }
         }
 
-        private struct RootKinds
+        private struct UnitRoots
         {
             public ComponentLookup<Parent> Parents;
             public ComponentLookup<UnitTag> Units;
-            public ComponentLookup<BuildingTag> Buildings;
 
-            /// <summary>The layer of the nearest unit or building above the entity, or none for scenery.</summary>
-            public uint Layer(Entity entity)
+            /// <summary>Whether a unit sits at or above the entity.</summary>
+            public bool IsUnitPart(Entity entity)
             {
                 while (true)
                 {
                     if (Units.HasComponent(entity))
                     {
-                        return UnitRenderingLayer.Mask;
-                    }
-
-                    if (Buildings.HasComponent(entity))
-                    {
-                        return BuildingRenderingLayer.Mask;
+                        return true;
                     }
 
                     if (!Parents.TryGetComponent(entity, out var parent))
                     {
-                        return 0u;
+                        return false;
                     }
 
                     entity = parent.Value;

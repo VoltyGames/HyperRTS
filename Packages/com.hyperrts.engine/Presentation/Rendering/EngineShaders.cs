@@ -26,9 +26,6 @@ namespace HyperRTS.Presentation.Rendering
         [SerializeField, ResourcePath("Hidden/HyperRTS/Sharpen", SearchType.ShaderName)]
         private Shader sharpen;
 
-        [SerializeField, ResourcePath("Hidden/HyperRTS/TeamOutline", SearchType.ShaderName)]
-        private Shader teamOutline;
-
         [SerializeField, ResourcePath("Hidden/HyperRTS/CraterHeight", SearchType.ShaderName)]
         private Shader craterHeight;
 
@@ -47,8 +44,6 @@ namespace HyperRTS.Presentation.Rendering
         public Shader ContactShadows => contactShadows;
 
         public Shader Sharpen => sharpen;
-
-        public Shader TeamOutline => teamOutline;
 
         public Shader CraterHeight => craterHeight;
 
