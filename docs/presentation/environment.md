@@ -50,7 +50,7 @@ so the river shades from bank to channel and follows each weather's light. `Wate
 strands, foam clumps and broad blobs: the blobs drift calm slicks down the current and sweep wind gusts across it,
 and every foam source (banks, slick edges, fords, wakes, piers) is an amount drawn through the lace, so thin foam
 breaks into strands rather than fading. Vertex colours shape the flow: alpha thins fords, green marks rapids, red
-trails foam below fords. Bridge piers come from `WaterPiers` on the water object, up to 16 per map: the shader draws
+trails foam below fords; both draw white water as streaks down the current with open water between. Bridge piers come from `WaterPiers` on the water object, up to 16 per map: the shader draws
 a cushion upstream of each, a short wake below it and rougher water round the wake.
 `WaterCaustics` off in [quality](README.md#quality) compiles the caustics out.
 

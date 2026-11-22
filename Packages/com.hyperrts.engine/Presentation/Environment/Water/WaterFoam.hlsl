@@ -4,6 +4,8 @@
 #define HYPERRTS_WATER_FOAM_INCLUDED
 
 #define WATER_GUST_DIRECTION float2(0.8, 0.6) // the wind the ripple spectrum was made for
+#define WATER_RAPIDS_WIDTH 1.5                // metres across a white-water streak
+#define WATER_RAPIDS_LENGTH 10.0              // metres along one
 
 // The foam map's broad blobs (B): smooth enough to read at the top mip, so branches may call it.
 half Blobs(float2 p)
@@ -21,6 +23,15 @@ half Slick(float2 uv, float drift)
 half Gust(float3 positionWS)
 {
     return Blobs((positionWS.xz - WATER_GUST_DIRECTION * _Time.y * _GustSpeed) / _GustSize);
+}
+
+// Broken white water over fast shallows and in the trail below them (fast: the larger of vertex G and R): streaks down the current with open water between, which
+// a further, wider noise thins, so a ford never turns to one white sheet.
+half RapidsFoam(float2 uv, float drift, half fast)
+{
+    half streak = Blobs(float2(uv.x / WATER_RAPIDS_WIDTH, (uv.y - drift * 2.5) / WATER_RAPIDS_LENGTH));
+    half breakup = Blobs(float2(uv.x / (WATER_RAPIDS_WIDTH * 3.0) + 0.21, (uv.y - drift * 1.5) / (WATER_RAPIDS_LENGTH * 1.7)));
+    return fast * smoothstep(0.45, 0.8, streak) * smoothstep(0.3, 0.6, breakup) * 0.9;
 }
 
 // Metres to the waterline from depth and screen derivatives: the ribbon's edge lies buried past the bank, so uv.x
@@ -93,11 +104,11 @@ half2 PierWake(float3 positionWS, float2 down, float2 across)
     return half2(foam * _PierWakeFoam, chop * _PierChop);
 }
 
-// Foam lines where slicks meet rougher water, which gathers the surface film, plus the trails below fords (vertex R).
-half FlowFoam(half slick, half trail)
+// Foam lines where slicks meet rougher water, which gathers the surface film.
+half FlowFoam(half slick)
 {
     half seam = 1.0 - smoothstep(0.0, 0.08, abs(slick - 0.62));
-    return max(seam * _FlowFoamAmount, trail * 0.7);
+    return seam * _FlowFoamAmount;
 }
 
 // How much of the surface foam covers for an amount: thick foam is whole, thinner foam keeps only the clumps (G) and

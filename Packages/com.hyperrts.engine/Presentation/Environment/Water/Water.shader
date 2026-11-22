@@ -223,9 +223,9 @@ Shader "HyperRTS/Water"
 
                 // Foam thins out on the last few centimetres so it never paints over the dry bank. Ground detail Low
                 // drops the calm-water foam: banks, flow lines and piers.
-                half amount = max(input.color.g * 0.8, wake.foam);
+                half amount = max(RapidsFoam(input.uv, drift, max(input.color.g, input.color.r * 0.8)), wake.foam);
                 #if !defined(_TERRAIN_SIMPLE)
-                    amount = max(amount, max(max(BankFoam(input.uv, shoreDistance), FlowFoam(slick, input.color.r)), pier.x));
+                    amount = max(amount, max(max(BankFoam(input.uv, shoreDistance), FlowFoam(slick)), pier.x));
                 #endif
                 amount *= saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
                 half foam = FoamCover(amount, input.uv, drift * (1.0 + input.color.g * 1.5));
