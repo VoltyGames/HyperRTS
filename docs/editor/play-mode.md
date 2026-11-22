@@ -141,6 +141,7 @@ the file, naming its path. Steps run by `at`, and in file order at the same time
 | `select` | a group | Selects the group for the local player and clears the selection before it, so selection rings, order markers and range previews show in later captures; single player only |
 | `weather` | a weather key | Switches the map to that weather; an unknown key fails naming the keys the map has |
 | `detail` | `shadows`, `grass`, `crops` (metres), `lod` (a factor); one or more | Raises render detail past the play camera's needs for footage shot from far off: the pipeline's shadow distance, which plants follow out to their drawn reach, full vegetation drawn out to the given distances (capped by each plant's own) and finer model levels. The run puts each setting back when it ends, so nothing is saved |
+| `quality` | a quality level name | Switches to that level with the settings the game ties to it through `PlayQuality.Applied`, as `map look` does, so later shots show what the level draws. The run puts both back when it ends; an unknown name fails naming the levels |
 | `mixer` | parameter names and values | Sets exposed parameters on the loaded audio mixers, such as `{ "Music": -80 }` to record without the match music under footage that gets its own; a name no mixer exposes fails |
 | `clean` | true or false | Hides (or shows again) every UI panel, the `OverlayRenderer`'s markers and bars and the silhouettes of hidden units, for footage |
 

@@ -114,6 +114,15 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         }
 
         [Test]
+        public void ParseReadsAQualityLevelByNameAndRejectsAnUnknownOne()
+        {
+            string With(string level) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 0, \"quality\": \"{level}\" }},");
+
+            Assert.That(StagingFile.Parse(With(QualitySettings.names[0]), "tier.json").Steps.Select(step => step.Kind), Has.Member("quality"));
+            StringAssert.Contains("'Potato'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("Potato"), "tier.json")).Message);
+        }
+
+        [Test]
         public void ParseReadsSelectAndWeatherAndRejectsSelectingAnUndefinedGroup()
         {
             string With(string select) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 1, \"select\": \"{select}\" }}, {{ \"at\": 1, \"weather\": \"Rain\" }},");

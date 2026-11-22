@@ -117,8 +117,7 @@ namespace HyperRTS.Editor.Maps.Look
                 return false;
             }
 
-            QualitySettings.SetQualityLevel(_quality, true);
-            MapLookQuality.Applied?.Invoke(_quality);
+            PlayQuality.Set(_quality);
             var keys = PlanShots(weatherSet, controller);
             if (!_graded)
             {

@@ -27,6 +27,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
         public bool? fog;
         public Dictionary<string, float> mixer;
         public DetailStep detail;
+        public string quality;
         public string select;
         public string weather;
         public GroupStep group;
@@ -57,6 +58,7 @@ namespace HyperRTS.Editor.PlayMode.Staging
             ("fog", fog is { } enabled ? new FogStep(enabled) : null),
             ("mixer", mixer == null ? null : new MixerStep(mixer)),
             ("detail", detail),
+            ("quality", quality == null ? null : new QualityStep(quality)),
             ("select", select == null ? null : new SelectStep(select)),
             ("weather", weather == null ? null : new WeatherStep(weather)),
             ("group", group),
