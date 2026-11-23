@@ -43,7 +43,8 @@ namespace HyperRTS.Simulation.Common.Systems
             return enabled;
         }
 
-        // Creation order, so a pause and its restore agree on which bit is which group.
+        // Creation order, so a pause and its restore agree on which bit is which group. A loop, since
+        // world.Systems throws when LINQ reads it as an IEnumerable.
         private static IEnumerable<GameplayPhaseGroup> Phases(World world)
         {
             foreach (var system in world.Systems)

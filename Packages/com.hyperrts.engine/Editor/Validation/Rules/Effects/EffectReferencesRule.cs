@@ -62,27 +62,16 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
         }
 
         // An impact has marks, effects, or both.
-        private static IEnumerable<EffectReference> ImpactReferences(ImpactAuthoring impacts)
+        private static IEnumerable<EffectReference> ImpactReferences(ImpactAuthoring impacts) => new[]
         {
-            yield return EffectReference.ForSurface("Impact effects", impacts.effects, !impacts.marks.Any(mark => mark != null));
-        }
+            EffectReference.ForSurface("Impact effects", impacts.effects, !impacts.marks.Any(mark => mark != null)),
+        };
 
-        private static IEnumerable<EffectReference> DamageStageReferences(DamageStagesAuthoring damage)
-        {
-            for (var i = 0; i < damage.stages.Count; i++)
-            {
-                yield return EffectReference.ForRig($"Damage stage {i} effect", damage.stages[i].effect, false);
-            }
-        }
+        private static IEnumerable<EffectReference> DamageStageReferences(DamageStagesAuthoring damage) =>
+            damage.stages.Select((stage, i) => EffectReference.ForRig($"Damage stage {i} effect", stage.effect, false));
 
-        private static IEnumerable<EffectReference> LoopReferences(LoopEffectsAuthoring effects)
-        {
-            for (var i = 0; i < effects.loops.Length; i++)
-            {
-                var loop = effects.loops[i];
-                yield return EffectReference.ForRig($"Loop {i}", loop.rig, true).WithSocket("socket", loop.socket);
-            }
-        }
+        private static IEnumerable<EffectReference> LoopReferences(LoopEffectsAuthoring effects) =>
+            effects.loops.Select((loop, i) => EffectReference.ForRig($"Loop {i}", loop.rig, true).WithSocket("socket", loop.socket));
 
         private static IEnumerable<EffectReference> EntityReferences(EntityEffectsAuthoring effects)
         {

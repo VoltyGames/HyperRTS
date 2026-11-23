@@ -108,13 +108,8 @@ namespace HyperRTS.Editor.Maps.Designer.Features
         private IEnumerable<int> Matches(MapSpec spec, MapFeatureKind kind)
         {
             var filter = Filter;
-            for (var i = 0; i < kind.Count(spec); i++)
-            {
-                if (filter.Length == 0 || kind.Describe(spec, i).Contains(filter, StringComparison.OrdinalIgnoreCase))
-                {
-                    yield return i;
-                }
-            }
+            return Enumerable.Range(0, kind.Count(spec))
+                .Where(i => filter.Length == 0 || kind.Describe(spec, i).Contains(filter, StringComparison.OrdinalIgnoreCase));
         }
 
         // A group's row is its category with no index.

@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HyperRTS.Presentation.HUD;
 using UnityEditor;
@@ -25,13 +26,9 @@ namespace HyperRTS.Editor.Authoring
         }
 
         /// <summary>Each <c>[ShowIf]</c> field's property path with its condition's, which names a sibling field.</summary>
-        public static IEnumerable<(string Field, string Condition)> Conditions(Type type, string prefix = "")
-        {
-            foreach (var (path, showIf) in Marked<ShowIfAttribute>(type, prefix))
-            {
-                yield return (path, path.Substring(0, path.LastIndexOf('.') + 1) + showIf.Field);
-            }
-        }
+        public static IEnumerable<(string Field, string Condition)> Conditions(Type type, string prefix = "") =>
+            Marked<ShowIfAttribute>(type, prefix).Select(marked =>
+                (marked.Path, marked.Path.Substring(0, marked.Path.LastIndexOf('.') + 1) + marked.Attribute.Field));
 
         /// <summary>Each field marked <typeparamref name="T"/>, as its property path and attribute; nested blocks too.</summary>
         public static IEnumerable<(string Path, T Attribute)> Marked<T>(Type type, string prefix = "") where T : Attribute

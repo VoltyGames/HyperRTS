@@ -103,31 +103,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
             turrets.Cast<PartSlot>().Concat(elevations).Concat(recoils).Concat(wheels).Concat(rotors).Concat(trailers);
 
         /// <summary>Why the rig can't bake, one line each.</summary>
-        public IEnumerable<string> Problems()
-        {
-            foreach (var slot in Slots())
-            {
-                var problem = slot.Problem(this);
-                if (problem != null)
-                {
-                    yield return problem;
-                }
-            }
-
-            foreach (var track in tracks)
-            {
-                var problem = track.Problem(this);
-                if (problem != null)
-                {
-                    yield return problem;
-                }
-            }
-
-            foreach (var problem in BodyProblems())
-            {
-                yield return problem;
-            }
-        }
+        public IEnumerable<string> Problems() =>
+            Slots().Select(slot => slot.Problem(this)).Concat(tracks.Select(track => track.Problem(this)))
+                .Where(problem => problem != null).Concat(BodyProblems());
 
         private IEnumerable<string> BodyProblems()
         {

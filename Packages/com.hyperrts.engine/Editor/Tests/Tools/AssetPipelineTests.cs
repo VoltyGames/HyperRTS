@@ -129,23 +129,9 @@ namespace HyperRTS.Editor.Tests.Tools
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
         }
 
-        private static IEnumerable<TestCaseData> Channels()
-        {
-            foreach (var channel in Enumerable.Range(0, 3))
-            {
-                yield return new TestCaseData("Terrain", channel);
-            }
-
-            foreach (var channel in Enumerable.Range(0, 2))
-            {
-                yield return new TestCaseData("Ripples", channel);
-            }
-
-            foreach (var channel in Enumerable.Range(0, 4))
-            {
-                yield return new TestCaseData("Micro", channel);
-            }
-        }
+        private static IEnumerable<TestCaseData> Channels() =>
+            new[] { ("Terrain", 3), ("Ripples", 2), ("Micro", 4) }.SelectMany(texture =>
+                Enumerable.Range(0, texture.Item2).Select(channel => new TestCaseData(texture.Item1, channel)));
 
         /// <summary>The step across each wrap edge is no bigger than a typical step between neighbours inside.</summary>
         private static void AssertTiles(float[] values, int size)

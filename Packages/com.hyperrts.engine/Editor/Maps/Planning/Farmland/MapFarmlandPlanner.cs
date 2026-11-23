@@ -199,10 +199,12 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
         private static IEnumerable<List<Vector2>> Runs(MapFieldGrid grid, float u, Vector2 across, Func<Vector2, bool> free)
         {
             var run = new List<Vector2>();
-            for (var v = across.x; v <= across.y; v += SampleStep)
+            // One step past the far edge, so the last run closes like any other.
+            for (var v = across.x; ; v += SampleStep)
             {
+                var past = v > across.y;
                 var point = grid.FromGrid(u, v);
-                if (free(point))
+                if (!past && free(point))
                 {
                     run.Add(point);
                     continue;
@@ -213,12 +215,12 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland
                     yield return Simplify(run);
                 }
 
-                run = new List<Vector2>();
-            }
+                if (past)
+                {
+                    yield break;
+                }
 
-            if (run.Count * SampleStep >= MinRun)
-            {
-                yield return Simplify(run);
+                run = new List<Vector2>();
             }
         }
 
