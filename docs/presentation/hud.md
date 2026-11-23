@@ -87,12 +87,9 @@ the OS pointer stays.
 
 - **Ground markers** (`GroundMarker.shader`) drape on the terrain for selected and hovered entities: a rounded
   rectangle round a vehicle, a circle round infantry, corner brackets round a building. Colours follow the relation.
-- **Team rings** are thinner, fainter ground markers on the same footprint under every visible owned mobile unit,
-  one per squad, in the owner's colour from `MatchView.GetColor`, the colour `HyperRTS/LitTeam` gets, so a
-  `TeamColorOverride` recolours both. They draw one queue place under the selection markers, which read over them,
-  and stay out of silhouettes since their shader has no unit mask pass. `OverlayRenderer.TeamRingsShown` hides them.
 - **Small-unit pips** (`UnitPip.shader`) mark a mobile unit drawn shorter on screen than the style's
-  `smallUnitHeight` with an owner-coloured dot in the gap above the model, under its health bar.
+  `smallUnitHeight` with a dot in the gap above the model, under its health bar. The dot takes the owner's colour
+  from `MatchView.GetColor`, the colour `HyperRTS/LitTeam` gets, so a `TeamColorOverride` recolours both.
 - **Health bars** are screen-aligned quads of fixed pixel size, which zoom doesn't change. `OverlayRenderer.HealthBars`
   picks who shows one: everyone, damaged units, or only selected ones. Sizes are pixels at 1080p, scaled by
   resolution and `OverlayRenderer.UIScale` but never below the style's `barMinHeight`. Bars and pips draw after

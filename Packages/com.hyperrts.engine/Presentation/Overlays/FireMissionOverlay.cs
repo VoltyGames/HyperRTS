@@ -33,7 +33,7 @@ namespace HyperRTS.Presentation.Overlays
 
         public FireMissionOverlay(Mesh grid, Material markerMaterial)
         {
-            _markers = new GroundMarkers(grid, markerMaterial, 0);
+            _markers = new GroundMarkers(grid, markerMaterial);
         }
 
         public void Gather(MatchView view, OverlayStyle style)

@@ -23,14 +23,11 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Ground markers under selected and hovered entities, owner-coloured team rings and small-unit pips on visible
+    /// Ground markers under selected and hovered entities, owner-coloured pips over small visible
     /// mobile units, and health bars over the ones the visibility setting picks. All read the drawn pose.
     /// </summary>
     public sealed class UnitOverlays : IDisposable
     {
-        // The team rings draw a place before the selection and hover markers, which read over them.
-        private const int RingsUnderMarkers = -1;
-
         private readonly LiveQuery _living = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Health>(),
             ComponentType.ReadOnly<Owner>(),
@@ -42,7 +39,6 @@ namespace HyperRTS.Presentation.Overlays
         private readonly LiveSingleton<SquadRules> _squadRules = new();
 
         private readonly GroundMarkers _markers;
-        private readonly GroundMarkers _teamRings;
         private readonly UnitPips _pips;
         private readonly HealthBars _bars;
         private readonly SelectionFades _fades = new();
@@ -50,14 +46,13 @@ namespace HyperRTS.Presentation.Overlays
         public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial,
             Material pipMaterial)
         {
-            _markers = new GroundMarkers(grid, markerMaterial, 0);
-            _teamRings = new GroundMarkers(grid, markerMaterial, RingsUnderMarkers);
+            _markers = new GroundMarkers(grid, markerMaterial);
             _pips = new UnitPips(billboard, pipMaterial);
             _bars = new HealthBars(billboard, barMaterial);
         }
 
-        public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, bool teamRingsShown,
-            in ReferencePixels pixels, float now)
+        public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, in ReferencePixels pixels,
+            float now)
         {
             var entityManager = view.EntityManager;
             var handles = new UnitHandles(entityManager);
@@ -68,7 +63,6 @@ namespace HyperRTS.Presentation.Overlays
                 View = view,
                 Style = style,
                 Visibility = visibility,
-                TeamRingsShown = teamRingsShown,
                 Pixels = pixels,
                 Now = now,
                 Hovered = hovered.Value,
@@ -128,7 +122,7 @@ namespace HyperRTS.Presentation.Overlays
             var anchor = new Vector3(position.x, top, position.z);
             if (teamMarked)
             {
-                AddTeamMarkers(pass, pose, footprint, anchor, pass.View.GetColor(seen.Owner));
+                AddPip(pass, pose, anchor, pass.View.GetColor(seen.Owner));
             }
 
             if (seen.Focus.ShowsMarker)
@@ -147,7 +141,6 @@ namespace HyperRTS.Presentation.Overlays
 
         public void Draw(OverlayStyle style, float uiScale, int layer)
         {
-            _teamRings.Draw(layer);
             _markers.Draw(layer);
             _pips.Draw(style, uiScale, layer);
             _bars.Draw(style, uiScale, layer);
@@ -156,7 +149,6 @@ namespace HyperRTS.Presentation.Overlays
         public void Dispose()
         {
             _markers.Dispose();
-            _teamRings.Dispose();
             _pips.Dispose();
             _bars.Dispose();
         }
@@ -168,16 +160,8 @@ namespace HyperRTS.Presentation.Overlays
                 : unit.Footprint(style.markerMargin);
         }
 
-        private void AddTeamMarkers(in GatherPass pass, in MarkerPose pose, in MarkerFootprint footprint, Vector3 top,
-            Color owner)
+        private void AddPip(in GatherPass pass, in MarkerPose pose, Vector3 top, Color owner)
         {
-            if (pass.TeamRingsShown)
-            {
-                var ring = owner;
-                ring.a *= pass.Style.teamRingOpacity;
-                _teamRings.Add(pose, footprint, ring, pass.Style.TeamRing);
-            }
-
             var foot = new Vector3(top.x, pose.Position.y, top.z);
             if (UnitPips.Shows(pass.Pixels.Projected(foot, top), pass.Style))
             {
@@ -214,7 +198,6 @@ namespace HyperRTS.Presentation.Overlays
             public MatchView View;
             public OverlayStyle Style;
             public HealthBarVisibility Visibility;
-            public bool TeamRingsShown;
             public ReferencePixels Pixels;
             public float Now;
             public Entity Hovered;

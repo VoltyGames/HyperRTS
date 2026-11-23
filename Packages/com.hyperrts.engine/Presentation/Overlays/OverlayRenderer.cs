@@ -9,7 +9,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays
 {
     /// <summary>
-    /// Draws ground markers, team rings, health bars, small-unit pips, capture dials, garrison pips, the placement
+    /// Draws ground markers, health bars, small-unit pips, capture dials, garrison pips, the placement
     /// outline and rally points, the cover preview and fire mission ranges with instanced meshes, and keeps the
     /// placement ghost's model copies.
     /// </summary>
@@ -64,9 +64,6 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Multiplies the pixel size of health bars, from the game's UI scale.</summary>
         public float UIScale { get; set; } = 1f;
 
-        /// <summary>Whether visible mobile units show an owner-coloured ring; a game sets it from its settings.</summary>
-        public bool TeamRingsShown { get; set; } = true;
-
         protected override void OnAwake()
         {
             var missing = material == null || markerMaterial == null || barMaterial == null || ghostMaterial == null;
@@ -104,7 +101,7 @@ namespace HyperRTS.Presentation.Overlays
             _materials ??= new OverlayMaterials(material);
 
             var pixels = new ReferencePixels(camera);
-            _units.Gather(view, style, HealthBars, TeamRingsShown, pixels, Time.unscaledTime);
+            _units.Gather(view, style, HealthBars, pixels, Time.unscaledTime);
             _buildings.Gather(view, style, camera, pixels);
             _commands.Gather(view, style);
             _fireMissions.Gather(view, style);

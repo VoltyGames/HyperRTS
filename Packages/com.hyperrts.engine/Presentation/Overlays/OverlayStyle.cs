@@ -53,15 +53,6 @@ namespace HyperRTS.Presentation.Overlays
         public float selectStartScale = 1.18f;
 
         [Header("Team Markers")]
-        [Tooltip("Line width of the owner-coloured ring under visible mobile units; keep it under the marker line.")]
-        [Unit("m")]
-        [Min(0.01f)]
-        public float teamRingLine = 0.07f;
-
-        [Tooltip("Opacity of the team ring.")]
-        [Range(0f, 1f)]
-        public float teamRingOpacity = 0.5f;
-
         [Tooltip("A mobile unit drawn shorter than this many pixels at 1080p, feet to top, gets an owner-coloured pip above it.")]
         [Min(0f)]
         public float smallUnitHeight = 20f;
@@ -215,9 +206,6 @@ namespace HyperRTS.Presentation.Overlays
         /// <summary>Segments for a bar of <paramref name="maxHealth"/>, or one per member for squads.</summary>
         public int Segments(float maxHealth, int members) =>
             members > 0 ? members : Mathf.Clamp(Mathf.CeilToInt(maxHealth / healthPerSegment), 1, maxSegments);
-
-        /// <summary>The team ring: a thin rim with no fill.</summary>
-        public MarkerLook TeamRing => new(teamRingLine, markerFade, 0f);
 
         /// <summary>A marker drawn as its rim alone.</summary>
         public MarkerLook Outline => new(markerLine, markerFade, 0f);
