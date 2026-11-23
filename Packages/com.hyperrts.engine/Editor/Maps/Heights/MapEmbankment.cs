@@ -26,8 +26,6 @@ namespace HyperRTS.Editor.Maps.Heights
             _behind = Ramp.Measure(heights, crossing, -1f);
         }
 
-        private float Landed => _crossing.Span * 0.5f + _crossing.Landing;
-
         /// <summary>
         /// Raises both embankments into <paramref name="heights"/>. Under the span the ground goes back to
         /// <paramref name="carved"/>, as it lay before roads were levelled across the river.
@@ -36,21 +34,21 @@ namespace HyperRTS.Editor.Maps.Heights
         {
             var crossing = _crossing;
             var level = crossing.Height - LandingDrop;
-            var reach = Landed + Mathf.Max(_ahead.Length, _behind.Length) + crossing.Width + MaxCutEdge;
+            var reach = _crossing.Reach + Mathf.Max(_ahead.Length, _behind.Length) + crossing.Width + MaxCutEdge;
             heights.ForEachNear(crossing.Position, reach, (x, z, _) =>
             {
                 var p = heights.Position(x, z);
                 var local = crossing.Local(p);
                 var ramp = local.y < 0f ? _behind : _ahead;
                 var along = Mathf.Abs(local.y);
-                if (along > Landed + ramp.Length)
+                if (along > _crossing.Reach + ramp.Length)
                 {
                     return;
                 }
 
                 var h = Mathf.Lerp(heights[x, z], carved[x, z], crossing.SpanOpening(p));
                 var underDeck = along <= crossing.Span * 0.5f;
-                var target = underDeck ? crossing.Height - AbutmentDrop : ramp.Height(level, h, along - Landed);
+                var target = underDeck ? crossing.Height - AbutmentDrop : ramp.Height(level, h, along - _crossing.Reach);
                 heights[x, z] = Mathf.Lerp(h, target, Fill(local, along, Mathf.Abs(h - target)));
             });
         }
@@ -93,7 +91,7 @@ namespace HyperRTS.Editor.Maps.Heights
 
             public static Ramp Measure(MapHeights heights, MapCrossing crossing, float sign)
             {
-                var end = crossing.Position + crossing.Across * (sign * (crossing.Span * 0.5f + crossing.Landing));
+                var end = crossing.Position + crossing.Across * (sign * crossing.Reach);
                 var length = MinLength;
                 var top = heights.Height(end + crossing.Across * (sign * length));
                 while (length < MaxLength && Mathf.Abs(top - crossing.Height) > Grade * length)

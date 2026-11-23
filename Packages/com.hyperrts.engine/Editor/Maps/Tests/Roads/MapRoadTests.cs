@@ -49,15 +49,18 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         }
 
         [Test]
-        public void ARoadDrawnAskewOverAFord_CrossesSquareToTheRiver_AndKeepsItsEnds()
+        public void ARoadDrawnAskewOverAFord_CrossesSquareToTheRiver_AndKeepsItsEnds_WhileABankRoadStays()
         {
-            var spec = SpecWith(MapFixture.Road("Asphalt", new Vector2(-75f, -115f), new Vector2(-45f, -5f)));
+            var spec = SpecWith(
+                MapFixture.Road("Asphalt", new Vector2(-75f, -115f), new Vector2(-45f, -5f)),
+                MapFixture.Road("Asphalt", new Vector2(-110f, -52f), new Vector2(-10f, -52f)));
             var river = new MapRiverSpec { width = 12f };
             river.points.AddRange(new[] { new MapPoint(-119f, -60f), new MapPoint(-1f, -60f) });
             river.crossings.Add(new MapCrossingSpec { along = 0.5f, kind = MapCrossingSpec.Ford });
             spec.rivers.Add(river);
             var decks = MapDecks.Read(MapFixture.Item<MapPalette>("Palette"));
             MapRoadCrossings.Align(spec.roads, spec.rivers, MapFixture.Climate(), decks);
+            Assert.AreEqual(2, spec.roads[1].points.Count, "a road along the bank past the ford is not laid across it");
 
             var line = Refine(spec, 0);
             var over = line.Where(p => Mathf.Abs(p.y + 60f) < 10f).ToList();

@@ -25,6 +25,9 @@ namespace HyperRTS.Editor.Maps.Geometry
         /// <summary>Length of level ground a bridge's prefab covers past each end of its span, as its approach slabs do.</summary>
         public float Landing { get; set; }
 
+        /// <summary>From the crossing's middle to where its level ground ends, past the span and its landing.</summary>
+        public float Reach => Span * 0.5f + Landing;
+
         /// <summary>A bridge's length between its abutment faces, where the ground keeps the river's banks; 0 for a ford.</summary>
         public float ClearSpan { get; set; }
 

@@ -25,18 +25,32 @@ namespace HyperRTS.Editor.Maps.Refine
                 foreach (var crossing in river.crossings)
                 {
                     var position = MapGeometry.PointAlong(channel, crossing.along * MapGeometry.Length(channel), out var flow);
+                    var across = MapGeometry.Left(flow);
                     var reach = HalfLength(river, crossing, decks) + Lead;
                     foreach (var road in roads)
                     {
                         var line = MapGeometry.ToVectors(road.points);
-                        if (MapGeometry.DistanceToPolyline(line, position, out var middle) <= crossing.width)
+                        if (MapGeometry.DistanceToPolyline(line, position, out var middle) > crossing.width)
+                        {
+                            continue;
+                        }
+
+                        if (Crosses(line, middle, reach, position, across))
                         {
                             var clear = climate.RoadClass(road.kind).cornerRadius;
-                            road.points = MapGeometry.ToPoints(Lay(line, middle, position, MapGeometry.Left(flow), reach, clear));
+                            road.points = MapGeometry.ToPoints(Lay(line, middle, position, across, reach, clear));
                         }
                     }
                 }
             }
+        }
+
+        /// <summary>Whether the road runs from one bank to the other round middle, rather than along one bank.</summary>
+        private static bool Crosses(List<Vector2> road, float middle, float reach, Vector2 position, Vector2 across)
+        {
+            var before = Vector2.Dot(MapGeometry.PointAlong(road, Mathf.Max(0f, middle - reach), out _) - position, across);
+            var after = Vector2.Dot(MapGeometry.PointAlong(road, middle + reach, out _) - position, across);
+            return before * after < 0f;
         }
 
         /// <summary>From a crossing's middle to where its level ground ends: a bridge's approach slabs, a ford's banks.</summary>
