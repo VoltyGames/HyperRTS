@@ -123,9 +123,6 @@ namespace HyperRTS.Editor.Maps.Climate
         [Above(0f)]
         public float fordRapidsLength;
 
-        [Tooltip("Metres of foam lines trailing downstream of a ford or bridge; 0 for none.")]
-        public float crossingFoamLength;
-
         [Tooltip("Surface inside ravines (floor and walls).")]
         [MapKey(typeof(MapClimateSurface))]
         public string ravineSurface;

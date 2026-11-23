@@ -1,6 +1,6 @@
-// River and lake surface: three scales of spectrum ripples flowing along V (metres), faster mid-channel, calmed in
-// slicks and roughened by gusts, over a body that deepens in colour with the bed. Vertex A is how shallow a ford is,
-// G fast water, R foam trailing a ford, B still water (ponds).
+// River and lake surface: three scales of spectrum ripples flowing along V (metres), calmed in slicks and roughened
+// by gusts, over a body that deepens in colour with the bed. Vertex A is how shallow a ford is, G its fast water and
+// B still water (ponds).
 // Needs the URP asset's Depth and Opaque Textures.
 Shader "HyperRTS/Water"
 {
@@ -38,24 +38,17 @@ Shader "HyperRTS/Water"
         _FoamColor ("Foam Color (albedo)", Color) = (0.85, 0.86, 0.82, 1)
         [NoScaleOffset] _FoamMap ("Foam (R lace, G clumps, B broad blobs)", 2D) = "black" {}
         _FoamSize ("Foam Size (m per lace tile)", Float) = 6
-        _FlowFoamAmount ("Flow Foam Lines", Range(0, 1)) = 0.35
-        _BankFoamWidth ("Bank Foam Width (m)", Float) = 2.5
+        _FordChop ("Ford Chop (extra ripples over fast water)", Range(0, 2)) = 1
+        _FordFoam ("Ford Foam Flecks", Range(0, 1)) = 0.25
+        _BankFoamDepth ("Bank Foam Depth (m of water it reaches)", Float) = 0.5
         _BankFoamAmount ("Bank Foam Amount", Range(0, 1)) = 0.35
-        _ShoreWaveFoam ("Shore Wave Foam", Range(0, 1)) = 0.4
-        _ShoreWaveLength ("Shore Wave Length (m)", Float) = 1.6
-        _ShoreWavePeriod ("Shore Wave Period (s)", Float) = 3.5
-        _ShoreLap ("Shore Lap (fraction of fade depth)", Range(0, 1)) = 0.6
         _WakeFoam ("Wake Foam", Range(0, 1)) = 0.8
         _WakeRipple ("Wake Ripple Strength", Range(0, 2)) = 0.5
         _PierWakeLength ("Pier Wake Length (m)", Float) = 12
         _PierWakeFoam ("Pier Wake Foam", Range(0, 1)) = 0.8
         _PierChop ("Pier Chop (extra ripples round a wake)", Range(0, 2)) = 1
         _PierCushionWidth ("Pier Cushion Width (m)", Float) = 0.5
-        _ReflectionStrength ("Scene Reflection Strength", Range(0, 1)) = 1
         _ReflectionFloor ("Reflection Looking Straight Down (water is 0.02)", Range(0.02, 0.5)) = 0.02
-        _ReflectionDistance ("Scene Reflection Reach (m)", Float) = 40
-        _ReflectionThickness ("Scene Reflection Hit Thickness (m)", Float) = 2
-        _ReflectionDistortion ("Scene Reflection Ripple Distortion", Range(0, 1)) = 0.4
     }
 
     SubShader
@@ -97,9 +90,8 @@ Shader "HyperRTS/Water"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneDepth.hlsl"
 
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/Trample.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterFoam.hlsl"
-            #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterReflection.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterSurface.hlsl"
+            #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterFoam.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/SceneFog.hlsl"
 
             struct Attributes
@@ -135,15 +127,17 @@ Shader "HyperRTS/Water"
                 return output;
             }
 
-            // Slicks smooth the ripples; gusts and the water round piers roughen them.
-            half3 SurfaceNormal(Varyings input, half3 bitangent, float current, half slick, half pierRipple,
-                float cameraDistance, out half3 ripple)
+            // Slicks smooth the ripples; gusts, a ford's fast water and the water round piers roughen them.
+            half3 SurfaceNormal(Varyings input, half3 bitangent, float drift, half pierChop, float cameraDistance,
+                out half3 ripple)
             {
-                half calm = smoothstep(0.5, 0.75, slick) * _SlickCalm * (1.0 - input.color.b);
+                half still = input.color.b;
+                half calm = smoothstep(0.5, 0.75, Slick(input.uv, drift)) * _SlickCalm * (1.0 - still);
                 half gust = 1.0 + (Gust(input.positionWS) * 2.0 - 1.0) * _GustStrength;
-                half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
-                half strength = _RippleStrength * rippleScale * (1.0 - calm) * gust * (1.0 + pierRipple);
-                ripple = Ripples(input.uv, strength, current, cameraDistance);
+                half rough = 1.0 + pierChop + input.color.g * _FordChop;
+                half distant = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
+                float travel = lerp(drift, _Time.y * WATER_STILL_DRIFT, still);
+                ripple = Ripples(input.uv, _RippleStrength * distant * (1.0 - calm) * gust * rough, travel, cameraDistance);
                 return normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
             }
 
@@ -179,33 +173,15 @@ Shader "HyperRTS/Water"
                 return bottom * transmitted + albedo * light * (1.0 - transmitted);
             }
 
-            half3 Reflection(Varyings input, half3 normalWS, half3 view, half smoothness, SceneFog fog)
+            // Foam fades in the last centimetres so it never paints the dry bank. A ford is shallow all over, so it
+            // takes no bank foam; ground detail Low drops calm-water foam.
+            half FoamAmount(Varyings input, float depth, float drift, half pierFoam, half wakeFoam)
             {
-                const bool useEnvironmentReflections = true;
-                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, useEnvironmentReflections);
-                // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
-                half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
-                half4 scene = half4(0.0, 0.0, 0.0, 0.0);
-                // The sharp march can't blur, so a rougher surface hands the reflection over to the blurred sky.
-                half sharpness = saturate((smoothness - _SmoothnessFar) / max(_Smoothness - _SmoothnessFar, 0.001));
-                [branch] if (_ReflectionStrength > 0.0 && sharpness > 0.0)
-                {
-                    scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
-                    scene.a *= sharpness;
-                }
-
-                return lerp(sky, RemoveAtmosphereFog(scene.rgb, fog.atmosphere), scene.a * _ReflectionStrength);
-            }
-
-            // Foam fades in the last centimetres so it never paints the dry bank; ground detail Low drops calm-water foam.
-            half FoamAmount(Varyings input, float drift, float shoreDistance, float shoreDepth, half slick, half2 pier,
-                half wakeFoam)
-            {
-                half amount = max(RapidsFoam(input.uv, drift, max(input.color.g, input.color.r * 0.8)), wakeFoam);
+                half amount = max(FordFoam(input.uv, drift, input.color.g), wakeFoam);
                 #if !defined(_TERRAIN_SIMPLE)
-                    amount = max(amount, max(max(BankFoam(input.uv, shoreDistance), FlowFoam(slick)), pier.x));
+                    amount = max(amount, max(BankFoam(depth) * (1.0 - input.color.a), pierFoam));
                 #endif
-                return amount * saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
+                return amount * saturate(depth / (_ShoreFadeDepth * 0.5));
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -215,14 +191,10 @@ Shader "HyperRTS/Water"
                 float surface = EyeDepth(input.positionCS.z);
                 float rawDepth = SampleSceneDepth(screenUV);
                 float depth = max(0.0, EyeDepth(rawDepth) - surface);
-                float shoreDistance = ShoreDistance(depth, input.positionWS);
-                float shoreDepth = depth + ShoreLap(input.uv);
 
-                // The current runs fastest mid-channel and drags along the banks; vertex B marks still water (ponds).
-                float current = _FlowSpeed * lerp(WATER_BANK_CURRENT, 1.0, smoothstep(0.5, 5.0, shoreDistance)) * (1.0 - input.color.b);
-                float drift = _Time.y * _FlowSpeed;
+                // Metres the current has carried the surface: one value over a river, none on still water (vertex B).
+                float drift = _Time.y * _FlowSpeed * (1.0 - input.color.b);
                 half3 bitangent = input.tangentWS.w * cross(input.normalWS, input.tangentWS.xyz);
-                half slick = Slick(input.uv, drift);
                 half2 pier = half2(0.0, 0.0);
                 #if !defined(_TERRAIN_SIMPLE)
                     [branch] if (_HyperRTSWaterPierCount > 0.5)
@@ -232,12 +204,11 @@ Shader "HyperRTS/Water"
                 #endif
 
                 half3 ripple;
-                half3 normalWS = SurfaceNormal(input, bitangent, current, slick, pier.y, cameraDistance, ripple);
+                half3 normalWS = SurfaceNormal(input, bitangent, drift, pier.y, cameraDistance, ripple);
                 // A wake tilts the surface down its slope, as if the foam were a height.
                 WakeSample wake = SampleWakeFoam(input.positionWS);
                 normalWS = normalize(normalWS - half3(wake.slope.x, 0.0, wake.slope.y) * _WakeRipple);
 
-                SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
                 float3 bed;
                 half3 bottom = RefractedBed(screenUV, ripple, depth, surface, rawDepth, bed);
                 // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
@@ -249,14 +220,15 @@ Shader "HyperRTS/Water"
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
                 half smoothness = DistantSmoothness(cameraDistance);
-                half3 color = lerp(body, Reflection(input, normalWS, view, smoothness, fog), fresnel);
+                const bool useEnvironmentReflections = true;
+                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, useEnvironmentReflections);
+                half3 color = lerp(body, sky, fresnel);
                 color += Glint(sun, normalWS, view, color, smoothness, cameraDistance);
 
-                half amount = FoamAmount(input, drift, shoreDistance, shoreDepth, slick, pier, wake.foam);
-                half foam = FoamCover(amount, input.uv, drift * (1.0 + input.color.g * 1.5));
+                half foam = FoamCover(FoamAmount(input, depth, drift, pier.x, wake.foam), input.uv, drift);
                 color = lerp(color, _FoamColor.rgb * light, foam);
-                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);
-                return half4(ApplySceneFog(color, fog), alpha);
+                half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(depth / _ShoreFadeDepth), foam);
+                return half4(ApplySceneFog(color, SceneFogAt(input.positionWS, input.positionCS)), alpha);
             }
             ENDHLSL
         }

@@ -55,16 +55,22 @@ object space, in metres:
 
 ## Water
 
-`HyperRTS/Water` is a refracting water shader with absorption, caustics, wind-wave ripples (`WaterRipples.png`, made
-by `WaterSpectrum`), reflection, foam and unit wakes (`SampleWake`). It needs Depth and Opaque Textures. `Shallow Color`
-and `Deep Color` are albedos lit by the sun and sky like the ground, blended by the depth of the bed over `Deep Depth`,
-so the river shades from bank to channel and follows each weather's light. `WaterLace.png` (`FoamLace`) holds lace
-strands, foam clumps and broad blobs: the blobs drift calm slicks down the current and sweep wind gusts across it,
-and every foam source (banks, slick edges, fords, wakes, piers) is an amount drawn through the lace, so thin foam
-breaks into strands rather than fading. Vertex colours shape the flow: alpha thins fords, green marks rapids, red
-trails foam below fords; both draw white water as streaks down the current with open water between. `WaterPiers` on the water object lists up
-to 16 bridge piers per map: the shader draws a cushion upstream of each, a short wake below it and rougher water round the wake.
-`WaterCaustics` off in [quality](README.md#quality) compiles the caustics out.
+`HyperRTS/Water` draws rivers and ponds: the bed refracted through the water, a body lit by the sun and sky, the sky
+mirrored at grazing angles, a sun glint and foam. It needs the Depth and Opaque Textures.
+
+- **Body.** `Shallow Color` and `Deep Color` are albedos lit like the ground and blended by the depth of the bed, so
+  a river shades from bank to channel and follows each weather's light. Caustics play on a shallow bed; `WaterCaustics`
+  off in [quality](README.md#quality) compiles them out.
+- **Surface.** Three scales of wind-wave ripples (`WaterRipples.png`, made by `WaterSpectrum`) scroll down the river
+  at one speed, so they never shear. Broad blobs in `WaterLace.png` drift calm slicks down the current and sweep
+  wind gusts across it.
+- **Foam.** Each source gives an amount and the strongest is drawn through the lace (`FoamLace`): a little foam is a
+  few soft flecks, a lot is whole. The sources are the shallowest water along banks and round hulls, a ford's fast
+  water, unit wakes (`SampleWake`) and bridge piers.
+- **Vertex colours** come from the map build: alpha thins the water over a ford, green marks its fast water, which
+  ripples harder and carries flecks of foam, and blue marks still water, where nothing flows.
+- **Piers.** `WaterPiers` on the water object lists up to 16 bridge piers per map: the shader draws a cushion
+  upstream of each, a short wake below it and rougher water round the wake.
 
 ## Field fires
 

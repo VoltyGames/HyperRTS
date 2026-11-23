@@ -1,82 +1,27 @@
 // Water.shader's foam. Each source gives an amount; FoamCover draws the strongest through the foam map's lace, so thick
-// foam is solid and thin foam breaks into strands and flecks. Include after the water's CBUFFER and Trample.hlsl.
+// foam is whole and thin foam is a few soft flecks. Include after WaterSurface.hlsl and Trample.hlsl.
 #ifndef HYPERRTS_WATER_FOAM_INCLUDED
 #define HYPERRTS_WATER_FOAM_INCLUDED
 
-#define WATER_GUST_DIRECTION float2(0.8, 0.6) // the wind the ripple spectrum was made for
-#define WATER_RAPIDS_WIDTH 1.5                // metres across a white-water streak
-#define WATER_RAPIDS_LENGTH 10.0              // metres along one
+#define WATER_FLECK_WIDTH 1.5   // metres across a run of flecks over a ford
+#define WATER_FLECK_LENGTH 10.0 // metres along one
 
-// The foam map's broad blobs (B): smooth enough to read at the top mip, so branches may call it.
-half Blobs(float2 p)
-{
-    return SAMPLE_TEXTURE2D_LOD(_FoamMap, sampler_FoamMap, p, 0).b;
-}
-
-// 1 along calm slicks: long streaks drifting down the current (V), where the surface film smooths the ripples.
-half Slick(float2 uv, float drift)
-{
-    return Blobs(float2(uv.x / _SlickWidth, (uv.y - drift * 0.8) / _SlickLength));
-}
-
-// 0..1 wind gusts darkening the water as patches that sweep across it, whatever way the river runs.
-half Gust(float3 positionWS)
-{
-    return Blobs((positionWS.xz - WATER_GUST_DIRECTION * _Time.y * _GustSpeed) / _GustSize);
-}
-
-// White water over fast shallows and the trail below them: streaks down the current, thinned by a wider noise so a
-// ford never turns to one white sheet.
-half RapidsFoam(float2 uv, float drift, half fast)
+// Flecks where a ford's fast water breaks, gathered in runs down the current with open water between.
+half FordFoam(float2 uv, float drift, half fast)
 {
     [branch] if (fast < 0.001)
     {
         return 0.0;
     }
 
-    half streak = Blobs(float2(uv.x / WATER_RAPIDS_WIDTH, (uv.y - drift * 2.5) / WATER_RAPIDS_LENGTH));
-    half breakup = Blobs(float2(uv.x / (WATER_RAPIDS_WIDTH * 3.0) + 0.21, (uv.y - drift * 1.5) / (WATER_RAPIDS_LENGTH * 1.7)));
-    return fast * smoothstep(0.45, 0.8, streak) * smoothstep(0.3, 0.6, breakup) * 0.9;
+    half run = Blobs(float2(uv.x / WATER_FLECK_WIDTH, (uv.y - drift * 2.5) / WATER_FLECK_LENGTH));
+    return fast * smoothstep(0.35, 0.75, run) * _FordFoam;
 }
 
-// Metres to the waterline from depth and screen derivatives: the ribbon's edge lies buried past the bank, so uv.x
-// can't place it. A flat ford bed reads as far from shore.
-float ShoreDistance(float depth, float3 positionWS)
+// A line of foam over the shallowest water: along the banks and round anything standing in it.
+half BankFoam(float depth)
 {
-    float2 ex = ddx(positionWS.xz);
-    float2 ey = ddy(positionWS.xz);
-    float det = ex.x * ey.y - ex.y * ey.x;
-    det += det >= 0.0 ? 1e-6 : -1e-6;
-    float dDepthX = ddx(depth);
-    float dDepthY = ddy(depth);
-    float2 gradient = float2(ey.y * dDepthX - ex.y * dDepthY, ex.x * dDepthY - ey.x * dDepthX) / det;
-    float slope = clamp(length(gradient), 0.15, 3.0);
-    return depth / slope;
-}
-
-// Swells only pull the waterline down: the bank hides water above it, so rising would harden the soft edge.
-float ShoreLap(float2 uv)
-{
-    return -(0.5 + 0.5 * sin((_Time.y / _ShoreWavePeriod + uv.y * 0.07) * TWO_PI)) * _ShoreLap * _ShoreFadeDepth;
-}
-
-// A broken line at the waterline, a looser band behind it and swells running in to the bank.
-half BankFoam(float2 uv, float shoreDistance)
-{
-    half amount = 0.0;
-    [branch] if (shoreDistance < _BankFoamWidth * 1.4)
-    {
-        half wander = Blobs(float2(0.21, uv.y / 40.0));
-        float bandWidth = _BankFoamWidth * (0.6 + 0.8 * wander);
-        half band = 1.0 - smoothstep(0.0, bandWidth, shoreDistance);
-        half waterline = 1.0 - smoothstep(0.1, 0.6, shoreDistance);
-        // The phase falls with distance, so crests travel shoreward; the wander bends them off straight lines.
-        float phase = shoreDistance / _ShoreWaveLength + _Time.y / _ShoreWavePeriod + wander * 0.6;
-        half crest = pow(saturate(sin(phase * TWO_PI) * 0.5 + 0.5), 6.0) * band;
-        amount = max(max(waterline * 0.5, band * band * 0.3) * _BankFoamAmount, crest * _ShoreWaveFoam);
-    }
-
-    return amount;
+    return (1.0 - smoothstep(0.0, _BankFoamDepth, depth)) * _BankFoamAmount;
 }
 
 // Foam round each bridge pier, which the water's mesh frame orients: down is its V on the water plane, across its U.
@@ -109,15 +54,9 @@ half2 PierWake(float3 positionWS, float2 down, float2 across)
     return half2(foam * _PierWakeFoam, chop * _PierChop);
 }
 
-// Foam lines where slicks meet rougher water, which gathers the surface film.
-half FlowFoam(half slick)
-{
-    half seam = 1.0 - smoothstep(0.0, 0.08, abs(slick - 0.62));
-    return seam * _FlowFoamAmount;
-}
-
-// How much of the surface foam covers for an amount: thick foam is whole, thinner foam keeps only the clumps (G) and
-// then the lace strands (R) inside them, drifting down the current.
+// How much of the surface foam covers for an amount, drifting down the current. Foam shows first as soft flecks on
+// the densest clumps (G) and fills out from there, thin foam staying see-through; the lace strands (R) only shade it,
+// since their straight runs read as sticks when they stand alone.
 half FoamCover(half amount, float2 uv, float drift)
 {
     // Gradients taken before the branch keep the fetch valid inside it.
@@ -128,9 +67,8 @@ half FoamCover(half amount, float2 uv, float drift)
     [branch] if (amount > 0.01)
     {
         half3 lace = SAMPLE_TEXTURE2D_GRAD(_FoamMap, sampler_FoamMap, float2(uv.x, uv.y - drift) * scale, dx, dy).rgb;
-        half prone = lace.g * 0.6 + lace.r * 0.4;
         half edge = 1.0 - amount;
-        cover = smoothstep(edge - 0.05, edge + 0.05, prone) * (0.7 + 0.3 * lace.r);
+        cover = smoothstep(edge, edge + 0.25, lace.g) * lerp(0.6, 1.0, amount) * (0.75 + 0.25 * lace.r);
     }
 
     return cover;
