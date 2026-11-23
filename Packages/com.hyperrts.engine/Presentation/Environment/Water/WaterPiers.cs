@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Environment.Water
 
         private void OnEnable() => Publish();
 
-        private void OnDisable() => Shader.SetGlobalFloat(CountId, 0f);
+        protected override void OnDisabled() => Shader.SetGlobalFloat(CountId, 0f);
 
         private void OnValidate()
         {

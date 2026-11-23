@@ -67,10 +67,8 @@ Shader "HyperRTS/Foliage"
             HLSLPROGRAM
             #pragma vertex ForwardVert
             #pragma fragment ForwardFrag
-            #pragma shader_feature_local _TREE_WIND
-            #pragma multi_compile_local _ _GRASS_INSTANCES
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/SimpleLightingKeywords.hlsl"
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
@@ -87,9 +85,7 @@ Shader "HyperRTS/Foliage"
             HLSLPROGRAM
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
-            #pragma shader_feature_local _TREE_WIND
-            #pragma multi_compile_local _ _GRASS_INSTANCES
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/ShadowCasterKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
@@ -107,9 +103,7 @@ Shader "HyperRTS/Foliage"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
-            #pragma shader_feature_local _TREE_WIND
-            #pragma multi_compile_local _ _GRASS_INSTANCES
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL
@@ -125,9 +119,7 @@ Shader "HyperRTS/Foliage"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthNormalsFrag
-            #pragma shader_feature_local _TREE_WIND
-            #pragma multi_compile_local _ _GRASS_INSTANCES
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/DepthNormalsKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
@@ -144,9 +136,7 @@ Shader "HyperRTS/Foliage"
             HLSLPROGRAM
             #pragma vertex MotionVert
             #pragma fragment MotionFrag
-            #pragma shader_feature_local _TREE_WIND
-            #pragma multi_compile_local _ _GRASS_INSTANCES
-            #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliageKeywords.hlsl"
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/InstancingKeywords.hlsl"
             #include "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Shading/FoliagePasses.hlsl"
             ENDHLSL

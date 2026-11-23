@@ -22,7 +22,11 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     [UpdateAfter(typeof(ImpactMarkSystem))]
     public partial class WornGroundStampSystem : SystemBase
     {
+        // Destroyed buildings leave the set on this slow sweep, which keeps a long match's set small.
+        private const double PruneSeconds = 30;
+
         private readonly HashSet<Entity> _stamped = new();
+        private double _nextPrune;
 
         protected override void OnUpdate()
         {
@@ -35,6 +39,11 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             if (stamps.Reset)
             {
                 _stamped.Clear();
+            }
+            else if (SystemAPI.Time.ElapsedTime >= _nextPrune)
+            {
+                _nextPrune = SystemAPI.Time.ElapsedTime + PruneSeconds;
+                _stamped.RemoveWhere(entity => !EntityManager.Exists(entity));
             }
 
             // A trench is dug earth already.

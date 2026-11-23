@@ -1,3 +1,4 @@
+using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Capture;
@@ -21,11 +22,13 @@ namespace HyperRTS.Editor.Templates
     /// </summary>
     public static class EntityTemplates
     {
+        private const float MarkerThickness = 0.05f;
         private const string TeamMaterial = "Packages/com.hyperrts.engine/Presentation/Materials/TeamLit.mat";
 
         public static GameObject Unit(string name = "Unit")
         {
             var go = Template(name, PrimitiveType.Capsule, new Vector3(0.8f, 0.9f, 0.8f), 0.9f);
+            AddTeamMarkers(go, 0.25f, 1.8f);
             go.AddComponent<GhostAuthoringComponent>();
             var unit = go.AddComponent<UnitAuthoring>();
             unit.displayName = name;
@@ -43,6 +46,7 @@ namespace HyperRTS.Editor.Templates
         public static GameObject Building(string name = "Building", float width = 4f, float height = 2.5f)
         {
             var go = Template(name, PrimitiveType.Cube, new Vector3(width, height, width), height * 0.5f);
+            AddTeamMarkers(go, width * 0.25f, height);
             go.AddComponent<GhostAuthoringComponent>();
             var building = go.AddComponent<BuildingAuthoring>();
             building.displayName = name;
@@ -125,6 +129,24 @@ namespace HyperRTS.Editor.Templates
             box.center = model.transform.localPosition;
             box.size = shape == PrimitiveType.Capsule ? new Vector3(size.x, size.y * 2f, size.z) : size;
             return root;
+        }
+
+        // Two roof panels, the fewest the team colour rule asks of a unit or building, so a new entity shows its owner.
+        // They sit flush with the model's top, so boxes fitted to the model keep its size.
+        private static void AddTeamMarkers(GameObject root, float offset, float top)
+        {
+            var material = root.GetComponentInChildren<Renderer>().sharedMaterial;
+            foreach (var side in new[] { -1f, 1f })
+            {
+                var marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                marker.name = "Team Marker";
+                Object.DestroyImmediate(marker.GetComponent<Collider>());
+                marker.GetComponent<Renderer>().sharedMaterial = material;
+                marker.AddComponent<TeamMarkerAuthoring>();
+                marker.transform.SetParent(root.transform, false);
+                marker.transform.localScale = new Vector3(0.2f, MarkerThickness, 0.2f);
+                marker.transform.localPosition = new Vector3(side * offset, top - MarkerThickness * 0.5f, 0f);
+            }
         }
     }
 }

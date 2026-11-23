@@ -19,16 +19,51 @@ namespace HyperRTS.Input.Cameras
             ComponentType.ReadOnly<BuildingTag>(), ComponentType.ReadOnly<Owner>(),
             ComponentType.ReadOnly<LocalTransform>()));
 
-        /// <summary>False until the local player exists (the map is still streaming in, or a network join is pending).</summary>
-        public bool TryGetLocalOwner(EntityManager entityManager, out byte owner)
+        private bool _done;
+        private float _deadline = float.NaN;
+
+        /// <summary>
+        /// The base centre the first time it is found, looking for <paramref name="searchSeconds"/> after the local
+        /// player exists; false before that, after it was given or the search ended, and when <paramref name="enabled"/> is off.
+        /// </summary>
+        public bool TryFindOnce(bool enabled, float searchSeconds, out Vector3 centre)
+        {
+            centre = default;
+            if (_done || !enabled)
+            {
+                return false;
+            }
+
+            if (!DefaultWorld.TryGetEntityManager(out var entityManager))
+            {
+                return false;
+            }
+
+            if (!TryGetLocalOwner(entityManager, out var owner))
+            {
+                return false;
+            }
+
+            if (float.IsNaN(_deadline))
+            {
+                _deadline = Time.unscaledTime + searchSeconds;
+            }
+
+            var found = TryFind(entityManager, owner, out centre);
+            _done = found || Time.unscaledTime >= _deadline;
+            return found;
+        }
+
+        // False until the local player exists (the map is still streaming in, or a network join is pending).
+        private bool TryGetLocalOwner(EntityManager entityManager, out byte owner)
         {
             var found = _localPlayer.In(entityManager).TryGetSingleton(out Player local);
             owner = local.Owner;
             return found;
         }
 
-        /// <summary>False when <paramref name="owner"/> owns no buildings.</summary>
-        public bool TryFind(EntityManager entityManager, byte owner, out Vector3 centre)
+        // False when the owner has no buildings.
+        private bool TryFind(EntityManager entityManager, byte owner, out Vector3 centre)
         {
             centre = default;
             var query = _buildings.In(entityManager);

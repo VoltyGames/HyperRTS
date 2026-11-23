@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly UnitPips _pips;
         private readonly HealthBars _bars;
         private readonly SelectionFades _fades = new();
-        private NativeList<Entity> _parts = new(Allocator.Persistent);
+        private readonly EntityExtent _extent = new();
 
         public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial,
             Material pipMaterial)
@@ -76,6 +76,7 @@ namespace HyperRTS.Presentation.Overlays
             }
 
             _fades.EndFrame();
+            _extent.EndFrame();
         }
 
         private void GatherChunk(in GatherPass pass, ref UnitHandles handles, in ArchetypeChunk chunk)
@@ -123,7 +124,7 @@ namespace HyperRTS.Presentation.Overlays
             var anchor = Vector3.zero;
             if (teamMarked || showsBar)
             {
-                var top = EntityExtent.Top(pass.View.EntityManager, seen.Entity, position, seen.Unit.Radius, _parts);
+                var top = _extent.Top(pass.View.EntityManager, seen.Entity, position, seen.Unit.Radius);
                 anchor = new Vector3(position.x, top, position.z);
             }
 
@@ -158,7 +159,7 @@ namespace HyperRTS.Presentation.Overlays
             _markers.Dispose();
             _pips.Dispose();
             _bars.Dispose();
-            _parts.Dispose();
+            _extent.Dispose();
         }
 
         private static MarkerFootprint MarkerSize(in OverlayUnit unit, OverlayStyle style)

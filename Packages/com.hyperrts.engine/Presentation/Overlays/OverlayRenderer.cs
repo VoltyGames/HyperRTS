@@ -115,17 +115,18 @@ namespace HyperRTS.Presentation.Overlays
 
         protected override void OnDestroyed()
         {
-            foreach (var mesh in _meshes)
+            // OnAwake may have thrown part way (a missing material), leaving these unbuilt.
+            foreach (var mesh in _meshes ?? Array.Empty<Mesh>())
             {
                 Destroy(mesh);
             }
 
-            _units.Dispose();
-            _buildings.Dispose();
-            _commands.Dispose();
-            _fireMissions.Dispose();
-            _cover.Dispose();
-            _ghosts.Dispose();
+            _units?.Dispose();
+            _buildings?.Dispose();
+            _commands?.Dispose();
+            _fireMissions?.Dispose();
+            _cover?.Dispose();
+            _ghosts?.Dispose();
             _materials?.Dispose();
         }
     }

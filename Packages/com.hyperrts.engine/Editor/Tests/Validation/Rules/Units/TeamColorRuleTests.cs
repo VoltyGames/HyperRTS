@@ -18,18 +18,18 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
         public void TeamColorRule_CountsMarkers_AndWarnsOnAnUnpaintedOne()
         {
             var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
-            var teamMaterial = unit.GetComponentInChildren<MeshRenderer>().sharedMaterial;
-            AddMarker(unit, teamMaterial);
-            Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("Only 1 team markers")));
+            Assert.IsEmpty(MarkerWarnings(unit), "the template carries the two markers it needs");
 
-            AddMarker(unit, teamMaterial);
-            Assert.IsEmpty(MarkerWarnings(unit));
+            RemoveMarker(unit);
+            Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("Only 1 team markers")));
 
             AddMarker(unit, Track(new Material(Shader.Find("Universal Render Pipeline/Lit"))));
             Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("no _TeamColor material")));
 
             var prop = Track(EntityTemplates.Unit("Prop")).GetComponent<UnitAuthoring>();
             prop.owner = 0;
+            RemoveMarker(prop);
+            RemoveMarker(prop);
             Assert.IsEmpty(MarkerWarnings(prop), "a neutral entity nobody can capture or garrison never takes an owner");
         }
 
@@ -42,7 +42,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             try
             {
                 var template = Track(EntityTemplates.Unit());
-                AddMarker(template.GetComponent<UnitAuthoring>(), template.GetComponentInChildren<MeshRenderer>().sharedMaterial);
+                RemoveMarker(template.GetComponent<UnitAuthoring>());
                 var basePrefab = PrefabUtility.SaveAsPrefabAsset(template, folder + "/Base.prefab");
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab);
                 var variant = PrefabUtility.SaveAsPrefabAsset(instance, folder + "/Variant.prefab");
@@ -77,6 +77,9 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             new TeamMarkerSettingsRule().Check(AssetSet.From(assets), issues);
             return issues.Select(issue => issue.Message).ToArray();
         }
+
+        private static void RemoveMarker(UnitAuthoring unit) =>
+            Object.DestroyImmediate(unit.GetComponentInChildren<TeamMarkerAuthoring>().gameObject);
 
         private static void AddMarker(UnitAuthoring unit, Material material)
         {

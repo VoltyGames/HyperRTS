@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.Environment.Ground.ImpactMarks;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -16,12 +17,17 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateAfter(typeof(TrampleStampSystem))]
+    [UpdateAfter(typeof(ImpactMarkSystem))]
     public partial class TrenchStampSystem : SystemBase
     {
         // Past the footprint's ends so neighbouring segments overlap and the ditch has no gaps.
         private const float EndOverlap = 0.1f;
 
+        // Destroyed buildings leave the set on this slow sweep, which keeps a long match's set small.
+        private const double PruneSeconds = 30;
+
         private readonly HashSet<Entity> _dug = new();
+        private double _nextPrune;
 
         protected override void OnUpdate()
         {
@@ -34,6 +40,11 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             if (stamps.Reset)
             {
                 _dug.Clear();
+            }
+            else if (SystemAPI.Time.ElapsedTime >= _nextPrune)
+            {
+                _nextPrune = SystemAPI.Time.ElapsedTime + PruneSeconds;
+                _dug.RemoveWhere(entity => !EntityManager.Exists(entity));
             }
 
             foreach (var (trench, obstacle, place, entity) in SystemAPI

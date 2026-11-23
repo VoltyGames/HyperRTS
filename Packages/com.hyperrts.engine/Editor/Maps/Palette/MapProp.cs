@@ -77,7 +77,7 @@ namespace HyperRTS.Editor.Maps.Palette
             prefab != null && prefab.TryGetComponent<NavAreaAuthoring>(out var area) && area.kind == NavAreaKind.Deck;
 
         /// <summary>A resource node. Looked up on the live prefab each time, so edits to it show on the next build.</summary>
-        public bool IsResource => prefab.GetComponentInChildren<ResourceNodeAuthoring>() != null;
+        public bool IsResource => prefab.GetComponentInChildren<ResourceNodeAuthoring>(true) != null;
 
         /// <summary>A resource node that regrows once tapped (its authoring has a regrowth rate above 0).</summary>
         public bool IsRenewable

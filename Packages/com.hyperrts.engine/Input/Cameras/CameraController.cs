@@ -79,8 +79,6 @@ namespace HyperRTS.Input.Cameras
         private readonly LiveSingleton<TerrainHeight> _terrain = new();
 
         private readonly HomeBase _home = new();
-        private bool _homeDone;
-        private float _homeDeadline = float.NaN;
 
         private readonly LiveSingleton<MapSettings> _map = new();
         private readonly LiveSingleton<CameraFocusRequest> _focusRequest = new();
@@ -146,7 +144,7 @@ namespace HyperRTS.Input.Cameras
                 return;
             }
 
-            if (TryTakeFocusRequest(out var point) || TryFindHomeOnce(out point))
+            if (TryTakeFocusRequest(out var point) || _home.TryFindOnce(startAtHome, homeSearchSeconds, out point))
             {
                 FocusOn(point);
                 return;
@@ -260,26 +258,6 @@ namespace HyperRTS.Input.Cameras
                 Time.unscaledDeltaTime);
 
         private Vector3 ClampToMap(Vector3 point) => _map.TryGetInDefaultWorld(out var map) ? (Vector3)map.Clamp(point) : point;
-
-        /// <summary>The local player's base, sought over <see cref="homeSearchSeconds"/> if <see cref="startAtHome"/>; none keeps the view.</summary>
-        private bool TryFindHomeOnce(out Vector3 home)
-        {
-            home = default;
-            if (_homeDone || !startAtHome || !DefaultWorld.TryGetEntityManager(out var entityManager)
-                || !_home.TryGetLocalOwner(entityManager, out var owner))
-            {
-                return false;
-            }
-
-            if (float.IsNaN(_homeDeadline))
-            {
-                _homeDeadline = Time.unscaledTime + homeSearchSeconds;
-            }
-
-            var found = _home.TryFind(entityManager, owner, out home);
-            _homeDone = found || Time.unscaledTime >= _homeDeadline;
-            return found;
-        }
 
         /// <summary>Takes the point the HUD (minimap) asked to centre on, clearing the request.</summary>
         private bool TryTakeFocusRequest(out Vector3 point)

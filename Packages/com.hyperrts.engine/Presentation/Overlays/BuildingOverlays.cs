@@ -52,7 +52,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly InstanceBuffer<OverlayInstance> _dialSteps;
         private readonly InstanceBuffer<OverlayInstance> _pipBacks;
         private readonly InstanceBuffer<OverlayInstance> _pips;
-        private NativeList<Entity> _parts = new(Allocator.Persistent);
+        private readonly EntityExtent _extent = new();
         private LocalFogView _view;
         private FogOfWar _fog;
         private bool _fogRead;
@@ -77,6 +77,7 @@ namespace HyperRTS.Presentation.Overlays
             _pixels = pixels;
             GatherDials(view, style);
             GatherPips(view, style);
+            _extent.EndFrame();
         }
 
         // Backings first, then rings and pips over them; neither tests depth, so buildings never cut through them.
@@ -94,7 +95,7 @@ namespace HyperRTS.Presentation.Overlays
             _dialSteps.Dispose();
             _pipBacks.Dispose();
             _pips.Dispose();
-            _parts.Dispose();
+            _extent.Dispose();
         }
 
         private void GatherDials(MatchView view, OverlayStyle style)
@@ -197,7 +198,7 @@ namespace HyperRTS.Presentation.Overlays
         private Vector3 Top(EntityManager entityManager, Entity entity, float3 position)
         {
             var radius = EntityRadius.Get(entityManager, entity);
-            return new Vector3(position.x, EntityExtent.Top(entityManager, entity, position, radius, _parts), position.z);
+            return new Vector3(position.x, _extent.Top(entityManager, entity, position, radius), position.z);
         }
 
         private bool IsHidden(MatchView view, byte owner, float3 position)

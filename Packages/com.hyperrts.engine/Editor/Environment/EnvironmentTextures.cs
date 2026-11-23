@@ -61,7 +61,7 @@ namespace HyperRTS.Editor.Environment
             WriteGray(EdgeNoisePath, EdgeNoise(), NoiseSize);
             WriteRGB(TerrainNoisePath, TerrainSize, TerrainNoise(), v => (byte)Mathf.Floor(Mathf.Clamp01(v) * 255f + 0.5f),
                 ConfigureChannels);
-            WriteRGB(WaterRipplesPath, RippleSize, RippleNormals(), v => (byte)Mathf.Floor((v * 0.5f + 0.5f) * 255f),
+            WriteRGB(WaterRipplesPath, RippleSize, RippleNormals(), v => (byte)Mathf.Floor((v * 0.5f + 0.5f) * 255f + 0.5f),
                 ConfigureWaterRipples);
             WriteRGB(WaterLacePath, LaceSize, FoamLace.Texels(LaceSize, LaceSeed),
                 v => (byte)Mathf.Floor(Mathf.Clamp01(v) * 255f + 0.5f), ConfigureChannels);

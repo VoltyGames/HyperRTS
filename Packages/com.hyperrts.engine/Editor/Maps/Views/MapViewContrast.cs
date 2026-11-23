@@ -35,7 +35,11 @@ namespace HyperRTS.Editor.Maps.Views
             var image = new Texture2D(2, 2, TextureFormat.RGB24, false);
             try
             {
-                image.LoadImage(File.ReadAllBytes(path));
+                if (!image.LoadImage(File.ReadAllBytes(path)))
+                {
+                    throw new InvalidDataException($"'{path}' is not a readable PNG.");
+                }
+
                 return Measure(image.GetPixels32(), image.width, image.height);
             }
             finally

@@ -90,7 +90,7 @@ namespace HyperRTS.Editor.Maps.Checks
         {
             if (string.IsNullOrEmpty(_spec.weather))
             {
-                Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.key}''s weathers.", Feature);
+                Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.key}' weathers.", Feature);
                 return;
             }
 

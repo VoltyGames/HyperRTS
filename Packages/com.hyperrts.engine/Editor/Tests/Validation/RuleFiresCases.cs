@@ -188,7 +188,11 @@ namespace HyperRTS.Editor.Tests.Validation
             {
                 var unit = f.Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
                 var plain = f.Track(new Material(Shader.Find("Universal Render Pipeline/Lit")));
-                unit.GetComponentInChildren<Renderer>().sharedMaterial = plain;
+                foreach (var renderer in unit.GetComponentsInChildren<Renderer>())
+                {
+                    renderer.sharedMaterial = plain;
+                }
+
                 return unit;
             });
             yield return Row<UnitRule>("no Flight component", f =>
