@@ -157,7 +157,7 @@ name sets the HUD display name, underscores read as spaces. **Assets ▸ Create 
 | `AuthoringRule<T>` | One authoring component | A Producer with no options |
 | `ISceneRule` | The open scenes | No Match, or a missing Netcode bootstrap |
 | `IPrefabRule` | All prefabs | Two prefabs sharing a display name |
-| `IAssetRule` | Any assets | A sound cue with no clips |
+| `IAssetRule` | Any assets | A sound cue with no clips; `UiFilesRule` reads every UXML and USS file |
 
 Rules are found in every editor assembly, so a game adds its own the same way. Write one `AuthoringRule<T>` per
 authoring type; a rule about components marked by an attribute derives from `AuthoringRule<Component>` and overrides
@@ -167,6 +167,11 @@ a set with `AssetSet.From`.
 The same rules run in the inspector, on the **Validate** page, in the console on entering Play mode, from the
 `project validate` [command](#commands) and in `ValidationTests.ProjectHasNoValidationErrors`. Prefab and asset rules
 run only in the full pass. Closed SubScenes are not checked. A new rule needs a case in `RuleFiresTests`.
+
+`UiFilesRule` checks UXML and USS under `Assets/` and the engine package, each issue naming file and line: a `Style`,
+`Template`, `@import` or `url()` link naming no asset (error), a custom element tag whose `VisualElement` type is gone
+(error) and a UXML class no USS selector names (warning). Classes set only from code show as that warning; `unity-`
+classes are skipped.
 
 There are two severities, error (what must hold) and warning; a hint belongs in the field's tooltip. An error or
 warning can carry a quick fix, one undo step. The Validate page groups issues by rule, errors first, then by asset, and
