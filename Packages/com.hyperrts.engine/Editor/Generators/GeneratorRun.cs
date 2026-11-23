@@ -7,17 +7,23 @@ using UnityEditor.PackageManager;
 
 namespace HyperRTS.Editor.Generators
 {
-    /// <summary>One generator's last run: its local time and, when it failed, why.</summary>
+    /// <summary>The last run of one generator, or of one of its items: its local time and, when it failed, why.</summary>
     [Serializable]
     public sealed class GeneratorRun
     {
         public string generator;
+
+        /// <summary>The <see cref="GeneratorItem"/>'s name, empty for a generator that runs whole.</summary>
+        public string item;
+
         public string time;
         public string error;
 
         public const string TimeFormat = "yyyy-MM-dd HH:mm:ss";
 
         public bool Failed => !string.IsNullOrEmpty(error);
+
+        public bool Matches(string generatorName, string itemName) => generator == generatorName && item == itemName;
 
         /// <summary>True when the run failed or any file under <paramref name="inputs"/> was written after it.</summary>
         public bool IsOlderThan(IEnumerable<string> inputs)

@@ -177,7 +177,7 @@ namespace HyperRTS.Editor.Authoring
             return button;
         }
 
-        /// <summary>The component's own [InspectorButton] methods, then the static editor ones that take it.</summary>
+        /// <summary>The component's own [InspectorButton] methods, the static editor ones that take it, then its fill from model.</summary>
         private static IEnumerable<(string Label, string Glyph, MethodInfo Method)> Buttons(Type type)
         {
             foreach (var method in type.GetMethods(Methods))
@@ -203,6 +203,11 @@ namespace HyperRTS.Editor.Authoring
                     var button = method.GetCustomAttribute<InspectorButtonAttribute>();
                     yield return (button.Label, button.Glyph, method);
                 }
+            }
+
+            if (ModelFillCommands.CanFill(type))
+            {
+                yield return (ModelFillCommands.Label, "wand-sparkles", typeof(ModelFillCommands).GetMethod(nameof(ModelFillCommands.Fill)));
             }
         }
 

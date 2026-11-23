@@ -1,6 +1,9 @@
+using System.Collections.Generic;
+using System.Linq;
+
 namespace HyperRTS.Editor.Generators
 {
-    /// <summary>A generator as the <c>generate</c> command returns it.</summary>
+    /// <summary>A generator as the <c>generator</c> commands return it, with its items.</summary>
     public sealed class GeneratorEntry
     {
         public string name;
@@ -11,10 +14,11 @@ namespace HyperRTS.Editor.Generators
         public string lastRun;
         public string error;
         public bool outOfDate;
+        public List<GeneratorItemEntry> items;
 
         public static GeneratorEntry From(Generator generator, GeneratorRunLog log)
         {
-            var last = log.Find(generator.Name);
+            var last = log.Find(generator.Name, "");
             return new GeneratorEntry
             {
                 name = generator.Name,
@@ -25,6 +29,7 @@ namespace HyperRTS.Editor.Generators
                 lastRun = last?.time,
                 error = last?.error,
                 outOfDate = generator.IsOutOfDate(log),
+                items = generator.Items.Select(item => GeneratorItemEntry.From(generator, item, log)).ToList(),
             };
         }
     }

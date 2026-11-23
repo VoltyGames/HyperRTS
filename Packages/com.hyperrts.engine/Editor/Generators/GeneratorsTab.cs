@@ -8,8 +8,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Generators
 {
     /// <summary>
-    /// The Build page's Generators tab: every available <see cref="Generator"/> by group with its last run, whether
-    /// it is out of date, and what it reads and writes; each runs alone or all the out of date ones in order.
+    /// The Build page's Generators tab: every available <see cref="Generator"/> by group with its last run or item
+    /// counts, whether it is out of date, and what it reads and writes; each runs alone or all the out of date ones.
     /// </summary>
     public sealed class GeneratorsTab : BuildTab
     {
@@ -65,12 +65,27 @@ namespace HyperRTS.Editor.Generators
             row.Require<Label>("sources").text = $"Reads: {generator.Sources}";
             row.Require<Label>("outputs").text = $"Writes: {generator.Outputs}";
             row.Require<Label>("out-of-date").SetHidden(!generator.IsOutOfDate(log));
-            var last = log.Find(generator.Name);
-            var lastRun = row.Require<Label>("last-run");
-            lastRun.text = last == null ? "Not run in this project yet" : last.ToString();
-            lastRun.EnableInClassList("hrts-generators__last-run--failed", last is { Failed: true });
+            ShowLastRun(row.Require<Label>("last-run"), generator, log);
             row.Require<Button>("run").clicked += () => RunThenFill(() => GeneratorRunner.Run(generator), root);
             return row;
+        }
+
+        // A generator with items shows their counts; the Models page or the command lists each one.
+        private static void ShowLastRun(Label label, Generator generator, GeneratorRunLog log)
+        {
+            var items = generator.Items;
+            if (items.Count == 0)
+            {
+                var last = log.Find(generator.Name, "");
+                label.text = last == null ? "Not run in this project yet" : last.ToString();
+                label.EnableInClassList("hrts-generators__last-run--failed", last is { Failed: true });
+                return;
+            }
+
+            var failed = items.Count(item => log.Find(generator.Name, item.Name) is { Failed: true });
+            var outOfDate = items.Count(item => generator.IsOutOfDate(item, log)) - failed;
+            label.text = $"{items.Count} items, {outOfDate} out of date, {failed} failed";
+            label.EnableInClassList("hrts-generators__last-run--failed", failed > 0);
         }
     }
 }

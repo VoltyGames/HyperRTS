@@ -28,7 +28,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>Bounds of the part's own mesh (not its child parts) in <paramref name="space"/>'s frame.</summary>
         public static Bounds MeshBounds(Transform part, Transform space)
         {
-            if (!part.TryGetComponent<MeshFilter>(out var filter))
+            if (!part.TryGetComponent<MeshFilter>(out var filter) || filter.sharedMesh == null)
             {
                 throw new InvalidOperationException($"'{part.name}' has no mesh to measure: a part carries its own mesh.");
             }

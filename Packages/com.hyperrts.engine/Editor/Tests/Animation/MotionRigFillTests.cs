@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Authoring;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
 using System.Linq;
@@ -8,9 +9,9 @@ using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Tests.Animation.Rigs
+namespace HyperRTS.Editor.Tests.Animation
 {
-    /// <summary>The motion rig authoring's fill from a model: parts found by name, weapons wired, steering axles, tuned slots kept.</summary>
+    /// <summary>The motion rig's and locomotion's fill from model: parts found by name, weapons wired, steering axles, tuned slots kept.</summary>
     public class MotionRigFillTests
     {
         private GameObject _unit;
@@ -36,7 +37,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(turret, rig.turrets.Single().part);
             Assert.AreEqual(new[] { barrel, launcher }, rig.elevations.Select(slot => slot.part).ToArray());
@@ -70,7 +71,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             _unit.AddComponent<WeaponAuthoring>().turreted = true;
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(new[] { turret, damagedTurret }, rig.turrets.Select(slot => slot.part).ToArray());
             Assert.AreEqual((hull, damagedHull), (rig.tiltRoot, rig.tiltFollower));
@@ -86,7 +87,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var weapon = _unit.AddComponent<WeaponAuthoring>();
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.IsEmpty(rig.elevations, "the machine raises the box");
             Assert.AreEqual((turret, box), (weapon.stats.turret, weapon.stats.barrel), "shots still leave the raised box");
@@ -98,10 +99,10 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var barrel = Pivot("Barrel", Pivot("Hull", _unit.transform, Vector3.one));
             _unit.AddComponent<WeaponAuthoring>();
             var rig = _unit.AddComponent<MotionRigAuthoring>();
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
             rig.recoils[0].distance = 0.8f;
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(barrel, rig.recoils.Single().part);
             Assert.AreEqual(0.8f, rig.recoils[0].distance);
@@ -114,7 +115,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var props = new[] { Pivot("Prop_01", hull), Pivot("Prop_02", hull) };
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(props, rig.rotors.Select(slot => slot.part).ToArray());
             Assert.IsTrue(rig.rotors.All(slot => slot.axis == Vector3.forward));
@@ -128,7 +129,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             _unit.AddComponent<WeaponAuthoring>();
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(model, rig.tiltRoot);
             Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
@@ -151,7 +152,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var interceptor = AddInterceptor(weapon);
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(1, rig.elevations.Single(slot => slot.part == launcher).weapon, "the launcher follows it");
             Assert.AreEqual((turret, launcher), (interceptor.turret, interceptor.barrel));
@@ -174,7 +175,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var interceptor = AddInterceptor(weapon);
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(new[] { 0, 1 }, rig.turrets.Select(slot => slot.weapon).ToArray());
             Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray());
@@ -188,13 +189,13 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         {
             Pivot("Turret", _unit.transform, Vector3.one);
             var rig = _unit.AddComponent<MotionRigAuthoring>();
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             StringAssert.Contains("follows weapon 0", rig.Problems().Single());
         }
 
         [Test]
-        public void FillFromWheels_MeasuresTheChassis_AndTheRigSteersOnlyTheFrontAxle()
+        public void FillFromModel_MeasuresTheChassis_AndTheRigSteersOnlyTheFrontAxle()
         {
             var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
             var steered = new[] { Wheel("Wheel_L01", hull, -1f, 2.5f), Wheel("Wheel_R01", hull, 1f, 2.5f) };
@@ -206,8 +207,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             locomotion.turnRadius = 9f;
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            locomotion.FillFromWheels();
-            rig.FillFromModel();
+            ModelFillCommands.Fill(locomotion);
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(4.2f, locomotion.wheelbase, 1e-4f, "front axle to the rear pair's midpoint");
             Assert.AreEqual(1.7f, locomotion.rearAxle, 1e-4f, "rear pair's midpoint behind the centre");
@@ -229,7 +230,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var damagedTrack = Pivot("Track_L", damagedHull, new Vector3(0.5f, 1f, 6f));
             var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            rig.FillFromModel();
+            ModelFillCommands.Fill(rig);
 
             Assert.AreEqual(left, rig.tracks.Single(slot => slot.part == track).wheels.ToArray());
             Assert.AreEqual(new[] { right }, rig.tracks.Single(slot => slot.part.name == "Track_R").wheels.ToArray());

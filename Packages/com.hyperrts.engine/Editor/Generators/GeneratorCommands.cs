@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Pipeline.Commands;
@@ -9,31 +10,52 @@ namespace HyperRTS.Editor.Generators
     {
         private const string Tag = "hyperrts/generate";
 
-        [CliCommand("generator", "run", "Run one generator by name, or every generator in order; returns each generator with what it reads and writes and its last run.", Tags = new[] { Tag })]
+        [CliCommand("generator", "run", "Run one generator or item by name, or every generator in order; returns each generator and its items with what they read and write and their last run.", Tags = new[] { Tag })]
         public static List<GeneratorEntry> Generate(
             [CliArg("name", "A generator's name as the Generators tab lists it; empty runs them all")] string name = "",
-            [CliArg("stale", "With no name, run only the generators that are out of date")] bool stale = false)
+            [CliArg("item", "With a name, run only this item of the generator")] string item = "",
+            [CliArg("stale", "Run only what is out of date: the generators and items, or with a name that generator's")] bool stale = false)
         {
             if (string.IsNullOrEmpty(name))
             {
-                if (stale)
+                if (!string.IsNullOrEmpty(item))
                 {
-                    GeneratorRunner.RunOutOfDate();
-                }
-                else
-                {
-                    GeneratorRunner.RunAll();
+                    throw new ArgumentException("HyperRTS: an item needs the name of its generator.");
                 }
 
+                RunEvery(stale);
                 return Describe(GeneratorRunner.All());
             }
 
             var generator = GeneratorRunner.Find(name);
-            GeneratorRunner.Run(generator);
+            if (!string.IsNullOrEmpty(item))
+            {
+                GeneratorRunner.Run(generator, generator.FindItem(item));
+            }
+            else if (stale)
+            {
+                GeneratorRunner.RunOutOfDate(generator, GeneratorRunLog.Load());
+            }
+            else
+            {
+                GeneratorRunner.Run(generator);
+            }
+
             return Describe(new[] { generator });
         }
 
-        [CliCommand("generator", "list", "List every generator with what it reads and writes and its last run, running none.", Tags = new[] { Tag })]
+        private static void RunEvery(bool stale)
+        {
+            if (stale)
+            {
+                GeneratorRunner.RunOutOfDate();
+                return;
+            }
+
+            GeneratorRunner.RunAll();
+        }
+
+        [CliCommand("generator", "list", "List every generator and its items with what they read and writes and its last run, running none.", Tags = new[] { Tag })]
         public static List<GeneratorEntry> List() => Describe(GeneratorRunner.All());
 
         private static List<GeneratorEntry> Describe(IEnumerable<Generator> generators)

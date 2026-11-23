@@ -35,8 +35,8 @@ A hull with a turn radius that doesn't pivot is wheeled. It aims its rear axle a
 steers an arc through it (pure pursuit), with the steer angle changing at most at the steer rate. The point is never
 further than the look-ahead, even toward a goal in sight, as one arc to a far goal turns twice its bearing. The centre drifts
 slightly inward in a turn. Tracks and instant units turn about the centre at the turn rate and move along it. The
-Locomotion's **Fill from wheels** button measures wheelbase and rear axle from the model's `Wheel_L01`... parts, front
-to back: the first Steering Axles axles steer and the rest make the rear axle. `LocomotionRule` checks a wheeled
+Locomotion's **Fill from model** measures wheelbase and rear axle from the model's `Wheel_L01`... parts, front to
+back: the first Steering Axles axles steer and the rest make the rear axle. A tracked hull takes 0 for both. `LocomotionRule` checks a wheeled
 unit has a wheelbase and both axles inside its hull.
 
 Reflexes:

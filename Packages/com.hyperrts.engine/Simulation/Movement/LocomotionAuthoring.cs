@@ -1,5 +1,4 @@
 using HyperRTS.Simulation.Navigation.Agents;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -57,7 +56,7 @@ namespace HyperRTS.Simulation.Movement
         [Tooltip("Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre. 0 for tracks.")]
         public float rearAxle;
 
-        [Tooltip("How many axles, from the front, steer; Fill From Wheels measures the rest as the rear axle.")]
+        [Tooltip("How many axles, from the front, steer; Fill from model measures the rest as the rear axle.")]
         [Range(1, 2)]
         public int steeringAxles = 1;
 
@@ -109,26 +108,6 @@ namespace HyperRTS.Simulation.Movement
         // Wheels of one axle, or the same wheel in a damaged model, sit within this of each other along the hull.
         private const float AxleTolerance = 0.1f;
 
-        /// <summary>
-        /// Measures <see cref="wheelbase"/> and <see cref="rearAxle"/> from the model's Wheel_L01... wheels: the first
-        /// <see cref="steeringAxles"/> axles from the front steer, the rest make the rear axle.
-        /// </summary>
-        [InspectorButton("Fill from wheels", Glyph = "wand-sparkles")]
-        public void FillFromWheels()
-        {
-            var axles = Axles();
-            if (axles.Count <= steeringAxles)
-            {
-                throw new InvalidOperationException(
-                    $"'{name}' has {axles.Count} axles of Wheel_L wheels; {steeringAxles} steering axles need more.");
-            }
-
-            var front = axles.Take(steeringAxles).Average();
-            var rear = axles.Skip(steeringAxles).Average();
-            wheelbase = front - rear;
-            rearAxle = -rear;
-        }
-
         /// <summary>Whether <paramref name="wheel"/> sits on one of the steering axles of a wheeled hull.</summary>
         public bool IsOnSteeringAxle(Transform wheel)
         {
@@ -141,8 +120,8 @@ namespace HyperRTS.Simulation.Movement
             return Axles().Take(steeringAxles).Any(axle => Mathf.Abs(axle - along) < AxleTolerance);
         }
 
-        /// <summary>Each axle's distance ahead of the hull centre, front first.</summary>
-        private List<float> Axles()
+        /// <summary>Each axle of the model's Wheel_L01... wheels, as its distance ahead of the hull centre, front first.</summary>
+        public List<float> Axles()
         {
             var positions = GetComponentsInChildren<Transform>(true).Where(part => LeftWheel.IsMatch(part.name))
                 .Select(Along).OrderByDescending(along => along);

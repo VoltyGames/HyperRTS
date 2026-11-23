@@ -12,12 +12,13 @@ namespace HyperRTS.Editor.Rows
         private static SettingsProvider Create() => new("Preferences/HyperRTS", SettingsScope.User)
         {
             label = "HyperRTS",
-            keywords = new[] { "Hierarchy row icons", "Project unit icons" },
+            keywords = new[] { "Hierarchy row icons", "Project unit icons", "Project generator states" },
             activateHandler = (_, root) =>
             {
                 root.style.paddingLeft = 10;
                 root.Add(CreateToggle("Hierarchy row icons", nameof(EditorState.hierarchyRowIcons), HierarchyRows.Refresh));
                 root.Add(CreateToggle("Project unit icons", nameof(EditorState.projectUnitIcons), EditorApplication.RepaintProjectWindow));
+                root.Add(CreateToggle("Project generator states", nameof(EditorState.projectGeneratorStates), EditorApplication.RepaintProjectWindow));
                 EditorState.Bind(root);
             },
         };

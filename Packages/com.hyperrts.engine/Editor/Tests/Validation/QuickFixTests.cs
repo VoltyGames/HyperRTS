@@ -1,6 +1,7 @@
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
+using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Damage;
@@ -11,6 +12,7 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision.Sight;
+using HyperRTS.Editor.Authoring;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -122,6 +124,36 @@ namespace HyperRTS.Editor.Tests.Validation
             Assert.AreEqual(4f, block.size.x, 0.01f);
             Assert.AreEqual(4f, block.size.y, 0.01f);
             Assert.AreEqual(2.5f, block.height, 0.01f);
+        }
+
+        [Test]
+        public void FillFromModelMovesGrimeToTheWheelAndHullTops_AndTheCheckLeavesItAsItWas()
+        {
+            var truck = Make("Truck");
+            var hull = Part("Hull", truck.transform, new Vector3(2.5f, 1.2f, 6f), 1.4f);
+            Part("Wheel_L01", hull, new Vector3(0.3f, 1f, 1f), -0.9f);
+            var grime = truck.AddComponent<GrimeAuthoring>();
+            grime.mudHeight = 0.3f;
+
+            Assert.IsTrue(ProjectValidator.Check(grime).Any(issue => issue.Message.Contains("Mud Height") && issue.FixLabel == "Fill From Model"));
+            Assert.AreEqual(0.3f, grime.mudHeight, "checking fills a copy of the values and puts them back");
+
+            // The fix's hierarchy undo would outlive the fixture's objects, and the test runner's revert brings them back.
+            ModelFillCommands.Fill(grime);
+
+            Assert.AreEqual(1f, grime.mudHeight, 1e-4f, "the wheel's top");
+            Assert.AreEqual(2f, grime.dustHeight, 1e-4f, "the hull's top");
+            Assert.IsFalse(ProjectValidator.Check(grime).Any(issue => issue.FixLabel == "Fill From Model"));
+        }
+
+        // A part carrying a box mesh of the given size, its centre the given height above its parent.
+        private static Transform Part(string name, Transform parent, Vector3 size, float height)
+        {
+            var part = new GameObject(name).transform;
+            part.SetParent(parent, false);
+            part.localPosition = new Vector3(0f, height, 0f);
+            part.gameObject.AddComponent<MeshFilter>().sharedMesh = new Mesh { bounds = new Bounds(Vector3.zero, size) };
+            return part;
         }
 
         private static void Fix(Component component, string label) =>

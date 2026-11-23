@@ -36,11 +36,11 @@ namespace HyperRTS.Presentation.Rendering.LitTeam
         [Min(0f)]
         public float mudWashPerSecond = Grime.Standard.MudWashPerSecond;
 
-        [Tooltip("Metres above the ground where mud ends: about the road wheels and lower hull.")]
+        [Tooltip("Metres above the ground where mud ends: the top of the road wheels, as Fill from model measures it.")]
         [Min(0.1f)]
         public float mudHeight = Grime.Standard.MudHeight;
 
-        [Tooltip("Metres above the ground where dust ends: about the top of the hull.")]
+        [Tooltip("Metres above the ground where dust ends: the top of the hull, as Fill from model measures it.")]
         [Min(0.1f)]
         public float dustHeight = Grime.Standard.DustHeight;
 

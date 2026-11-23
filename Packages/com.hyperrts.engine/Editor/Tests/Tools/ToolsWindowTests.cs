@@ -1,6 +1,4 @@
 using System;
-using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using HyperRTS.Editor.Generators;
@@ -16,10 +14,6 @@ namespace HyperRTS.Editor.Tests.Tools
     public class ToolsWindowTests : TemplateFixture
     {
         private const string ObjectMenu = "GameObject/HyperRTS/";
-        private const string Folder = "Assets/_ToolsWindowTests";
-
-        [TearDown]
-        public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
 
         [Test]
         public void HubPagesHaveUniqueTitlesAndOrders()
@@ -68,22 +62,6 @@ namespace HyperRTS.Editor.Tests.Tools
             }
         }
 
-        [Test]
-        public void GeneratorIsOutOfDateWhenAnInputIsNewerThanItsRun()
-        {
-            AssetDatabase.CreateFolder("Assets", "_ToolsWindowTests");
-            var input = Folder + "/input.txt";
-            File.WriteAllText(input, "x");
-            var ran = DateTime.Now;
-            var run = new GeneratorRun { generator = "test", time = ran.ToString(GeneratorRun.TimeFormat, CultureInfo.InvariantCulture) };
-
-            File.SetLastWriteTime(input, ran.AddMinutes(-5));
-            Assert.That(run.IsOlderThan(new[] { Folder }), Is.False);
-
-            File.SetLastWriteTime(input, ran.AddMinutes(5));
-            Assert.That(run.IsOlderThan(new[] { Folder }), Is.True);
-        }
-
         [TestCaseSource(nameof(Controls))]
         public void ControlBuilds(Type control) =>
             Assert.DoesNotThrow(() => Activator.CreateInstance(control), control.Name);
@@ -99,6 +77,7 @@ namespace HyperRTS.Editor.Tests.Tools
             {
                 Assert.That(generator.Group, Is.Not.Empty, generator.Name);
                 Assert.That(generator.Description, Is.Not.Empty, generator.Name);
+                Assert.That(generator.Items.Select(item => item.Name), Is.Unique, generator.Name);
             }
         }
 

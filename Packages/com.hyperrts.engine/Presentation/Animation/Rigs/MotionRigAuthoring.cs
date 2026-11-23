@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
 {
     /// <summary>
     /// Client-side motion of a unit or building model's parts: turrets, barrels, wheels, rotors, trailers and body tilt.
-    /// <see cref="FillFromModel"/> finds the parts by their art names.
+    /// Fill from model finds the parts by their art names.
     /// </summary>
     [AddComponentMenu(HyperRTSMenu.Look + "Animation/Motion Rig")]
     [Icon(HyperRTSIcons.MotionRigAuthoring)]
@@ -74,13 +74,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>A building stands on levelled ground and never moves, so its body never tilts.</summary>
         public bool IsBuilding => TryGetComponent<BuildingAuthoring>(out _);
-
-        /// <summary>
-        /// Fills the slots and the weapons' pivots from parts named by the art (Turret, Barrel, Wheel_L01 and so on) in
-        /// every model under it.
-        /// </summary>
-        [InspectorButton("Fill from model", Glyph = "wand-sparkles")]
-        public void FillFromModel() => new MotionRigFill(this).Run();
 
         public static void AddRig(EntityWriter writer, in MotionRig rig, IReadOnlyList<MotionRigPart> parts)
         {

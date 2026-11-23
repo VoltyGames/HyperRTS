@@ -11,8 +11,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Destruction
 {
     /// <summary>
-    /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts or its model's sections, and measures the
-    /// boxes their intact models fill in the building's space.
+    /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts, or from its model's sections for
+    /// <see cref="SectionsModelFill"/>, and measures the boxes their intact models fill in the building's space.
     /// </summary>
     public sealed class SectionsFill
     {
@@ -31,9 +31,6 @@ namespace HyperRTS.Editor.Destruction
 
         [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
         private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
-
-        [InspectorButton("Fill from model", Glyph = "wand-sparkles")]
-        private static void FillFromModel(SectionsAuthoring sections) => new SectionsFill(sections).FromModel();
 
         /// <summary>
         /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling and guesses box, anchored, exterior,
@@ -57,7 +54,7 @@ namespace HyperRTS.Editor.Destruction
         /// Lists the sections kept inside the building's model (see <see cref="ModelSections.Entries"/>) and takes the
         /// break clips from the clip table its pieces play.
         /// </summary>
-        public void FromModel()
+        internal void FromModel()
         {
             _owner.sections = FindSections().Entries(_owner, Measure).ToArray();
             _owner.clips = BreakClips();

@@ -51,9 +51,18 @@ from `EntitySummary.Stats`). Under it the `ModuleStrip` has a chip per authoring
 issue: a click shows only that component, a second shows all, and **+** opens `AddComponentPopup`, a searchable list of
 the components the object lacks.
 
-`[InspectorButton("Fill from model", Glyph = "wand-sparkles")]` on a parameterless method of the component draws a
+`[InspectorButton("Fit to model", Glyph = "wand-sparkles")]` on a parameterless method of the component draws a
 button under its fields, or on a static editor method taking the component, for work that needs editor code. A click
 runs on every selected object as one undo step; an `InvalidOperationException` shows as an error under the buttons.
+
+A component that takes values from its model gets them through one contract: a `ModelFill<T>` subclass in an editor
+assembly (engine or game), found by type like a `HubPage`, so runtime assemblies keep no editor code. Its `Fill` sets
+the values from the model's art names alone, the same on every run, and throws naming the part the model lacks. Every
+fill gets a **Fill from model** button on its component, the Project window's **Assets ▸ HyperRTS ▸ Fill From Model**
+command, which fills every component of the selected prefabs and saves them, and `ModelFillRule`, which fills a
+snapshot, puts the component back and warns on the first value off from the model, with a **Fill From Model** fix.
+The engine fills the Motion Rig, Locomotion (wheelbase and rear axle), Sections (from the model's kept sections) and
+Grime (mud height at the road wheels' top, dust height at the hull's top).
 
 A component needs its own editor only for UI a button can't give, or handles. Subclass `AuthoringEditor` and override
 `BuildHeader`, `BuildFooter` or `Refresh`; for handles use `GroundHandles.EditBox` or `EditRadius` in `OnSceneGUI`.
@@ -90,4 +99,6 @@ that sets a value calls `Save()`. Values that must reset each session stay in `S
 its icon at the right edge, a 2 px edge in the owner's colour and a red or amber dot for a component rule error or
 warning (UI Toolkit item events, `HierarchyWindow.BindViewItem`). The Project window offers only
 `projectWindowItemOnGUI`, the second IMGUI exception after Scene view `Handles`: in the grid view a prefab whose root
-`ProducibleAuthoring` has an `icon` shows it over the thumbnail. **Preferences ▸ HyperRTS** has the two switches.
+`ProducibleAuthoring` has an `icon` shows it over the thumbnail, and in both views the entry a generator item names
+shows an amber dot when the item is out of date and a red one when it failed. Icons and item states are found once and
+kept until the project changes or a generator runs. **Preferences ▸ HyperRTS** has the three switches.

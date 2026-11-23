@@ -38,6 +38,9 @@ namespace HyperRTS.Editor.Common
         /// <summary>The Project grid shows a unit prefab's command card icon over its thumbnail.</summary>
         public bool projectUnitIcons = true;
 
+        /// <summary>Project rows of a generator item's asset or folder show a dot when the item is out of date or failed.</summary>
+        public bool projectGeneratorStates = true;
+
         /// <summary>Full type names of the debug layers switched on.</summary>
         public List<string> debugLayers = new();
 

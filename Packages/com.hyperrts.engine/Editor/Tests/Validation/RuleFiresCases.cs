@@ -13,6 +13,7 @@ using HyperRTS.Presentation.Animation.Figures;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Effects.Streams;
+using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Simulation.Abilities;
 using HyperRTS.Simulation.Air;
@@ -60,6 +61,16 @@ namespace HyperRTS.Editor.Tests.Validation
             return target;
         }
 
+        // A model with a hull mesh but no Wheel_L parts, so the grime fill has a model to read and fails on it.
+        private static GameObject TruckWithoutWheels()
+        {
+            var truck = new GameObject("Truck");
+            var hull = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            hull.name = "Hull";
+            hull.transform.SetParent(truck.transform, false);
+            return truck;
+        }
+
         private static IEnumerable<RuleCase> Gameplay()
         {
             yield return Case<AbilityRule>("'Smoke'", f => f.Add<AbilityAuthoring>(EntityTemplates.CombatUnit()).With(a =>
@@ -75,6 +86,7 @@ namespace HyperRTS.Editor.Tests.Validation
                 .With(aircraft => aircraft.remains = f.Make("Wreck")).GetComponent<FlightAuthoring>());
             yield return Case<AuraRule>("Affects nobody", f => f.Add<AuraAuthoring>(EntityTemplates.Building())
                 .With(aura => aura.affects = AuraTargets.Units));
+            yield return Case<ModelFillRule>("no road wheels", f => f.Add<GrimeAuthoring>(TruckWithoutWheels()));
             yield return Case<FieldAttributeRule>("Extra Weapons 1: Projectile 'Shell' is a scene object", f =>
                 f.Template<WeaponAuthoring>(EntityTemplates.CombatUnit()).With(weapon =>
                 {

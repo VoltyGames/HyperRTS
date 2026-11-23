@@ -86,16 +86,29 @@ awaits.
 A `Generator` is one step that creates generated assets. Subclass it in the engine or a game and it appears on the
 Build page's Generators tab. It has a unique `Name`, a `Group`, an `Order`, a `Description`, its `Sources` and
 `Outputs`, its `Inputs` (asset paths of files or folders it reads) and a `Run()` method. A step that uses another's
-output must come after it. Each run's time and result go to `Library/HyperRTS/GeneratorRuns.json`.
+output must come after it. Each run's time and result go to `Library/HyperRTS/GeneratorRuns.json`, one entry per
+generator or per item.
+
+A generator that makes many independent things, such as one prefab per model, lists them as `Items` instead of
+overriding `Run()`. A `GeneratorItem` has a name unique in its generator, its own inputs and outputs, a
+`ProjectPath` (the asset or folder whose Project window entry shows its state) and a run delegate. Each item runs,
+fails and goes out of date alone; a failed item never stops the others.
 
 A generator that overrides `RunOnImport` to true also runs on its own: `GeneratorImport` runs it once per import batch
-(after the batch, through `delayCall`) when an imported, deleted or moved path is one it `Reads`. By default that is an
-input or anything below an input folder; override `Reads` when the inputs are a list that lags a delete or when an
-output sits inside an input folder, so the step's own writes never start it again.
+(after the batch, through `delayCall`) when an imported, deleted or moved path is one it `Reads`, and of a generator
+with items only the items whose inputs the batch touched. By default `Reads` is an input or anything below an input
+folder; override it when the inputs are a list that lags a delete or when an output sits inside an input folder, so
+the step's own writes never start it again.
 
-A generator is **Out of date** when it never ran here, failed last time, or an input was written after its last run.
-**Run out of date** runs only those, in order. In batch mode call `GeneratorRunner.RunAll` with `-executeMethod`. To
-change generated output, change the generator and run it again.
+A generator or item is **Out of date** when it never ran here, failed last time, or an input was written after its
+last run; a generator with items is out of date when any item is. **Run out of date** runs only those, in order, and
+of a generator with items only its out of date items. The tab shows such a generator's item count and how many are
+out of date or failed. The `generator run` command takes a generator `name`, an `item` and `stale`; `generator list`
+returns each generator with its items and their last runs. In batch mode call `GeneratorRunner.RunAll` with
+`-executeMethod`. To change generated output, change the generator and run it again.
+
+An item that is out of date shows an amber dot at the right of its `ProjectPath` entry in the Project window, a failed
+one a red dot ([rows](authoring.md#hierarchy-and-project-rows)).
 
 The engine has four: **Component icons**, **Environment textures** (cloud shadow cookie, road edge noise, terrain
 noise, water ripple normals), **Terrain micro detail** and **Effect graphs**. The first three write into the package, so

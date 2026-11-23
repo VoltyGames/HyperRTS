@@ -3,14 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using HyperRTS.Presentation.Animation.Machines;
-using HyperRTS.Simulation.Combat.Projectiles;
-using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Movement;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Animation.Rigs
+namespace HyperRTS.Editor.Animation
 {
     /// <summary>Fills a Motion Rig's slots and the weapons' pivots from the parts the art names.</summary>
     internal sealed class MotionRigFill

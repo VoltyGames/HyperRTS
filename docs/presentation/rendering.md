@@ -41,7 +41,8 @@ so the toggle turns `_NORMALMAP` on; the depth-normals buffer keeps the base nor
 `_WeatheringBaseHeight` above object y 0, streaks growing with height, and mottled, pooled roofs. Object space keeps
 the Meta pass's GI dirt matching. Team paint and glass stay clean. Base dirt needs mesh pivots on the ground.
 
-Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`). After rain (`_HyperRTSWetness`, from the
+Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`), mud up to the road wheels' top and dust up to
+the hull's top, both measured by **Fill from model**. After rain (`_HyperRTSWetness`, from the
 `Atmosphere`) every LitTeam surface is wet where the sky reaches it, as the ground is: darker and glossier, metal
 not darker.
 
