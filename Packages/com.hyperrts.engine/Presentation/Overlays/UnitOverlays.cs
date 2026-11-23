@@ -42,6 +42,7 @@ namespace HyperRTS.Presentation.Overlays
         private readonly UnitPips _pips;
         private readonly HealthBars _bars;
         private readonly SelectionFades _fades = new();
+        private NativeList<Entity> _parts = new(Allocator.Persistent);
 
         public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial,
             Material pipMaterial)
@@ -118,8 +119,14 @@ namespace HyperRTS.Presentation.Overlays
             var position = seen.World.Position;
             var pose = new MarkerPose(seen.World, seen.Unit.Layer);
             var footprint = MarkerSize(seen.Unit, style);
-            var top = EntityExtent.Top(pass.View.EntityManager, seen.Entity, position, seen.Unit.Radius);
-            var anchor = new Vector3(position.x, top, position.z);
+            // Only a pip or bar sits on the model's top, and finding it walks the render hierarchy.
+            var anchor = Vector3.zero;
+            if (teamMarked || showsBar)
+            {
+                var top = EntityExtent.Top(pass.View.EntityManager, seen.Entity, position, seen.Unit.Radius, _parts);
+                anchor = new Vector3(position.x, top, position.z);
+            }
+
             if (teamMarked)
             {
                 AddPip(pass, pose, anchor, pass.View.GetColor(seen.Owner));
@@ -151,6 +158,7 @@ namespace HyperRTS.Presentation.Overlays
             _markers.Dispose();
             _pips.Dispose();
             _bars.Dispose();
+            _parts.Dispose();
         }
 
         private static MarkerFootprint MarkerSize(in OverlayUnit unit, OverlayStyle style)

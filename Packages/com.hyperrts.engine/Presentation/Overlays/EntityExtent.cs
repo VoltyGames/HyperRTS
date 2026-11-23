@@ -11,12 +11,12 @@ namespace HyperRTS.Presentation.Overlays
     {
         /// <summary>
         /// Top of the highest rendered part (models are often children of a mesh-less root), or a guess from the
-        /// radius when nothing has bounds yet.
+        /// radius when nothing has bounds yet. <paramref name="parts"/> is scratch the caller keeps between calls.
         /// </summary>
-        public static float Top(EntityManager entityManager, Entity entity, float3 position, float radius)
+        public static float Top(EntityManager entityManager, Entity entity, float3 position, float radius,
+            NativeList<Entity> parts)
         {
             var top = float.MinValue;
-            using var parts = new NativeList<Entity>(Allocator.Temp);
             RenderHierarchy.Collect(entityManager, entity, parts);
             foreach (var part in parts)
             {

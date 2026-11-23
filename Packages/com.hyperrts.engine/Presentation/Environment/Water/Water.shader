@@ -135,6 +135,79 @@ Shader "HyperRTS/Water"
                 return output;
             }
 
+            // Slicks smooth the ripples; gusts and the water round piers roughen them.
+            half3 SurfaceNormal(Varyings input, half3 bitangent, float current, half slick, half pierRipple,
+                float cameraDistance, out half3 ripple)
+            {
+                half calm = smoothstep(0.5, 0.75, slick) * _SlickCalm * (1.0 - input.color.b);
+                half gust = 1.0 + (Gust(input.positionWS) * 2.0 - 1.0) * _GustStrength;
+                half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
+                half strength = _RippleStrength * rippleScale * (1.0 - calm) * gust * (1.0 + pierRipple);
+                ripple = Ripples(input.uv, strength, current, cameraDistance);
+                return normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
+            }
+
+            // The opaque texture already holds URP's fog to the bottom; take it out so the water fogs it once.
+            half3 RefractedBed(float2 screenUV, half3 ripple, float depth, float surface, float rawDepth, out float3 bed)
+            {
+                float2 refracted = screenUV + ripple.xy * _Refraction * saturate(depth);
+                float refractedDepth = SampleSceneDepth(refracted);
+                if (EyeDepth(refractedDepth) < surface)
+                {
+                    refracted = screenUV;
+                    refractedDepth = rawDepth;
+                }
+
+                bed = ComputeWorldSpacePosition(refracted, refractedDepth, UNITY_MATRIX_I_VP);
+                half4 bedFog = AtmosphereFogAt(refracted, bed, EyeDepth(refractedDepth));
+                return RemoveAtmosphereFog(SampleSceneColor(refracted), bedFog);
+            }
+
+            half3 Body(float3 positionWS, half3 bottom, float3 bed, float depth, Light sun, out half3 light)
+            {
+                bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
+
+                // A wet bed is darker than the dry ground; it darkens over the depth the surface fades in, so the
+                // waterline stays soft.
+                bottom *= lerp(1.0, _BedDarkening, saturate(depth / _ShoreFadeDepth));
+                // Light through the water fades the bed into the colour its silt scatters.
+                half3 transmitted = exp(-_Absorption.rgb * depth);
+                // URP's sun colour holds the whole cloud cookie, so the bare light is taken here.
+                half3 sunlight = _MainLightColor.rgb * saturate(sun.direction.y) * sun.shadowAttenuation;
+                light = sunlight * CloudShade(positionWS) + SampleSH(half3(0.0, 1.0, 0.0));
+                half3 albedo = lerp(_ShallowColor.rgb, _DeepColor.rgb, smoothstep(0.0, _DeepDepth, depth));
+                return bottom * transmitted + albedo * light * (1.0 - transmitted);
+            }
+
+            half3 Reflection(Varyings input, half3 normalWS, half3 view, half smoothness, SceneFog fog)
+            {
+                const bool useEnvironmentReflections = true;
+                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, useEnvironmentReflections);
+                // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
+                half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
+                half4 scene = half4(0.0, 0.0, 0.0, 0.0);
+                // The sharp march can't blur, so a rougher surface hands the reflection over to the blurred sky.
+                half sharpness = saturate((smoothness - _SmoothnessFar) / max(_Smoothness - _SmoothnessFar, 0.001));
+                [branch] if (_ReflectionStrength > 0.0 && sharpness > 0.0)
+                {
+                    scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
+                    scene.a *= sharpness;
+                }
+
+                return lerp(sky, RemoveAtmosphereFog(scene.rgb, fog.atmosphere), scene.a * _ReflectionStrength);
+            }
+
+            // Foam fades in the last centimetres so it never paints the dry bank; ground detail Low drops calm-water foam.
+            half FoamAmount(Varyings input, float drift, float shoreDistance, float shoreDepth, half slick, half2 pier,
+                half wakeFoam)
+            {
+                half amount = max(RapidsFoam(input.uv, drift, max(input.color.g, input.color.r * 0.8)), wakeFoam);
+                #if !defined(_TERRAIN_SIMPLE)
+                    amount = max(amount, max(max(BankFoam(input.uv, shoreDistance), FlowFoam(slick)), pier.x));
+                #endif
+                return amount * saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float cameraDistance = length(_WorldSpaceCameraPos - input.positionWS);
@@ -158,77 +231,32 @@ Shader "HyperRTS/Water"
                     }
                 #endif
 
-                // Slicks smooth the ripples; gusts and the water round piers roughen them.
-                half calm = smoothstep(0.5, 0.75, slick) * _SlickCalm * (1.0 - input.color.b);
-                half gust = 1.0 + (Gust(input.positionWS) * 2.0 - 1.0) * _GustStrength;
-                half rippleScale = lerp(_RippleStrengthFar, 1.0, Fade(cameraDistance, _RippleFadeStart, _RippleFadeEnd));
-                half strength = _RippleStrength * rippleScale * (1.0 - calm) * gust * (1.0 + pier.y);
-                half3 ripple = Ripples(input.uv, strength, current, cameraDistance);
-                half3 normalWS = normalize(TransformTangentToWorld(ripple, half3x3(input.tangentWS.xyz, bitangent, input.normalWS)));
+                half3 ripple;
+                half3 normalWS = SurfaceNormal(input, bitangent, current, slick, pier.y, cameraDistance, ripple);
                 // A wake tilts the surface down its slope, as if the foam were a height.
                 WakeSample wake = SampleWakeFoam(input.positionWS);
                 normalWS = normalize(normalWS - half3(wake.slope.x, 0.0, wake.slope.y) * _WakeRipple);
 
-                float2 refracted = screenUV + ripple.xy * _Refraction * saturate(depth);
-                float refractedDepth = SampleSceneDepth(refracted);
-                if (EyeDepth(refractedDepth) < surface)
-                {
-                    refracted = screenUV;
-                    refractedDepth = rawDepth;
-                }
-
-                // The opaque texture already holds URP's fog to the bottom; take it out so the water fogs it once.
                 SceneFog fog = SceneFogAt(input.positionWS, input.positionCS);
-                float3 bed = ComputeWorldSpacePosition(refracted, refractedDepth, UNITY_MATRIX_I_VP);
-                half4 bedFog = AtmosphereFogAt(refracted, bed, EyeDepth(refractedDepth));
-                half3 bottom = RemoveAtmosphereFog(SampleSceneColor(refracted), bedFog);
-
+                float3 bed;
+                half3 bottom = RefractedBed(screenUV, ripple, depth, surface, rawDepth, bed);
                 // The cookie variant tints the sun's colour with the cloud cover, shading glint and foam.
                 Light sun = SunLight(input.positionWS, input.normalWS);
-                bottom *= 1.0 + Caustics(bed.xz, depth) * sun.shadowAttenuation;
+                half3 light;
+                half3 body = Body(input.positionWS, bottom, bed, depth, sun, light);
 
-                // A wet bed is darker than the dry ground; it darkens over the depth the surface fades in, so the
-                // waterline stays soft.
-                bottom *= lerp(1.0, _BedDarkening, saturate(depth / _ShoreFadeDepth));
-                // Light through the water fades the bed into the colour its silt scatters.
-                half3 transmitted = exp(-_Absorption.rgb * depth);
-                // URP's sun colour holds the whole cloud cookie, so the bare light is taken here.
-                half3 sunlight = _MainLightColor.rgb * saturate(sun.direction.y) * sun.shadowAttenuation;
-                half3 light = sunlight * CloudShade(input.positionWS) + SampleSH(half3(0.0, 1.0, 0.0));
-                half3 albedo = lerp(_ShallowColor.rgb, _DeepColor.rgb, smoothstep(0.0, _DeepDepth, depth));
-                half3 body = bottom * transmitted + albedo * light * (1.0 - transmitted);
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
                 half smoothness = DistantSmoothness(cameraDistance);
-                const bool useEnvironmentReflections = true;
-                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, useEnvironmentReflections);
-                // Ripples only partly bend the scene reflection, so banks and hulls stay readable in it.
-                half3 mirror = normalize(lerp(input.normalWS, normalWS, _ReflectionDistortion));
-                half4 scene = half4(0.0, 0.0, 0.0, 0.0);
-                // The sharp march can't blur, so a rougher surface hands the reflection over to the blurred sky.
-                half sharpness = saturate((smoothness - _SmoothnessFar) / max(_Smoothness - _SmoothnessFar, 0.001));
-                [branch] if (_ReflectionStrength > 0.0 && sharpness > 0.0)
-                {
-                    scene = ScreenReflection(input.positionWS, reflect(-view, mirror), input.positionCS.xy);
-                    scene.a *= sharpness;
-                }
-
-                half3 reflection = lerp(sky, RemoveAtmosphereFog(scene.rgb, fog.atmosphere), scene.a * _ReflectionStrength);
-                half3 color = lerp(body, reflection, fresnel);
+                half3 color = lerp(body, Reflection(input, normalWS, view, smoothness, fog), fresnel);
                 color += Glint(sun, normalWS, view, color, smoothness, cameraDistance);
 
-                // Foam fades in the last centimetres so it never paints the dry bank; ground detail Low drops calm-water foam.
-                half amount = max(RapidsFoam(input.uv, drift, max(input.color.g, input.color.r * 0.8)), wake.foam);
-                #if !defined(_TERRAIN_SIMPLE)
-                    amount = max(amount, max(max(BankFoam(input.uv, shoreDistance), FlowFoam(slick)), pier.x));
-                #endif
-                amount *= saturate(shoreDepth / (_ShoreFadeDepth * 0.5));
+                half amount = FoamAmount(input, drift, shoreDistance, shoreDepth, slick, pier, wake.foam);
                 half foam = FoamCover(amount, input.uv, drift * (1.0 + input.color.g * 1.5));
                 color = lerp(color, _FoamColor.rgb * light, foam);
                 half alpha = max(lerp(1.0h, _FordAlpha, input.color.a) * saturate(shoreDepth / _ShoreFadeDepth), foam);
-                color = ApplySceneFog(color, fog);
-                return half4(color, alpha);
+                return half4(ApplySceneFog(color, fog), alpha);
             }
             ENDHLSL
         }
