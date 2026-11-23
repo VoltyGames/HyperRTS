@@ -209,6 +209,27 @@ namespace HyperRTS.Simulation.Tests.Destruction
         }
 
         [Test]
+        public void LastSectionFalling_DestroysTheBuilding_EvenWithHealthLeftOverTheSections()
+        {
+            var house = House(float3.zero);
+            var health = World.Get<Health>(house);
+            health.Max = health.Current = 500.5f;
+            World.Set(house, health);
+            World.Tick();
+
+            Shoot(house, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 200f);
+            Shoot(house, new float3(0f, 1.5f, -30f), new float3(0f, 1.5f, 0f), 200f);
+            Shoot(house, new float3(-30f, 1.5f, 0f), new float3(0f, 1.5f, 0f), 200f);
+            Shoot(house, new float3(30f, 1.5f, 0f), new float3(0f, 1.5f, 0f), 200f);
+            World.Tick();
+            Assert.IsFalse(IsBroken(house, Roof), "the roof waits a support level's delay");
+
+            World.Run(SectionedBuilding.FallDelay + 0.2f);
+
+            Assert.IsFalse(World.EntityManager.Exists(house), "every section is down, so the building is destroyed");
+        }
+
+        [Test]
         public void Repair_RebuildsTheLatestBrokenSectionFirst()
         {
             var house = House(float3.zero);

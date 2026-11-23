@@ -66,6 +66,14 @@ namespace HyperRTS.Simulation.Destruction
                     Fall(entity, ref building, sections);
                 }
 
+                // Section shares can sum to a hair under the building's health, which would leave a heap alive.
+                if ((SectionedBuilding.All(sections.Length) & ~building.Broken) == 0 && !Repairables.HasComponent(entity))
+                {
+                    var health = Health[entity];
+                    health.Current = 0f;
+                    Health[entity] = health;
+                }
+
                 Buildings[entity] = building;
                 if (Floors.TryGetComponent(entity, out var floors))
                 {
