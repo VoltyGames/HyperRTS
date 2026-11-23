@@ -56,7 +56,7 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
                     var here = Drifted[x + z * Cells];
                     var around = Clamped(x - 1, z) + Clamped(x + 1, z) + Clamped(x, z - 1) + Clamped(x, z + 1);
                     var spread = here + Share * (around * 0.25f - here);
-                    Amounts[x + z * Cells] = math.min(spread * Keep, BattleHaze.Most);
+                    Amounts[x + z * Cells] = math.min(spread * Keep, BattleHaze.Thickest);
                 }
             }
         }

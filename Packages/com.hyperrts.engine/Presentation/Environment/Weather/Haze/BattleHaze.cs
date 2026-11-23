@@ -22,13 +22,13 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
         /// <summary>Metres one layer spans when mist is on, so mist a few metres deep keeps its height.</summary>
         public const float MistLayerHeight = 4f;
 
-        public const int MistMostLayers = 192;
+        public const int MaxMistLayers = 192;
 
         /// <summary>
         /// Mist's extinction per metre at full strength and pooling; its own scale, since the weather's fog (about
         /// 0.001) is too thin for a few metres of mist to show.
         /// </summary>
-        public const float MistMost = 0.12f;
+        public const float MaxMistExtinction = 0.12f;
 
         /// <summary>Metres of mist above the ground.</summary>
         public const float MistDepth = 6f;
@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
         public const float Spread = 0.2f;
 
         /// <summary>The thickest haze, in multiples of the weather's own fog density.</summary>
-        public const float Most = 2f;
+        public const float Thickest = 2f;
 
         /// <summary>Once the thickest cell is thinner than this, the grid clears and still air stops rewriting the texture.</summary>
         public const float Faintest = 0.01f;
@@ -72,9 +72,9 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
             Side = side;
             CellSize = side / Cells;
             Layers = mist > 0f
-                ? math.clamp((int)math.ceil(side / MistLayerHeight), PlainLayers, MistMostLayers)
+                ? math.clamp((int)math.ceil(side / MistLayerHeight), PlainLayers, MaxMistLayers)
                 : PlainLayers;
-            _mistExtinction = mist * MistMost;
+            _mistExtinction = mist * MaxMistExtinction;
             _grid = new CellGrid(min, CellSize, new int2(Cells, Cells));
             // The fog samples the texture from world zero, repeating every side, so the map's cells shift round it.
             _roll = (int2)math.round(min / CellSize);
@@ -129,7 +129,7 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
                 }
 
                 var index = _grid.Index(cell);
-                _amounts[index] = math.min(_amounts[index] + amount * falloff, Most);
+                _amounts[index] = math.min(_amounts[index] + amount * falloff, Thickest);
             }
         }
 

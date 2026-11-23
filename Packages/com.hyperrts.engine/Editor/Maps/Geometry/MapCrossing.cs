@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         public bool IsBridge => Kind == MapCrossingSpec.Bridge;
 
         /// <summary>Depth of each of a bridge's abutments along it, from its face to the deck's end.</summary>
-        public float Abutment => (Span - ClearSpan) * 0.5f;
+        public float AbutmentDepth => (Span - ClearSpan) * 0.5f;
 
         /// <summary>
         /// How much a bridge leaves the ground at a point as the river shaped it: 1 between its abutments over the
@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Geometry
             }
 
             var local = Local(point);
-            var along = MapGeometry.Smooth((Mathf.Abs(local.y) - ClearSpan * 0.5f) / Abutment);
+            var along = MapGeometry.Smooth((Mathf.Abs(local.y) - ClearSpan * 0.5f) / AbutmentDepth);
             var shoulder = Width * 0.5f + MapShapes.RoadShoulder;
             var side = MapGeometry.Smooth((Mathf.Abs(local.x) - shoulder) / MapShapes.RoadShoulder);
             return (1f - along) * (1f - side);

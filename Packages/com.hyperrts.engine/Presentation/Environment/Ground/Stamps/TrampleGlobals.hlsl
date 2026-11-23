@@ -34,7 +34,7 @@ float GroundSunk(float alpha)
     return (alpha - HYPERRTS_GROUND_LEVEL_BIAS) * HYPERRTS_GROUND_RANGE;
 }
 
-bool TrampleMapsOn()
+bool HasTrampleMaps()
 {
     return _HyperRTSTrampleRect.z > 0.0;
 }
@@ -47,7 +47,7 @@ float2 TrampleUV(float2 positionXZ)
 
 bool OnTrampleMaps(float2 uv)
 {
-    return TrampleMapsOn() && all(uv == saturate(uv));
+    return HasTrampleMaps() && all(uv == saturate(uv));
 }
 
 #endif

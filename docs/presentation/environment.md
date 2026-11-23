@@ -32,7 +32,7 @@ tiny, so a multiple of it would stay faint.
 
 - **Mist.** `Atmosphere.mist` (0 to 1) lays ground mist in hollows (cells at least 5 m under their 60 m surroundings)
   and on banks within 2.5 m of the water. It rests on the ground and fades linearly to nothing 6 m up, with an
-  extinction of `BattleHaze.MistMost` times `mist`. The texture has 4 m layers up the y axis; with no mist it has two.
+  extinction of `BattleHaze.MaxMistExtinction` times `mist`. The texture has 4 m layers up the y axis; with no mist it has two.
 
 ## Wind
 

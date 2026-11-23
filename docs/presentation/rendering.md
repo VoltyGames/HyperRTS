@@ -15,7 +15,7 @@ in step with the maps and toggles.
 
 **Team markers.** A team marker is a child mesh (a roof panel, pennant, flag or placard) on a LitTeam material with a
 white team mask, which `TeamColorSystem` paints like every mesh under the root. `TeamMarkerAuthoring` bakes nothing; it
-lets `TeamColorRule` count markers against `TeamColorSettings.minMarkers` (the project keeps exactly one such asset, which `TeamColorSettingsRule` requires) on vehicles and buildings that can take an
+lets `TeamColorRule` count markers against `TeamMarkerSettings.minMarkers` (the project keeps exactly one such asset, which `TeamMarkerSettingsRule` requires) on vehicles and buildings that can take an
 owner (not neutral, or capturable, or a neutral garrison), have no team strip and are no base prefab that variants
 derive from; a variant's inherited markers count. A marker hides with the damage stage it sits under and dies with its entity, since
 remains are their own prefab. A building's marker turns `_BUILD` on with UV3 at 1, or it shows before the building

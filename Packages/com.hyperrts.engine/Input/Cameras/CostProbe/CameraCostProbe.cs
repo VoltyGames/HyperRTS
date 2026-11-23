@@ -82,7 +82,7 @@ namespace HyperRTS.Input.Cameras.CostProbe
                 yield return null;
             }
 
-            controller.Pinned = true;
+            controller.ScriptDriven = true;
             yield return new WaitForSecondsRealtime(WarmSeconds);
 
             var report = new CameraCostReport();

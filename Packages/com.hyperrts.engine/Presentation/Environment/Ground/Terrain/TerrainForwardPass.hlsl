@@ -63,7 +63,7 @@ half ApplyTrample(inout TerrainSurface surface, float2 positionXZ, out TrackSamp
 {
     tracks = (TrackSample)0;
     UNITY_BRANCH
-    if (!TrampleMapsOn())
+    if (!HasTrampleMaps())
     {
         return 0.0;
     }

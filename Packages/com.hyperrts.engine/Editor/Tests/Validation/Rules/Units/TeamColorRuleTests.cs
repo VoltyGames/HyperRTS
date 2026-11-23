@@ -60,21 +60,21 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
         }
 
         [Test]
-        public void TeamColorSettingsRule_ReportsNoAsset_AndTwoAssets_OnceEach()
+        public void TeamMarkerSettingsRule_ReportsNoAsset_AndTwoAssets_OnceEach()
         {
-            Assert.AreEqual(1, TeamColorSettingsIssues().Count(issue => issue.Contains("No TeamColorSettings")));
+            Assert.AreEqual(1, TeamMarkerSettingsIssues().Count(issue => issue.Contains("No TeamMarkerSettings")));
 
-            var first = Track(ScriptableObject.CreateInstance<TeamColorSettings>());
-            Assert.IsEmpty(TeamColorSettingsIssues(first));
+            var first = Track(ScriptableObject.CreateInstance<TeamMarkerSettings>());
+            Assert.IsEmpty(TeamMarkerSettingsIssues(first));
 
-            var second = Track(ScriptableObject.CreateInstance<TeamColorSettings>());
-            Assert.AreEqual(1, TeamColorSettingsIssues(first, second).Count(issue => issue.Contains("2 TeamColorSettings")));
+            var second = Track(ScriptableObject.CreateInstance<TeamMarkerSettings>());
+            Assert.AreEqual(1, TeamMarkerSettingsIssues(first, second).Count(issue => issue.Contains("2 TeamMarkerSettings")));
         }
 
-        private static string[] TeamColorSettingsIssues(params TeamColorSettings[] assets)
+        private static string[] TeamMarkerSettingsIssues(params TeamMarkerSettings[] assets)
         {
             var issues = new ValidationIssues();
-            new TeamColorSettingsRule().Check(AssetSet.From(assets), issues);
+            new TeamMarkerSettingsRule().Check(AssetSet.From(assets), issues);
             return issues.Select(issue => issue.Message).ToArray();
         }
 

@@ -37,8 +37,8 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                 return;
             }
 
-            // TeamColorSettingsRule reports a project without exactly one asset, once.
-            var settings = AssetSet.InProject().All<TeamColorSettings>();
+            // TeamMarkerSettingsRule reports a project without exactly one asset, once.
+            var settings = AssetSet.InProject().All<TeamMarkerSettings>();
             if (settings.Count == 1)
             {
                 CheckMarkers(entity, settings[0].minMarkers, PrefabSet.InProject(), issues);

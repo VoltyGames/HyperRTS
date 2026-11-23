@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         private const float Continues = 1.5f;
 
         /// <summary>Whether the road's start and end fade.</summary>
-        public static (bool Start, bool End) For(MapRoad road, IReadOnlyList<MapRoad> roads)
+        public static (bool Start, bool End) EndFades(MapRoad road, IReadOnlyList<MapRoad> roads)
         {
             var points = road.Line.Points;
             return (Fades(road, points[0], roads), Fades(road, points[^1], roads));

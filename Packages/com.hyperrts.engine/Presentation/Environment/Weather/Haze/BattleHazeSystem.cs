@@ -38,8 +38,8 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
         private const float ImpactHazePerRadius = 0.1f;
 
         // One blast, however large, smokes its own ground and no more, or a strike would fog the map for minutes.
-        private const float ImpactReachMost = 60f;
-        private const float ImpactHazeMost = 1.5f;
+        private const float MaxImpactReach = 60f;
+        private const float MaxImpactHaze = 1.5f;
         private const float WreckReach = 6f;
         private const float WreckHazePerSecond = 0.02f;
         private const float BuildingReach = 10f;
@@ -145,8 +145,8 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
             {
                 if (cue.IsBlast && _visibility.IsSeen(cue))
                 {
-                    var reach = math.min(cue.Radius * ImpactReachPerRadius, ImpactReachMost);
-                    var amount = math.min(cue.Radius * ImpactHazePerRadius, ImpactHazeMost);
+                    var reach = math.min(cue.Radius * ImpactReachPerRadius, MaxImpactReach);
+                    var amount = math.min(cue.Radius * ImpactHazePerRadius, MaxImpactHaze);
                     Haze.Add(cue.Position.xz, reach, amount);
                 }
             }

@@ -104,7 +104,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather.Haze
             var row = (cell * mist.Layers) * BattleHaze.Cells + cell;
             var lowest = (float)mist.Texels[row];
             // The layer's middle is 2 m up: a third of the mist has faded, and the fog thins by its own height falloff.
-            var expected = 1f + 0.5f * BattleHaze.MistMost * (1f - 2f / BattleHaze.MistDepth) / (Fog.Density * Fog.Multiplier(2f));
+            var expected = 1f + 0.5f * BattleHaze.MaxMistExtinction * (1f - 2f / BattleHaze.MistDepth) / (Fog.Density * Fog.Multiplier(2f));
             Assert.AreEqual(expected, lowest, expected * 0.02f, "mist holds its own extinction whatever the fog's density");
             Assert.AreEqual(1f, (float)mist.Texels[row + mist.Layers / 4 * BattleHaze.Cells], 0.01f, "the layers high over it stay clear");
         }

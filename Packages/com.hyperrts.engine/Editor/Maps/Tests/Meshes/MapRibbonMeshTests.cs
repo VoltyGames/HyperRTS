@@ -145,17 +145,17 @@ namespace HyperRTS.Editor.Maps.Tests.Meshes
         {
             var main = MapFixture.RoadShape(Asphalt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));
             var side = MapFixture.RoadShape(Dirt, false, new Vector2(0f, -40f), new Vector2(0f, 0f));
-            Assert.AreEqual((true, true), MapRoadFades.For(side, new[] { main, side }), "the dirt fades out under the asphalt");
+            Assert.AreEqual((true, true), MapRoadFades.EndFades(side, new[] { main, side }), "the dirt fades out under the asphalt");
 
             var low = MapFixture.RoadShape(Dirt, false, new Vector2(-50f, 0f), new Vector2(50f, 0f));
             var top = MapFixture.RoadShape(Gravel, false, new Vector2(0f, -40f), new Vector2(0f, 0f));
-            Assert.AreEqual((true, false), MapRoadFades.For(top, new[] { low, top }), "solid onto a lower rank");
+            Assert.AreEqual((true, false), MapRoadFades.EndFades(top, new[] { low, top }), "solid onto a lower rank");
 
             var first = MapFixture.RoadShape(Lane, false, new Vector2(0f, -50f), new Vector2(0f, 0f));
             var second = MapFixture.RoadShape(Lane, false, new Vector2(0f, 0f), new Vector2(0f, 50f));
             var roads = new[] { first, second };
-            Assert.AreEqual((true, false), MapRoadFades.For(first, roads), "no fade where they carry on");
-            Assert.AreEqual((false, true), MapRoadFades.For(second, roads));
+            Assert.AreEqual((true, false), MapRoadFades.EndFades(first, roads), "no fade where they carry on");
+            Assert.AreEqual((false, true), MapRoadFades.EndFades(second, roads));
         }
 
         [Test]

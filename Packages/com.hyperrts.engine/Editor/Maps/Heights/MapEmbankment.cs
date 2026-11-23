@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Maps.Heights
             // The end slope's toe stays on the abutment face, so the banks in front keep their shape; its crest
             // recedes with distance from the roadway, wrapping a cone round the abutment's end.
             var front = Mathf.Max(0f, _crossing.Span * 0.5f + side - along);
-            var reach = new Vector2(side / edge, front / (_crossing.Abutment + side)).magnitude;
+            var reach = new Vector2(side / edge, front / (_crossing.AbutmentDepth + side)).magnitude;
             return 1f - MapGeometry.Smooth(reach);
         }
 

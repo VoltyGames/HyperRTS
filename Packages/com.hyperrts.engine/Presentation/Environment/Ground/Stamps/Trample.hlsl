@@ -26,7 +26,7 @@ struct TrackSample
     float2 craterSlope;
 };
 
-// Unguarded: the caller checks TrampleMapsOn.
+// Unguarded: the caller checks HasTrampleMaps.
 TrampleSample ReadTrample(float2 positionXZ)
 {
     half4 texel = SAMPLE_TEXTURE2D_LOD(_HyperRTSTrample, sampler_LinearClamp, TrampleUV(positionXZ), 0);
@@ -41,7 +41,7 @@ TrampleSample SampleTrample(float2 positionXZ)
 {
     TrampleSample s = (TrampleSample)0;
     UNITY_BRANCH
-    if (TrampleMapsOn())
+    if (HasTrampleMaps())
     {
         s = ReadTrample(positionXZ);
     }
@@ -57,7 +57,7 @@ half RutCoverage(float ramp)
     return (half)(inside * saturate(ramp / RUT_FULL));
 }
 
-// Unguarded: the caller checks TrampleMapsOn.
+// Unguarded: the caller checks HasTrampleMaps.
 TrackSample ReadTracks(float2 positionXZ)
 {
     float2 uv = TrampleUV(positionXZ);
@@ -97,7 +97,7 @@ float4 SampleTracks(float2 positionXZ)
 {
     float4 tracks = 0.0;
     UNITY_BRANCH
-    if (TrampleMapsOn())
+    if (HasTrampleMaps())
     {
         tracks = SAMPLE_TEXTURE2D_LOD(_HyperRTSTracks, sampler_LinearClamp, TrampleUV(positionXZ), 0);
     }
@@ -108,7 +108,7 @@ half SampleWake(float3 positionWS)
 {
     half wake = 0.0;
     UNITY_BRANCH
-    if (TrampleMapsOn())
+    if (HasTrampleMaps())
     {
         wake = SAMPLE_TEXTURE2D_LOD(_HyperRTSWake, sampler_LinearClamp, TrampleUV(positionWS.xz), 0).r;
     }

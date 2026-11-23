@@ -10,7 +10,7 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
     public struct BattleHazeTexelJob : IJobParallelFor
     {
         private const int Cells = BattleHaze.Cells;
-        private const float HalfMost = 60000f;
+        private const float MaxHalf = 60000f;
 
         [ReadOnly] public NativeArray<float> Amounts;
         [ReadOnly] public NativeArray<float> Ground;
@@ -42,7 +42,7 @@ namespace HyperRTS.Presentation.Environment.Weather.Haze
             var extinction = Pooling[cell] * MistExtinction * math.saturate(1f - above / BattleHaze.MistDepth);
             // The fog thins with height itself; dividing it out keeps the mist at its own extinction on any ground.
             var mist = extinction > 0f ? extinction / (Fog.Density * Fog.Multiplier(height)) : 0f;
-            Texels[index] = (half)math.min(1f + Amounts[cell] + mist, HalfMost);
+            Texels[index] = (half)math.min(1f + Amounts[cell] + mist, MaxHalf);
         }
 
         private static int Wrap(int cell) => (cell % Cells + Cells) % Cells;

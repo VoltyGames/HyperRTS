@@ -158,7 +158,7 @@ half AshDrift(TerrainPixel pixel)
 half ApplyStains(inout TerrainSurface surface, TerrainPixel pixel, half ashShare)
 {
     UNITY_BRANCH
-    if (!TrampleMapsOn())
+    if (!HasTrampleMaps())
     {
         return 0.0;
     }
