@@ -1,4 +1,4 @@
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.Silhouettes
 {
     /// <summary>The rendering layer <see cref="RenderingLayerBakingSystem"/> puts units on for the silhouettes.</summary>
     public static class UnitRenderingLayer

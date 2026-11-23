@@ -5,7 +5,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather.Haze
 {
     /// <summary>
     /// The smoke hanging over a fight: a grid over the map that drifts with the wind, spreads a little and halves

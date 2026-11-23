@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace HyperRTS.Input.Cameras
+namespace HyperRTS.Input.Cameras.CostProbe
 {
     /// <summary>The frame times measured at one point and height, in milliseconds.</summary>
     [Serializable]

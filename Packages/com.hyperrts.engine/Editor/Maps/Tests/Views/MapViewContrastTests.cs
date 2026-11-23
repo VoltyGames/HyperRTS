@@ -3,7 +3,7 @@ using HyperRTS.Editor.Maps.Views;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Tests
+namespace HyperRTS.Editor.Maps.Tests.Views
 {
     /// <summary>A view's contrast reads flat ground as flat and light and shade as contrast.</summary>
     public class MapViewContrastTests

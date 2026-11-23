@@ -1,5 +1,5 @@
 using HyperRTS.Presentation.Overlays;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.Silhouettes;
 using UnityEngine;
 using UnityEngine.UIElements;
 

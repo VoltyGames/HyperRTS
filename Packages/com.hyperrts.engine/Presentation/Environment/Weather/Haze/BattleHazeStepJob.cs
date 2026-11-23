@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather.Haze
 {
     /// <summary>One <see cref="BattleHaze"/> step: drift downwind, spread to the neighbours, then thin.</summary>
     [BurstCompile]

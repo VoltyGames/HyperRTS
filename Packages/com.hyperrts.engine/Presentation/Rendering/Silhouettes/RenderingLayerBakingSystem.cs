@@ -4,7 +4,7 @@ using Unity.Entities;
 using Unity.Entities.Graphics;
 using Unity.Transforms;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.Silhouettes
 {
     /// <summary>
     /// Puts every rendered part of a unit on <see cref="UnitRenderingLayer"/> at bake time, so prefabs

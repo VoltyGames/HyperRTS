@@ -11,7 +11,7 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Editor.Maps.Tests.Roads
+namespace HyperRTS.Editor.Maps.Tests.Meshes
 {
     /// <summary>Road and river ribbons: layout, fades, terrain conforming, breaks, draw order and water over fords.</summary>
     public class MapRibbonMeshTests

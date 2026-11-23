@@ -5,7 +5,7 @@ using System.IO;
 using HyperRTS.Presentation.Common;
 using UnityEngine;
 
-namespace HyperRTS.Input.Cameras
+namespace HyperRTS.Input.Cameras.CostProbe
 {
     /// <summary>
     /// Run with <c>-camera-cost &lt;points file&gt; -camera-cost-report &lt;path&gt;</c>: times frames at each point and height of

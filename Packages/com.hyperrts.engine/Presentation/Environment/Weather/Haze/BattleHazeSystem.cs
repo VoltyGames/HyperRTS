@@ -18,7 +18,7 @@ using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather.Haze
 {
     /// <summary>
     /// Feeds the <see cref="BattleHaze"/> from impacts the local player sees (by splash), burning wrecks, damaged

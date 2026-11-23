@@ -1,6 +1,6 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather.Haze
 {
     /// <summary>The weather's volumetric fog as the density texture meets it: its base density and how it thins with height.</summary>
     public readonly struct FogShape

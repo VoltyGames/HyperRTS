@@ -1,7 +1,7 @@
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering.Silhouettes
 {
     /// <summary>
     /// Hides the team-colour silhouettes of units behind cover, for footage. URP's

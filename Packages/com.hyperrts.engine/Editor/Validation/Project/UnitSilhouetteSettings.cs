@@ -1,6 +1,6 @@
 using System;
 using System.Linq;
-using HyperRTS.Presentation.Rendering;
+using HyperRTS.Presentation.Rendering.Silhouettes;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;

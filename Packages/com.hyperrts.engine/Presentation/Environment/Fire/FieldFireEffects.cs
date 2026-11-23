@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
-using HyperRTS.Presentation.Environment.Weather;
+using HyperRTS.Presentation.Environment.Weather.Haze;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;

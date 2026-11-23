@@ -1,6 +1,6 @@
 using System;
 
-namespace HyperRTS.Input.Cameras
+namespace HyperRTS.Input.Cameras.CostProbe
 {
     /// <summary>A named ground point and yaw in degrees that <see cref="CameraCostProbe"/> looks at.</summary>
     [Serializable]

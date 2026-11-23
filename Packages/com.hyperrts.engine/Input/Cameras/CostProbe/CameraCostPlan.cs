@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HyperRTS.Input.Cameras
+namespace HyperRTS.Input.Cameras.CostProbe
 {
     /// <summary>The points file of <see cref="CameraCostProbe"/>: where to look, from which heights, and for how long.</summary>
     [Serializable]

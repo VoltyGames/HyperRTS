@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Environment.Ground;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Simulation.Cues.Effects;
-using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -10,10 +9,9 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
 {
-    /// <summary>Trample maps on the CPU: texture sizing, fades, and the stamps vehicles, craters, wakes, feet and gusts lay.</summary>
+    /// <summary>Trample maps on the CPU: texture sizing, fades, and the stamps vehicles, craters, wakes and feet lay.</summary>
     public class TrampleTests
     {
-        private const float Reach = 25f;
         private const float BurnReach = 1.5f;
 
         private static readonly TrackMarks Tank = new() { Width = 0.6f, Gauge = 2.8f, RutDepth = 1f };
@@ -234,34 +232,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Ground.Stamps
             Assert.AreEqual(10f + 2f, wake.Center.x + wake.HalfSize.y, 1e-4f, "front edge at the unit's bow");
             Assert.AreEqual(4f / TrampleStamps.FullWakeSpeed, wake.Value.x, 1e-5f);
             Assert.AreEqual(1f, stamps.Wakes[1].Value.x, "full foam caps");
-        }
-
-        [Test]
-        public void Downwash_IsStrongestLow_AndGoneAboveItsHeight()
-        {
-            var low = LocalGust.Downwash(float2.zero, 3f, 1f, Reach);
-            var high = LocalGust.Downwash(float2.zero, 20f, 1f, Reach);
-
-            Assert.Greater(low.Push, high.Push);
-            Assert.Greater(high.Radius, low.Radius, "spreads wider from higher up");
-            Assert.AreEqual(0f, LocalGust.Downwash(float2.zero, Reach, 1f, Reach).Push);
-            Assert.AreEqual(0f, LocalGust.Downwash(float2.zero, 3f, 0f, Reach).Push, "stopped rotors");
-        }
-
-        [Test]
-        public void Blast_FrontSpreadsOut_WhileThePushRelaxes_WithinItsReachLimits()
-        {
-            var blast = LocalGust.Blast(new float2(5f, 5f), 4f);
-            var start = blast;
-
-            blast.Advance(LocalGust.BlastFront);
-            Assert.AreEqual(12f, blast.Radius, 1e-4f, "three times the splash");
-            Assert.Less(blast.Push, start.Push);
-
-            blast.Advance(1f);
-            Assert.IsTrue(blast.Expired);
-            Assert.AreEqual(LocalGust.MinBlastReach, LocalGust.Blast(float2.zero, 1f).Reach);
-            Assert.AreEqual(LocalGust.MaxBlastReach, LocalGust.Blast(float2.zero, 50f).Reach);
         }
     }
 }

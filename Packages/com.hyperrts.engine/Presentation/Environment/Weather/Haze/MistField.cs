@@ -4,7 +4,7 @@ using System;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather.Haze
 {
     /// <summary>
     /// Where ground mist pools, per <see cref="BattleHaze"/> cell: how low the cell lies against its surroundings or

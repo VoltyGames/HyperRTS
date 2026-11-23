@@ -3,7 +3,7 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather.Haze
 {
     /// <summary>Writes one <see cref="BattleHaze"/> texel per run: one plus the haze, plus the mist where its layer lies low over the ground.</summary>
     [BurstCompile]

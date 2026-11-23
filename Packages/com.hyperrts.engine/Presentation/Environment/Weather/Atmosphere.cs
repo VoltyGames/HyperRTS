@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.Environment.Weather.Haze;
 using HyperRTS.Simulation.Common.Authoring;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;

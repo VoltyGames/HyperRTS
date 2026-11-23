@@ -1,10 +1,10 @@
 using NUnit.Framework;
-using HyperRTS.Presentation.Environment.Weather;
+using HyperRTS.Presentation.Environment.Weather.Haze;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Tests.Environment.Weather
+namespace HyperRTS.Presentation.Tests.Environment.Weather.Haze
 {
     /// <summary>Battle haze: it halves every 90 s, drifts downwind, lines up with the fog's world-zero texture, and keeps mist low in hollows.</summary>
     public class BattleHazeTests

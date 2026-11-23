@@ -5,6 +5,7 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Environment.Weather;
+using HyperRTS.Presentation.Environment.Weather.Haze;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
