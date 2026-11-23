@@ -47,215 +47,156 @@ namespace HyperRTS.Editor.Tests.Validation
     internal static class RuleFiresCases
     {
         [NoAutoStaticsCleanup]
-        public static readonly Dictionary<Type, (string Expected, Func<RuleFiresTests, object> Build)> Rows =
-            GameplayRows().Concat(SquadRows()).Concat(EntityRows()).Concat(UnitRows()).Concat(UnitStatRows()).Concat(EffectRows()).Concat(SceneRows())
-                .ToDictionary(row => row.Rule, row => (row.Expected, row.Build));
+        public static readonly Dictionary<Type, RuleCase> Rows =
+            new[] { Gameplay(), Squads(), Entities(), Units(), UnitStats(), Effects(), Scenes() }
+                .SelectMany(cases => cases).ToDictionary(brokenCase => brokenCase.Rule);
 
-        private static (Type Rule, string Expected, Func<RuleFiresTests, object> Build) Row<TRule>(string expected,
-            Func<RuleFiresTests, object> build) => (typeof(TRule), expected, build);
+        private static RuleCase Case<TRule>(string expected, Func<RuleFiresTests, object> build) =>
+            new(typeof(TRule), expected, build);
 
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> GameplayRows()
+        private static T With<T>(this T target, Action<T> setup)
         {
-            yield return Row<AbilityRule>("'Smoke'", f =>
-            {
-                var abilities = f.Add<AbilityAuthoring>(EntityTemplates.CombatUnit());
-                abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
-                abilities.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
-                return abilities;
-            });
-            yield return Row<AirdropReceiverRule>("no aircraft prefab", f =>
-                f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
-            yield return Row<BomberStrikeRule>("no aircraft prefab", f =>
-                f.Add<BomberStrikeAuthoring>(EntityTemplates.Building()));
-            yield return Row<MissileStrikeRule>("no missile prefab", f =>
-                f.Add<MissileStrikeAuthoring>(EntityTemplates.Building()));
-            yield return Row<AircraftRemainsRule>("don't fall", f =>
-            {
-                var aircraft = f.Track(EntityTemplates.Aircraft()).GetComponent<UnitAuthoring>();
-                aircraft.remains = f.Track(new GameObject("Wreck"));
-                return aircraft.GetComponent<FlightAuthoring>();
-            });
-            yield return Row<AuraRule>("Affects nobody", f =>
-            {
-                var field = f.Add<AuraAuthoring>(EntityTemplates.Building());
-                field.affects = AuraTargets.Units;
-                return field;
-            });
-            yield return Row<FieldAttributeRule>("Extra Weapons 1: Projectile 'Shell' is a scene object", f =>
-            {
-                var weapon = f.Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
-                weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
-                weapon.extraWeapons[0].stats.projectilePrefab = f.Make("Shell");
-                return weapon;
-            });
+            setup(target);
+            return target;
         }
 
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> SquadRows()
+        private static IEnumerable<RuleCase> Gameplay()
         {
-            yield return Row<ContainerRule>("exceeds capacity", f =>
+            yield return Case<AbilityRule>("'Smoke'", f => f.Add<AbilityAuthoring>(EntityTemplates.CombatUnit()).With(a =>
             {
-                var container = f.Add<ContainerAuthoring>(EntityTemplates.Building());
-                container.capacity = 2;
-                container.maxPassengerSize = 4;
-                return container;
+                a.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
+                a.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
+            }));
+            yield return Case<AirdropReceiverRule>("no aircraft prefab",
+                f => f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
+            yield return Case<BomberStrikeRule>("no aircraft prefab", f => f.Add<BomberStrikeAuthoring>(EntityTemplates.Building()));
+            yield return Case<MissileStrikeRule>("no missile prefab", f => f.Add<MissileStrikeAuthoring>(EntityTemplates.Building()));
+            yield return Case<AircraftRemainsRule>("don't fall", f => f.Template<UnitAuthoring>(EntityTemplates.Aircraft())
+                .With(aircraft => aircraft.remains = f.Make("Wreck")).GetComponent<FlightAuthoring>());
+            yield return Case<AuraRule>("Affects nobody", f => f.Add<AuraAuthoring>(EntityTemplates.Building())
+                .With(aura => aura.affects = AuraTargets.Units));
+            yield return Case<FieldAttributeRule>("Extra Weapons 1: Projectile 'Shell' is a scene object", f =>
+                f.Template<WeaponAuthoring>(EntityTemplates.CombatUnit()).With(weapon =>
+                {
+                    weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
+                    weapon.extraWeapons[0].stats.projectilePrefab = f.Make("Shell");
+                }));
+        }
+
+        private static IEnumerable<RuleCase> Squads()
+        {
+            yield return Case<ContainerRule>("exceeds capacity", f => f.Add<ContainerAuthoring>(EntityTemplates.Building())
+                .With(container =>
+                {
+                    container.capacity = 2;
+                    container.maxPassengerSize = 4;
+                }));
+            yield return Case<SquadRule>("no members", f => f.Add<SquadAuthoring>(EntityTemplates.CombatUnit()));
+            yield return Case<SquadFiguresRule>("both an upgraded and an emplaced figure", f =>
+            {
+                var root = f.Make("Figure").transform;
+                return f.Add<SquadFiguresAuthoring>(EntityTemplates.CombatUnit()).With(squad =>
+                    squad.figures.Add(new SquadFiguresAuthoring.Figure { root = root, upgradedRoot = root, emplacedRoot = root }));
             });
-            yield return Row<SquadRule>("no members",
-                f => f.Add<SquadAuthoring>(EntityTemplates.CombatUnit()));
-            yield return Row<SquadFiguresRule>("both an upgraded and an emplaced figure", f =>
-            {
-                var squad = f.Add<SquadFiguresAuthoring>(EntityTemplates.CombatUnit());
-                var root = new GameObject("Figure").transform;
-                squad.figures.Add(new SquadFiguresAuthoring.Figure { root = root, upgradedRoot = root, emplacedRoot = root });
-                return squad;
-            });
-            yield return Row<CoverSpotRule>("faces away from the prop", f =>
-            {
-                var cover = f.Add<CoverSpotAuthoring>(new GameObject("Wall"));
-                cover.spots.Add(new CoverSpotAuthoring.Spot
+            yield return Case<CoverSpotRule>("faces away from the prop", f => f.Add<CoverSpotAuthoring>(new GameObject("Wall"))
+                .With(cover => cover.spots.Add(new CoverSpotAuthoring.Spot
                 {
                     position = new Vector3(0f, 0f, -0.8f), facing = new Vector2(0f, -1f), kind = CoverKind.Heavy,
-                });
-                return cover;
-            });
-            yield return Row<DeliverySourceRule>("no carrier prefab",
+                })));
+            yield return Case<DeliverySourceRule>("no carrier prefab",
                 f => f.Add<DeliverySourceAuthoring>(EntityTemplates.Building()));
         }
 
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> EntityRows()
+        private static IEnumerable<RuleCase> Entities()
         {
-            yield return Row<GameEntityRule>("never met", f =>
-            {
-                var unit = f.Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
-                unit.prerequisites.Add(f.Track(EntityTemplates.Unit("Scout")).GetComponent<UnitAuthoring>());
-                return unit;
-            });
-            yield return Row<MatchRule>("no players", f =>
-            {
-                var match = f.Add<MatchAuthoring>(new GameObject("Match"));
-                match.players.Clear();
-                return match;
-            });
-            yield return Row<ProducerRule>("inside the footprint", f =>
-            {
-                var producer = f.Track(EntityTemplates.Producer()).GetComponent<ProducerAuthoring>();
-                producer.spawnOffset = Vector3.zero;
-                return producer;
-            });
-            yield return Row<RequiredAuthoringRule>("needs a Unit",
-                f => f.Add<HarvesterAuthoring>(EntityTemplates.Building()));
-            yield return Row<RequiresGhostRule>("Not a ghost",
-                f => f.Add<ResourceNodeAuthoring>(new GameObject("Node")));
-            yield return Row<ResourceNodeRule>("no resource type",
-                f => f.Track(EntityTemplates.ResourceNode()).GetComponent<ResourceNodeAuthoring>());
+            yield return Case<GameEntityRule>("never met", f => f.Template<UnitAuthoring>(EntityTemplates.Unit())
+                .With(unit => unit.prerequisites.Add(f.Template<UnitAuthoring>(EntityTemplates.Unit("Scout")))));
+            yield return Case<MatchRule>("no players", f => f.Add<MatchAuthoring>(new GameObject("Match"))
+                .With(match => match.players.Clear()));
+            yield return Case<ProducerRule>("inside the footprint", f => f.Template<ProducerAuthoring>(EntityTemplates.Producer())
+                .With(producer => producer.spawnOffset = Vector3.zero));
+            yield return Case<RequiredAuthoringRule>("needs a Unit", f => f.Add<HarvesterAuthoring>(EntityTemplates.Building()));
+            yield return Case<RequiresGhostRule>("Not a ghost", f => f.Add<ResourceNodeAuthoring>(new GameObject("Node")));
+            yield return Case<ResourceNodeRule>("no resource type",
+                f => f.Template<ResourceNodeAuthoring>(EntityTemplates.ResourceNode()));
         }
 
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> UnitRows()
+        private static IEnumerable<RuleCase> Units()
         {
-            yield return Row<GarrisonPartRule>("no Container above it", f => f.Add<GarrisonPartAuthoring>(new GameObject("Gun")));
-            yield return Row<LocomotionRule>("has no wheelbase", f =>
-            {
-                var locomotion = f.Add<LocomotionAuthoring>(EntityTemplates.Unit());
-                locomotion.pivots = false;
-                locomotion.turnRadius = 9f;
-                return locomotion;
-            });
-            yield return Row<MachineRule>("Ramp Seconds must be above 0", f =>
-            {
-                var machine = f.Add<MachineAuthoring>(new GameObject("Door"));
-                machine.rampSeconds = 0f;
-                return machine;
-            });
-            yield return Row<MachinePartRule>("To must be above From", f =>
-            {
-                var part = f.Add<MachinePartAuthoring>(new GameObject("Jack"));
-                part.motion = MachineMotion.Extend;
-                part.from = 0.5f;
-                part.to = 0.5f;
-                return part;
-            });
-        }
-
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> UnitStatRows()
-        {
-            yield return Row<SceneryRemainsRule>("show twice", f =>
-            {
-                var scenery = f.Add<DestructibleAuthoring>(new GameObject("Fence"));
-                scenery.remains = f.Track(EntityTemplates.Unit("Rubble"));
-                return scenery;
-            });
-            yield return Row<TurretTossRule>("hull and a turret", f => f.Add<TurretTossAuthoring>(new GameObject("Tank")));
-            yield return Row<TeamColorRule>("owner's colour", f =>
-            {
-                var unit = f.Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
-                var plain = f.Track(new Material(Shader.Find("Universal Render Pipeline/Lit")));
-                foreach (var renderer in unit.GetComponentsInChildren<Renderer>())
+            yield return Case<GarrisonPartRule>("no Container above it", f => f.Add<GarrisonPartAuthoring>(new GameObject("Gun")));
+            yield return Case<LocomotionRule>("has no wheelbase", f => f.Add<LocomotionAuthoring>(EntityTemplates.Unit())
+                .With(locomotion =>
                 {
-                    renderer.sharedMaterial = plain;
-                }
+                    locomotion.pivots = false;
+                    locomotion.turnRadius = 9f;
+                }));
+            yield return Case<MachineRule>("Ramp Seconds must be above 0", f => f.Add<MachineAuthoring>(new GameObject("Door"))
+                .With(machine => machine.rampSeconds = 0f));
+            yield return Case<MachinePartRule>("To must be above From", f => f.Add<MachinePartAuthoring>(new GameObject("Jack"))
+                .With(part =>
+                {
+                    part.motion = MachineMotion.Extend;
+                    part.from = 0.5f;
+                    part.to = 0.5f;
+                }));
+        }
 
-                return unit;
-            });
-            yield return Row<UnitRule>("no Flight component", f =>
+        private static IEnumerable<RuleCase> UnitStats()
+        {
+            yield return Case<SceneryRemainsRule>("show twice", f => f.Add<DestructibleAuthoring>(new GameObject("Fence"))
+                .With(scenery => scenery.remains = f.Track(EntityTemplates.Unit("Rubble"))));
+            yield return Case<TurretTossRule>("hull and a turret", f => f.Add<TurretTossAuthoring>(new GameObject("Tank")));
+            yield return Case<TeamColorRule>("owner's colour", f =>
             {
-                var unit = f.Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
-                unit.navLayer = NavLayer.Air;
-                return unit;
+                var plain = f.Track(new Material(Shader.Find("Universal Render Pipeline/Lit")));
+                return f.Template<UnitAuthoring>(EntityTemplates.Unit()).With(unit =>
+                {
+                    foreach (var renderer in unit.GetComponentsInChildren<Renderer>())
+                    {
+                        renderer.sharedMaterial = plain;
+                    }
+                });
             });
-            yield return Row<UpgradeRule>("No stat bonuses",
-                f => f.Track(EntityTemplates.Upgrade()).GetComponent<UpgradeAuthoring>());
-            yield return Row<VeterancyRule>("No ranks", f => f.Add<VeterancyAuthoring>(EntityTemplates.CombatUnit()));
-            yield return Row<WeaponRule>("negative arc height", f =>
-            {
-                var weapon = f.Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
-                weapon.stats.arcHeight = -1f;
-                return weapon;
-            });
+            yield return Case<UnitRule>("no Flight component", f => f.Template<UnitAuthoring>(EntityTemplates.Unit())
+                .With(unit => unit.navLayer = NavLayer.Air));
+            yield return Case<UpgradeRule>("No stat bonuses", f => f.Template<UpgradeAuthoring>(EntityTemplates.Upgrade()));
+            yield return Case<VeterancyRule>("No ranks", f => f.Add<VeterancyAuthoring>(EntityTemplates.CombatUnit()));
+            yield return Case<WeaponRule>("negative arc height", f => f.Template<WeaponAuthoring>(EntityTemplates.CombatUnit())
+                .With(weapon => weapon.stats.arcHeight = -1f));
         }
 
         // An empty required rig, or a scene object where a prefab asset belongs, is what the effect rules catch.
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> EffectRows()
+        private static IEnumerable<RuleCase> Effects()
         {
-            yield return Row<SectionsRule>("has no effect rig",
-                f => f.Add<SectionsAuthoring>(new GameObject("Sections")));
-            yield return Row<EffectReferencesRule>("has no socket", f =>
-            {
-                var effects = f.Add<LoopEffectsAuthoring>(new GameObject("Loops"));
-                effects.loops = new[] { new LoopEffectsAuthoring.Entry() };
-                return effects;
-            });
-            yield return Row<MotionRigRule>("has no part", f =>
-            {
-                var rig = f.Add<MotionRigAuthoring>(new GameObject("Rig"));
-                rig.turrets.Add(new TurretSlot());
-                return rig;
-            });
+            yield return Case<SectionsRule>("has no effect rig", f => f.Add<SectionsAuthoring>(new GameObject("Sections")));
+            yield return Case<EffectReferencesRule>("has no socket", f => f.Add<LoopEffectsAuthoring>(new GameObject("Loops"))
+                .With(effects => effects.loops = new[] { new LoopEffectsAuthoring.Entry() }));
+            yield return Case<MotionRigRule>("has no part", f => f.Add<MotionRigAuthoring>(new GameObject("Rig"))
+                .With(rig => rig.turrets.Add(new TurretSlot())));
         }
 
-        private static IEnumerable<(Type Rule, string Expected, Func<RuleFiresTests, object> Build)> SceneRows()
+        private static IEnumerable<RuleCase> Scenes()
         {
-            yield return Row<DuplicateNameRule>("'Tank'", f => new PrefabSet(new[]
-            {
-                f.Track(EntityTemplates.Unit("Tank")), f.Track(EntityTemplates.Unit("Tank")),
-            }));
-            yield return Row<MatchCountRule>("More than one Match", f => f.InNewScene(false, () =>
+            yield return Case<DuplicateNameRule>("'Tank'", f =>
+                new PrefabSet(new[] { f.Track(EntityTemplates.Unit("Tank")), f.Track(EntityTemplates.Unit("Tank")) }));
+            yield return Case<MatchCountRule>("More than one Match", f => f.InNewScene(false, () =>
             {
                 f.Add<MatchAuthoring>(new GameObject("Match"));
                 f.Add<MatchAuthoring>(new GameObject("Second Match"));
             }));
-            yield return Row<MatchPlacementRule>("has no player slot", f => f.InNewScene(false, () =>
+            yield return Case<MatchPlacementRule>("has no player slot", f => f.InNewScene(false, () =>
             {
                 f.Add<MatchAuthoring>(new GameObject("Match"));
-                f.Track(EntityTemplates.Unit()).GetComponent<GameEntityAuthoring>().owner = 3;
+                f.Template<GameEntityAuthoring>(EntityTemplates.Unit()).owner = 3;
             }));
             // Inactive, so the SubScene doesn't start an edit-mode Entities world.
-            yield return Row<NetcodeBootstrapRule>("No OverrideAutomaticNetcodeBootstrap",
-                f => f.InNewScene(false, () =>
-                {
-                    var host = f.Make("SubScene");
-                    host.SetActive(false);
-                    host.AddComponent<SubScene>();
-                }));
-            yield return Row<SceneryIdRule>("same spot", f => f.InNewScene(true, () =>
+            yield return Case<NetcodeBootstrapRule>("No OverrideAutomaticNetcodeBootstrap", f => f.InNewScene(false, () =>
+            {
+                var host = f.Make("SubScene");
+                host.SetActive(false);
+                host.AddComponent<SubScene>();
+            }));
+            yield return Case<SceneryIdRule>("same spot", f => f.InNewScene(true, () =>
             {
                 f.Add<DestructibleAuthoring>(new GameObject("Rock"));
                 f.Add<DestructibleAuthoring>(new GameObject("Second Rock"));

@@ -43,7 +43,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [TestCase("Fire", "Fire 'Flash' has no muzzle socket.")]
         public void ReferenceRuleNamesEachBrokenField(string authoring, string expected)
         {
-            var owner = Track(new GameObject("Owner"));
+            var owner = Make("Owner");
             Component component;
             switch (authoring)
             {
@@ -61,12 +61,12 @@ namespace HyperRTS.Editor.Tests.Validation
                     break;
                 case "DamageStage":
                     var damage = owner.AddComponent<DamageStagesAuthoring>();
-                    damage.stages.Add(new DamageStagesAuthoring.Stage { effect = Track(new GameObject("Smoke")) });
+                    damage.stages.Add(new DamageStagesAuthoring.Stage { effect = Make("Smoke") });
                     component = damage;
                     break;
                 default:
                     var effects = owner.AddComponent<EntityEffectsAuthoring>();
-                    effects.fire = Track(new GameObject("Flash"));
+                    effects.fire = Make("Flash");
                     component = effects;
                     break;
             }
@@ -116,7 +116,7 @@ namespace HyperRTS.Editor.Tests.Validation
 
         private GameObject Rig(bool hasEffectRig = true, string graph = TestGraph)
         {
-            var root = Track(new GameObject("FX_Test"));
+            var root = Make("FX_Test");
             if (hasEffectRig)
             {
                 root.AddComponent<EffectRig>();

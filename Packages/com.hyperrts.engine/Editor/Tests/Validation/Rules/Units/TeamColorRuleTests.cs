@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
         [Test]
         public void TeamColorRule_CountsMarkers_AndWarnsOnAnUnpaintedOne()
         {
-            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            var unit = Template<UnitAuthoring>(EntityTemplates.Unit());
             Assert.IsEmpty(MarkerWarnings(unit), "the template carries the two markers it needs");
 
             RemoveMarker(unit);
@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             AddMarker(unit, Track(new Material(Shader.Find("Universal Render Pipeline/Lit"))));
             Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("no _TeamColor material")));
 
-            var prop = Track(EntityTemplates.Unit("Prop")).GetComponent<UnitAuthoring>();
+            var prop = Template<UnitAuthoring>(EntityTemplates.Unit("Prop"));
             prop.owner = 0;
             RemoveMarker(prop);
             RemoveMarker(prop);

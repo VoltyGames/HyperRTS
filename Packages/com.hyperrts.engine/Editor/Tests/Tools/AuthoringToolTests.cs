@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void ShowIfFollowsNumbersAndObjects_AndRejectsOtherConditions()
         {
-            var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
+            var weapon = Template<WeaponAuthoring>(EntityTemplates.CombatUnit());
             var serialized = new SerializedObject(weapon);
             bool IsMet(string field) => ConditionalFields.IsMet(serialized.FindProperty(Stat(field)));
             Assert.IsFalse(IsMet(Hit(nameof(DamageSettings.splashRadius))));
@@ -52,8 +52,8 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void SummariesListRoleModulesStatsAndTime()
         {
-            var soldier = Track(EntityTemplates.CombatUnit()).GetComponent<GameEntityAuthoring>();
-            var upgrade = Track(EntityTemplates.Upgrade()).GetComponent<UpgradeAuthoring>();
+            var soldier = Template<GameEntityAuthoring>(EntityTemplates.CombatUnit());
+            var upgrade = Template<UpgradeAuthoring>(EntityTemplates.Upgrade());
             upgrade.buildTime = 30f;
 
             Assert.AreEqual("Unit · Weapon", EntitySummary.Role(soldier));
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void HeadersStartFoldoutsAndFieldsBeforeThemStayOutside()
         {
-            var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
+            var weapon = Template<WeaponAuthoring>(EntityTemplates.CombatUnit());
             var editor = UnityEditor.Editor.CreateEditor(weapon);
             try
             {
@@ -98,9 +98,9 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void FieldIssuesNameTheirPathInsideListEntries()
         {
-            var weapon = Track(EntityTemplates.CombatUnit()).GetComponent<WeaponAuthoring>();
+            var weapon = Template<WeaponAuthoring>(EntityTemplates.CombatUnit());
             weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
-            weapon.extraWeapons[0].stats.projectilePrefab = Track(new GameObject("Shell"));
+            weapon.extraWeapons[0].stats.projectilePrefab = Make("Shell");
 
             var issue = ProjectValidator.Check(weapon).Single(found => found.Message.Contains("scene object"));
 
@@ -132,7 +132,7 @@ namespace HyperRTS.Editor.Tests.Tools
             var (topple, bark) = Tree(Vector3.zero);
             if (meshless)
             {
-                topple.GetComponent<DestructibleAuthoring>().remains = Track(new GameObject("Remains"));
+                topple.GetComponent<DestructibleAuthoring>().remains = Make("Remains");
             }
 
             Assert.Throws<InvalidOperationException>(() => ToppleMeasure.Measure(topple, bark));
@@ -180,7 +180,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void StretchMeasure_ReadsATurnedSpanAlongItsOwnAxis()
         {
-            var root = Track(new GameObject("Arch")).transform;
+            var root = Make("Arch").transform;
             var start = Child(root, new Vector3(0f, 0f, -2f), Quaternion.identity);
             var end = Child(root, new Vector3(0f, 0f, 2f), Quaternion.identity);
             var span = Child(root, Vector3.zero, Quaternion.Euler(-90f, 0f, 0f));
@@ -197,7 +197,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void StretchMeasure_FindsTheAxisFromCapMeshes_WhenEveryPivotIsAtTheOrigin()
         {
-            var root = Track(new GameObject("Arch")).transform;
+            var root = Make("Arch").transform;
             var start = Child(root, Vector3.zero, Quaternion.identity);
             var end = Child(root, Vector3.zero, Quaternion.identity);
             start.gameObject.AddComponent<MeshFilter>().sharedMesh = CapMesh(-2f);
@@ -220,7 +220,7 @@ namespace HyperRTS.Editor.Tests.Tools
         {
             var bark = Track(new Material(Shader.Find("Hidden/InternalErrorShader")) { name = "Bark" });
             var leaves = Track(new Material(Shader.Find("Hidden/InternalErrorShader")) { name = "Leaves" });
-            var root = Track(new GameObject("Tree"));
+            var root = Make("Tree");
             root.AddComponent<DestructibleAuthoring>().remains = TreeModel(remainsOffset, bark, leaves);
             var model = TreeModel(Vector3.zero, bark, leaves);
             model.transform.SetParent(root.transform, false);
@@ -241,7 +241,7 @@ namespace HyperRTS.Editor.Tests.Tools
             mesh.subMeshCount = 2;
             mesh.SetTriangles(new[] { 0, 1, 2 }, 0);
             mesh.SetTriangles(new[] { 3, 4, 5 }, 1);
-            var model = Track(new GameObject("Model"));
+            var model = Make("Model");
             model.AddComponent<MeshFilter>().sharedMesh = mesh;
             model.AddComponent<MeshRenderer>().sharedMaterials = new[] { bark, leaves };
             return model;

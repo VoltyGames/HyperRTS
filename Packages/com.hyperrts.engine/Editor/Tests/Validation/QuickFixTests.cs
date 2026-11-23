@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void MoveOutsidePutsTheSpawnPointBeyondTheFootprint()
         {
-            var producer = Track(EntityTemplates.Producer()).GetComponent<ProducerAuthoring>();
+            var producer = Template<ProducerAuthoring>(EntityTemplates.Producer());
             producer.spawnOffset = Vector3.zero;
 
             Fix(producer, "Move Outside");
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Tests.Validation
             AssetDatabase.CreateFolder("Assets", "_QuickFixTests");
             var asset = PrefabUtility.SaveAsPrefabAsset(Track(EntityTemplates.Unit()), Folder + "/Unit.prefab");
             var instance = Track((GameObject)PrefabUtility.InstantiatePrefab(asset)).GetComponent<UnitAuthoring>();
-            var producer = Track(EntityTemplates.Producer()).GetComponent<ProducerAuthoring>();
+            var producer = Template<ProducerAuthoring>(EntityTemplates.Producer());
             producer.productionOptions.Add(instance);
             producer.productionOptions.Add(null);
 
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void AddFlightTurnsAnAirLayerUnitIntoAnAircraft()
         {
-            var unit = Track(EntityTemplates.Unit()).GetComponent<UnitAuthoring>();
+            var unit = Template<UnitAuthoring>(EntityTemplates.Unit());
             unit.navLayer = NavLayer.Air;
 
             Fix(unit, "Add Flight");
@@ -80,7 +80,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void AddRequiredPutsTheMissingAuthoringOnTheObject()
         {
-            var producer = Track(new GameObject("Producer")).AddComponent<ProducerAuthoring>();
+            var producer = Make("Producer").AddComponent<ProducerAuthoring>();
 
             Fix(producer, "Add Building");
 
@@ -90,7 +90,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void RemoveEmptyDropsArmorEntriesWithoutADamageType()
         {
-            var armor = Track(EntityTemplates.Unit()).AddComponent<ArmorAuthoring>();
+            var armor = Add<ArmorAuthoring>(EntityTemplates.Unit());
             armor.modifiers.Add(new DamageFactor { multiplier = 2f });
 
             Fix(armor, "Remove Empty");
@@ -101,7 +101,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void ClampOversizedPassengerLimitToCapacity()
         {
-            var container = Track(EntityTemplates.Building()).AddComponent<ContainerAuthoring>();
+            var container = Add<ContainerAuthoring>(EntityTemplates.Building());
             container.capacity = 2;
             container.maxPassengerSize = 4;
 
@@ -113,7 +113,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void AddSightBlockFitsTheGarrisonedBuilding()
         {
-            var container = Track(EntityTemplates.Building()).AddComponent<ContainerAuthoring>();
+            var container = Add<ContainerAuthoring>(EntityTemplates.Building());
 
             Fix(container, "Add Sight Block");
 

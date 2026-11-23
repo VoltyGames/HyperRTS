@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Rules.Effects;
@@ -44,13 +43,13 @@ namespace HyperRTS.Editor.Tests.Validation
         [TestCaseSource(nameof(CoveredRules))]
         public void RuleReportsItsBrokenCase(Type ruleType)
         {
-            var (expected, build) = RuleFiresCases.Rows[ruleType];
-            var input = build(this);
+            var brokenCase = RuleFiresCases.Rows[ruleType];
+            var input = brokenCase.Build(this);
 
             var messages = Run(Activator.CreateInstance(ruleType), input).Select(issue => issue.Message).ToList();
 
-            Assert.IsTrue(messages.Any(message => message.Contains(expected)),
-                $"{ruleType.Name} should report '{expected}', reported: [{string.Join(" | ", messages)}]");
+            Assert.IsTrue(messages.Any(message => message.Contains(brokenCase.Expected)),
+                $"{ruleType.Name} should report '{brokenCase.Expected}', reported: [{string.Join(" | ", messages)}]");
         }
 
         [Test]
@@ -98,10 +97,6 @@ namespace HyperRTS.Editor.Tests.Validation
 
             return issues;
         }
-
-        internal GameObject Make(string name) => Track(new GameObject(name));
-
-        internal T Add<T>(GameObject go) where T : Component => Track(go).AddComponent<T>();
 
         /// <summary>A fresh scene holding what <paramref name="furnish"/> creates, as the validator sees it.</summary>
         internal SceneSet InNewScene(bool isSubScene, Action furnish)

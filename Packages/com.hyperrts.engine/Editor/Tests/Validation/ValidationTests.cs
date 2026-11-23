@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void UnsortedVeterancyRanksAreReported()
         {
-            var veterancy = Track(EntityTemplates.CombatUnit()).AddComponent<VeterancyAuthoring>();
+            var veterancy = Add<VeterancyAuthoring>(EntityTemplates.CombatUnit());
             veterancy.ranks.Add(new VeterancyAuthoring.Rank { experience = 200f });
             veterancy.ranks.Add(new VeterancyAuthoring.Rank { experience = 100f });
 
@@ -66,14 +66,14 @@ namespace HyperRTS.Editor.Tests.Validation
             switch (broken)
             {
                 case "ResourceNode":
-                    return Track(EntityTemplates.ResourceNode()).GetComponent<ResourceNodeAuthoring>();
+                    return Template<ResourceNodeAuthoring>(EntityTemplates.ResourceNode());
                 case "Aura":
-                    var field = Track(EntityTemplates.Building()).AddComponent<AuraAuthoring>();
+                    var field = Add<AuraAuthoring>(EntityTemplates.Building());
                     field.affects = AuraTargets.Units;
                     return field;
                 default:
-                    var source = Track(EntityTemplates.Building()).AddComponent<DeliverySourceAuthoring>();
-                    source.carrier = Track(EntityTemplates.CombatUnit()).GetComponent<UnitAuthoring>();
+                    var source = Add<DeliverySourceAuthoring>(EntityTemplates.Building());
+                    source.carrier = Template<UnitAuthoring>(EntityTemplates.CombatUnit());
                     return source;
             }
         }

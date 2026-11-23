@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.Tests.Animation
         public void Weapon_SitsWithItsOriginOnTheSocketNode()
         {
             using var rig = Rig();
-            var weapon = Track(new GameObject("Weapon"));
+            var weapon = Make("Weapon");
             var mesh = Track(new Mesh
             {
                 vertices = new[] { Vector3.zero, new Vector3(0f, 0f, 1f), new Vector3(0f, 0.1f, 0f) },

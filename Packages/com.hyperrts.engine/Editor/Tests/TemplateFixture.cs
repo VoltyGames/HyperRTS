@@ -28,5 +28,12 @@ namespace HyperRTS.Editor.Tests
             _created.Add(created);
             return created;
         }
+
+        public GameObject Make(string name) => Track(new GameObject(name));
+
+        public T Add<T>(GameObject go) where T : Component => Track(go).AddComponent<T>();
+
+        /// <summary>Tracks a template and returns its <typeparamref name="T"/>, which the template must carry.</summary>
+        public T Template<T>(GameObject template) where T : Component => Track(template).GetComponent<T>();
     }
 }

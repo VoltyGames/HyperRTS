@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Tests.Animation
         // holding one triangle at the hand.
         protected GameObject Model(string name, Quaternion meshTurn, Vector3 handNudge = default)
         {
-            var root = Track(new GameObject(name));
+            var root = Make(name);
             var armature = Child(root.transform, "Armature", Vector3.zero, Quaternion.identity);
             var hips = Child(armature, "Hips", new Vector3(0f, 1f, 0f), Quaternion.identity);
             var hand = Child(hips, "Hand", HandAt - hips.position + handNudge, Quaternion.identity);
