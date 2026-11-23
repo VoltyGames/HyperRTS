@@ -15,8 +15,11 @@ namespace HyperRTS.Input.Cameras
         public float cpuMedianMs;
         public float cpuP95Ms;
 
+        /// <summary>Sorts <paramref name="gpu"/> and <paramref name="cpu"/> in place.</summary>
         public static CameraCostResult From(string point, float height, List<float> gpu, List<float> cpu)
         {
+            gpu.Sort();
+            cpu.Sort();
             return new CameraCostResult
             {
                 point = point,
@@ -29,11 +32,7 @@ namespace HyperRTS.Input.Cameras
             };
         }
 
-        private static float Percentile(List<float> times, float fraction)
-        {
-            var sorted = new List<float>(times);
-            sorted.Sort();
-            return sorted[Math.Min(sorted.Count - 1, (int)(sorted.Count * fraction))];
-        }
+        private static float Percentile(List<float> sorted, float fraction) =>
+            sorted[Math.Min(sorted.Count - 1, (int)(sorted.Count * fraction))];
     }
 }

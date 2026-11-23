@@ -4,9 +4,8 @@
 
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/Wetness.hlsl"
 
-// How readily water stands here: broad world noise, damp hollows and ruts place whole pools; the fine noise and low
-// texels only ragged their edges, or every texel dip would hold a fleck. The broad noise mixes two unrelated scales
-// so the pools never line up on the tile. Explicit gradients, as it runs in a branch.
+// How readily water stands here: broad noise, damp hollows and ruts place whole pools, fine noise only ragged their
+// edges. Two unrelated broad scales keep pools off the tile grid. Explicit gradients, as it runs in a branch.
 half PuddleCollect(TerrainSurface surface, half dampness, half rut, float2 st, float2 dx, float2 dy)
 {
     half near = SAMPLE_TEXTURE2D_GRAD(_NoiseMap, sampler_LinearRepeat, st, dx, dy).g;

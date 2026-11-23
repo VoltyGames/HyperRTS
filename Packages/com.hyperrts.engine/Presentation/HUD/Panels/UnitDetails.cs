@@ -5,10 +5,7 @@ using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD.Panels
 {
-    /// <summary>
-    /// The facts block beside a single selected entity: weapons in one column, then armor, speed, sight and
-    /// passengers in the next. Read a few times a second, since none of it changes fast.
-    /// </summary>
+    /// <summary>The facts block beside a single selected entity, read a few times a second since it changes slowly.</summary>
     public sealed class UnitDetails
     {
         private const float RefreshSeconds = 0.25f;

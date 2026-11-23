@@ -192,12 +192,9 @@ Shader "HyperRTS/Water"
                 bottom *= lerp(1.0, _BedDarkening, saturate(depth / _ShoreFadeDepth));
                 // Light through the water fades the bed into the colour its silt scatters.
                 half3 transmitted = exp(-_Absorption.rgb * depth);
-                // The water scatters the light that reaches it: the sky, and the sun where clouds, trees and bridges
-                // let it through. URP's sun colour holds the whole cloud cookie, so the bare light is taken here.
+                // URP's sun colour holds the whole cloud cookie, so the bare light is taken here.
                 half3 sunlight = _MainLightColor.rgb * saturate(sun.direction.y) * sun.shadowAttenuation;
                 half3 light = sunlight * CloudShade(input.positionWS) + SampleSH(half3(0.0, 1.0, 0.0));
-                // Over a near bed the light scattered back is warmer and brighter; it takes the deep colour as the bed
-                // drops away.
                 half3 albedo = lerp(_ShallowColor.rgb, _DeepColor.rgb, smoothstep(0.0, _DeepDepth, depth));
                 half3 body = bottom * transmitted + albedo * light * (1.0 - transmitted);
                 half3 view = GetWorldSpaceNormalizeViewDir(input.positionWS);
@@ -221,8 +218,7 @@ Shader "HyperRTS/Water"
                 half3 color = lerp(body, reflection, fresnel);
                 color += Glint(sun, normalWS, view, color, smoothness, cameraDistance);
 
-                // Foam thins out on the last few centimetres so it never paints over the dry bank. Ground detail Low
-                // drops the calm-water foam: banks, flow lines and piers.
+                // Foam fades in the last centimetres so it never paints the dry bank; ground detail Low drops calm-water foam.
                 half amount = max(RapidsFoam(input.uv, drift, max(input.color.g, input.color.r * 0.8)), wake.foam);
                 #if !defined(_TERRAIN_SIMPLE)
                     amount = max(amount, max(max(BankFoam(input.uv, shoreDistance), FlowFoam(slick)), pier.x));

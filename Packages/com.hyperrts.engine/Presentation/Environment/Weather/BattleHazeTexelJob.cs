@@ -20,7 +20,6 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         public int2 Roll;
         public int Layers;
-        public float LayerHeight;
         public float Side;
 
         /// <summary>Mist extinction per metre at full pooling.</summary>
@@ -37,12 +36,12 @@ namespace HyperRTS.Presentation.Environment.Weather
             var cell = Wrap(x - Roll.x) + Wrap(z - Roll.y) * Cells;
 
             // The texture repeats every side up the y axis, so its top layers are the ground below world zero.
-            var height = (layer + 0.5f) * LayerHeight;
+            var height = (layer + 0.5f) * Side / Layers;
             height -= height >= Side * 0.5f ? Side : 0f;
             var above = height - Ground[cell];
             var extinction = Pooling[cell] * MistExtinction * math.saturate(1f - above / BattleHaze.MistDepth);
             // The fog thins with height itself; dividing it out keeps the mist at its own extinction on any ground.
-            var mist = extinction / (Fog.Density * Fog.Multiplier(height));
+            var mist = extinction > 0f ? extinction / (Fog.Density * Fog.Multiplier(height)) : 0f;
             Texels[index] = (half)math.min(1f + Amounts[cell] + mist, HalfMost);
         }
 

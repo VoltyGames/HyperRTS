@@ -25,9 +25,8 @@ namespace HyperRTS.Presentation.Environment.Weather
         public const int MistMostLayers = 192;
 
         /// <summary>
-        /// Mist's extinction per metre at full strength and full pooling, its own scale and not a multiple of the
-        /// weather's fog: that density is about 0.001, too thin for a few metres of mist to show. At 0.12 and a
-        /// 6 m fade, a full layer takes 0.36 of the light looking straight down and about half at a 30 degree pitch.
+        /// Mist's extinction per metre at full strength and pooling; its own scale, since the weather's fog (about
+        /// 0.001) is too thin for a few metres of mist to show.
         /// </summary>
         public const float MistMost = 0.12f;
 
@@ -178,7 +177,6 @@ namespace HyperRTS.Presentation.Environment.Weather
                 Texels = _texels,
                 Roll = _roll,
                 Layers = Layers,
-                LayerHeight = Side / Layers,
                 Side = Side,
                 MistExtinction = _mistExtinction,
                 Fog = Fog,

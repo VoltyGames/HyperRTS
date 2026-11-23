@@ -9,8 +9,9 @@ meshes.
 ## Atmosphere
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, with its sun, post-processing volume and
-`Wind`. When enabled it sets the skybox, ambient light, reflection cubemap, and turns Unity fog off. It writes the ground wetness each frame as the `GroundWetness` singleton and `_HyperRTSWetness`, and its `mist` as the `GroundMist` singleton; `WetnessGroup` shows its children from a threshold of `_HyperRTSWetness`, so puddles also show in edit mode. A
-missing skybox or reflection is an error. Skyboxes use `HyperRTS/Sky`, which blends its photographed ground into haze
+`Wind`. When enabled it sets the skybox, ambient light, reflection cubemap, and turns Unity fog off. It writes the ground wetness each frame as the `GroundWetness` singleton and `_HyperRTSWetness`, and its `mist` as
+the `GroundMist` singleton; `WetnessGroup` shows its children above a threshold of `_HyperRTSWetness`, so puddles also
+show in edit mode. A missing skybox or reflection is an error. Skyboxes use `HyperRTS/Sky`, which blends its photographed ground into haze
 below the horizon.
 
 `CloudShadows` on the sun draws a drifting cloud cookie that includes smoke column shadows (`SmokeShadows`).
@@ -23,15 +24,13 @@ impacts, burning wrecks and damaged buildings add haze to a coarse grid; it drif
 haze is capped in reach and amount, so a very large one smokes its own ground and no more. Other sources call
 `BattleHaze.Add(position, radius, amount)`.
 
-The density texture multiplies the weather's volumetric fog density, which is tiny (0.0006 to 0.0012 per metre, 800 m
-or more of sight), so a multiple of it stays faint: mist at 5 times the fog changed a view by a grey level or two.
-Mist therefore carries its own density and is divided by the weather's (`FogShape`, read from the volume stack
-each step, with the fog's height falloff) before they go in the texture, which stores unclamped half floats.
+Mist carries its own density, divided by the weather's volumetric fog density (`FogShape`, read from the volume stack
+each step, with the fog's height falloff) before both go in the half-float density texture. The weather's density is
+tiny, so a multiple of it would stay faint.
 
 - **Mist.** `Atmosphere.mist` (0 to 1) lays ground mist in hollows (cells at least 5 m under their 60 m surroundings)
-  and on banks within 2.5 m of the water. It rests on the ground, fades linearly to nothing 6 m up, and has an
-  extinction of `BattleHaze.MistMost` (0.12 per metre) times `mist`. The texture then has 4 m layers up the y axis; with
-  no mist it has two. A full layer takes 0.36 of the light looking straight down, about half at a 30 degree pitch.
+  and on banks within 2.5 m of the water. It rests on the ground and fades linearly to nothing 6 m up, with an
+  extinction of `BattleHaze.MistMost` times `mist`. The texture has 4 m layers up the y axis; with no mist it has two.
 
 ## Wind
 
@@ -61,8 +60,8 @@ so the river shades from bank to channel and follows each weather's light. `Wate
 strands, foam clumps and broad blobs: the blobs drift calm slicks down the current and sweep wind gusts across it,
 and every foam source (banks, slick edges, fords, wakes, piers) is an amount drawn through the lace, so thin foam
 breaks into strands rather than fading. Vertex colours shape the flow: alpha thins fords, green marks rapids, red
-trails foam below fords; both draw white water as streaks down the current with open water between. Bridge piers come from `WaterPiers` on the water object, up to 16 per map: the shader draws
-a cushion upstream of each, a short wake below it and rougher water round the wake.
+trails foam below fords; both draw white water as streaks down the current with open water between. `WaterPiers` on the water object lists up
+to 16 bridge piers per map: the shader draws a cushion upstream of each, a short wake below it and rougher water round the wake.
 `WaterCaustics` off in [quality](README.md#quality) compiles the caustics out.
 
 ## Field fires

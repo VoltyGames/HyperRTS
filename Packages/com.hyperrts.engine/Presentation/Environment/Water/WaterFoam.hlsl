@@ -25,10 +25,15 @@ half Gust(float3 positionWS)
     return Blobs((positionWS.xz - WATER_GUST_DIRECTION * _Time.y * _GustSpeed) / _GustSize);
 }
 
-// Broken white water over fast shallows and in the trail below them (fast: the larger of vertex G and R): streaks down the current with open water between, which
-// a further, wider noise thins, so a ford never turns to one white sheet.
+// White water over fast shallows and the trail below them: streaks down the current, thinned by a wider noise so a
+// ford never turns to one white sheet.
 half RapidsFoam(float2 uv, float drift, half fast)
 {
+    [branch] if (fast < 0.001)
+    {
+        return 0.0;
+    }
+
     half streak = Blobs(float2(uv.x / WATER_RAPIDS_WIDTH, (uv.y - drift * 2.5) / WATER_RAPIDS_LENGTH));
     half breakup = Blobs(float2(uv.x / (WATER_RAPIDS_WIDTH * 3.0) + 0.21, (uv.y - drift * 1.5) / (WATER_RAPIDS_LENGTH * 1.7)));
     return fast * smoothstep(0.45, 0.8, streak) * smoothstep(0.3, 0.6, breakup) * 0.9;

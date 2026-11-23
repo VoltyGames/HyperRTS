@@ -12,9 +12,8 @@ using UnityEngine;
 namespace HyperRTS.Presentation.HUD.Panels
 {
     /// <summary>
-    /// What one selected entity says about itself: its weapons, armor and speed from its type's prefab, which host and
-    /// client bake alike, and its sight, passengers and rank from the entity, which are replicated. A line appears only
-    /// when the component exists.
+    /// What a selected entity says about itself: weapons, armor and speed from its prefab (baked alike on host and client),
+    /// sight, passengers and rank from the replicated entity. A line shows only when its component exists.
     /// </summary>
     public sealed class UnitFacts
     {
@@ -47,8 +46,8 @@ namespace HyperRTS.Presentation.HUD.Panels
             if (entityManager.HasComponent<Experience>(entity))
             {
                 var rank = entityManager.GetComponentData<Experience>(entity).Rank;
-                Facts.Add(rank == 0 ? new DetailRow(HUDText.Text("details.rank"), HUDText.Text("details.rank-none"))
-                    : new DetailRow(HUDText.Text("details.rank"), rank));
+                var none = rank == 0 ? HUDText.Text("details.rank-none") : "";
+                Facts.Add(new DetailRow(HUDText.Text("details.rank"), none, rank));
             }
         }
 
@@ -117,7 +116,7 @@ namespace HyperRTS.Presentation.HUD.Panels
                     }
 
                     _text.Append(_text.Length > 0 ? ", " : "").Append(HUDText.DamageName(type.displayName))
-                        .Append(' ').Append(Percent(modifier.Multiplier));
+                        .Append(' ').Append(HUDText.Percent(modifier.Multiplier));
                 }
 
                 if (_text.Length > 0)
@@ -129,7 +128,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             if (entityManager.HasComponent<ArmorFacing>(entity))
             {
                 var facing = entityManager.GetComponentData<ArmorFacing>(entity);
-                var sides = HUDText.Text("details.armor-sides-value", Percent(facing.Front), Percent(facing.Side), Percent(facing.Rear));
+                var sides = HUDText.Text("details.armor-sides-value", HUDText.Percent(facing.Front), HUDText.Percent(facing.Side), HUDText.Percent(facing.Rear));
                 Facts.Add(new DetailRow(HUDText.Text("details.armor-sides"), sides));
             }
         }
@@ -148,7 +147,5 @@ namespace HyperRTS.Presentation.HUD.Panels
 
         private void AddFact(string nameKey, string valueKey, float value) =>
             Facts.Add(new DetailRow(HUDText.Text(nameKey), HUDText.Text(valueKey, value)));
-
-        private static string Percent(float multiplier) => $"{Mathf.RoundToInt(multiplier * 100f)}%";
     }
 }

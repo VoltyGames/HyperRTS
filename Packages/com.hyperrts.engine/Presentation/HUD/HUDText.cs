@@ -102,10 +102,7 @@ namespace HyperRTS.Presentation.HUD
         /// </summary>
         public virtual string Get(string key, params object[] arguments) => string.Format(English[key], arguments);
 
-        /// <summary>
-        /// Shown name of authored content: <paramref name="key"/> is entity.*, resource.*, ability.*, weapon.* or damage.* and
-        /// <paramref name="authored"/> is the display name it was authored with.
-        /// </summary>
+        /// <summary>Shown name of authored content under <paramref name="key"/> (entity.*, resource.*, ability.*, weapon.*, damage.*).</summary>
         public virtual string Name(string key, string authored) => authored;
 
         /// <summary>Optional text of a content key such as entity.war-factory.description; null when there is none.</summary>
@@ -128,6 +125,9 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>Whole seconds with the unit: "12 s".</summary>
         public static string Seconds(float seconds) => $"{Mathf.CeilToInt(seconds)} {Text("tooltip.seconds")}";
+
+        /// <summary>A multiplier as a whole percent: "75%".</summary>
+        public static string Percent(float multiplier) => $"{Mathf.RoundToInt(multiplier * 100f)}%";
 
         /// <summary>A weapon's designation as a member card shows it: weapon.m4a1 for M4A1.</summary>
         public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Name(Key("weapon", designation), designation);

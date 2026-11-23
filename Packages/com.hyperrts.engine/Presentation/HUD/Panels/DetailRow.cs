@@ -7,17 +7,10 @@ namespace HyperRTS.Presentation.HUD.Panels
         public readonly string Value;
         public readonly int Chevrons;
 
-        public DetailRow(string name, string value)
+        public DetailRow(string name, string value, int chevrons = 0)
         {
             Name = name;
             Value = value;
-            Chevrons = 0;
-        }
-
-        public DetailRow(string name, int chevrons)
-        {
-            Name = name;
-            Value = "";
             Chevrons = chevrons;
         }
     }

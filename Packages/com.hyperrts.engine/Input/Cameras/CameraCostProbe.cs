@@ -8,9 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Input.Cameras
 {
     /// <summary>
-    /// A player build run with <c>-camera-cost &lt;points file&gt;</c> and <c>-camera-cost-report &lt;path&gt;</c>: holds the
-    /// match camera at each point and height of the <see cref="CameraCostPlan"/>, records GPU and main-thread frame times,
-    /// writes a <see cref="CameraCostReport"/> and quits with 0, or logs why not and quits with 1.
+    /// Run with <c>-camera-cost &lt;points file&gt; -camera-cost-report &lt;path&gt;</c>: times frames at each point and height of
+    /// the <see cref="CameraCostPlan"/>, writes a <see cref="CameraCostReport"/> and quits 0, or quits 1 with the reason.
     /// </summary>
     public sealed class CameraCostProbe : PresentationBehaviour
     {
@@ -25,7 +24,6 @@ namespace HyperRTS.Input.Cameras
         private readonly FrameTiming[] _timing = new FrameTiming[1];
         private CameraCostPlan _plan;
         private string _reportPath;
-        private bool _failed;
 
         /// <summary>True when the command line asks for a cost run; the game reads it to start its match without a menu.</summary>
         public static bool IsRequested(string[] args) => Array.IndexOf(args, PointsFlag) >= 0;
@@ -88,44 +86,41 @@ namespace HyperRTS.Input.Cameras
             yield return new WaitForSecondsRealtime(WarmSeconds);
 
             var report = new CameraCostReport();
+            var gpu = new List<float>();
+            var cpu = new List<float>();
             foreach (var point in _plan.points)
             {
                 foreach (var height in _plan.heights)
                 {
-                    yield return Visit(controller, point, height, report);
-                    if (_failed)
+                    controller.LookAt(new Vector3(point.x, 0f, point.z), height, point.yaw);
+                    yield return Measure(gpu, cpu);
+                    if (gpu.Count == 0)
                     {
+                        Fail($"the GPU reported no frame times at '{point.name}', {height} m.");
                         yield break;
                     }
+
+                    report.results.Add(CameraCostResult.From(point.name, height, gpu, cpu));
                 }
             }
 
             Finish(report);
         }
 
-        private IEnumerator Visit(CameraController controller, CameraCostPoint point, float height, CameraCostReport report)
+        private IEnumerator Measure(List<float> gpu, List<float> cpu)
         {
-            controller.LookAt(new Vector3(point.x, 0f, point.z), height, point.yaw);
             for (var frame = 0; frame < _plan.settleFrames; frame++)
             {
                 yield return null;
             }
 
-            var gpu = new List<float>();
-            var cpu = new List<float>();
+            gpu.Clear();
+            cpu.Clear();
             for (var frame = 0; frame < _plan.sampleFrames; frame++)
             {
                 yield return null;
                 Sample(gpu, cpu);
             }
-
-            if (gpu.Count == 0)
-            {
-                Fail($"the GPU reported no frame times at '{point.name}', {height} m.");
-                yield break;
-            }
-
-            report.results.Add(CameraCostResult.From(point.name, height, gpu, cpu));
         }
 
         private static bool IsLive(out CameraController controller)
@@ -162,7 +157,6 @@ namespace HyperRTS.Input.Cameras
 
         private void Fail(string reason)
         {
-            _failed = true;
             Debug.LogError($"[HyperRTS] Camera cost run failed: {reason}");
             Application.Quit(ErrorCode);
         }

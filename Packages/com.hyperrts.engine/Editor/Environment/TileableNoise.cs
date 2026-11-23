@@ -181,6 +181,6 @@ namespace HyperRTS.Editor.Environment
             }
         }
 
-        private static int Wrap(int value, int period) => (value % period + period) % period;
+        internal static int Wrap(int value, int period) => (value % period + period) % period;
     }
 }

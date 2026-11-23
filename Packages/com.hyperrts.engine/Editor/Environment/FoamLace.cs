@@ -70,7 +70,7 @@ namespace HyperRTS.Editor.Environment
                 for (var dx = -1; dx <= 1; dx++)
                 {
                     var cell = new Vector2Int(cx + dx, cy + dy);
-                    var point = points[Wrap(cell.y, cells) * cells + Wrap(cell.x, cells)] + cell;
+                    var point = points[TileableNoise.Wrap(cell.y, cells) * cells + TileableNoise.Wrap(cell.x, cells)] + cell;
                     var distance = Vector2.Distance(p, point);
                     if (distance < nearest)
                     {
@@ -96,7 +96,5 @@ namespace HyperRTS.Editor.Environment
 
             return first;
         }
-
-        private static int Wrap(int index, int size) => ((index % size) + size) % size;
     }
 }
