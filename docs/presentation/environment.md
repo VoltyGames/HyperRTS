@@ -9,7 +9,7 @@ meshes.
 ## Atmosphere
 
 An `Atmosphere` component sits on the root of a weather's atmosphere prefab, with its sun, post-processing volume and
-`Wind`. When enabled it sets the skybox, ambient light, reflection cubemap, and turns Unity fog off. It writes the ground wetness each frame as the `GroundWetness` singleton and `_HyperRTSWetness`; `WetnessGroup` shows its children from a threshold of `_HyperRTSWetness`, so puddles also show in edit mode. A
+`Wind`. When enabled it sets the skybox, ambient light, reflection cubemap, and turns Unity fog off. It writes the ground wetness each frame as the `GroundWetness` singleton and `_HyperRTSWetness`, and its `mist` as the `GroundMist` singleton; `WetnessGroup` shows its children from a threshold of `_HyperRTSWetness`, so puddles also show in edit mode. A
 missing skybox or reflection is an error. Skyboxes use `HyperRTS/Sky`, which blends its photographed ground into haze
 below the horizon.
 
@@ -22,6 +22,16 @@ a project using it sets that define. `FogOfWarFeature` keeps orthographic captur
 impacts, burning wrecks and damaged buildings add haze to a coarse grid; it drifts downwind and thins. One blast's
 haze is capped in reach and amount, so a very large one smokes its own ground and no more. Other sources call
 `BattleHaze.Add(position, radius, amount)`.
+
+The density texture multiplies the weather's volumetric fog density, which is tiny (0.0006 to 0.0012 per metre, 800 m
+or more of sight), so a multiple of it stays faint: mist at 5 times the fog changed a view by a grey level or two.
+Mist therefore carries its own density and is divided by the weather's (`FogShape`, read from the volume stack
+each step, with the fog's height falloff) before they go in the texture, which stores unclamped half floats.
+
+- **Mist.** `Atmosphere.mist` (0 to 1) lays ground mist in hollows (cells at least 5 m under their 60 m surroundings)
+  and on banks within 2.5 m of the water. It rests on the ground, fades linearly to nothing 6 m up, and has an
+  extinction of `BattleHaze.MistMost` (0.12 per metre) times `mist`. The texture then has 4 m layers up the y axis; with
+  no mist it has two. A full layer takes 0.36 of the light looking straight down, about half at a 30 degree pitch.
 
 ## Wind
 

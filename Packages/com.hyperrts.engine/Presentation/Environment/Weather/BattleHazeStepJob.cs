@@ -5,7 +5,7 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment.Weather
 {
-    /// <summary>One <see cref="BattleHaze"/> step: drift downwind, spread to the neighbours, thin, then write the texels.</summary>
+    /// <summary>One <see cref="BattleHaze"/> step: drift downwind, spread to the neighbours, then thin.</summary>
     [BurstCompile]
     public struct BattleHazeStepJob : IJob
     {
@@ -13,8 +13,6 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         public NativeArray<float> Amounts;
         public NativeArray<float> Drifted;
-
-        [WriteOnly] public NativeArray<half> Texels;
 
         /// <summary>Cells the haze moves this step.</summary>
         public float2 Shift;
@@ -25,13 +23,10 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// <summary>Share of the haze left after thinning.</summary>
         public float Keep;
 
-        public int2 Roll;
-
         public void Execute()
         {
             Drift();
             SpreadAndThin();
-            WriteTexels();
         }
 
         // Each cell takes what lay upwind of it; clean air blows in past the map's edge.
@@ -66,22 +61,6 @@ namespace HyperRTS.Presentation.Environment.Weather
             }
         }
 
-        private void WriteTexels()
-        {
-            for (var z = 0; z < Cells; z++)
-            {
-                var cellZ = Wrap(z - Roll.y);
-                for (var y = 0; y < BattleHaze.Layers; y++)
-                {
-                    var row = (z * BattleHaze.Layers + y) * Cells;
-                    for (var x = 0; x < Cells; x++)
-                    {
-                        Texels[row + x] = (half)(1f + Amounts[Wrap(x - Roll.x) + cellZ * Cells]);
-                    }
-                }
-            }
-        }
-
         private readonly float At(int2 cell)
         {
             var onGrid = math.all(cell >= 0) && math.all(cell < Cells);
@@ -90,7 +69,5 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         private readonly float Clamped(int x, int z) =>
             Drifted[math.clamp(x, 0, Cells - 1) + math.clamp(z, 0, Cells - 1) * Cells];
-
-        private static int Wrap(int cell) => (cell % Cells + Cells) % Cells;
     }
 }

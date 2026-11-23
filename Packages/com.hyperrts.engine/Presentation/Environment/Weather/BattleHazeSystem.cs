@@ -8,6 +8,7 @@ using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Death;
+using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -21,7 +22,7 @@ namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
     /// Feeds the <see cref="BattleHaze"/> from impacts the local player sees (by splash), burning wrecks, damaged
-    /// buildings and collapses, steps it with the wind and hands its texture to the volumetric fog.
+    /// buildings and collapses, lays the ground mist, steps it with the wind and hands its texture to the volumetric fog.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -50,6 +51,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         private MapSettings _area;
         private readonly BattleHazeFog _fog = new();
         private Texture3D _texture;
+        private float _mist;
         private float _clock;
 
         /// <summary>This map's haze; null while it is off or no map is loaded.</summary>
@@ -74,7 +76,8 @@ namespace HyperRTS.Presentation.Environment.Weather
             }
 
             CompleteDependency();
-            Prepare(SystemAPI.GetSingleton<MapSettings>());
+            var mist = SystemAPI.TryGetSingleton(out GroundMist ground) ? ground.Level : 0f;
+            Prepare(SystemAPI.GetSingleton<MapSettings>(), mist);
             var deltaTime = SystemAPI.Time.DeltaTime;
             AddImpacts();
             AddSmoke(deltaTime);
@@ -88,24 +91,31 @@ namespace HyperRTS.Presentation.Environment.Weather
 
             // No Wind in the scene means still air.
             SystemAPI.TryGetSingleton(out WindState wind);
+            Haze.Fog = _fog.Shape();
             Haze.Advance(_clock, wind.Push * DriftPerStrength);
             _clock = 0f;
             _texture.SetPixelData(Haze.Texels, 0);
             _texture.Apply(false);
         }
 
-        // A new map, or one whose area changed, starts clear air.
-        private void Prepare(in MapSettings map)
+        // A new map, one whose area changed, or a new mist level starts clear air.
+        private void Prepare(in MapSettings map, float mist)
         {
-            if (Haze != null && _area.SameArea(map))
+            if (Haze != null && _area.SameArea(map) && mist == _mist)
             {
                 return;
             }
 
             Clear();
-            _area = map;
-            Haze = new BattleHaze(map.Min, math.cmax(map.Size));
-            _texture = new Texture3D(BattleHaze.Cells, BattleHaze.Layers, BattleHaze.Cells,
+            (_area, _mist) = (map, mist);
+            Haze = new BattleHaze(map.Min, math.cmax(map.Size), mist, _fog.Shape());
+            if (mist > 0f)
+            {
+                SystemAPI.TryGetSingleton(out TerrainHeight terrain);
+                Haze.LayMist(terrain, map.WaterLevel);
+            }
+
+            _texture = new Texture3D(BattleHaze.Cells, Haze.Layers, BattleHaze.Cells,
                 GraphicsFormat.R16_SFloat, TextureCreationFlags.None)
             {
                 name = "Battle Haze",

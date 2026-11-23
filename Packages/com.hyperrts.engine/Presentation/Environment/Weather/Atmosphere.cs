@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
-    /// One weather's sky, ambient light, ground wetness and vehicle dust and mud colours, on the root of an atmosphere prefab.
+    /// One weather's sky, ambient light, ground wetness, low-ground mist and vehicle dust and mud colours, on the root of an atmosphere prefab.
     /// Unity's built-in fog stays off, since URP's fog replaces it.
     /// </summary>
     [ExecuteAlways]
@@ -37,6 +37,10 @@ namespace HyperRTS.Presentation.Environment.Weather
         [Range(0f, 1f)]
         public float wetness;
 
+        [Tooltip("Mist lying in low ground here (valleys, river banks, hollows): 0 none, 1 thick. It needs battle haze on.")]
+        [Range(0f, 1f)]
+        public float mist;
+
         [Tooltip("Dust on vehicles driving dry ground here, as a dry light soil.")]
         public Color dustColor = new(0.45f, 0.4f, 0.33f);
 
@@ -44,6 +48,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         public Color mudColor = new(0.1f, 0.075f, 0.05f);
 
         private readonly SceneSingleton<GroundWetness> _wetness = new();
+        private readonly SceneSingleton<GroundMist> _mist = new();
 
         private void OnEnable()
         {
@@ -67,12 +72,14 @@ namespace HyperRTS.Presentation.Environment.Weather
         private void Update()
         {
             _wetness.Write(new GroundWetness { Level = wetness });
+            _mist.Write(new GroundMist { Level = mist });
             Shader.SetGlobalFloat(WetnessId, wetness);
         }
 
         protected override void OnDisabled()
         {
             _wetness.Remove();
+            _mist.Remove();
             Shader.SetGlobalFloat(WetnessId, 0f);
         }
 

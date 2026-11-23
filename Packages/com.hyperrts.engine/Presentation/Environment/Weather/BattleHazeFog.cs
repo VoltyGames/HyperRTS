@@ -13,6 +13,8 @@ namespace HyperRTS.Presentation.Environment.Weather
         // Above the weather's volume, so only the density texture and its tiling change; the rest is the weather's.
         private const float FogPriority = 100f;
 
+        private const float VolumetricScale = 0.144765f;
+
         private GameObject _host;
         private VolumeProfile _profile;
 #endif
@@ -33,6 +35,20 @@ namespace HyperRTS.Presentation.Environment.Weather
             volume.isGlobal = true;
             volume.priority = FogPriority;
             volume.sharedProfile = _profile;
+#endif
+        }
+
+        /// <summary>The fog as the camera's volume stack has it now, so the texture reads against the weather's density and height falloff.</summary>
+        public FogShape Shape()
+        {
+#if VOLUMETRIC_FOG
+            var fog = VolumeManager.instance.stack.GetComponent<FogVolumeComponent>();
+            var baseHeight = fog.volumetricFogBaseHeight.value;
+            // URP drops the density to 0.1% over the layer: scale height is the layer depth over ln 1000.
+            var scaleHeight = (fog.volumetricFogMaximumHeight.value - baseHeight) * VolumetricScale;
+            return new FogShape(fog.volumetricFogDensity.value, baseHeight, scaleHeight);
+#else
+            return new FogShape(1f, 0f, 1f);
 #endif
         }
 
