@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
 using UnityEditor;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Generators
@@ -10,6 +11,13 @@ namespace HyperRTS.Editor.Generators
     /// <summary>Every available <see cref="Generator"/> in run order, and running them.</summary>
     public static class GeneratorRunner
     {
+        // Runs in progress, so imports a run causes start no other.
+        [NoAutoStaticsCleanup]
+        private static int _running;
+
+        /// <summary>True while a generator or item runs.</summary>
+        public static bool Running => _running > 0;
+
         public static IReadOnlyList<Generator> All()
         {
             var all = TypeDiscovery.Instances<Generator>()
@@ -90,6 +98,7 @@ namespace HyperRTS.Editor.Generators
 
             try
             {
+                _running++;
                 generator.Run();
                 AssetDatabase.SaveAssets();
             }
@@ -97,6 +106,10 @@ namespace HyperRTS.Editor.Generators
             {
                 GeneratorRunLog.Record(generator.Name, "", exception.Message);
                 throw;
+            }
+            finally
+            {
+                _running--;
             }
 
             GeneratorRunLog.Record(generator.Name, "", null);
@@ -107,6 +120,7 @@ namespace HyperRTS.Editor.Generators
         {
             try
             {
+                _running++;
                 item.Run();
                 AssetDatabase.SaveAssets();
             }
@@ -114,6 +128,10 @@ namespace HyperRTS.Editor.Generators
             {
                 GeneratorRunLog.Record(generator.Name, item.Name, exception.Message);
                 throw;
+            }
+            finally
+            {
+                _running--;
             }
 
             GeneratorRunLog.Record(generator.Name, item.Name, null);

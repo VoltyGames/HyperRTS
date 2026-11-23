@@ -28,6 +28,30 @@ namespace HyperRTS.Editor.Authoring
             }
         }
 
+        /// <summary>
+        /// Fills every component under <paramref name="root"/> that takes values from its model, each even when another
+        /// fails; returns why each failed one did.
+        /// </summary>
+        public static List<string> FillAll(GameObject root)
+        {
+            var failures = new List<string>();
+            var filled = root.GetComponentsInChildren<Component>(true)
+                .Where(component => component != null && CanFill(component.GetType())).ToList();
+            foreach (var component in filled)
+            {
+                try
+                {
+                    Fill(component);
+                }
+                catch (InvalidOperationException failure)
+                {
+                    failures.Add(failure.Message);
+                }
+            }
+
+            return failures;
+        }
+
         [MenuItem(Menu)]
         private static void FillSelected()
         {
@@ -44,20 +68,18 @@ namespace HyperRTS.Editor.Authoring
             Selection.GetFiltered<GameObject>(SelectionMode.Assets).Select(AssetDatabase.GetAssetPath)
                 .Where(path => path.EndsWith(".prefab", StringComparison.Ordinal));
 
-        // A prefab whose model lacks a part stays unsaved, and the console names it; the others still fill.
+        // What a model lacks keeps its value as it was, and the console names it; the rest still fill and save.
         private static void FillPrefab(string path)
         {
             var root = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                var filled = root.GetComponentsInChildren<Component>(true)
-                    .Where(component => component != null && CanFill(component.GetType())).ToList();
-                filled.ForEach(Fill);
+                foreach (var failure in FillAll(root))
+                {
+                    Debug.LogError($"HyperRTS: fill from model on '{path}': {failure}");
+                }
+
                 PrefabUtility.SaveAsPrefabAsset(root, path);
-            }
-            catch (InvalidOperationException problem)
-            {
-                Debug.LogError($"HyperRTS: fill from model on '{path}': {problem.Message}");
             }
             finally
             {

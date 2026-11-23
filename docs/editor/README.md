@@ -97,8 +97,9 @@ fails and goes out of date alone; a failed item never stops the others.
 A generator that overrides `RunOnImport` to true also runs on its own: `GeneratorImport` runs it once per import batch
 (after the batch, through `delayCall`) when an imported, deleted or moved path is one it `Reads`, and of a generator
 with items only the items whose inputs the batch touched. By default `Reads` is an input or anything below an input
-folder; override it when the inputs are a list that lags a delete or when an output sits inside an input folder, so
-the step's own writes never start it again.
+folder; override it when the inputs are a list that lags a delete or when an output sits inside an input folder.
+Imports made while any generator or item runs start nothing, so a step that reimports what it reads never starts
+itself again, and a generator that throws holds back none of the others in the batch.
 
 A generator or item is **Out of date** when it never ran here, failed last time, or an input was written after its
 last run; a generator with items is out of date when any item is. **Run out of date** runs only those, in order, and

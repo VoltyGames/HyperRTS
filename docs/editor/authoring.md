@@ -59,7 +59,9 @@ A component that takes values from its model gets them through one contract: a `
 assembly (engine or game), found by type like a `HubPage`, so runtime assemblies keep no editor code. Its `Fill` sets
 the values from the model's art names alone, the same on every run, and throws naming the part the model lacks. Every
 fill gets a **Fill from model** button on its component, the Project window's **Assets ▸ HyperRTS ▸ Fill From Model**
-command, which fills every component of the selected prefabs and saves them, and `ModelFillRule`, which fills a
+command, which fills every component of the selected prefabs and saves them (a component whose model lacks a part
+keeps its values and the console names it), `ModelFillCommands.FillAll` for code that fills a loaded prefab and
+reports what failed, and `ModelFillRule`, which fills a
 snapshot, puts the component back and warns on the first value off from the model, with a **Fill From Model** fix.
 The engine fills the Motion Rig, Locomotion (wheelbase and rear axle), Sections (from the model's kept sections) and
 Grime (mud height at the road wheels' top, dust height at the hull's top).

@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
+using UnityEngine;
 
 namespace HyperRTS.Editor.Generators
 {
@@ -20,6 +22,12 @@ namespace HyperRTS.Editor.Generators
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
+            // A run's own imports (a hook reimporting the model it reads) would start it again, without end.
+            if (GeneratorRunner.Running)
+            {
+                return;
+            }
+
             var paths = imported.Concat(deleted).Concat(moved).Concat(movedFrom).ToList();
             var pending = Changed.Count + ChangedItems.Count > 0;
             foreach (var generator in GeneratorRunner.All().Where(generator => generator.RunOnImport))
@@ -70,14 +78,27 @@ namespace HyperRTS.Editor.Generators
             ChangedItems.Clear();
             foreach (var generator in GeneratorRunner.All())
             {
-                if (changedItems.TryGetValue(generator.Name, out var names))
+                // One failing generator holds back no other; the run log keeps the failure.
+                try
                 {
-                    GeneratorRunner.RunItems(generator, generator.Items.Where(item => names.Contains(item.Name)).ToList());
+                    RunChanged(generator, changed, changedItems);
                 }
-                else if (changed.Contains(generator.Name))
+                catch (Exception exception)
                 {
-                    GeneratorRunner.Run(generator);
+                    Debug.LogException(exception);
                 }
+            }
+        }
+
+        private static void RunChanged(Generator generator, HashSet<string> changed, Dictionary<string, HashSet<string>> changedItems)
+        {
+            if (changedItems.TryGetValue(generator.Name, out var names))
+            {
+                GeneratorRunner.RunItems(generator, generator.Items.Where(item => names.Contains(item.Name)).ToList());
+            }
+            else if (changed.Contains(generator.Name))
+            {
+                GeneratorRunner.Run(generator);
             }
         }
     }
