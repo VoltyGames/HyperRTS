@@ -2,22 +2,24 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
+using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Refine
 {
     /// <summary>
-    /// Rounds authored roads into curves and joins road ends to the roads they meet (<see cref="MapRoadJoiner"/>).
-    /// Ends on the seam or playable edge stay put.
+    /// Lays authored roads square over their crossings (<see cref="MapRoadCrossings"/>), rounds them into curves and
+    /// joins road ends to the roads they meet (<see cref="MapRoadJoiner"/>). Ends on the seam or playable edge stay put.
     /// </summary>
     public static class MapRoadRefiner
     {
         /// <summary>Metres between the points of a refined road.</summary>
         public const float Step = 3f;
 
-        public static void Refine(MapSpec spec, MapClimate climate, MapSymmetry symmetry)
+        public static void Refine(MapSpec spec, MapClimate climate, MapSymmetry symmetry, MapDecks decks)
         {
+            MapRoadCrossings.Align(spec.roads, spec.rivers, climate, decks);
             var roads = new List<MapRefinedRoad>();
             foreach (var road in spec.roads)
             {

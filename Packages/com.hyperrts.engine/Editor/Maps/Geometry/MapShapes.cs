@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         public const float FordBed = 0.3f;
         public const float FordWade = 0.15f;
 
-        private const float FordBanks = 8f;
+        public const float FordBanks = 8f;
 
         public MapShapes(MapLayout layout, MapPalette palette, MapDecks decks, MapClimate climate)
         {

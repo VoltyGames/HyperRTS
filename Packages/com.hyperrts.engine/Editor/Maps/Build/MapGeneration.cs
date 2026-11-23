@@ -105,7 +105,7 @@ namespace HyperRTS.Editor.Maps.Build
 
         private static MapGeneration LayChecked(MapProject project, MapIssues issues)
         {
-            MapRefiner.Refine(project.Spec, project.Climate);
+            MapRefiner.Refine(project.Spec, project.Climate, project.Decks);
             var layout = MapSymmetryCopier.Expand(project.Spec, issues);
             return issues.HasErrors ? null : new MapGeneration(project, layout, issues);
         }

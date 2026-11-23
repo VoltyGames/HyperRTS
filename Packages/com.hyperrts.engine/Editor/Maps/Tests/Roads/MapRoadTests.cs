@@ -20,9 +20,11 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         private static List<Vector2> Refine(MapSpec spec, int road)
         {
             var symmetry = MapSymmetry.Parse(spec.symmetry);
-            MapRoadRefiner.Refine(spec, MapFixture.Climate(), symmetry);
+            MapRoadRefiner.Refine(spec, MapFixture.Climate(), symmetry, NoDecks());
             return MapGeometry.ToVectors(spec.roads[road].points);
         }
+
+        private static MapDecks NoDecks() => MapDecks.Read(MapFixture.Item<MapPalette>("Palette"));
 
         private static MapSpec SpecWith(params MapRoadSpec[] roads)
         {
@@ -46,6 +48,24 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
             Assert.Greater(MapGeometry.DistanceToPolyline(line, corner), 8f, "the corner is cut off by the arc");
             Assert.GreaterOrEqual(MapFixture.TightestRadius(line), 25f * 0.85f);
             Assert.IsTrue(line.All(p => p.y <= 0.5f), "the road stays in the authored sector");
+        }
+
+        [Test]
+        public void ARoadDrawnAskewOverAFord_CrossesSquareToTheRiver_AndKeepsItsEnds()
+        {
+            var spec = SpecWith(MapFixture.Road("Asphalt", new Vector2(-75f, -115f), new Vector2(-45f, -5f)));
+            var river = new MapRiverSpec { width = 12f };
+            river.points.AddRange(new[] { new MapPoint(-119f, -60f), new MapPoint(-1f, -60f) });
+            river.crossings.Add(new MapCrossingSpec { along = 0.5f, kind = MapCrossingSpec.Ford });
+            spec.rivers.Add(river);
+
+            var line = Refine(spec, 0);
+            var over = line.Where(p => Mathf.Abs(p.y + 60f) < 10f).ToList();
+            Assert.Greater(over.Count, 3);
+            Assert.IsTrue(over.All(p => Mathf.Abs(p.x + 60f) < 0.01f), "the road runs straight across at the ford");
+            Assert.Less((line[0] - new Vector2(-75f, -115f)).magnitude, 0.01f);
+            Assert.Less((line[^1] - new Vector2(-45f, -5f)).magnitude, 0.01f);
+            Assert.GreaterOrEqual(MapFixture.TightestRadius(line), 25f * 0.85f, "it bends onto the crossing at the class radius");
         }
 
         [Test]
@@ -152,7 +172,7 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
             var corner = new[] { new Vector2(-100f, -100f), new Vector2(-100f, -60f), new Vector2(-60f, -60f) };
             var sharp = SpecWith(MapFixture.Road("Asphalt", corner));
             var refined = SpecWith(MapFixture.Road("Asphalt", corner));
-            MapRoadRefiner.Refine(refined, MapFixture.Climate(), MapSymmetry.Parse(refined.symmetry));
+            MapRoadRefiner.Refine(refined, MapFixture.Climate(), MapSymmetry.Parse(refined.symmetry), NoDecks());
 
             Assert.IsTrue(Check(sharp).Warnings.Any(w => w.Message.Contains("bends")));
             Assert.IsFalse(Check(refined).Warnings.Any(w => w.Message.Contains("bends")));

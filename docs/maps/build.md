@@ -32,7 +32,9 @@ symmetric. A surface prop that lands in the backdrop is drawn as its `backdropMo
 
 `MapRefiner` reshapes the sector before the copies are made, and the file keeps the coarse lines: rivers meander but
 stay straight at their ends and crossings, roads become curves, ravines smooth and fork, and a road end that stops
-short of another is joined onto it.
+short of another is joined onto it. A crossing spans square to its river, so a road that passes within the crossing's
+`width` of it is first laid straight along the span and its level ground (`MapRoadCrossings`), then rounded like any other corner.
+Authored points within the road class's corner radius of that straight run are dropped, since no bend fits there.
 
 ## Ground and rendering
 
