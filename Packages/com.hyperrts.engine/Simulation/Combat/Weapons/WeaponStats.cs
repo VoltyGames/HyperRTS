@@ -172,6 +172,14 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Damage per second before armor, with the cooldown floored at its minimum.</summary>
         public float Dps => hit.damage / Mathf.Max(cooldown, 0.05f);
 
+        /// <summary>The transforms the weapon aims and fires through: its muzzles, turret and barrel.</summary>
+        public IEnumerable<Transform> AimPoints()
+        {
+            var points = new List<Transform> { muzzle, turret, barrel };
+            points.AddRange(extraMuzzles);
+            return points.FindAll(point => point != null);
+        }
+
         /// <summary>The weapon's magazine, full.</summary>
         public Ammo BakeAmmo() => Ammo.Create(rounds, reloadTime, refill);
 

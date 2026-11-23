@@ -103,11 +103,9 @@ namespace HyperRTS.Simulation.Destruction
                 var sections = SectionShape.Bake(authoring.sections, building.maxHealth, materials);
                 var models = new List<SectionModel>(sections.Count);
                 var looks = new List<SectionLook>(sections.Count);
-                foreach (var entry in authoring.sections)
-                {
-                    models.Add(Model(entry));
-                    looks.Add(SectionLook.Untouched);
-                }
+                var parts = new List<SectionPart>();
+                var weapons = new List<SectionWeapon>();
+                ListEntries(authoring, models, looks, parts, weapons);
 
                 var rubble = authoring.rubble != null
                     ? GetEntity(authoring.rubble, TransformUsageFlags.Dynamic)
@@ -119,12 +117,33 @@ namespace HyperRTS.Simulation.Destruction
                     SectionsSetup.AddRepairable(writer, authoring.repairSeconds);
                 }
 
+                SectionsSetup.AddCarried(writer, parts, weapons);
                 writer.AddBuffer(models);
                 writer.AddBuffer(looks);
                 writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });
                 if (authoring.clips.IsSet)
                 {
                     writer.Add(authoring.clips);
+                }
+            }
+
+            private void ListEntries(SectionsAuthoring authoring, List<SectionModel> models, List<SectionLook> looks,
+                List<SectionPart> parts, List<SectionWeapon> weapons)
+            {
+                for (var i = 0; i < authoring.sections.Length; i++)
+                {
+                    var entry = authoring.sections[i];
+                    models.Add(Model(entry));
+                    looks.Add(SectionLook.Untouched);
+                    foreach (var part in entry.parts ?? Array.Empty<GameObject>())
+                    {
+                        parts.Add(new SectionPart { Section = (byte)i, Part = Find(part) });
+                    }
+
+                    foreach (var mount in entry.weapons ?? Array.Empty<int>())
+                    {
+                        weapons.Add(new SectionWeapon { Section = (byte)i, Mount = (byte)mount });
+                    }
                 }
             }
 

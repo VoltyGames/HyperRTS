@@ -50,6 +50,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Weapon mounts the primary and extra weapons take.</summary>
         public int WeaponCount => 1 + extraWeapons.Count;
 
+        /// <summary>The stats of mount <paramref name="index"/>: 0 the main weapon, 1 and up the extra weapons.</summary>
+        public WeaponStats MountStats(int index) => index == 0 ? stats : extraWeapons[index - 1].stats;
+
         /// <summary>An extra weapon: its own stats (with its ammo) plus its targeting and unlock.</summary>
         [Serializable]
         public class WeaponSlot

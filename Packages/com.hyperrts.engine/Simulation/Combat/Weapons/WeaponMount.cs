@@ -29,6 +29,9 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Set by the upgrades module once the owner has the required research.</summary>
         public bool Unlocked;
 
+        /// <summary>Held silent by the section that carries it while that section is broken.</summary>
+        public bool Silenced;
+
         /// <summary>An extra weapon that may pick its own target when it can't hit the shared one.</summary>
         public bool Independent;
 
@@ -55,7 +58,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             return mount;
         }
 
-        public bool Enabled => RequiredResearchTypeId == 0 || Unlocked;
+        public bool Enabled => (RequiredResearchTypeId == 0 || Unlocked) && !Silenced;
 
         /// <summary>A usable weapon that runs dry and needs reloading.</summary>
         public bool IsLimited => Enabled && Ammo.Limited;

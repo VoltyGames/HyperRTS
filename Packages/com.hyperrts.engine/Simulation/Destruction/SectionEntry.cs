@@ -60,6 +60,12 @@ namespace HyperRTS.Simulation.Destruction
         [Tooltip("Sections it rests on, by their intact model; it falls once none of them reach the ground.")]
         public GameObject[] supports;
 
+        [Tooltip("Moving parts (a turret, a gun, a door, a radar head) that hide and show with the intact model.")]
+        public GameObject[] parts;
+
+        [Tooltip("Weapon mounts that are silent while the section is broken: 0 the main weapon, 1 and up the extra weapons.")]
+        public int[] weapons;
+
         /// <summary>What stops this section baking on <paramref name="owner"/>; null when it is fine.</summary>
         public string Problem(SectionsAuthoring owner, int index)
         {
@@ -95,7 +101,28 @@ namespace HyperRTS.Simulation.Destruction
                 return $"Section '{intact.name}' on '{owner.name}' has more than {SectionModel.MostHoles} holed variants.";
             }
 
-            return ModelProblem(owner);
+            return CarriedProblem(owner) ?? ModelProblem(owner);
+        }
+
+        private string CarriedProblem(SectionsAuthoring owner)
+        {
+            foreach (var part in parts ?? Array.Empty<GameObject>())
+            {
+                if (part == null || !part.transform.IsChildOf(owner.transform))
+                {
+                    return $"Section '{intact.name}' on '{owner.name}' lists a part that is missing or outside the building.";
+                }
+            }
+
+            foreach (var mount in weapons ?? Array.Empty<int>())
+            {
+                if (mount is < 0 or > byte.MaxValue)
+                {
+                    return $"Section '{intact.name}' on '{owner.name}' lists the weapon mount {mount}, which is out of range.";
+                }
+            }
+
+            return null;
         }
 
         // Hidden in the prefab so editor views and map captures show the standing building.

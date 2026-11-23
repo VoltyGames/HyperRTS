@@ -16,8 +16,8 @@ namespace HyperRTS.Presentation.Destruction
 {
     /// <summary>
     /// Shows each <see cref="Section"/> standing, breaking or broken to match the building's broken mask. Breaks this
-    /// client saw play their clip, effect and debris; a loaded or unseen building shows the end state. The intact model
-    /// hides in place; the others are copied in from their prefabs while they show.
+    /// client saw play their clip, effect and debris; a loaded or unseen building shows the end state. The intact model and
+    /// the section's parts hide in place; the others are copied in from their prefabs while they show.
     /// </summary>
     [WorldSystemFilter(SimulationWorlds.Presented)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
@@ -26,9 +26,6 @@ namespace HyperRTS.Presentation.Destruction
     {
         /// <summary>Metres around a section's box that still count as an impact on it.</summary>
         private const float ImpactMargin = 0.5f;
-
-        /// <summary>Seconds an impact still decides how a section breaks.</summary>
-        private const float ImpactMemory = 2f;
 
         private enum Phase
         {
@@ -66,7 +63,7 @@ namespace HyperRTS.Presentation.Destruction
                 var context = new Context
                 {
                     Entity = entity, Sections = sections, Models = models, Looks = looks, Place = place.ValueRO, Now = now,
-                    Copies = copies,
+                    Copies = copies, Carried = SystemAPI.GetBuffer<SectionPart>(entity),
                 };
                 Refresh(context, building.ValueRO.Broken, impacts, ref shown.ValueRW);
             }
@@ -205,7 +202,7 @@ namespace HyperRTS.Presentation.Destruction
             shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
             at.Looks[index] = look;
             var hangs = phase == Phase.Broken && at.Sections[index].Hangs(broken);
-            Display(at, parts, at.Models[index], look, phase, hangs);
+            Display(at, parts, index, look, phase, hangs);
         }
 
         /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
@@ -217,30 +214,27 @@ namespace HyperRTS.Presentation.Destruction
                 return Phase.Broken;
             }
 
-            var clip = Pick(SystemAPI.GetComponent<SectionClips>(at.Entity), at.Sections[index], look, at.Now);
+            var clip = SystemAPI.GetComponent<SectionClips>(at.Entity).Pick(at.Sections[index], look, at.Now);
             var range = new ClipRange { StartRow = clip.StartRow, FrameCount = clip.FrameCount, Fps = clip.Fps };
             at.Copies.Play(at.Entity, at.Models[index].Pieces, PlayingClip.Started(range, at.Now));
             look.BreakEnd = at.Now + clip.Seconds;
             return Phase.Breaking;
         }
 
-        /// <summary>Blown in by a hit from outside, out by one from inside, else falling apart on its own.</summary>
-        private static SectionClip Pick(in SectionClips clips, in Section section, in SectionLook look, float now)
+        private void Display(Context at, NativeList<Entity> parts, int index, in SectionLook look, Phase phase, bool hangs)
         {
-            if (now - look.ImpactTime > ImpactMemory)
+            var model = at.Models[index];
+            var standing = phase == Phase.Standing;
+            var hidden = !standing || look.Hole != 0;
+            _switch.SetBranch(parts, model.Intact, HideReason.Section, hidden);
+            foreach (var carried in at.Carried)
             {
-                return clips.Collapse;
+                if (carried.Section == index)
+                {
+                    _switch.SetBranch(parts, carried.Part, HideReason.Section, hidden);
+                }
             }
 
-            var fromOutside = math.dot(look.Impact - section.Center, section.Outward) > 0f;
-            return fromOutside ? clips.BlownIn : clips.BlownOut;
-        }
-
-        private void Display(Context at, NativeList<Entity> parts, in SectionModel model, in SectionLook look, Phase phase,
-            bool hangs)
-        {
-            var standing = phase == Phase.Standing;
-            _switch.SetBranch(parts, model.Intact, HideReason.Section, !standing || look.Hole != 0);
             for (var i = 0; i < SectionModel.MostHoles; i++)
             {
                 at.Copies.Set(at.Entity, model.Hole(i).Model, standing && look.Hole == i + 1);
@@ -289,6 +283,7 @@ namespace HyperRTS.Presentation.Destruction
             public DynamicBuffer<Section> Sections;
             public DynamicBuffer<SectionModel> Models;
             public DynamicBuffer<SectionLook> Looks;
+            public DynamicBuffer<SectionPart> Carried;
             public LocalToWorld Place;
             public float Now;
             public ModelCopies Copies;

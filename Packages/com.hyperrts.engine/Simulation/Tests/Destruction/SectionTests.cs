@@ -251,6 +251,30 @@ namespace HyperRTS.Simulation.Tests.Destruction
         }
 
         [Test]
+        public void WeaponOfABrokenSection_StaysSilent_UntilRepaired()
+        {
+            var house = House(float3.zero);
+            World.AddWeapon(house, new TestWeapon { Range = 8f, Damage = 10f, Cooldown = 0.2f });
+            SectionsSetup.AddCarried(World.Writer(house), new SectionPart[0],
+                new[] { new SectionWeapon { Section = Front, Mount = 0 } });
+            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 6f), new TestUnit { MaxHealth = 10000f, Speed = 0f });
+            World.Run(1f);
+            Assert.Less(World.GetHealth(enemy), 10000f, "the house fires while whole");
+            Shoot(house, new float3(0f, 1.5f, 30f), new float3(0f, 1.5f, 0f), 100f);
+            World.Tick();
+            var health = World.GetHealth(enemy);
+
+            World.Run(1f);
+            Assert.AreEqual(health, World.GetHealth(enemy), "silent while the section is broken");
+
+            World.QueueDamage(new DamageEvent { Target = house, Profile = new DamageProfile { Amount = -100f } });
+            World.Run(1f);
+
+            Assert.IsFalse(IsBroken(house, Front));
+            Assert.Less(World.GetHealth(enemy), health, "fires again after the repair");
+        }
+
+        [Test]
         public void FallenGroundFloorWall_OpensItsCells_AndLeavesRubble()
         {
             var rubble = World.MakePrefab(World.EntityManager.CreateEntity());

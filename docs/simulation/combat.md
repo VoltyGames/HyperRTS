@@ -76,9 +76,7 @@ jobs, which can't carry a query.
 
 ## Destruction
 
-Building sections and toppling scenery. Presentation is in [client](../presentation/rendering.md#destruction). Combat uses it, never the
-other way round: `DamageSystem` routes hits into sections through `SectionDamage` and fells `Topple` pieces away from
-their `LethalHit`.
+Building sections and toppling scenery; presentation is in [client](../presentation/rendering.md#destruction). `DamageSystem` routes hits into sections through `SectionDamage` and fells `Topple` pieces away from their `LethalHit`.
 
 | Type | Role |
 | --- | --- |
@@ -92,16 +90,20 @@ their `LethalHit`.
 
 `SectionsAuthoring` splits a building into up to 64 `Section`s (walls, roofs, floors). Each is a box with a share of
 the health, a `SectionMaterial`, a floor, the sections it rests on, and flags for anchored (stands on the ground) and
-exterior. The building's health is the sum of its sections', so the HUD, AI, capture and repair read it as usual.
+exterior. The building's health is the sum of its sections', so the HUD, AI, capture and repair read it.
 
 - **Filling the list.** **Fill from parts** lists sections from `<Name>_Intact` children and their `<Name>_Broken`
-  siblings and guesses the rest for you to correct. For a building from the structure tool
+  siblings and guesses the rest. For a building from the structure tool
   ([tools](../../../docs/art/generators.md#structure-builds)), **Fill from model** reads the sections its model's import
   keeps (`ModelSections`, from the FBX properties `section` and `hole` on the intact and holed meshes): materials,
-  floors, supports, facing and holes. It measures each box from the intact mesh and takes the `In`, `Out` and
+  floors, supports, facing, holes and parts (nodes with `section` but no `order`), and gives a mount to the section whose parts hold its
+  muzzle, turret or barrel. It measures each box from the intact mesh and takes the `In`, `Out` and
   `Collapse` break clips from the [rigid](../presentation/animation.md#rigid-vertex-animation) clip table the pieces
-  play. Map its material names in `materialNames` (no name matching). A refill keeps shares and decks of existing entries. The baker reads the stored
-  prefab, never the file. `SectionsRule` checks pairs, materials, clips and that everything reaches the ground.
+  play. Map material names in `materialNames`. A refill keeps shares and decks of existing entries. `SectionsRule` checks pairs, materials, clips, parts, mounts and that everything reaches the ground.
+- **Parts and weapons.** A section lists `parts` (a turret, a door) and `weapons` (mount indexes, 0 the
+  main weapon, 1 and up the `extraWeapons`). While the section is broken or holed, its parts hide through
+  `HideReason.Section` like its intact model and show on repair. Its mounts are silent while it is broken
+  (`WeaponMount.Silenced`) and fire again after repair.
 - **Hits.** A direct hit lands in full on the first section its line enters, and its splash on the others in reach.
   The section's material multiplies the damage after the building's armor. A section at 0 breaks.
 - **Collapse.** `SectionCollapseSystem` floods supports up from the anchored sections after each break. Whatever no

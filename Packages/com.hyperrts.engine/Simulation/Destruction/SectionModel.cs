@@ -85,6 +85,9 @@ namespace HyperRTS.Simulation.Destruction
     [System.Serializable]
     public struct SectionClips : IComponentData
     {
+        /// <summary>Seconds an impact still decides how a section breaks.</summary>
+        public const float ImpactMemory = 2f;
+
         /// <summary>Blown inward by a hit from outside.</summary>
         public SectionClip BlownIn;
 
@@ -93,6 +96,18 @@ namespace HyperRTS.Simulation.Destruction
 
         /// <summary>Falling apart with nothing hitting it, once its supports are gone.</summary>
         public SectionClip Collapse;
+
+        /// <summary>Blown in by a hit from outside, out by one from inside, else falling apart on its own.</summary>
+        public readonly SectionClip Pick(in Section section, in SectionLook look, float now)
+        {
+            if (now - look.ImpactTime > ImpactMemory)
+            {
+                return Collapse;
+            }
+
+            var fromOutside = math.dot(look.Impact - section.Center, section.Outward) > 0f;
+            return fromOutside ? BlownIn : BlownOut;
+        }
 
         /// <summary>Whether all three clips have frames, which pieces need to play.</summary>
         public readonly bool IsSet => BlownIn.FrameCount > 0 && BlownOut.FrameCount > 0 && Collapse.FrameCount > 0;

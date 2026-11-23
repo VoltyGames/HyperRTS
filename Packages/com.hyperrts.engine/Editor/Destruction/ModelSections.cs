@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Destruction;
 using UnityEditor;
 using UnityEngine;
@@ -56,18 +57,34 @@ namespace HyperRTS.Editor.Destruction
             public Vector3 center;
         }
 
+        [Serializable]
+        public struct MovingPart
+        {
+            public string node;
+
+            [Tooltip("The section it hides and shows with, by name.")]
+            public string section;
+        }
+
         [Tooltip("By mask bit.")]
         public List<Part> sections = new();
 
         public List<Hole> holes = new();
 
+        public List<MovingPart> parts = new();
+
         /// <summary>The sections inside the model at <paramref name="path"/>, or null.</summary>
         public static ModelSections Find(string path) => AssetDatabase.LoadAllAssetsAtPath(path).OfType<ModelSections>().FirstOrDefault();
 
-        /// <summary>Adds what one FBX node's properties say: a section, a hole or nothing.</summary>
+        /// <summary>Adds what one FBX node's properties say: a section, a moving part, a hole or nothing.</summary>
         public void Read(GameObject node, FbxProperties properties)
         {
-            if (properties.TryString(SectionProperty, out var section))
+            // A moving part names its section the same way, but has no order.
+            if (properties.TryString(SectionProperty, out var owner) && !properties.Has("order"))
+            {
+                parts.Add(new MovingPart { node = node.name, section = owner });
+            }
+            else if (properties.TryString(SectionProperty, out var section))
             {
                 var exterior = properties.Has("outward");
                 sections.Add(new Part
@@ -111,6 +128,12 @@ namespace HyperRTS.Editor.Destruction
                     throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' names holed mesh '{holed}', which has no '{HoleProperty}'.");
                 }
             }
+
+            var lost = parts.Find(moving => sections.All(part => part.name != moving.section));
+            if (lost.node != null)
+            {
+                throw new InvalidDataException($"HyperRTS: {source} part '{lost.node}' belongs to section '{lost.section}', which no mesh names as its section.");
+            }
         }
 
         /// <summary>
@@ -152,15 +175,13 @@ namespace HyperRTS.Editor.Destruction
                 floor = part.floor,
                 anchored = part.anchored,
                 exterior = part.exterior,
+                parts = parts.Where(moving => moving.section == part.name).Select(moving => FindModel(owner, moving.node)).ToArray(),
+                weapons = Weapons(owner, part.name),
                 supports = part.supports.Select(name => FindModel(owner, sections.Find(other => other.name == name).intact)).ToArray(),
                 pieces = Hidden(owner, part.pieces),
                 stub = Hidden(owner, part.stub),
                 heap = Hidden(owner, part.heap),
-                holes = part.holed.Select(name => new SectionsAuthoring.Hole
-                {
-                    model = Hidden(owner, name),
-                    center = owner.transform.InverseTransformPoint(intact.transform.TransformPoint(holes.Find(hole => hole.model == name).center)),
-                }).ToArray(),
+                holes = Holes(owner, part, intact),
             };
             if (keptAt >= 0)
             {
@@ -175,6 +196,34 @@ namespace HyperRTS.Editor.Destruction
             }
 
             return entry;
+        }
+
+        private SectionsAuthoring.Hole[] Holes(SectionsAuthoring owner, Part part, GameObject intact) =>
+            part.holed.Select(name => new SectionsAuthoring.Hole
+            {
+                model = Hidden(owner, name),
+                center = owner.transform.InverseTransformPoint(intact.transform.TransformPoint(holes.Find(hole => hole.model == name).center)),
+            }).ToArray();
+
+        // The mounts whose muzzle, turret or barrel sit under one of the section's moving parts.
+        private int[] Weapons(SectionsAuthoring owner, string sectionName)
+        {
+            var carriers = parts.Where(moving => moving.section == sectionName).Select(moving => FindModel(owner, moving.node).transform).ToList();
+            if (!owner.TryGetComponent<WeaponAuthoring>(out var weapons))
+            {
+                return Array.Empty<int>();
+            }
+
+            var mounts = new List<int>();
+            for (var m = 0; m < weapons.WeaponCount; m++)
+            {
+                if (weapons.MountStats(m).AimPoints().Any(point => carriers.Any(point.IsChildOf)))
+                {
+                    mounts.Add(m);
+                }
+            }
+
+            return mounts.ToArray();
         }
 
         private static GameObject Hidden(SectionsAuthoring owner, string modelName)

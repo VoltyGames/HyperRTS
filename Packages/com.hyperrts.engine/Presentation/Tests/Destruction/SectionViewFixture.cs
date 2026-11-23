@@ -123,6 +123,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _em.AddBuffer<Section>(house);
             _em.AddBuffer<SectionLook>(house);
             _em.AddBuffer<SectionModel>(house);
+            _em.AddBuffer<SectionPart>(house);
             var sections = _em.GetBuffer<Section>(house);
             var looks = _em.GetBuffer<SectionLook>(house);
             var list = _em.GetBuffer<SectionModel>(house);
@@ -158,6 +159,14 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _em.GetBuffer<Child>(house).Add(new Child { Value = piece });
             _em.GetBuffer<LinkedEntityGroup>(house).Add(piece);
             return piece;
+        }
+
+        // A moving part of one section: a mesh under the house, beside its intact model.
+        protected Entity AddPart(Entity house, int section)
+        {
+            var part = Piece(house);
+            _em.GetBuffer<SectionPart>(house).Add(new SectionPart { Section = (byte)section, Part = part });
+            return part;
         }
 
         // Any other model, which bakes as a prefab of its own.

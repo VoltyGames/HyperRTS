@@ -42,6 +42,25 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
+        public void SectionParts_HideWithTheIntactModel_AndShowOnRepair()
+        {
+            var house = Building(0ul, false, out _);
+            var turret = AddPart(house, 1);
+            var door = AddPart(house, 2);
+            Update(0f);
+            Assert.IsTrue(Drawn(turret));
+
+            SetBroken(house, 0b0010ul);
+            Update(0f);
+            Assert.IsFalse(Drawn(turret), "hidden with its section");
+            Assert.IsTrue(Drawn(door), "another section's part stays");
+
+            SetBroken(house, 0ul);
+            Update(0f);
+            Assert.IsTrue(Drawn(turret));
+        }
+
+        [Test]
         public void SeenBreak_PlaysItsClipOnceThenShowsTheHeap()
         {
             var house = Building(0ul, true, out var models);
