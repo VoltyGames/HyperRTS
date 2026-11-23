@@ -74,6 +74,21 @@ namespace HyperRTS.Presentation.HUD
             ["producer.waiting-population"] = "No population room",
             ["producer.waiting-pad"] = "Every pad taken",
             ["producer.offline"] = "Offline",
+            ["details.weapon"] = "Weapon",
+            ["details.weapon-line"] = "{0}, {1:0} m",
+            ["details.target-ground"] = "Ground",
+            ["details.target-naval"] = "Naval",
+            ["details.target-air"] = "Air",
+            ["details.target-projectile"] = "Projectiles",
+            ["details.armor"] = "Armor",
+            ["details.armor-sides"] = "Front, side, rear",
+            ["details.armor-sides-value"] = "{0} / {1} / {2}",
+            ["details.speed"] = "Speed",
+            ["details.speed-value"] = "{0:0.#} m/s",
+            ["details.vision"] = "Vision",
+            ["details.range-value"] = "{0:0} m",
+            ["details.passengers"] = "Passengers",
+            ["details.passengers-value"] = "{0} / {1}",
         };
 
         [AutoStaticsCleanup]
@@ -86,7 +101,7 @@ namespace HyperRTS.Presentation.HUD
         public virtual string Get(string key, params object[] arguments) => string.Format(English[key], arguments);
 
         /// <summary>
-        /// Shown name of authored content: <paramref name="key"/> is entity.*, resource.*, ability.* or weapon.* and
+        /// Shown name of authored content: <paramref name="key"/> is entity.*, resource.*, ability.*, weapon.* or damage.* and
         /// <paramref name="authored"/> is the display name it was authored with.
         /// </summary>
         public virtual string Name(string key, string authored) => authored;
@@ -114,6 +129,9 @@ namespace HyperRTS.Presentation.HUD
 
         /// <summary>A weapon's designation as a member card shows it: weapon.m4a1 for M4A1.</summary>
         public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Name(Key("weapon", designation), designation);
+
+        /// <summary>A damage type as armor lists it: damage.small-arms for Small Arms.</summary>
+        public static string DamageName(string displayName) => Current.Name(Key("damage", displayName), displayName);
 
         public static string AbilityName(string name) => Current.Name(Key("ability", name), name);
 

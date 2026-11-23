@@ -15,9 +15,37 @@
 }
 
 .hud-single__details {
-  flex-grow: 1;
+  flex-shrink: 0;
+  width: 200px;
   margin-left: 12px;
   justify-content: center;
+}
+
+.hud-details {
+  flex-grow: 1;
+  flex-direction: row;
+  align-items: flex-start;
+  margin-left: 16px;
+}
+
+.hud-details__column {
+  flex-grow: 1;
+  flex-basis: 0;
+  margin-right: 16px;
+}
+
+.hud-detail {
+  margin-bottom: 3px;
+}
+
+.hud-detail .hud-tooltip__stat-name {
+  margin-right: 10px;
+}
+
+.hud-detail .hud-tooltip__stat-value {
+  flex-shrink: 1;
+  white-space: normal;
+  -unity-text-align: upper-right;
 }
 
 .hud-single__name {

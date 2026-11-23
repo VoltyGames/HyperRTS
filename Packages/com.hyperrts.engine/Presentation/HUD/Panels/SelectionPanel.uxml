@@ -9,6 +9,10 @@
           <ui:Label name="health-text" class="hud-single__caption" />
           <HyperRTS.Presentation.HUD.HUDBar name="construction" class="hud-single__construction" />
         </ui:VisualElement>
+        <ui:VisualElement name="details" class="hud-details">
+          <ui:VisualElement name="weapons" class="hud-details__column" />
+          <ui:VisualElement name="facts" class="hud-details__column" />
+        </ui:VisualElement>
       </ui:VisualElement>
       <ui:VisualElement name="squad" class="hud-squad">
         <ui:VisualElement name="members" class="hud-squad__members" />

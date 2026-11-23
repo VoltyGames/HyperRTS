@@ -22,6 +22,7 @@ namespace HyperRTS.Presentation.HUD.Panels
         private readonly Label _healthText;
         private readonly HUDBar _construction;
         private readonly ProductionQueueView _queue;
+        private readonly UnitDetails _details;
         private readonly SquadView _squad;
         private readonly VisualElement _groups;
         private int _hash = -1;
@@ -38,6 +39,7 @@ namespace HyperRTS.Presentation.HUD.Panels
             _healthText = Root.Require<Label>("health-text");
             _construction = Root.Require<HUDBar>("construction");
             _queue = new ProductionQueueView(Root.Require<VisualElement>("queue"), layouts.ProductionQueueViewSlot);
+            _details = new UnitDetails(Root.Require<VisualElement>("details"), layouts.TooltipStat);
             _squad = new SquadView(Root.Require<VisualElement>("squad"), layouts.SquadMemberCard);
             _groups = Root.Require<VisualElement>("groups");
         }
@@ -72,6 +74,7 @@ namespace HyperRTS.Presentation.HUD.Panels
                     ? context.View.GetColor(entityManager.GetComponentData<Owner>(entity).Value)
                     : new StyleColor(StyleKeyword.Null);
                 _name.text = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
+                _details.Invalidate();
             }
             else if (selected.Count > 1)
             {
@@ -104,6 +107,7 @@ namespace HyperRTS.Presentation.HUD.Panels
                 _construction.Fraction = entityManager.GetComponentData<ConstructionProgress>(entity).Value;
             }
 
+            _details.Refresh(context, entity);
             _squad.Refresh(context, entity);
             _queue.Refresh(context, entity);
         }
