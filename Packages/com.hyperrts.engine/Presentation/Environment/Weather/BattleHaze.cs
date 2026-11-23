@@ -41,6 +41,9 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// <summary>The thickest haze, in multiples of the weather's own fog density.</summary>
         public const float Most = 2f;
 
+        /// <summary>Once the thickest cell is thinner than this, the grid clears and still air stops rewriting the texture.</summary>
+        public const float Faintest = 0.01f;
+
         private const int TexelBatch = 4096;
 
         private readonly CellGrid _grid;
@@ -49,7 +52,15 @@ namespace HyperRTS.Presentation.Environment.Weather
         private MistField _mist;
         private NativeArray<float> _amounts;
         private NativeArray<float> _drifted;
+
+        // The amounts the texels are drawn from, so the grid takes haze while a rewrite runs.
+        private NativeArray<float> _drawn;
         private NativeArray<half> _texels;
+        private JobHandle _rewrite;
+        private FogShape _fog;
+        private bool _hazy;
+        private bool _stale = true;
+        private bool _written;
 
         /// <summary>
         /// A square grid of side <paramref name="side"/> metres from <paramref name="min"/>. A <paramref name="mist"/>
@@ -57,7 +68,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// </summary>
         public BattleHaze(float2 min, float side, float mist, FogShape fog)
         {
-            Fog = fog;
+            _fog = fog;
             Side = side;
             CellSize = side / Cells;
             Layers = mist > 0f
@@ -70,9 +81,11 @@ namespace HyperRTS.Presentation.Environment.Weather
             _mist = new MistField(Cells * Cells);
             _amounts = new NativeArray<float>(Cells * Cells, Allocator.Persistent);
             _drifted = new NativeArray<float>(Cells * Cells, Allocator.Persistent);
+            _drawn = new NativeArray<float>(Cells * Cells, Allocator.Persistent);
             _texels = new NativeArray<half>(Cells * Layers * Cells, Allocator.Persistent);
             // A zero step writes clear air: every texel at the weather's own density.
             Advance(0f, float2.zero);
+            Finish();
         }
 
         public float Side { get; }
@@ -83,12 +96,21 @@ namespace HyperRTS.Presentation.Environment.Weather
         public int Layers { get; }
 
         /// <summary>The weather's fog now; the system refreshes it so mist keeps its own density as the weather changes.</summary>
-        public FogShape Fog { get; set; }
+        public FogShape Fog
+        {
+            get => _fog;
+            set
+            {
+                // Only the mist reads the fog's shape.
+                _stale |= Layers > PlainLayers && !value.Equals(_fog);
+                _fog = value;
+            }
+        }
 
         /// <summary>Repeats of the density texture per metre, so one repeat spans the grid.</summary>
         public float Tiling => 1f / Side;
 
-        /// <summary>The fog density texture's R16F texels, x fastest, then the layers, then z.</summary>
+        /// <summary>The fog density texture's R16F texels, x fastest, then the layers, then z. Read them after <see cref="Finish"/>.</summary>
         public NativeArray<half> Texels => _texels;
 
         /// <summary>
@@ -118,8 +140,11 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// </summary>
         public void LayMist(in TerrainHeight terrain, float waterLevel)
         {
+            _rewrite.Complete();
             _mist.Lay(_grid, terrain, waterLevel);
+            _stale = true;
             Advance(0f, float2.zero);
+            Finish();
         }
 
         /// <summary>The mist's extinction per metre at world <paramref name="height"/> over <paramref name="position"/>.</summary>
@@ -157,10 +182,11 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         /// <summary>
         /// Drifts the haze <paramref name="deltaTime"/> seconds down a wind of <paramref name="drift"/> m/s, spreads
-        /// and thins it, and rewrites the <see cref="Texels"/>.
+        /// and thins it, and starts rewriting the <see cref="Texels"/> on worker threads unless they would come out the same.
         /// </summary>
         public void Advance(float deltaTime, float2 drift)
         {
+            _rewrite.Complete();
             new BattleHazeStepJob
             {
                 Amounts = _amounts,
@@ -169,9 +195,17 @@ namespace HyperRTS.Presentation.Environment.Weather
                 Share = Spread * deltaTime,
                 Keep = math.exp2(-deltaTime / HalfLife),
             }.Run();
-            new BattleHazeTexelJob
+            var hazy = ClearFaint();
+            if (!hazy && !_hazy && !_stale)
             {
-                Amounts = _amounts,
+                return;
+            }
+
+            (_hazy, _stale, _written) = (hazy, false, true);
+            _drawn.CopyFrom(_amounts);
+            _rewrite = new BattleHazeTexelJob
+            {
+                Amounts = _drawn,
                 Ground = _mist.Ground,
                 Pooling = _mist.Pooling,
                 Texels = _texels,
@@ -179,15 +213,49 @@ namespace HyperRTS.Presentation.Environment.Weather
                 Layers = Layers,
                 Side = Side,
                 MistExtinction = _mistExtinction,
-                Fog = Fog,
-            }.Schedule(_texels.Length, TexelBatch).Complete();
+                Fog = _fog,
+            }.Schedule(_texels.Length, TexelBatch);
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        // True while any cell holds haze worth drawing; a fainter grid clears.
+        private bool ClearFaint()
+        {
+            var thickest = 0f;
+            foreach (var amount in _amounts)
+            {
+                thickest = math.max(thickest, amount);
+            }
+
+            if (thickest >= Faintest)
+            {
+                return true;
+            }
+
+            for (var i = 0; i < _amounts.Length; i++)
+            {
+                _amounts[i] = 0f;
+            }
+
+            return false;
+        }
+
+        /// <summary>Waits for the rewrite <see cref="Advance"/> started; true when the <see cref="Texels"/> changed since the last call.</summary>
+        public bool Finish()
+        {
+            _rewrite.Complete();
+            var written = _written;
+            _written = false;
+            return written;
         }
 
         public void Dispose()
         {
+            _rewrite.Complete();
             _mist.Dispose();
             _amounts.Dispose();
             _drifted.Dispose();
+            _drawn.Dispose();
             _texels.Dispose();
         }
     }

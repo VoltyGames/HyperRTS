@@ -45,11 +45,33 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
         }
 
         [Test]
+        public void ClearAir_SkipsTheRewriteUntilHazeComes()
+        {
+            _haze.Advance(Step, float2.zero);
+            Assert.IsFalse(_haze.Finish(), "clear air draws the same texels");
+
+            _haze.Add(Middle, 12f, 2f);
+            _haze.Advance(Step, float2.zero);
+            Assert.IsTrue(_haze.Finish());
+        }
+
+        [Test]
+        public void FaintHaze_Clears()
+        {
+            _haze.Add(Middle, 12f, BattleHaze.Faintest * 2f);
+
+            Run(BattleHaze.HalfLife * 2f, float2.zero);
+
+            Assert.AreEqual(0f, _haze.Total());
+        }
+
+        [Test]
         public void Texels_ShiftACentredMapToWorldZero()
         {
             var centred = new BattleHaze(new float2(-256f, -256f), 512f, 0f, Fog);
             centred.Add(new float2(2f, 2f), 1f, 1f);
             centred.Advance(0f, float2.zero);
+            centred.Finish();
 
             // The fog reads texel 0 at world 0 to 4 m, so the haze there lands in the first texel of both layers.
             Assert.AreEqual(2f, (float)centred.Texels[0], 0.01f);

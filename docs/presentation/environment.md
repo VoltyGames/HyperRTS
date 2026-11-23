@@ -22,7 +22,9 @@ a project using it sets that define. `FogOfWarFeature` keeps orthographic captur
 **Battle haze.** While `PresentationQuality.BattleHaze` is on, `BattleHazeSystem` thickens the fog over a fight. Seen
 impacts, burning wrecks and damaged buildings add haze to a coarse grid; it drifts downwind and thins. One blast's
 haze is capped in reach and amount, so a very large one smokes its own ground and no more. Other sources call
-`BattleHaze.Add(position, radius, amount)`.
+`BattleHaze.Add(position, radius, amount)`. Each step rewrites the density texture on worker threads from a copy of
+the grid and uploads it the next frame. Still, clear air skips both: the grid clears once its
+thickest cell is under `BattleHaze.Faintest`.
 
 Mist carries its own density, divided by the weather's volumetric fog density (`FogShape`, read from the volume stack
 each step, with the fog's height falloff) before both go in the half-float density texture. The weather's density is

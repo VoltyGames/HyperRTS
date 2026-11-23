@@ -1,9 +1,10 @@
+using System;
 using Unity.Mathematics;
 
 namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>The weather's volumetric fog as the density texture meets it: its base density and how it thins with height.</summary>
-    public readonly struct FogShape
+    public readonly struct FogShape : IEquatable<FogShape>
     {
         /// <summary>Extinction per metre at <see cref="BaseHeight"/>, which the density texture multiplies.</summary>
         public readonly float Density;
@@ -22,5 +23,12 @@ namespace HyperRTS.Presentation.Environment.Weather
 
         /// <summary>The share of <see cref="Density"/> the fog keeps at world <paramref name="height"/>.</summary>
         public float Multiplier(float height) => math.exp(-math.max(height - BaseHeight, 0f) / ScaleHeight);
+
+        public bool Equals(FogShape other) =>
+            Density == other.Density && BaseHeight == other.BaseHeight && ScaleHeight == other.ScaleHeight;
+
+        public override bool Equals(object other) => other is FogShape shape && Equals(shape);
+
+        public override int GetHashCode() => HashCode.Combine(Density, BaseHeight, ScaleHeight);
     }
 }

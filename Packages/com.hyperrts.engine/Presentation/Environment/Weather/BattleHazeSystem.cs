@@ -78,6 +78,13 @@ namespace HyperRTS.Presentation.Environment.Weather
             CompleteDependency();
             var mist = SystemAPI.TryGetSingleton(out GroundMist ground) ? ground.Level : 0f;
             Prepare(SystemAPI.GetSingleton<MapSettings>(), mist);
+            // The last step's rewrite ran on worker threads since then.
+            if (Haze.Finish())
+            {
+                _texture.SetPixelData(Haze.Texels, 0);
+                _texture.Apply(false);
+            }
+
             var deltaTime = SystemAPI.Time.DeltaTime;
             AddImpacts();
             AddSmoke(deltaTime);
@@ -94,8 +101,6 @@ namespace HyperRTS.Presentation.Environment.Weather
             Haze.Fog = _fog.Shape();
             Haze.Advance(_clock, wind.Push * DriftPerStrength);
             _clock = 0f;
-            _texture.SetPixelData(Haze.Texels, 0);
-            _texture.Apply(false);
         }
 
         // A new map, one whose area changed, or a new mist level starts clear air.
