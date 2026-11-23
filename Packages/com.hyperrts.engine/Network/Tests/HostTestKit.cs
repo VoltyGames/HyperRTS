@@ -5,6 +5,7 @@ using HyperRTS.Network.Session;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Tests;
+using HyperRTS.Simulation.Veterancy;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
@@ -122,7 +123,7 @@ namespace HyperRTS.Network.Tests
             return query.GetSingletonEntity();
         }
 
-        /// <summary>A unit prefab made a ghost in both worlds, as <see cref="PlayerGhostSystem"/> does players.</summary>
+        /// <summary>A veteran-capable unit prefab made a ghost in both worlds, as <see cref="PlayerGhostSystem"/> does players.</summary>
         public Entity GhostUnitPrefab(byte owner, string name)
         {
             var config = new GhostPrefabCreation.Config
@@ -136,6 +137,7 @@ namespace HyperRTS.Network.Tests
             foreach (var world in new[] { Client, Host })
             {
                 prefab = world.SpawnUnit(owner, float3.zero, new TestUnit { Name = name });
+                world.EntityManager.AddComponent<Experience>(prefab);
                 GhostPrefabCreation.ConvertToGhostPrefab(world.EntityManager, prefab, config);
             }
 

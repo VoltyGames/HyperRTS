@@ -14,6 +14,7 @@ namespace HyperRTS.Presentation.HUD
         };
 
         private static readonly Vector2[] ChevronRight = { new(0.3f, 0.1f), new(0.7f, 0.5f), new(0.3f, 0.9f) };
+        private static readonly Vector2[] ChevronUp = { new(0.1f, 0.7f), new(0.5f, 0.3f), new(0.9f, 0.7f) };
         private static readonly Vector2[] ChevronLeft = { new(0.7f, 0.1f), new(0.3f, 0.5f), new(0.7f, 0.9f) };
 
         private HUDGlyphShape _shape;
@@ -62,6 +63,9 @@ namespace HyperRTS.Presentation.HUD
                     break;
                 case HUDGlyphShape.ChevronRight:
                     PaintChevron(painter, box, ChevronRight);
+                    break;
+                case HUDGlyphShape.ChevronUp:
+                    PaintChevron(painter, box, ChevronUp);
                     break;
                 case HUDGlyphShape.ChevronLeft:
                     PaintChevron(painter, box, ChevronLeft);
@@ -126,5 +130,6 @@ namespace HyperRTS.Presentation.HUD
         Lightning,
         ChevronRight,
         ChevronLeft,
+        ChevronUp,
     }
 }

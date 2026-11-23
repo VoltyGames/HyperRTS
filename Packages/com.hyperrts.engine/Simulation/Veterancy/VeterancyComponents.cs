@@ -1,13 +1,14 @@
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
+using Unity.Netcode;
 
 namespace HyperRTS.Simulation.Veterancy
 {
-    /// <summary>Experience earned from kills and the rank it reached (0 = none).</summary>
+    /// <summary>Experience earned from kills and the rank it reached (0 = none). Only the rank replicates, for the HUD.</summary>
     public struct Experience : IComponentData
     {
         public float Points;
-        public byte Rank;
+        [GhostField] public byte Rank;
     }
 
     /// <summary>Experience threshold of rank index + 1, ascending.</summary>

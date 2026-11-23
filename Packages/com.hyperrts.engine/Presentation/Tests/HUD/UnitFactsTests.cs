@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Veterancy;
 using NUnit.Framework;
 using Unity.Entities;
 using UnityEngine;
@@ -41,6 +42,25 @@ namespace HyperRTS.Presentation.Tests.HUD
             Assert.AreEqual("Bullet 25%", facts.Facts[0].Value, "a multiplier of 1 is not listed");
             Assert.AreEqual("2 / 5", facts.Facts[2].Value);
             Object.DestroyImmediate(bullets);
+        }
+
+        [Test]
+        public void Read_ShowsRankAsChevrons_OnlyForEntitiesWithExperience()
+        {
+            var facts = new UnitFacts();
+            var plain = _em.CreateEntity();
+            facts.Read(_em, plain, Entity.Null);
+            Assert.IsEmpty(facts.Facts);
+
+            var veteran = _em.CreateEntity(typeof(Experience));
+            facts.Read(_em, veteran, Entity.Null);
+            Assert.AreEqual("None", facts.Facts[0].Value);
+            Assert.AreEqual(0, facts.Facts[0].Chevrons);
+
+            _em.SetComponentData(veteran, new Experience { Rank = 2 });
+            facts.Read(_em, veteran, Entity.Null);
+            Assert.AreEqual("Rank", facts.Facts[0].Name);
+            Assert.AreEqual(2, facts.Facts[0].Chevrons);
         }
     }
 }

@@ -58,9 +58,9 @@ One selected entity shows its icon, name and health, and beside them a details b
 `UnitFacts` a few times a second) in two columns. Weapons (designation or "Weapon", what each can hit and its range),
 armor (the damage types it scales and, with `ArmorFacing`, the front, side and rear share taken) and speed come from
 the entity type's prefab, found through `PrefabRegistry`, which host and client bake alike, so both show the same
-numbers: they are the type's base values, not a live upgrade. Vision range and passengers out of capacity come from the
-entity, whose `VisionRange` and `Cargo` replicate. A line appears only when its component exists, and a type with no
-loaded prefab shows no weapons, armor or speed. Experience is not replicated, so the panel shows no rank. A group
+numbers: they are the type's base values, not a live upgrade. Vision range, passengers out of capacity and rank (up-pointing chevrons, "None" at rank 0) come from the
+entity, whose `VisionRange`, `Cargo` and `Experience.Rank` replicate. A line appears only when its component exists, and a type with no
+loaded prefab shows no weapons, armor or speed. A group
 selection shows one tile per entity type with a count. Rows reuse the `HUDTooltipStat` template, and the text keys are
 `details.*`, with `damage.*` names for armor.
 

@@ -4,6 +4,7 @@ using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Transport;
+using HyperRTS.Simulation.Veterancy;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using UnityEngine;
@@ -12,7 +13,7 @@ namespace HyperRTS.Presentation.HUD.Panels
 {
     /// <summary>
     /// What one selected entity says about itself: its weapons, armor and speed from its type's prefab, which host and
-    /// client bake alike, and its sight and passengers from the entity, which are replicated. A line appears only
+    /// client bake alike, and its sight, passengers and rank from the entity, which are replicated. A line appears only
     /// when the component exists.
     /// </summary>
     public sealed class UnitFacts
@@ -43,6 +44,12 @@ namespace HyperRTS.Presentation.HUD.Panels
             }
 
             ReadPassengers(entityManager, entity, prefab);
+            if (entityManager.HasComponent<Experience>(entity))
+            {
+                var rank = entityManager.GetComponentData<Experience>(entity).Rank;
+                Facts.Add(rank == 0 ? new DetailRow(HUDText.Text("details.rank"), HUDText.Text("details.rank-none"))
+                    : new DetailRow(HUDText.Text("details.rank"), rank));
+            }
         }
 
         private void ReadWeapons(EntityManager entityManager, Entity entity)

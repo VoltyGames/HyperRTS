@@ -8,6 +8,10 @@
   -unity-font-style: bold;
 }
 
+.hud-detail__chevron {
+  color: var(--hud-text);
+}
+
 .hud-single__caption {
   font-size: 11px;
   color: var(--hud-text-muted);
@@ -23,4 +27,4 @@
   background-color: var(--hud-badge-bg);
   border-radius: var(--hud-radius-tiny);
 }
-
+

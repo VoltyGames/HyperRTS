@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.HUD.Panels
     {
         private readonly VisualElement _column;
         private readonly VisualTreeAsset _template;
-        private readonly List<(VisualElement Row, Label Name, Label Value)> _rows = new();
+        private readonly List<(VisualElement Row, Label Name, Label Value, VisualElement Chevrons)> _rows = new();
 
         public DetailRows(VisualElement column, VisualTreeAsset template)
         {
@@ -24,7 +24,10 @@ namespace HyperRTS.Presentation.HUD.Panels
                 var row = _template.CloneRoot();
                 row.AddToClassList("hud-detail");
                 _column.Add(row);
-                _rows.Add((row, row.Require<Label>("name"), row.Require<Label>("value")));
+                var chevrons = new VisualElement { pickingMode = PickingMode.Ignore };
+                chevrons.AddToClassList("hud-detail__chevrons");
+                row.Add(chevrons);
+                _rows.Add((row, row.Require<Label>("name"), row.Require<Label>("value"), chevrons));
             }
 
             for (var i = 0; i < _rows.Count; i++)
@@ -35,7 +38,25 @@ namespace HyperRTS.Presentation.HUD.Panels
                 {
                     SetText(_rows[i].Name, rows[i].Name);
                     SetText(_rows[i].Value, rows[i].Value);
+                    ShowChevrons(_rows[i].Value, _rows[i].Chevrons, rows[i].Chevrons);
                 }
+            }
+        }
+
+        private static void ShowChevrons(Label value, VisualElement chevrons, int count)
+        {
+            value.SetHidden(count > 0);
+            chevrons.SetHidden(count == 0);
+            while (chevrons.childCount < count)
+            {
+                var chevron = new HUDGlyph(HUDGlyphShape.ChevronUp);
+                chevron.AddToClassList("hud-detail__chevron");
+                chevrons.Add(chevron);
+            }
+
+            for (var i = 0; i < chevrons.childCount; i++)
+            {
+                chevrons[i].SetHidden(i >= count);
             }
         }
 

@@ -144,7 +144,8 @@ fails the bake.
 ## Veterancy
 
 Units gain ranks from kills. `VeterancyAuthoring` sets thresholds and bonuses. A kill pays the victim's resource cost
-times `MatchRules.ExperiencePerCost` to the last hostile attacker.
+times `MatchRules.ExperiencePerCost` to the last hostile attacker. Only `Experience.Rank` is a ghost field, for the
+health bars and the selection panel; the points stay on the server.
 
 ## Upgrades
 

@@ -89,6 +89,8 @@ namespace HyperRTS.Presentation.HUD
             ["details.range-value"] = "{0:0} m",
             ["details.passengers"] = "Passengers",
             ["details.passengers-value"] = "{0} / {1}",
+            ["details.rank"] = "Rank",
+            ["details.rank-none"] = "None",
         };
 
         [AutoStaticsCleanup]

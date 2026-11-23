@@ -48,6 +48,16 @@
   -unity-text-align: upper-right;
 }
 
+.hud-detail__chevrons {
+  flex-direction: row;
+}
+
+.hud-detail__chevron {
+  width: 12px;
+  height: 12px;
+  margin-left: -2px;
+}
+
 .hud-single__name {
   padding: 0;
   margin-bottom: 6px;
