@@ -25,14 +25,14 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>A lone pass stores its rut depth times this, leaving room to deepen. Matches RUT_LONE_SHARE.</summary>
         public const float RutLoneShare = 0.4f;
 
-        /// <summary>The deepest a rut gets, as a multiple of the deepest lone pass: where the stored R saturates, for every vehicle. Matches RUT_CAP.</summary>
+        /// <summary>The deepest a rut gets, as a multiple of the deepest lone pass: where the stored R saturates, for every vehicle.</summary>
         public const float RutCap = 1f / RutLoneShare;
 
         /// <summary>The share of a lone pass's depth that each further pass adds.</summary>
         public const float RutDeepening = 0.3f;
 
         public const float FullWakeSpeed = 8f;
-        public const float WakeReachSeconds = 0.5f;
+        private const float WakeReachSeconds = 0.5f;
 
         // Half width in metres of the strip one soldier treads, and how far it bends plants and crops.
         private const float FootWidth = 0.3f;
@@ -96,8 +96,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         public void AddFootprintScar(float2 center, float2 forward, float2 size, float share) =>
             Scars.Add(Stamp(center, forward, size * 0.5f, new float4(0f, share, 0f, share)));
 
-        // A bowl as wide as the stamp but with no depth takes the brush's round, soft-edged path.
         /// <summary>A soft, ragged disc scorched to <paramref name="scorch"/>, with no depth and no churn: burnt grass.</summary>
+        // A bowl as wide as the stamp but with no depth takes the brush's round, soft-edged path.
         public void AddScorch(float2 center, float radius, float scorch) =>
             Scars.Add(Disc(center, radius, new float4(0f, math.saturate(scorch), 1f, 0f)));
 

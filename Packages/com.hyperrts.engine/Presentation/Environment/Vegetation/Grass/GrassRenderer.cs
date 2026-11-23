@@ -27,7 +27,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
         // Keeps LitTeam's silhouette and ground markers off grass; RowCrop.shader writes the same bit.
         private const float GroundCoverStencil = 64f;
 
-        private GrassComputeInputs _kernels;
+        private GrassComputeInputs _inputs;
         private Material[] _materials;
 
         private protected override ScatterSettings Settings
@@ -40,17 +40,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             }
         }
 
-        private protected override ScatterComputeInputs Inputs => _kernels;
+        private protected override ScatterComputeInputs Inputs => _inputs;
 
         private protected override void BuildInputs()
         {
-            _kernels = new GrassComputeInputs(compute, field, terrain);
+            _inputs = new GrassComputeInputs(compute, field, terrain);
             _materials = field.plants.ConvertAll(Instanced).ToArray();
         }
 
         private protected override ScatterField Field => field;
 
-        private protected override List<GrassBatch> NewBatches() => new() { new GrassBatch(field, _kernels, _materials) };
+        private protected override List<GrassBatch> NewBatches() => new() { new GrassBatch(field, _inputs, _materials) };
 
         private Material Instanced(GrassPlant plant)
         {
@@ -62,8 +62,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
 
         private protected override void ReleaseInputs()
         {
-            _kernels?.Dispose();
-            _kernels = null;
+            _inputs?.Dispose();
+            _inputs = null;
             if (_materials != null)
             {
                 Array.ForEach(_materials, Object.DestroyImmediate);

@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Maps.Heights
 
             // Ravines, roads and bridges each reshape what the last left, so they stay in order.
             var open = heights.Copy();
-            CutRavines(heights, shapes, terrain.waterLevel);
+            CutRavines(heights, open, shapes, terrain.waterLevel);
             var carved = heights.Copy();
             MapRoadLeveller.Level(heights, open, shapes, terrain.waterLevel);
             RaiseBridges(heights, carved, shapes);
@@ -152,9 +152,8 @@ namespace HyperRTS.Editor.Maps.Heights
         /// Flat floor, steep walls and a gentle rim slope easing into them; ravines open out gently at their ends and
         /// never cut down to the water. Where branches meet the main cut the deeper cut wins.
         /// </summary>
-        private static void CutRavines(MapHeights heights, MapShapes shapes, float water)
+        private static void CutRavines(MapHeights heights, MapHeights open, MapShapes shapes, float water)
         {
-            var open = heights.Copy();
             foreach (var ravine in shapes.Ravines)
             {
                 var (line, spec) = (ravine.Line, ravine.Spec);

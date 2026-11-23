@@ -23,17 +23,17 @@ namespace HyperRTS.Presentation.Rendering
 
         public void OnUpdate(ref SystemState state)
         {
-            var roots = new UnitRoots
+            var roots = new UnitPartCheck
             {
                 Parents = SystemAPI.GetComponentLookup<Parent>(true),
                 Units = SystemAPI.GetComponentLookup<UnitTag>(true),
             };
-            var em = state.EntityManager;
+            var entityManager = state.EntityManager;
             var parts = new NativeList<Entity>(Allocator.Temp);
             using var rendered = _rendered.ToEntityArray(Allocator.Temp);
             foreach (var entity in rendered)
             {
-                var onLayer = (em.GetSharedComponent<RenderFilterSettings>(entity).RenderingLayerMask & UnitRenderingLayer.Mask) != 0;
+                var onLayer = (entityManager.GetSharedComponent<RenderFilterSettings>(entity).RenderingLayerMask & UnitRenderingLayer.Mask) != 0;
                 if (!onLayer && roots.IsUnitPart(entity))
                 {
                     parts.Add(entity);
@@ -43,13 +43,13 @@ namespace HyperRTS.Presentation.Rendering
             // Setting a shared component moves the entity, so collect first.
             foreach (var part in parts)
             {
-                var settings = em.GetSharedComponent<RenderFilterSettings>(part);
+                var settings = entityManager.GetSharedComponent<RenderFilterSettings>(part);
                 settings.RenderingLayerMask |= UnitRenderingLayer.Mask;
-                em.SetSharedComponent(part, settings);
+                entityManager.SetSharedComponent(part, settings);
             }
         }
 
-        private struct UnitRoots
+        private struct UnitPartCheck
         {
             public ComponentLookup<Parent> Parents;
             public ComponentLookup<UnitTag> Units;

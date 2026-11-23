@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Rendering.ScreenOverlay
 
         private ScreenOverlayPass _pass;
 
-        public override void Create() => _pass = new ScreenOverlayPass(Pass);
+        public override void Create() => _pass = new ScreenOverlayPass();
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {

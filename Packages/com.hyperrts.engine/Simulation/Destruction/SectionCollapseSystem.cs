@@ -14,7 +14,6 @@ namespace HyperRTS.Simulation.Destruction
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
     public partial struct SectionCollapseSystem : ISystem
     {
-
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
@@ -29,7 +28,7 @@ namespace HyperRTS.Simulation.Destruction
                 Now = SystemAPI.Time.ElapsedTime,
                 Buildings = SystemAPI.GetComponentLookup<SectionedBuilding>(false),
                 Sections = SystemAPI.GetBufferLookup<Section>(false),
-                Health = SystemAPI.GetComponentLookup<Health>(false),
+                Healths = SystemAPI.GetComponentLookup<Health>(false),
                 Floors = SystemAPI.GetComponentLookup<IntactFloors>(false),
                 Repairables = SystemAPI.GetComponentLookup<Repairable>(true),
             }.Schedule();
@@ -43,7 +42,7 @@ namespace HyperRTS.Simulation.Destruction
             public double Now;
             public ComponentLookup<SectionedBuilding> Buildings;
             public BufferLookup<Section> Sections;
-            public ComponentLookup<Health> Health;
+            public ComponentLookup<Health> Healths;
             public ComponentLookup<IntactFloors> Floors;
             [ReadOnly] public ComponentLookup<Repairable> Repairables;
 
@@ -51,7 +50,7 @@ namespace HyperRTS.Simulation.Destruction
             {
                 var building = Buildings[entity];
                 var due = building.Falling != 0 && Now >= building.NextFall;
-                if ((building.Broken == building.Checked && !due) || !Common.Combat.Health.IsAlive(Health, entity))
+                if ((building.Broken == building.Checked && !due) || !Health.IsAlive(Healths, entity))
                 {
                     return;
                 }
@@ -69,9 +68,9 @@ namespace HyperRTS.Simulation.Destruction
                 // Section shares can sum to a hair under the building's health, which would leave a heap alive.
                 if ((SectionedBuilding.All(sections.Length) & ~building.Broken) == 0 && !Repairables.HasComponent(entity))
                 {
-                    var health = Health[entity];
+                    var health = Healths[entity];
                     health.Current = 0f;
-                    Health[entity] = health;
+                    Healths[entity] = health;
                 }
 
                 Buildings[entity] = building;
@@ -101,7 +100,7 @@ namespace HyperRTS.Simulation.Destruction
             private void Fall(Entity entity, ref SectionedBuilding building, DynamicBuffer<Section> sections)
             {
                 var due = building.DueToFall(sections);
-                var health = Health[entity];
+                var health = Healths[entity];
                 for (var i = 0; i < sections.Length; i++)
                 {
                     if ((due & (1ul << i)) != 0)
@@ -115,7 +114,7 @@ namespace HyperRTS.Simulation.Destruction
                     health.Current = Repairable.Health(sections);
                 }
 
-                Health[entity] = health;
+                Healths[entity] = health;
                 building.Fell |= due;
                 building.Checked = building.Broken;
                 building.NextFall = building.Falling != 0 ? Now + SectionedBuilding.FallDelay : 0;

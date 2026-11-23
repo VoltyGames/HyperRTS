@@ -68,7 +68,7 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
         [Test]
         public void Texels_ShiftACentredMapToWorldZero()
         {
-            var centred = new BattleHaze(new float2(-256f, -256f), 512f, 0f, Fog);
+            using var centred = new BattleHaze(new float2(-256f, -256f), 512f, 0f, Fog);
             centred.Add(new float2(2f, 2f), 1f, 1f);
             centred.Advance(0f, float2.zero);
             centred.Finish();
@@ -77,7 +77,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
             Assert.AreEqual(2f, (float)centred.Texels[0], 0.01f);
             Assert.AreEqual(2f, (float)centred.Texels[BattleHaze.Cells], 0.01f);
             Assert.AreEqual(1f, (float)centred.Texels[1], 0.01f, "clear air keeps the weather's own fog");
-            centred.Dispose();
         }
 
         [Test]
@@ -92,7 +91,9 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
             }
 
             var terrain = TerrainHeight.Create(heights, new int2(samples, samples), float2.zero, 8f, Allocator.Temp);
-            var mist = new BattleHaze(float2.zero, 512f, 0.5f, Fog);
+            heights.Dispose();
+            using var blob = terrain.Blob;
+            using var mist = new BattleHaze(float2.zero, 512f, 0.5f, Fog);
             mist.LayMist(terrain, -100f);
             var ridge = new float2(60f, 256f);
 
@@ -106,9 +107,6 @@ namespace HyperRTS.Presentation.Tests.Environment.Weather
             var expected = 1f + 0.5f * BattleHaze.MistMost * (1f - 2f / BattleHaze.MistDepth) / (Fog.Density * Fog.Multiplier(2f));
             Assert.AreEqual(expected, lowest, expected * 0.02f, "mist holds its own extinction whatever the fog's density");
             Assert.AreEqual(1f, (float)mist.Texels[row + mist.Layers / 4 * BattleHaze.Cells], 0.01f, "the layers high over it stay clear");
-            mist.Dispose();
-            terrain.Blob.Dispose();
-            heights.Dispose();
         }
 
         private void Run(float seconds, float2 drift)

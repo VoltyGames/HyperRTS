@@ -5,12 +5,9 @@ using HyperRTS.Simulation.Common.Infantry;
 using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Simulation.Navigation.Agents;
-using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Veterancy;
 using HyperRTS.Simulation.Vision;
@@ -28,6 +25,9 @@ namespace HyperRTS.Presentation.Overlays
     /// </summary>
     public sealed class UnitOverlays : IDisposable
     {
+        // A hovered unit's marker line, as a share of a selected one's.
+        private const float HoverLine = 0.6f;
+
         private readonly LiveQuery _living = new(entityManager => entityManager.CreateEntityQuery(
             ComponentType.ReadOnly<Health>(),
             ComponentType.ReadOnly<Owner>(),
@@ -172,18 +172,17 @@ namespace HyperRTS.Presentation.Overlays
         private void AddMarker(in MarkerPose pose, MarkerFootprint footprint, Color color, bool selected, float selectedFor,
             OverlayStyle style)
         {
-            if (selected)
-            {
-                var settle = SelectionFades.ScaleAndAlpha(selectedFor, style.selectSeconds, style.selectStartScale);
-                footprint = footprint.Scaled(settle.x);
-                color.a *= settle.y;
-            }
-            else
+            if (!selected)
             {
                 color.a *= style.hoverOpacity;
+                _markers.Add(pose, footprint, color, new MarkerLook(style.markerLine * HoverLine, style.markerFade, 0f));
+                return;
             }
 
-            _markers.Add(pose, footprint, color, selected, style);
+            var settle = SelectionFades.ScaleAndAlpha(selectedFor, style.selectSeconds, style.selectStartScale);
+            color.a *= settle.y;
+            var look = new MarkerLook(style.markerLine, style.markerFade, style.markerFill);
+            _markers.Add(pose, footprint.Scaled(settle.x), color, look);
         }
 
         private void AddBar(in OverlayUnit unit, Vector3 anchor, in Health health, in SquadRules squadRules,

@@ -8,8 +8,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>
-    /// The smoke hanging over a fight: a 128 by 128 grid over the map that drifts with the wind, spreads a little and
-    /// halves every 90 s. Its <see cref="Texels"/> are the fog density texture: one plus the haze in every cell, plus
+    /// The smoke hanging over a fight: a grid over the map that drifts with the wind, spreads a little and halves
+    /// every <see cref="HalfLife"/>. Its <see cref="Texels"/> are the fog density texture: one plus the haze in every cell, plus
     /// the ground mist lying low in hollows and by water.
     /// </summary>
     public sealed class BattleHaze : IDisposable
@@ -88,9 +88,9 @@ namespace HyperRTS.Presentation.Environment.Weather
             Finish();
         }
 
-        public float Side { get; }
+        private float Side { get; }
 
-        public float CellSize { get; }
+        private float CellSize { get; }
 
         /// <summary>Texture layers up the y axis.</summary>
         public int Layers { get; }
@@ -98,7 +98,6 @@ namespace HyperRTS.Presentation.Environment.Weather
         /// <summary>The weather's fog now; the system refreshes it so mist keeps its own density as the weather changes.</summary>
         public FogShape Fog
         {
-            get => _fog;
             set
             {
                 // Only the mist reads the fog's shape.

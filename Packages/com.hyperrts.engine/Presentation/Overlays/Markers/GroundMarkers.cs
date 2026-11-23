@@ -9,8 +9,6 @@ namespace HyperRTS.Presentation.Overlays.Markers
     /// <summary>One frame's selection and hover markers, draped on the active terrain in one draw.</summary>
     public sealed class GroundMarkers : IDisposable
     {
-        private const float HoverLine = 0.6f;
-
         // Keeps the shader's corner radius non-zero so its sign can carry the bracket flag.
         private const float MinCorner = 0.01f;
 
@@ -24,13 +22,6 @@ namespace HyperRTS.Presentation.Overlays.Markers
             _markers = new InstanceBuffer<MarkerInstance>(grid);
             _material = new Material(material) { hideFlags = HideFlags.DontSave };
             BindFlatGround();
-        }
-
-        public void Add(in MarkerPose pose, in MarkerFootprint footprint, Color color, bool selected, OverlayStyle style)
-        {
-            var line = selected ? style.markerLine : style.markerLine * HoverLine;
-            var fill = selected ? style.markerFill : 0f;
-            Add(pose, footprint, color, new MarkerLook(line, style.markerFade, fill));
         }
 
         public void Add(in MarkerPose pose, in MarkerFootprint footprint, Color color, in MarkerLook look)

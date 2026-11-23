@@ -110,7 +110,7 @@ namespace HyperRTS.Editor.Maps.Checks
                 var backdrop = entry.backdropModel;
                 if (backdrop != null && backdrop.GetComponentInChildren<AuthoringBehaviour>(true) != null)
                 {
-                    Require(false, $"Prop '{entry.key}': backdrop model '{backdrop.name}' must be a plain model, not an entity prefab.");
+                    Issues.Error($"Prop '{entry.key}': backdrop model '{backdrop.name}' must be a plain model, not an entity prefab.");
                 }
             }
         }

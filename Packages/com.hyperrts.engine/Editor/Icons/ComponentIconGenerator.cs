@@ -185,7 +185,7 @@ namespace HyperRTS.Editor.Icons
             {
                 for (var x = 0; x < Size; x++)
                 {
-                    var alpha = Mathf.Clamp01(0.5f - RoundedBoxSdf(x - center, y - center, half, half, radius));
+                    var alpha = Mathf.Clamp01(0.5f - RoundedBoxSdf(x - center, y - center, half, radius));
                     var color = Color.Lerp(tile, Color.white, glyph.Coverage(x, y));
                     pixels[y * Size + x] = new Color(color.r, color.g, color.b, alpha);
                 }
@@ -197,10 +197,10 @@ namespace HyperRTS.Editor.Icons
             return texture;
         }
 
-        private static float RoundedBoxSdf(float px, float py, float halfW, float halfH, float r)
+        private static float RoundedBoxSdf(float px, float py, float half, float r)
         {
-            var qx = Mathf.Abs(px) - halfW + r;
-            var qy = Mathf.Abs(py) - halfH + r;
+            var qx = Mathf.Abs(px) - half + r;
+            var qy = Mathf.Abs(py) - half + r;
             var outside = Mathf.Sqrt(Mathf.Max(qx, 0f) * Mathf.Max(qx, 0f) + Mathf.Max(qy, 0f) * Mathf.Max(qy, 0f));
             var inside = Mathf.Min(Mathf.Max(qx, qy), 0f);
             return outside + inside - r;

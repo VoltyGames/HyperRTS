@@ -5,16 +5,15 @@ using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Presentation.Rendering.ScreenOverlay
 {
-    /// <summary>Draws one LightMode into the camera's final target with the camera's unjittered matrices.</summary>
+    /// <summary>Draws the <see cref="ScreenOverlayFeature.Pass"/> LightMode into the camera's final target with the camera's unjittered matrices.</summary>
     public sealed class ScreenOverlayPass : ScriptableRenderPass
     {
         private static readonly int ProjectionParamsId = Shader.PropertyToID("_ProjectionParams");
 
-        private readonly ShaderTagId _lightMode;
+        private static readonly ShaderTagId LightMode = new(ScreenOverlayFeature.Pass);
 
-        public ScreenOverlayPass(string lightMode)
+        public ScreenOverlayPass()
         {
-            _lightMode = new ShaderTagId(lightMode);
             profilingSampler = new ProfilingSampler("Screen Overlay");
             // After URP's final post and blit, so at the screen's size whatever the upscaler, and before it draws the UI.
             renderPassEvent = RenderPassEvent.AfterRendering;
@@ -29,7 +28,7 @@ namespace HyperRTS.Presentation.Rendering.ScreenOverlay
             }
 
             var renderingData = frameData.Get<UniversalRenderingData>();
-            var drawing = RenderingUtils.CreateDrawingSettings(_lightMode, renderingData, cameraData,
+            var drawing = RenderingUtils.CreateDrawingSettings(LightMode, renderingData, cameraData,
                 frameData.Get<UniversalLightData>(), SortingCriteria.CommonTransparent);
             var renderers = new RendererListParams(renderingData.cullResults, drawing, new FilteringSettings(RenderQueueRange.all));
 

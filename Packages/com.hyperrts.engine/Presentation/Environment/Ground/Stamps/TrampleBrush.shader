@@ -51,7 +51,7 @@ Shader "Hidden/HyperRTS/TrampleBrush"
             ENDHLSL
         }
 
-        // Each pass over a rut adds a share of its depth; the 8-bit R saturates at the deepest rut (RUT_CAP), the same for every vehicle.
+        // Each pass over a rut adds a share of its depth; the 8-bit R saturates at the deepest rut (TrampleStamps.RutCap), the same for every vehicle.
         Pass
         {
             Name "RutDeepen"

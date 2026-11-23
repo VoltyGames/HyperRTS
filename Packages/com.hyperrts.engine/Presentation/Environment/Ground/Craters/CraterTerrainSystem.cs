@@ -22,7 +22,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
     [UpdateBefore(typeof(TrampleStampSystem))]
     public partial class CraterTerrainSystem : SystemBase
     {
-        public const float SyncSeconds = 0.5f;
+        private const float SyncSeconds = 0.5f;
 
         private CraterTerrain _crater;
         private readonly BuildingLevels _levels = new();

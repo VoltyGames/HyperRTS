@@ -15,11 +15,11 @@ namespace HyperRTS.Editor.Environment
     public sealed class EnvironmentTextures : Generator
     {
         private const string Folder = "Packages/com.hyperrts.engine/Presentation/Environment/";
-        public const string CloudCookiePath = Folder + "Weather/CloudCookie.png";
-        public const string EdgeNoisePath = Folder + "EdgeNoise.png";
-        public const string TerrainNoisePath = Folder + "Ground/Terrain/TerrainNoise.png";
-        public const string WaterRipplesPath = Folder + "Water/WaterRipples.png";
-        public const string WaterLacePath = Folder + "Water/WaterLace.png";
+        private const string CloudCookiePath = Folder + "Weather/CloudCookie.png";
+        private const string EdgeNoisePath = Folder + "EdgeNoise.png";
+        private const string TerrainNoisePath = Folder + "Ground/Terrain/TerrainNoise.png";
+        private const string WaterRipplesPath = Folder + "Water/WaterRipples.png";
+        private const string WaterLacePath = Folder + "Water/WaterLace.png";
 
         private const int CloudSize = 512;
         private const int CloudPeriod = 2;
@@ -71,7 +71,7 @@ namespace HyperRTS.Editor.Environment
         /// Soft, lumpy cumulus over about a third of the tile: open sky is 1 and the thickest cloud lets 65% of the sun
         /// through, so shadows stay subtle.
         /// </summary>
-        public static float[] Clouds()
+        private static float[] Clouds()
         {
             var density = Field(CloudSize, CloudPeriod, p => TileableNoise.Fbm(p, CloudPeriod, 4, 3));
             var edge = TileableNoise.Percentile(density, 1f - CloudCover);
@@ -88,7 +88,7 @@ namespace HyperRTS.Editor.Environment
         }
 
         /// <summary>Fine fBm stretched over 0..1.</summary>
-        public static float[] EdgeNoise()
+        private static float[] EdgeNoise()
         {
             var values = Field(NoiseSize, NoisePeriod, p => TileableNoise.Fbm(p, NoisePeriod, 5, 7));
             var low = TileableNoise.Percentile(values, 0.02f);

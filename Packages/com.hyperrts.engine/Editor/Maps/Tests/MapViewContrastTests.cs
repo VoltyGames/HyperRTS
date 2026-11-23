@@ -1,10 +1,11 @@
+using System.Linq;
 using HyperRTS.Editor.Maps.Views;
 using NUnit.Framework;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Tests
 {
-    /// <summary>A view's contrast reads flat ground as flat and light and shade as contrast, and the report keeps it.</summary>
+    /// <summary>A view's contrast reads flat ground as flat and light and shade as contrast.</summary>
     public class MapViewContrastTests
     {
         private const int Width = 64;
@@ -23,11 +24,7 @@ namespace HyperRTS.Editor.Maps.Tests
         [Test]
         public void ASaturatedView_HasHighChroma()
         {
-            var pixels = Fill((x, y) => 0);
-            for (var i = 0; i < pixels.Length; i++)
-            {
-                pixels[i] = new Color32(255, 0, 0, 255);
-            }
+            var pixels = Enumerable.Repeat(new Color32(255, 0, 0, 255), Width * Height).ToArray();
 
             Assert.AreEqual(104.6f, MapViewContrast.Measure(pixels, Width, Height).Chroma, 1f);
         }

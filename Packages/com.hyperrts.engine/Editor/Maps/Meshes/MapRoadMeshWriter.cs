@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         }
 
         /// <summary>One ribbon mesh per road class that has a material, in the order the classes first appear.</summary>
-        public static List<(MapRoadClass Class, Mesh Mesh, int Order)> Build(MapShapes shapes, MapHeights heights, float groundLevel)
+        private static List<(MapRoadClass Class, Mesh Mesh, int Order)> Build(MapShapes shapes, MapHeights heights, float groundLevel)
         {
             var meshes = new List<(MapRoadClass, Mesh, int)>();
             var roads = shapes.Roads;
@@ -77,7 +77,7 @@ namespace HyperRTS.Editor.Maps.Meshes
         /// Per lower class and higher rank, the ends that meet a higher-ranked road, drawn just above it so the lower
         /// surface fades onto it instead of stopping at its edge.
         /// </summary>
-        public static List<(MapRoadClass Class, Mesh Mesh, int Order)> BuildSpills(MapShapes shapes, MapHeights heights,
+        private static List<(MapRoadClass Class, Mesh Mesh, int Order)> BuildSpills(MapShapes shapes, MapHeights heights,
             float groundLevel)
         {
             var spills = new Dictionary<(MapRoadClass, int), MapRoadMesh>();

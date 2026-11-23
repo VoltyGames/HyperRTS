@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
 
             foreach (var renderer in RendererFeatures.ActiveRenderers())
             {
-                CheckRenderer(renderer, issues);
+                CheckActiveRenderer(renderer, issues);
             }
         }
 
@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Validation.Rules.Effects
             }
         }
 
-        private void CheckRenderer(UniversalRendererData renderer, ValidationIssues issues)
+        private void CheckActiveRenderer(UniversalRendererData renderer, ValidationIssues issues)
         {
             var feature = RendererFeatures.Find<TFeature>(renderer);
             if (feature != null)

@@ -1,5 +1,4 @@
 using HyperRTS.Editor.Maps.Common;
-using HyperRTS.Simulation.Common;
 using System.Collections.Generic;
 
 namespace HyperRTS.Editor.Maps.Planning.Settlements

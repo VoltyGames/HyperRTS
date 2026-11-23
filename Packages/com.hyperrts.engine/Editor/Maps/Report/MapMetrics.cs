@@ -23,10 +23,6 @@ namespace HyperRTS.Editor.Maps.Report
         /// <summary>Renewable fields (clusters of regrowing stacks, see <see cref="MapResourceFields"/>) per player.</summary>
         public float renewableFieldsPerPlayer;
 
-        public int trees;
-        public int placements;
-        public int decals;
-        public int wetDecals;
         public List<MapSpawnMetrics> spawns = new();
 
         /// <summary>The ground views' mean <see cref="MapViewContrast.LuminanceSpread"/>; the overview is left out.</summary>

@@ -20,7 +20,6 @@
 // A lone pass stores its depth times RUT_LONE_SHARE, leaving room for repeat passes; R saturates at the same ceiling
 // for every vehicle. Readers divide by it. Match TrampleStamps.RutLoneShare.
 #define RUT_LONE_SHARE 0.4
-#define RUT_CAP (1.0 / RUT_LONE_SHARE)
 
 TEXTURE2D(_HyperRTSTrample);
 TEXTURE2D(_HyperRTSTracks);

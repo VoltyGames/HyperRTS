@@ -24,6 +24,9 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
             ]
         }";
 
+        private static string WithSteps(string steps) =>
+            Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {steps},");
+
         [Test]
         public void ParseOrdersStepsByTimeAndKeepsFileOrderAtTheSameTime()
         {
@@ -96,8 +99,8 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         [Test]
         public void ParseReadsMixerParametersByNameAndRejectsAnEmptyMixer()
         {
-            var muted = Good.Replace("{ \"at\": 0, \"fog\": false },", "{ \"at\": 0, \"fog\": false }, { \"at\": 0, \"mixer\": { \"Music\": -80, \"Voice\": -6 } },");
-            var empty = Good.Replace("{ \"at\": 0, \"fog\": false },", "{ \"at\": 0, \"fog\": false }, { \"at\": 0, \"mixer\": { } },");
+            var muted = WithSteps("{ \"at\": 0, \"mixer\": { \"Music\": -80, \"Voice\": -6 } }");
+            var empty = WithSteps("{ \"at\": 0, \"mixer\": { } }");
 
             Assert.That(StagingFile.Parse(muted, "muted.json").Steps.Select(step => step.Kind), Has.Member("mixer"));
             StringAssert.Contains("mixer", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(empty, "empty.json")).Message);
@@ -106,7 +109,7 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         [Test]
         public void ParseReadsDetailAndRejectsAnEmptyOrNonPositiveOne()
         {
-            string With(string detail) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 0, \"detail\": {detail} }},");
+            string With(string detail) => WithSteps($"{{ \"at\": 0, \"detail\": {detail} }}");
 
             Assert.That(StagingFile.Parse(With("{ \"shadows\": 500, \"lod\": 4 }"), "far.json").Steps.Select(step => step.Kind), Has.Member("detail"));
             StringAssert.Contains("detail", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ }"), "empty.json")).Message);
@@ -116,7 +119,7 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         [Test]
         public void ParseReadsAQualityLevelByNameAndRejectsAnUnknownOne()
         {
-            string With(string level) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 0, \"quality\": \"{level}\" }},");
+            string With(string level) => WithSteps($"{{ \"at\": 0, \"quality\": \"{level}\" }}");
 
             Assert.That(StagingFile.Parse(With(QualitySettings.names[0]), "tier.json").Steps.Select(step => step.Kind), Has.Member("quality"));
             StringAssert.Contains("'Potato'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("Potato"), "tier.json")).Message);
@@ -125,7 +128,7 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         [Test]
         public void ParseReadsSelectAndWeatherAndRejectsSelectingAnUndefinedGroup()
         {
-            string With(string select) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 1, \"select\": \"{select}\" }}, {{ \"at\": 1, \"weather\": \"Rain\" }},");
+            string With(string select) => WithSteps($"{{ \"at\": 1, \"select\": \"{select}\" }}, {{ \"at\": 1, \"weather\": \"Rain\" }}");
 
             Assert.That(StagingFile.Parse(With("blue"), "pick.json").Steps.Select(step => step.Kind), Is.SupersetOf(new[] { "select", "weather" }));
             StringAssert.Contains("group 'green'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("green"), "pick.json")).Message);
@@ -134,7 +137,7 @@ namespace HyperRTS.Editor.Tests.PlayMode.Staging
         [Test]
         public void ParseReadsGroupAndLetsLaterStepsUseItsLabelAndRejectsAMissingAsOrRadius()
         {
-            string With(string group) => Good.Replace("{ \"at\": 0, \"fog\": false },", $"{{ \"at\": 0, \"fog\": false }}, {{ \"at\": 0, \"group\": {group} }}, {{ \"at\": 1, \"damage\": {{ \"units\": \"barn\", \"amount\": 50 }} }},");
+            string With(string group) => WithSteps($"{{ \"at\": 0, \"group\": {group} }}, {{ \"at\": 1, \"damage\": {{ \"units\": \"barn\", \"amount\": 50 }} }}");
 
             var file = StagingFile.Parse(With("{ \"as\": \"barn\", \"at\": [10, 20], \"radius\": 15, \"prefab\": \"Barn\" }"), "group.json");
 

@@ -25,14 +25,14 @@ namespace HyperRTS.Input.Cameras
         private CameraCostPlan _plan;
         private string _reportPath;
 
-        /// <summary>True when the command line asks for a cost run; the game reads it to start its match without a menu.</summary>
-        public static bool IsRequested(string[] args) => Array.IndexOf(args, PointsFlag) >= 0;
+        /// <summary>True when a built player's command line asks for a cost run; the game reads it to start its match without a menu.</summary>
+        public static bool IsRequested(string[] args) => !Application.isEditor && Array.IndexOf(args, PointsFlag) >= 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Launch()
         {
             var args = Environment.GetCommandLineArgs();
-            if (Application.isEditor || !IsRequested(args))
+            if (!IsRequested(args))
             {
                 return;
             }

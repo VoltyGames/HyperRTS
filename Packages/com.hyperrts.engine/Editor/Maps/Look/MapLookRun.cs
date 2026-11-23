@@ -96,7 +96,7 @@ namespace HyperRTS.Editor.Maps.Look
                 return true;
             }
 
-            Frame(_plan[_next]);
+            SetUpShot(_plan[_next]);
             _readyFrame = Time.frameCount + SettleFrames;
             return false;
         }
@@ -121,7 +121,7 @@ namespace HyperRTS.Editor.Maps.Look
             var keys = PlanShots(weatherSet, controller);
             if (!_graded)
             {
-                _ungraded = Ungraded();
+                _ungraded = CreateUngradedVolume();
             }
 
             // The capture places the camera itself; the controller would pan it with the pointer.
@@ -162,7 +162,7 @@ namespace HyperRTS.Editor.Maps.Look
             return keys;
         }
 
-        private void Frame((string weather, MapLookSpec look, float zoom) shot)
+        private void SetUpShot((string weather, MapLookSpec look, float zoom) shot)
         {
             _weatherSet.Apply(shot.weather);
             if (PlayWorld.TryGetAuthoritative(out var entityManager))
@@ -187,7 +187,7 @@ namespace HyperRTS.Editor.Maps.Look
         /// A global volume over every other that zeroes the weathers' Color Lookup, for captures the lookup fitter
         /// pairs with paintovers.
         /// </summary>
-        private static Volume Ungraded()
+        private static Volume CreateUngradedVolume()
         {
             var profile = ScriptableObject.CreateInstance<VolumeProfile>();
             profile.Add<ColorLookup>(true).contribution.Override(0f);

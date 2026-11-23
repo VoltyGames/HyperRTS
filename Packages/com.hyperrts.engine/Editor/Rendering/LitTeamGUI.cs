@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Rendering
             }
         }
 
-        private static void Follow(Material material, string keyword, bool on) =>
-            material.SetKeyword(new LocalKeyword(material.shader, keyword), on);
+        private static void Follow(Material material, string keyword, bool enabled) =>
+            material.SetKeyword(new LocalKeyword(material.shader, keyword), enabled);
     }
 }

@@ -38,12 +38,10 @@ namespace HyperRTS.Editor.Maps.Palette
             var size = area.size;
             var clearSpan = area.ClearSpan();
             var piers = area.PierPoints();
-            if (!prefab.TryGetComponent<BuildingAuthoring>(out var building))
-            {
-                return new MapDeck(size, 0f, clearSpan, piers);
-            }
-
-            return new MapDeck(size, Mathf.Max(0f, (building.footprint.y - size.y) * 0.5f), clearSpan, piers);
+            var landing = prefab.TryGetComponent<BuildingAuthoring>(out var building)
+                ? Mathf.Max(0f, (building.footprint.y - size.y) * 0.5f)
+                : 0f;
+            return new MapDeck(size, landing, clearSpan, piers);
         }
     }
 }

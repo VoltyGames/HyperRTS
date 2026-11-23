@@ -13,9 +13,9 @@ namespace HyperRTS.Editor.Maps.Meshes
     /// </summary>
     public sealed class MapRoadMesh
     {
-        public const float Step = 2f;
+        private const float Step = 2f;
         public const float Lift = 0.05f;
-        public const float FadeLength = 4f;
+        private const float FadeLength = 4f;
 
         private const float AcrossStep = 1.5f;
         private const float SpillStep = 0.5f;

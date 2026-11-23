@@ -2,7 +2,6 @@ using HyperRTS.Presentation.Overlays.Bars;
 using HyperRTS.Presentation.Overlays.Ghosts;
 using System;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 

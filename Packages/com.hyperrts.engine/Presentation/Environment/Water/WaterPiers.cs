@@ -23,7 +23,7 @@ namespace HyperRTS.Presentation.Environment.Water
         [Tooltip("Each pier as (x, z, half-width across the flow) in world metres.")]
         public Vector3[] points = System.Array.Empty<Vector3>();
 
-        private readonly Vector4[] _obstacles = new Vector4[Capacity];
+        private readonly Vector4[] _piers = new Vector4[Capacity];
 
         private void OnEnable() => Publish();
 
@@ -46,10 +46,10 @@ namespace HyperRTS.Presentation.Environment.Water
 
             for (var i = 0; i < points.Length; i++)
             {
-                _obstacles[i] = new Vector4(points[i].x, points[i].y, points[i].z, 0f);
+                _piers[i] = new Vector4(points[i].x, points[i].y, points[i].z, 0f);
             }
 
-            Shader.SetGlobalVectorArray(PiersId, _obstacles);
+            Shader.SetGlobalVectorArray(PiersId, _piers);
             Shader.SetGlobalFloat(CountId, points.Length);
         }
     }

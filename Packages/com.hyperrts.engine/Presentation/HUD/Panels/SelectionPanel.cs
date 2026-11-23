@@ -5,7 +5,6 @@ using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using UnityEngine.UIElements;
-using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Panels
 {
@@ -73,7 +72,7 @@ namespace HyperRTS.Presentation.HUD.Panels
                 _icon.style.borderBottomColor = entityManager.HasComponent<Owner>(entity)
                     ? context.View.GetColor(entityManager.GetComponentData<Owner>(entity).Value)
                     : new StyleColor(StyleKeyword.Null);
-                _name.text = HUDText.EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
+                _name.text = HUDText.EntityName(entityManager, entity);
                 _details.Invalidate();
             }
             else if (selected.Count > 1)

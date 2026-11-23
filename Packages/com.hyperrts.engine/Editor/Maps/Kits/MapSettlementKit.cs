@@ -44,8 +44,8 @@ namespace HyperRTS.Editor.Maps.Kits
         public string frontFence;
 
         [MapKey(typeof(MapProp), Optional = true)]
-
         public string sideFence;
+
         [MapKey(typeof(MapProp), Optional = true)]
         public string gate;
 
@@ -54,8 +54,8 @@ namespace HyperRTS.Editor.Maps.Kits
         public string yardSurface;
 
         [MapKey(typeof(MapClimateSurface))]
-
         public string gardenSurface;
+
         [MapKey(typeof(MapClimateSurface))]
         public string backSurface;
 
