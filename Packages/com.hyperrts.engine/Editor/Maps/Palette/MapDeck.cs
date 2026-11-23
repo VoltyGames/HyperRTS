@@ -30,6 +30,9 @@ namespace HyperRTS.Editor.Maps.Palette
         /// <summary>Whether the abutments stand inside the deck, as the height shaper needs.</summary>
         public bool HasAbutments => ClearSpan > 0f && ClearSpan < Size.y;
 
+        /// <summary>From the deck's middle to the end of its approach slab.</summary>
+        public float Reach => Size.y * 0.5f + Landing;
+
         /// <summary>Reads a bridge prop's prefab on the main thread.</summary>
         public static MapDeck Read(MapProp entry)
         {

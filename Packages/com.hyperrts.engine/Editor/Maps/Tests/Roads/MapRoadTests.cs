@@ -20,11 +20,9 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
         private static List<Vector2> Refine(MapSpec spec, int road)
         {
             var symmetry = MapSymmetry.Parse(spec.symmetry);
-            MapRoadRefiner.Refine(spec, MapFixture.Climate(), symmetry, NoDecks());
+            MapRoadRefiner.Refine(spec, MapFixture.Climate(), symmetry);
             return MapGeometry.ToVectors(spec.roads[road].points);
         }
-
-        private static MapDecks NoDecks() => MapDecks.Read(MapFixture.Item<MapPalette>("Palette"));
 
         private static MapSpec SpecWith(params MapRoadSpec[] roads)
         {
@@ -58,6 +56,8 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
             river.points.AddRange(new[] { new MapPoint(-119f, -60f), new MapPoint(-1f, -60f) });
             river.crossings.Add(new MapCrossingSpec { along = 0.5f, kind = MapCrossingSpec.Ford });
             spec.rivers.Add(river);
+            var decks = MapDecks.Read(MapFixture.Item<MapPalette>("Palette"));
+            MapRoadCrossings.Align(spec.roads, spec.rivers, MapFixture.Climate(), decks);
 
             var line = Refine(spec, 0);
             var over = line.Where(p => Mathf.Abs(p.y + 60f) < 10f).ToList();
@@ -172,7 +172,7 @@ namespace HyperRTS.Editor.Maps.Tests.Roads
             var corner = new[] { new Vector2(-100f, -100f), new Vector2(-100f, -60f), new Vector2(-60f, -60f) };
             var sharp = SpecWith(MapFixture.Road("Asphalt", corner));
             var refined = SpecWith(MapFixture.Road("Asphalt", corner));
-            MapRoadRefiner.Refine(refined, MapFixture.Climate(), MapSymmetry.Parse(refined.symmetry), NoDecks());
+            MapRoadRefiner.Refine(refined, MapFixture.Climate(), MapSymmetry.Parse(refined.symmetry));
 
             Assert.IsTrue(Check(sharp).Warnings.Any(w => w.Message.Contains("bends")));
             Assert.IsFalse(Check(refined).Warnings.Any(w => w.Message.Contains("bends")));

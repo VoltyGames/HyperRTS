@@ -20,7 +20,8 @@ namespace HyperRTS.Editor.Maps.Refine
             }
 
             MapRavineRefiner.Refine(spec, symmetry);
-            MapRoadRefiner.Refine(spec, climate, symmetry, decks);
+            MapRoadCrossings.Align(spec.roads, spec.rivers, climate, decks);
+            MapRoadRefiner.Refine(spec, climate, symmetry);
         }
     }
 }

@@ -220,8 +220,7 @@ Shader "HyperRTS/Water"
                 half grazing = pow(1.0 - saturate(dot(normalWS, view)), 5.0);
                 half fresnel = _ReflectionFloor + (1.0 - _ReflectionFloor) * grazing;
                 half smoothness = DistantSmoothness(cameraDistance);
-                const bool useEnvironmentReflections = true;
-                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, useEnvironmentReflections);
+                half3 sky = GlossyEnvironmentReflection(reflect(-view, normalWS), 1.0 - smoothness, 1.0, true);
                 half3 color = lerp(body, sky, fresnel);
                 color += Glint(sun, normalWS, view, color, smoothness, cameraDistance);
 

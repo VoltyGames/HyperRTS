@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Maps.Geometry
         public const float FordBed = 0.3f;
         public const float FordWade = 0.15f;
 
-        public const float FordBanks = 8f;
+        private const float FordBanks = 8f;
 
         public MapShapes(MapLayout layout, MapPalette palette, MapDecks decks, MapClimate climate)
         {
@@ -211,7 +211,7 @@ namespace HyperRTS.Editor.Maps.Geometry
                     Position = position,
                     Across = across,
                     Width = spec.width,
-                    Span = river.Spec.width + FordBanks,
+                    Span = FordSpan(river.Spec.width),
                     Height = water - FordWade,
                 });
                 return;
@@ -219,6 +219,9 @@ namespace HyperRTS.Editor.Maps.Geometry
 
             Crossings.Add(Bridge(spec, position, across, decks.Find(spec.prop), water));
         }
+
+        /// <summary>A ford's length along the road: the river plus the banks it levels.</summary>
+        public static float FordSpan(float riverWidth) => riverWidth + FordBanks;
 
         private static MapCrossing Bridge(MapCrossingSpec spec, Vector2 position, Vector2 across, MapDeck deck, float water)
         {

@@ -31,8 +31,8 @@ namespace HyperRTS.Editor.Maps.Refine
                         var line = MapGeometry.ToVectors(road.points);
                         if (MapGeometry.DistanceToPolyline(line, position, out var middle) <= crossing.width)
                         {
-                            var run = new Run(position, MapGeometry.Left(flow), reach, climate.RoadClass(road.kind).cornerRadius);
-                            road.points = MapGeometry.ToPoints(run.Lay(line, middle));
+                            var clear = climate.RoadClass(road.kind).cornerRadius;
+                            road.points = MapGeometry.ToPoints(Lay(line, middle, position, MapGeometry.Left(flow), reach, clear));
                         }
                     }
                 }
@@ -44,65 +44,45 @@ namespace HyperRTS.Editor.Maps.Refine
         {
             if (crossing.kind == MapCrossingSpec.Ford)
             {
-                return (river.width + MapShapes.FordBanks) * 0.5f;
+                return MapShapes.FordSpan(river.width) * 0.5f;
             }
 
-            var deck = decks.Find(crossing.prop);
-            return deck.Size.y * 0.5f + deck.Landing;
+            return decks.Find(crossing.prop).Reach;
         }
 
         /// <summary>
-        /// A straight run through a crossing: Reach metres either way from Position along Across, with no authored
-        /// point left within Clear metres of its ends, where no bend of the road's class would fit.
+        /// The road with a straight run, reach metres either way of position along across, in place of its points round
+        /// middle (metres along it). Ends inside the run stay put; points within clear metres of it go, as no bend fits.
         /// </summary>
-        private readonly struct Run
+        private static List<Vector2> Lay(List<Vector2> road, float middle, Vector2 position, Vector2 across, float reach,
+            float clear)
         {
-            private readonly Vector2 _position;
-            private readonly Vector2 _across;
-            private readonly float _reach;
-            private readonly float _clear;
+            MapGeometry.PointAlong(road, middle, out var direction);
+            var heading = Vector2.Dot(direction, across) < 0f ? -across : across;
+            var from = middle - reach;
+            var to = middle + reach;
 
-            public Run(Vector2 position, Vector2 across, float reach, float clear)
+            var laid = new List<Vector2>();
+            var after = new List<Vector2>();
+            var walked = 0f;
+            for (var i = 0; i < road.Count; i++)
             {
-                _position = position;
-                _across = across;
-                _reach = reach;
-                _clear = clear;
-            }
-
-            /// <summary>
-            /// The road with the run in place of its points round <paramref name="middle"/> (metres along it). A road
-            /// that starts or ends inside the run keeps that end where it is.
-            /// </summary>
-            public List<Vector2> Lay(List<Vector2> road, float middle)
-            {
-                new MapLineWalker(road).PointAt(middle, out var direction);
-                var heading = Vector2.Dot(direction, _across) < 0f ? -_across : _across;
-                var from = middle - _reach;
-                var to = middle + _reach;
-
-                var laid = new List<Vector2>();
-                var after = new List<Vector2>();
-                var walked = 0f;
-                for (var i = 0; i < road.Count; i++)
+                walked += i > 0 ? (road[i] - road[i - 1]).magnitude : 0f;
+                var end = i == 0 || i == road.Count - 1;
+                if (walked < from - clear || (end && walked < from))
                 {
-                    walked += i > 0 ? (road[i] - road[i - 1]).magnitude : 0f;
-                    var end = i == 0 || i == road.Count - 1;
-                    if (walked < from - _clear || (end && walked < from))
-                    {
-                        laid.Add(road[i]);
-                    }
-                    else if (walked > to + _clear || (end && walked > to))
-                    {
-                        after.Add(road[i]);
-                    }
+                    laid.Add(road[i]);
                 }
-
-                laid.Add(from > 0f ? _position - heading * _reach : road[0]);
-                laid.Add(to < walked ? _position + heading * _reach : road[^1]);
-                laid.AddRange(after);
-                return laid;
+                else if (walked > to + clear || (end && walked > to))
+                {
+                    after.Add(road[i]);
+                }
             }
+
+            laid.Add(from > 0f ? position - heading * reach : road[0]);
+            laid.Add(to < walked ? position + heading * reach : road[^1]);
+            laid.AddRange(after);
+            return laid;
         }
     }
 }
