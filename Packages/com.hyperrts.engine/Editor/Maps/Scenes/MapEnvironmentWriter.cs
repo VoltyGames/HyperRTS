@@ -73,8 +73,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         private static void CreateGroundMaterials(MapScene scene, MapGeneration generation)
         {
             var path = generation.Project.Paths.GroundMaterials;
-            var map = AssetDatabase.LoadAssetAtPath<GroundMaterialMap>(path)
-                ?? throw new System.InvalidOperationException($"HyperRTS: the ground material map '{path}' is missing.");
+            var map = Load<GroundMaterialMap>(path, "ground material map");
             var land = generation.Land.Bounds;
             var go = scene.CreateEntityObject("Ground Materials");
             go.transform.position = new Vector3(land.xMin, 0f, land.yMin);
@@ -91,8 +90,7 @@ namespace HyperRTS.Editor.Maps.Scenes
             }
 
             var path = generation.Project.Paths.CropCover;
-            var map = AssetDatabase.LoadAssetAtPath<CropCoverMap>(path)
-                ?? throw new System.InvalidOperationException($"HyperRTS: the crop cover map '{path}' is missing.");
+            var map = Load<CropCoverMap>(path, "crop cover map");
             var area = generation.Crops.Area;
             var go = scene.CreateEntityObject("Crop Cover");
             go.transform.position = new Vector3(area.xMin, 0f, area.yMin);
@@ -115,13 +113,11 @@ namespace HyperRTS.Editor.Maps.Scenes
         /// <summary>Publishes the ground picture to the foliage shaders.</summary>
         private static void CreateGroundColor(MapScene scene, Texture2D picture, Rect area)
         {
-            var go = new GameObject("Ground Color");
-            go.SetActive(false);
-            go.transform.SetParent(scene.Root, false);
-            var ground = go.AddComponent<GroundColor>();
-            ground.picture = picture;
-            ground.area = area;
-            go.SetActive(true);
+            CreateActivated<GroundColor>(scene, "Ground Color", ground =>
+            {
+                ground.picture = picture;
+                ground.area = area;
+            });
         }
 
         // Loaded by path because opening the scene unloads the fields WriteGround saved.
@@ -133,15 +129,13 @@ namespace HyperRTS.Editor.Maps.Scenes
                 return;
             }
 
-            var compute = Engine<ComputeShader>(RowCropsCompute, "row crop compute shader");
-            var go = new GameObject("Row Crops");
-            go.SetActive(false);
-            go.transform.SetParent(scene.Root, false);
-            var renderer = go.AddComponent<RowCropRenderer>();
-            renderer.fields = fields;
-            renderer.compute = compute;
-            renderer.terrain = terrain;
-            go.SetActive(true);
+            var compute = Load<ComputeShader>(RowCropsCompute, "row crop compute shader");
+            CreateActivated<RowCropRenderer>(scene, "Row Crops", renderer =>
+            {
+                renderer.fields = fields;
+                renderer.compute = compute;
+                renderer.terrain = terrain;
+            });
         }
 
         // Loaded by path because opening the scene unloads the field WriteGround saved.
@@ -153,17 +147,26 @@ namespace HyperRTS.Editor.Maps.Scenes
                 return;
             }
 
-            var go = new GameObject("Grass");
+            CreateActivated<GrassRenderer>(scene, "Grass", renderer =>
+            {
+                renderer.field = field;
+                renderer.compute = Load<ComputeShader>(GrassCompute, "grass compute shader");
+                renderer.terrain = terrain;
+            });
+        }
+
+        // Inactive while configured so the component's first enable sees its fields.
+        private static void CreateActivated<T>(MapScene scene, string name, System.Action<T> configure)
+            where T : Component
+        {
+            var go = new GameObject(name);
             go.SetActive(false);
             go.transform.SetParent(scene.Root, false);
-            var renderer = go.AddComponent<GrassRenderer>();
-            renderer.field = field;
-            renderer.compute = Engine<ComputeShader>(GrassCompute, "grass compute shader");
-            renderer.terrain = terrain;
+            configure(go.AddComponent<T>());
             go.SetActive(true);
         }
 
-        private static T Engine<T>(string path, string what) where T : Object =>
+        private static T Load<T>(string path, string what) where T : Object =>
             AssetDatabase.LoadAssetAtPath<T>(path)
             ?? throw new System.InvalidOperationException($"HyperRTS: the {what} '{path}' is missing.");
 

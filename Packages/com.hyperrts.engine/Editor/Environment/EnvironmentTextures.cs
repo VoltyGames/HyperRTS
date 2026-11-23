@@ -127,16 +127,28 @@ namespace HyperRTS.Editor.Environment
         /// <summary>Two standardised fields weighted, scaled about 0.5 and clipped to 0..1, written into the first.</summary>
         private static float[] Brightness(float[] first, float firstWeight, float[] second, float secondWeight)
         {
+            WeightedSum(first, firstWeight, second, secondWeight);
             for (var i = 0; i < first.Length; i++)
             {
-                first[i] = Mathf.Clamp01(0.5f + TerrainContrast * (first[i] * firstWeight + second[i] * secondWeight));
+                first[i] = Mathf.Clamp01(0.5f + TerrainContrast * first[i]);
+            }
+
+            return first;
+        }
+
+        /// <summary>Two fields weighted and added, written into the first.</summary>
+        internal static float[] WeightedSum(float[] first, float firstWeight, float[] second, float secondWeight)
+        {
+            for (var i = 0; i < first.Length; i++)
+            {
+                first[i] = first[i] * firstWeight + second[i] * secondWeight;
             }
 
             return first;
         }
 
         /// <summary>A square of samples spanning <paramref name="period"/> lattice cells, so it tiles.</summary>
-        private static float[] Field(int size, int period, Func<Vector2, float> sample)
+        internal static float[] Field(int size, int period, Func<Vector2, float> sample)
         {
             var values = new float[size * size];
             var scale = (float)period / size;

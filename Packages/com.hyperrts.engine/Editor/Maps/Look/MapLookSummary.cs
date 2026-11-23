@@ -28,13 +28,13 @@ namespace HyperRTS.Editor.Maps.Look
             weathers.Clear();
             foreach (var group in shots.GroupBy(shot => shot.weather))
             {
-                var views = group.Select(shot => MapViewContrast.Load(shot.path)).ToList();
+                var mean = MapViewContrast.Mean(group.Select(shot => MapViewContrast.Load(shot.path)));
                 weathers.Add(new MapLookWeather
                 {
                     weather = group.Key,
-                    viewLuminanceSpread = views.Average(view => view.LuminanceSpread),
-                    viewLocalContrast = views.Average(view => view.LocalContrast),
-                    viewChroma = views.Average(view => view.Chroma),
+                    viewLuminanceSpread = mean.LuminanceSpread,
+                    viewLocalContrast = mean.LocalContrast,
+                    viewChroma = mean.Chroma,
                 });
             }
         }

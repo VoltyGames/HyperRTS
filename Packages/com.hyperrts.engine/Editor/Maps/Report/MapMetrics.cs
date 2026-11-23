@@ -44,9 +44,10 @@ namespace HyperRTS.Editor.Maps.Report
                 return;
             }
 
-            viewLuminanceSpread = views.Average(v => v.LuminanceSpread);
-            viewLocalContrast = views.Average(v => v.LocalContrast);
-            viewChroma = views.Average(v => v.Chroma);
+            var mean = MapViewContrast.Mean(views);
+            viewLuminanceSpread = mean.LuminanceSpread;
+            viewLocalContrast = mean.LocalContrast;
+            viewChroma = mean.Chroma;
         }
     }
 }

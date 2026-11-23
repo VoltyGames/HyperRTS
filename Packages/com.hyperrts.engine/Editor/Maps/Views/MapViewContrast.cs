@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Maps.Views
@@ -40,6 +42,14 @@ namespace HyperRTS.Editor.Maps.Views
             {
                 UnityEngine.Object.DestroyImmediate(image);
             }
+        }
+
+        /// <summary>The mean of each number over the views; throws when there are none.</summary>
+        public static MapViewContrast Mean(IEnumerable<MapViewContrast> views)
+        {
+            var list = views.ToList();
+            return new MapViewContrast(list.Average(v => v.LuminanceSpread), list.Average(v => v.LocalContrast),
+                list.Average(v => v.Chroma));
         }
 
         /// <summary>Measures display (sRGB) pixels, rows bottom up as Unity stores them.</summary>

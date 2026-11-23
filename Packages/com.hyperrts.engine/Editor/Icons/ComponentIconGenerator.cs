@@ -168,12 +168,10 @@ namespace HyperRTS.Editor.Icons
         public static void WriteIcon(string svgPath, Color tile, string pngPath)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(pngPath));
-            EditorTextures.SavePng(Render(svgPath, tile), pngPath);
-            AssetDatabase.ImportAsset(pngPath, ImportAssetOptions.ForceUpdate);
-            ApplyImportSettings(pngPath);
+            EditorTextures.WritePng(pngPath, Size, Size, TextureFormat.RGBA32, Render(svgPath, tile), ConfigureGui);
         }
 
-        private static Texture2D Render(string svgPath, Color tile)
+        private static Color[] Render(string svgPath, Color tile)
         {
             var glyph = new GlyphRaster(svgPath, Size, GlyphSize);
             const float margin = 6f;
@@ -191,10 +189,7 @@ namespace HyperRTS.Editor.Icons
                 }
             }
 
-            var texture = new Texture2D(Size, Size, TextureFormat.RGBA32, false);
-            texture.SetPixels(pixels);
-            texture.Apply();
-            return texture;
+            return pixels;
         }
 
         private static float RoundedBoxSdf(float px, float py, float half, float r)
@@ -206,21 +201,14 @@ namespace HyperRTS.Editor.Icons
             return outside + inside - r;
         }
 
-        private static void ApplyImportSettings(string path)
+        private static void ConfigureGui(TextureImporter importer)
         {
-            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null)
-            {
-                return;
-            }
-
             importer.textureType = TextureImporterType.GUI;
             importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false;
             importer.wrapMode = TextureWrapMode.Clamp;
             importer.filterMode = FilterMode.Bilinear;
             importer.textureCompression = TextureImporterCompression.Uncompressed;
-            importer.SaveAndReimport();
         }
     }
 }

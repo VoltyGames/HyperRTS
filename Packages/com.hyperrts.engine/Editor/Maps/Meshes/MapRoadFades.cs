@@ -25,20 +25,14 @@ namespace HyperRTS.Editor.Maps.Meshes
         /// </summary>
         public static MapRoad HigherAt(MapRoad road, Vector2 end, IReadOnlyList<MapRoad> roads)
         {
-            MapRoad higher = null;
-            foreach (var other in roads)
+            if (!TryCovering(road, end, roads, out var covering))
             {
-                if (other == road || other.Line.Distance(end, out var along) > other.Width * 0.5f)
-                {
-                    continue;
-                }
+                return null;
+            }
 
-                var atEnd = along <= Continues || along >= other.Line.Length - Continues;
-                if (atEnd && other.Line.Distance(end) <= Continues)
-                {
-                    return null;
-                }
-
+            MapRoad higher = null;
+            foreach (var other in covering)
+            {
                 if (other.Class.rank > road.Class.rank && (higher == null || other.Class.rank > higher.Class.rank))
                 {
                     higher = other;
@@ -50,8 +44,19 @@ namespace HyperRTS.Editor.Maps.Meshes
 
         private static bool Fades(MapRoad road, Vector2 end, IReadOnlyList<MapRoad> roads)
         {
-            var touching = false;
-            var underHigher = false;
+            if (!TryCovering(road, end, roads, out var covering))
+            {
+                return false;
+            }
+
+            return covering.Count == 0 || covering.Exists(other => road.Class.rank <= other.Class.rank);
+        }
+
+        // False when another road carries on at the end; otherwise the roads whose width covers it.
+        private static bool TryCovering(MapRoad road, Vector2 end, IReadOnlyList<MapRoad> roads,
+            out List<MapRoad> covering)
+        {
+            covering = new List<MapRoad>();
             foreach (var other in roads)
             {
                 if (other == road)
@@ -71,11 +76,10 @@ namespace HyperRTS.Editor.Maps.Meshes
                     return false;
                 }
 
-                touching = true;
-                underHigher |= road.Class.rank <= other.Class.rank;
+                covering.Add(other);
             }
 
-            return !touching || underHigher;
+            return true;
         }
     }
 }

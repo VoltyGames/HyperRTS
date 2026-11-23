@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Environment
             var random = new Random(seed);
             var large = Strands(size, LargeCells, LargeStrand, ref random);
             var small = Strands(size, SmallCells, SmallStrand, ref random);
-            var clumps = Mixed(TileableNoise.Lowpass(size, 5f, ref random), 0.75f, TileableNoise.Lowpass(size, 14f, ref random), 0.45f);
+            var clumps = EnvironmentTextures.WeightedSum(TileableNoise.Lowpass(size, 5f, ref random), 0.75f, TileableNoise.Lowpass(size, 14f, ref random), 0.45f);
             TileableNoise.RankUniform(clumps);
             var blobs = TileableNoise.Lowpass(size, 3f, ref random);
             TileableNoise.RankUniform(blobs);
@@ -44,19 +44,11 @@ namespace HyperRTS.Editor.Environment
                 points[i] = new Vector2(random.NextFloat(0.1f, 0.9f), random.NextFloat(0.1f, 0.9f));
             }
 
-            var values = new float[size * size];
-            var scale = (float)cells / size;
-            for (var y = 0; y < size; y++)
+            return EnvironmentTextures.Field(size, cells, p =>
             {
-                for (var x = 0; x < size; x++)
-                {
-                    var p = new Vector2(x + 0.5f, y + 0.5f) * scale;
-                    var (nearest, second) = TwoNearest(points, cells, p);
-                    values[y * size + x] = 1f - Mathf.SmoothStep(0f, 1f, (second - nearest) / width);
-                }
-            }
-
-            return values;
+                var (nearest, second) = TwoNearest(points, cells, p);
+                return 1f - Mathf.SmoothStep(0f, 1f, (second - nearest) / width);
+            });
         }
 
         private static (float nearest, float second) TwoNearest(Vector2[] points, int cells, Vector2 p)
@@ -85,16 +77,6 @@ namespace HyperRTS.Editor.Environment
             }
 
             return (nearest, second);
-        }
-
-        private static float[] Mixed(float[] first, float firstWeight, float[] second, float secondWeight)
-        {
-            for (var i = 0; i < first.Length; i++)
-            {
-                first[i] = first[i] * firstWeight + second[i] * secondWeight;
-            }
-
-            return first;
         }
     }
 }
