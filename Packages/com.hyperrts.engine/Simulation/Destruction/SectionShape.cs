@@ -45,7 +45,8 @@ namespace HyperRTS.Simulation.Destruction
             return sections;
         }
 
-        private static ulong Bits(SectionEntry[] entries, GameObject[] named)
+        /// <summary>The bits of the entries whose intact model is in <paramref name="named"/>.</summary>
+        public static ulong Bits(SectionEntry[] entries, GameObject[] named)
         {
             var bits = 0ul;
             foreach (var model in named ?? Array.Empty<GameObject>())

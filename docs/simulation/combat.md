@@ -95,11 +95,12 @@ exterior. The building's health is the sum of its sections'.
 - **Filling the list.** **Fill from parts** lists sections from `<Name>_Intact` children and their `<Name>_Broken`
   siblings and guesses the rest. For a building from the structure tool
   ([tools](../../../docs/art/generators.md#structure-builds)), **Fill from model** reads the sections its model's import
-  keeps (`ModelSections`, from the FBX properties `section` and `hole` on the intact and holed meshes): materials,
+  keeps (`ModelSections`, from the intact and holed meshes' FBX properties): materials,
   floors, supports, rests (what its debris lies on, as `supports`), facing, holes and parts (nodes with `section` but no `order`), and gives a mount to the section whose parts hold its
-  muzzle, turret or barrel. It measures each box from the intact mesh and takes the `In`, `Out` and
-  `Collapse` break clips from the [rigid](../presentation/animation.md#rigid-vertex-animation) clip table the pieces
-  play. Map material names in `materialNames`. A refill keeps shares and decks of existing entries. `SectionsRule` checks pairs, materials, clips, parts, mounts and that everything reaches the ground.
+  muzzle, turret or barrel. It measures each box from the intact mesh and takes the `In`, `Out` and `Collapse` break clips from the
+  [rigid](../presentation/animation.md#rigid-vertex-animation) clip table. Map material names in `materialNames`. A refill keeps existing shares and decks. `SectionsRule` checks pairs, materials, clips, parts, mounts and grounding.
+- **Overlay.** The Scene view's **Sections** overlay (`SectionsOverlay`) draws a selected or open sectioned
+  building's boxes and names, anchored ones green, with lines to holders.
 - **Parts and weapons.** A section lists `parts` (a turret, a door) and `weapons` (mount indexes, 0 the
   main weapon, 1 and up the `extraWeapons`). While the section is broken or holed, its parts hide through
   `HideReason.Section` like its intact model and show on repair. Its mounts are silent while it is broken
@@ -109,8 +110,7 @@ exterior. The building's health is the sum of its sections'.
 - **Collapse.** `SectionCollapseSystem` floods supports up from the anchored sections after each break. Whatever no
   longer reaches the ground falls level by level. A section needing all its supports (`needsAllSupports`, such as a
   bridge span) falls with either one.
-- **Floors.** `FallenFloorSystem` hurts the passengers of a fallen floor, lets them out and closes its slots until it
-  is rebuilt.
+- **Floors.** `FallenFloorSystem` hurts and ejects a fallen floor's passengers and closes its slots until rebuilt.
 - **Garrisons.** A `Shelter` takes its protection from the standing share of its exterior sections' health.
 - **Paths and rubble.** Standing sections on the ground stamp `NavObstaclePart`s. `SectionSettleSystem` opens broken
   ones and leaves crushable rubble where an outer wall fell.
