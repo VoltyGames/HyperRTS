@@ -255,8 +255,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
         {
             var house = House(float3.zero);
             World.AddWeapon(house, new TestWeapon { Range = 8f, Damage = 10f, Cooldown = 0.2f });
-            SectionsSetup.AddCarried(World.Writer(house), new SectionPart[0],
-                new[] { new SectionWeapon { Section = Front, Mount = 0 } });
+            WeaponSetup.AddSectionWeapons(World.Writer(house), new[] { new SectionWeapon { Section = Front, Mount = 0 } });
             var enemy = World.SpawnUnit(2, new float3(0f, 0f, 6f), new TestUnit { MaxHealth = 10000f, Speed = 0f });
             World.Run(1f);
             Assert.Less(World.GetHealth(enemy), 10000f, "the house fires while whole");

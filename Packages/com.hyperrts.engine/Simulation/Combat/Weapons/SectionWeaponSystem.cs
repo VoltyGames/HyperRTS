@@ -1,9 +1,9 @@
-using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Destruction;
 using Unity.Burst;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Destruction
+namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>Silences the weapon mounts of broken sections, and frees them again once the section is repaired.</summary>
     [BurstCompile]

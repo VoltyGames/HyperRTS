@@ -10,6 +10,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
     /// <summary>Adds the components that let an entity attack, and fire missions when its primary fires only on order.</summary>
     public static class WeaponSetup
     {
+        /// <summary>Ties weapon mounts to the building sections that carry them, which silence them while broken.</summary>
+        public static void AddSectionWeapons(EntityWriter writer, IReadOnlyList<SectionWeapon> weapons) =>
+            writer.AddBuffer(weapons);
+
         /// <summary>
         /// The weapons, primary first, with a pose each; build each with <see cref="WeaponMount.Create"/>.
         /// <paramref name="designations"/> (null for none) name the first weapons in order.

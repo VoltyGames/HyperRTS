@@ -35,12 +35,9 @@ namespace HyperRTS.Simulation.Destruction
             writer.Add(new IntactFloors { Count = (byte)floors });
         }
 
-        /// <summary>Adds the moving parts and weapon mounts the sections carry.</summary>
-        public static void AddCarried(EntityWriter writer, IReadOnlyList<SectionPart> parts, IReadOnlyList<SectionWeapon> weapons)
-        {
+        /// <summary>Adds the moving parts the sections carry.</summary>
+        public static void AddCarriedParts(EntityWriter writer, IReadOnlyList<SectionPart> parts) =>
             writer.AddBuffer(parts);
-            writer.AddBuffer(weapons);
-        }
 
         /// <summary>The footprint a building's sections close while they stand.</summary>
         public static List<NavObstaclePart> ObstacleParts(IReadOnlyList<Section> sections)

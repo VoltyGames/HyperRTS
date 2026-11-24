@@ -1,7 +1,7 @@
-using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Destruction
+namespace HyperRTS.Simulation.Combat.Weapons
 {
     /// <summary>A weapon mount that stays silent while section <see cref="Section"/> is broken.</summary>
     [InternalBufferCapacity(0)]

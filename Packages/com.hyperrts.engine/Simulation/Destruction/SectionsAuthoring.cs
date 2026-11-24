@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -117,7 +118,8 @@ namespace HyperRTS.Simulation.Destruction
                     SectionsSetup.AddRepairable(writer, authoring.repairSeconds);
                 }
 
-                SectionsSetup.AddCarried(writer, parts, weapons);
+                SectionsSetup.AddCarriedParts(writer, parts);
+                WeaponSetup.AddSectionWeapons(writer, weapons);
                 writer.AddBuffer(models);
                 writer.AddBuffer(looks);
                 writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });
