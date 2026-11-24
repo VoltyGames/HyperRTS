@@ -11,9 +11,12 @@ namespace HyperRTS.Editor.Stages
         private readonly StageLogFile _log;
         private readonly List<string> _inputs;
         private readonly List<string> _outputs;
+        private readonly bool _logMarksOutputs;
 
-        public StageFiles(StageLogFile log, IEnumerable<string> inputs, IEnumerable<string> outputs)
+        /// <param name="logMarksOutputs">True for a command that rewrites one of its own inputs: a good run's log time counts as when it wrote its outputs.</param>
+        public StageFiles(StageLogFile log, IEnumerable<string> inputs, IEnumerable<string> outputs, bool logMarksOutputs = false)
         {
+            _logMarksOutputs = logMarksOutputs;
             _log = log;
             _inputs = inputs.ToList();
             _outputs = outputs.ToList();
@@ -34,7 +37,13 @@ namespace HyperRTS.Editor.Stages
 
             var inputs = _inputs.Where(File.Exists).ToList();
             var newestInput = inputs.Count == 0 ? DateTime.MinValue : inputs.Max(File.GetLastWriteTimeUtc);
-            return newestInput > _outputs.Min(File.GetLastWriteTimeUtc) ? StageState.OutOfDate : StageState.Done;
+            var made = _outputs.Min(File.GetLastWriteTimeUtc);
+            if (_logMarksOutputs && _log.Exists && _log.WrittenUtc > made)
+            {
+                made = _log.WrittenUtc;
+            }
+
+            return newestInput > made ? StageState.OutOfDate : StageState.Done;
         }
     }
 }

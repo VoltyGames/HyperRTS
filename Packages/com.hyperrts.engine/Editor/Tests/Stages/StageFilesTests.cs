@@ -65,6 +65,16 @@ namespace HyperRTS.Editor.Tests.Stages
             Assert.IsFalse(_log.Failed);
         }
 
+        [Test]
+        public void ALogNewerThanTheOutputsCountsAsTheirTimeOnlyWhenItMarksThem()
+        {
+            Touch(Input, Made.AddMinutes(1));
+            _log.Write("rewrote its own input", 0);
+            File.SetLastWriteTimeUtc(_log.Path, Made.AddMinutes(2));
+            Assert.AreEqual(StageState.OutOfDate, State(Output));
+            Assert.AreEqual(StageState.Done, new StageFiles(_log, new[] { Input }, new[] { Output }, true).State());
+        }
+
         private StageState State(params string[] outputs) => new StageFiles(_log, new[] { Input }, outputs).State();
 
         private static void Touch(string path, DateTime time)
