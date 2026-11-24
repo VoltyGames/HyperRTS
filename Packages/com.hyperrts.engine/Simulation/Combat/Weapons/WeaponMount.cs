@@ -29,7 +29,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
         /// <summary>Set by the upgrades module once the owner has the required research.</summary>
         public bool Unlocked;
 
-        /// <summary>Held silent by the section that carries it while that section is broken.</summary>
+        /// <summary>Held silent by whatever carries it, such as a broken building section.</summary>
         public bool Silenced;
 
         /// <summary>An extra weapon that may pick its own target when it can't hit the shared one.</summary>
