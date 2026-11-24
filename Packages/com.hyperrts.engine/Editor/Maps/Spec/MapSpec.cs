@@ -30,6 +30,9 @@ namespace HyperRTS.Editor.Maps.Spec
         public int seed;
         public MapTerrainSpec terrain = new();
         public string status;
+
+        /// <summary>Whether players may pick the map. An unlisted one, a test or showroom ground, plays only from its scene.</summary>
+        public bool listed = true;
         public List<string> notes = new();
         public List<MapSpawnSpec> spawns = new();
         public List<MapResourceSpec> resources = new();

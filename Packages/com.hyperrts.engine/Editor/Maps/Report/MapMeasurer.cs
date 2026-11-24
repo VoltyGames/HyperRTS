@@ -110,7 +110,7 @@ namespace HyperRTS.Editor.Maps.Report
             var mode = _rules.Mode(_layout.Spec.mode);
             foreach (var spawn in Metrics.spawns.Where(s => s.rush < mode.rushMin || s.rush > mode.rushMax))
             {
-                _issues.Error($"Slot {spawn.slot} reaches its nearest enemy in {spawn.rush:0} s; {_layout.Spec.mode} wants {mode.rushMin:0} to {mode.rushMax:0} s.");
+                ReportMissedModeRule($"Slot {spawn.slot} reaches its nearest enemy in {spawn.rush:0} s; {_layout.Spec.mode} wants {mode.rushMin:0} to {mode.rushMax:0} s.");
             }
 
             var copies = _layout.Symmetry.Copies.Count;
@@ -119,7 +119,7 @@ namespace HyperRTS.Editor.Maps.Report
                 var group = Metrics.spawns.Skip(i).Take(copies).Select(s => s.rush).ToList();
                 if (group.Max() > group.Min() * (1f + FairnessTolerance))
                 {
-                    _issues.Error($"Symmetric slots {i + 1} to {i + copies} differ in rush time ({group.Min():0} to {group.Max():0} s).");
+                    ReportMissedModeRule($"Symmetric slots {i + 1} to {i + copies} differ in rush time ({group.Min():0} to {group.Max():0} s).");
                 }
             }
         }
@@ -138,7 +138,7 @@ namespace HyperRTS.Editor.Maps.Report
             Metrics.paths = Paths.Count;
             if (Paths.Count < mode.minPaths)
             {
-                _issues.Error($"Slots 1 and 2 have {Paths.Count} separate attack paths; {_layout.Spec.mode} wants {mode.minPaths}.");
+                ReportMissedModeRule($"Slots 1 and 2 have {Paths.Count} separate attack paths; {_layout.Spec.mode} wants {mode.minPaths}.");
             }
         }
 
@@ -200,8 +200,20 @@ namespace HyperRTS.Editor.Maps.Report
             var mode = _rules.Mode(_layout.Spec.mode);
             if (fields < mode.minRenewableFields * players)
             {
-                _issues.Error($"The map has {fields} renewable fields for {players} players ({Metrics.renewableFieldsPerPlayer:0.#} each); {_layout.Spec.mode} wants {mode.minRenewableFields} each.");
+                ReportMissedModeRule($"The map has {fields} renewable fields for {players} players ({Metrics.renewableFieldsPerPlayer:0.#} each); {_layout.Spec.mode} wants {mode.minRenewableFields} each.");
             }
+        }
+
+        // A mode's thresholds make matches fair; an unlisted map hosts no match players pick, so it only notes them.
+        private void ReportMissedModeRule(string message)
+        {
+            if (_layout.Spec.listed)
+            {
+                _issues.Error(message);
+                return;
+            }
+
+            _issues.Warn(message);
         }
 
         private float BuildableShare(Vector2 center, float radius)

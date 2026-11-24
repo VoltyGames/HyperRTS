@@ -38,6 +38,7 @@ map centre, X points east, Z points north, and angles run clockwise from north. 
 | `name` | The map name. The file must be named `<name>.map.json` |
 | `displayName` | The name the game shows |
 | `mode` | `1v1` to `4v4`, or `ffa`. The spawns times the symmetry's copies must fit |
+| `listed` | Whether players may pick the map; true by default. An unlisted map, such as a test or showroom ground, plays only from its scene: the game leaves it out of its map lists, and the report notes missed mode thresholds (rush, paths, renewable fields) as warnings |
 | `mapType`, `status`, `notes` | `land` (`coastal` and `island` are named but not built); a free work-state label; dated notes |
 | `climate`, `weather` | A library climate key, and one of its weathers. The scene is built and lit with that weather |
 | `warAge` | `None` (default), `Skirmished`, `Contested` or `Frontline`: how scarred the land is before the battle |
