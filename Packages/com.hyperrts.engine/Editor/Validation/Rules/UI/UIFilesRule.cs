@@ -4,25 +4,25 @@ using System.Linq;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Sets;
 
-namespace HyperRTS.Editor.Validation.Rules.Ui
+namespace HyperRTS.Editor.Validation.Rules.UI
 {
     /// <summary>
     /// UXML and USS files under Assets and the engine package link only to assets that exist, name only element
     /// types that exist, and use only classes a USS file styles or C# code uses.
     /// </summary>
-    public sealed class UiFilesRule : IAssetRule
+    public sealed class UIFilesRule : IAssetRule
     {
         public void Check(AssetSet assets, ValidationIssues issues)
         {
-            var project = UiProject.Open();
+            var project = UIProject.Open();
             project.CodeClassNames = ReadCodeClassNames();
             Check(ReadFiles(), project, issues);
         }
 
         /// <summary>Checks files by asset path and text; the part of the rule that needs no Editor state.</summary>
-        public void Check(IReadOnlyDictionary<string, string> files, UiProject project, ValidationIssues issues)
+        public void Check(IReadOnlyDictionary<string, string> files, UIProject project, ValidationIssues issues)
         {
-            var parsed = files.Select(file => new UiFile(file.Key, file.Value)).ToList();
+            var parsed = files.Select(file => new UIFile(file.Key, file.Value)).ToList();
             var styled = new HashSet<string>(parsed.Where(file => !file.IsLayout).SelectMany(file => file.SelectorClasses()));
             foreach (var file in parsed)
             {
@@ -58,7 +58,7 @@ namespace HyperRTS.Editor.Validation.Rules.Ui
             {
                 foreach (var file in Files(folder, ".cs"))
                 {
-                    names.UnionWith(UiProject.ClassNamesIn(File.ReadAllText(file)));
+                    names.UnionWith(UIProject.ClassNamesIn(File.ReadAllText(file)));
                 }
             }
 
@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Validation.Rules.Ui
 
         private static (string Folder, string AssetFolder)[] Roots()
         {
-            var engine = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(UiFilesRule).Assembly);
+            var engine = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(UIFilesRule).Assembly);
             return new[] { ("Assets", "Assets"), (engine.resolvedPath, engine.assetPath) };
         }
 

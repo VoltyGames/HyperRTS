@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 using Unity.Scripting.LifecycleManagement;
 using HyperRTS.Editor.Validation.Issues;
 
-namespace HyperRTS.Editor.Validation.Rules.Ui
+namespace HyperRTS.Editor.Validation.Rules.UI
 {
     using Match = System.Text.RegularExpressions.Match;
 
@@ -22,14 +22,14 @@ namespace HyperRTS.Editor.Validation.Rules.Ui
         [NoAutoStaticsCleanup]
         private static readonly HashSet<string> Structural = new() { "UXML", "Style", "Template", "Instance", "AttributeOverrides" };
 
-        private readonly UiFile _file;
-        private readonly UiProject _project;
+        private readonly UIFile _file;
+        private readonly UIProject _project;
         private readonly HashSet<string> _styled;
         private readonly ValidationIssues _issues;
         private readonly HashSet<string> _reportedClasses = new();
         private readonly Dictionary<string, string> _namespaces = new();
 
-        public UxmlCheck(UiFile file, UiProject project, HashSet<string> styled, ValidationIssues issues)
+        public UxmlCheck(UIFile file, UIProject project, HashSet<string> styled, ValidationIssues issues)
         {
             _file = file;
             _project = project;

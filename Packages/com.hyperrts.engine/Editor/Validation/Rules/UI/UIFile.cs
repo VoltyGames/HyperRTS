@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
-namespace HyperRTS.Editor.Validation.Rules.Ui
+namespace HyperRTS.Editor.Validation.Rules.UI
 {
     using Match = System.Text.RegularExpressions.Match;
 
     /// <summary>One UXML or USS file: its comment-free text, line numbers and the asset paths its links name.</summary>
-    internal sealed class UiFile
+    internal sealed class UIFile
     {
         private static readonly Regex XmlComment = new(@"<!--.*?-->", RegexOptions.Singleline);
         private static readonly Regex CssComment = new(@"/\*.*?\*/", RegexOptions.Singleline);
@@ -19,7 +19,7 @@ namespace HyperRTS.Editor.Validation.Rules.Ui
         /// <summary>The text with comments blanked, so indexes and line numbers still match the file.</summary>
         public readonly string Code;
 
-        public UiFile(string path, string text)
+        public UIFile(string path, string text)
         {
             Path = path;
             Code = Blank(path.EndsWith(".uxml") ? XmlComment : CssComment, text);

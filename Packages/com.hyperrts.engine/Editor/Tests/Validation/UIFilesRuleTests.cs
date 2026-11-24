@@ -1,18 +1,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Validation.Issues;
-using HyperRTS.Editor.Validation.Rules.Ui;
+using HyperRTS.Editor.Validation.Rules.UI;
 using NUnit.Framework;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Tests.Validation
 {
     /// <summary>The UI file rule runs over UXML and USS text held in memory.</summary>
-    public class UiFilesRuleTests
+    public class UIFilesRuleTests
     {
         private const string Header = "<ui:UXML xmlns:ui=\"UnityEngine.UIElements\" xmlns:g=\"Game.Ui\">\n";
 
-        private static UiProject Project(Dictionary<string, string> files) => new()
+        private static UIProject Project(Dictionary<string, string> files) => new()
         {
             AssetExists = path => files.ContainsKey(path),
             ElementExists = name => name is "Game.Ui.Known" or "UnityEngine.UIElements.Label",
@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Tests.Validation
         private static ValidationIssues Run(Dictionary<string, string> files)
         {
             var issues = new ValidationIssues();
-            new UiFilesRule().Check(files, Project(files), issues);
+            new UIFilesRule().Check(files, Project(files), issues);
             return issues;
         }
 
@@ -73,7 +73,7 @@ namespace HyperRTS.Editor.Tests.Validation
                 root.Q<Label>(""name"", ""g""); public const string CapsClass = ""h""; const string Kind = ""i"";
                 OnClick(""credits"", () => { });";
 
-            CollectionAssert.AreEqual(new[] { "a", "b", "c", "d", "e", "f", "g", "h" }, UiProject.ClassNamesIn(code).ToArray());
+            CollectionAssert.AreEqual(new[] { "a", "b", "c", "d", "e", "f", "g", "h" }, UIProject.ClassNamesIn(code).ToArray());
         }
 
         [Test]
@@ -87,7 +87,7 @@ namespace HyperRTS.Editor.Tests.Validation
             project.CodeClassNames.Add("marker");
             var issues = new ValidationIssues();
 
-            new UiFilesRule().Check(files, project, issues);
+            new UIFilesRule().Check(files, project, issues);
 
             StringAssert.Contains("'lonely'", issues.Single().Message);
         }
@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Tests.Validation
             };
             var issues = new ValidationIssues();
 
-            new UiFilesRule().Check(files, UiProject.Open(), issues);
+            new UIFilesRule().Check(files, UIProject.Open(), issues);
 
             StringAssert.Contains("HyperRTS.Editor.Authoring.Gone", issues.Single().Message);
         }

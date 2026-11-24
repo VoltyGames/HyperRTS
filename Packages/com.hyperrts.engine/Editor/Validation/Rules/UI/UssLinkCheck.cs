@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using HyperRTS.Editor.Validation.Issues;
 
-namespace HyperRTS.Editor.Validation.Rules.Ui
+namespace HyperRTS.Editor.Validation.Rules.UI
 {
     using Match = System.Text.RegularExpressions.Match;
 
@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Validation.Rules.Ui
         private static readonly Regex Link = new(
             @"url\(\s*(?:""([^""]*)""|'([^']*)'|([^)\s]*))\s*\)|@import\s+(?:""([^""]*)""|'([^']*)')");
 
-        public void Run(UiFile file, UiProject project, ValidationIssues issues)
+        public void Run(UIFile file, UIProject project, ValidationIssues issues)
         {
             foreach (Match match in Link.Matches(file.Code))
             {

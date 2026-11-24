@@ -6,10 +6,10 @@ using UnityEditor;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Validation.Rules.Ui
+namespace HyperRTS.Editor.Validation.Rules.UI
 {
     /// <summary>What the UI file rule asks the project: whether an asset or an element type exists, and the asset to point an issue at.</summary>
-    public sealed class UiProject
+    public sealed class UIProject
     {
         public Func<string, bool> AssetExists;
         public Func<string, bool> ElementExists;
@@ -29,14 +29,14 @@ namespace HyperRTS.Editor.Validation.Rules.Ui
             ClassName.Matches(code).Select(match => match.Groups.Cast<Group>().Skip(1).First(group => group.Success).Value);
 
         /// <summary>The open project: its asset database and every loaded type UXML can name.</summary>
-        public static UiProject Open()
+        public static UIProject Open()
         {
             // Tags also name bindings and UXML objects, and the cache lists derived types without the base itself.
             var elements = TypeCache.GetTypesDerivedFrom<VisualElement>()
                 .Concat(TypeCache.GetTypesDerivedFrom<Binding>())
                 .Concat(TypeCache.GetTypesWithAttribute<UxmlObjectAttribute>())
                 .Append(typeof(VisualElement)).Select(type => type.FullName).ToHashSet();
-            return new UiProject
+            return new UIProject
             {
                 AssetExists = path => !string.IsNullOrEmpty(AssetDatabase.AssetPathToGUID(path)),
                 ElementExists = elements.Contains,
