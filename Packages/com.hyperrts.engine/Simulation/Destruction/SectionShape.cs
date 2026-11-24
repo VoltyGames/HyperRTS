@@ -31,12 +31,13 @@ namespace HyperRTS.Simulation.Destruction
                     MaxHealth = health,
                     Material = (byte)MaterialIndex(materials, entry.material),
                     Floor = (byte)entry.floor,
-                    Supports = SupportBits(entries, entry.supports),
+                    Holders = Bits(entries, entry.supports),
+                    Rests = Bits(entries, entry.rests),
                     Anchored = entry.anchored,
                     Closes = entry.anchored && !bridge,
                     Exterior = entry.exterior,
                     Deck = entry.deck,
-                    NeedsAllSupports = entry.needsAllSupports,
+                    NeedsAllHolders = entry.needsAllSupports,
                     Outward = entry.outward,
                 });
             }
@@ -44,12 +45,12 @@ namespace HyperRTS.Simulation.Destruction
             return sections;
         }
 
-        private static ulong SupportBits(SectionEntry[] entries, GameObject[] supports)
+        private static ulong Bits(SectionEntry[] entries, GameObject[] named)
         {
             var bits = 0ul;
-            foreach (var support in supports ?? Array.Empty<GameObject>())
+            foreach (var model in named ?? Array.Empty<GameObject>())
             {
-                var index = Array.FindIndex(entries, entry => entry.intact == support);
+                var index = Array.FindIndex(entries, entry => entry.intact == model);
                 if (index >= 0)
                 {
                     bits |= 1ul << index;

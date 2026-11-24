@@ -119,7 +119,7 @@ namespace HyperRTS.Simulation.Destruction
             var due = 0ul;
             for (var i = 0; i < sections.Length; i++)
             {
-                if ((Falling & (1ul << i)) != 0 && (sections[i].Supports & ~Broken) == 0)
+                if ((Falling & (1ul << i)) != 0 && (sections[i].Holders & ~Broken) == 0)
                 {
                     due |= 1ul << i;
                 }

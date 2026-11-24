@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
         private static Section Wall(float3 center, float3 half, int floor = 0, ulong supports = 0) => new()
         {
             Center = center, HalfSize = half, Health = 100f, MaxHealth = 100f, Floor = (byte)floor,
-            Anchored = floor == 0, Closes = floor == 0, Exterior = true, Supports = supports, Outward = math.normalizesafe(center * new float3(1f, 0f, 1f)),
+            Anchored = floor == 0, Closes = floor == 0, Exterior = true, Holders = supports, Outward = math.normalizesafe(center * new float3(1f, 0f, 1f)),
         };
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 new()
                 {
                     Center = new float3(0f, 3.2f, 0f), HalfSize = new float3(4f, 0.2f, 4f), Health = 100f,
-                    MaxHealth = 100f, Supports = 0b1111, Outward = math.up(),
+                    MaxHealth = 100f, Holders = 0b1111, Outward = math.up(),
                 },
             };
             if (upper)

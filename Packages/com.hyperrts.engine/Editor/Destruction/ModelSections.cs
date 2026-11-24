@@ -42,6 +42,9 @@ namespace HyperRTS.Editor.Destruction
             [Tooltip("The sections holding this one up, by name.")]
             public string[] supports;
 
+            [Tooltip("The sections its broken pieces and heap lie on, by name.")]
+            public string[] rests;
+
             public string[] holed;
             public string pieces;
             public string stub;
@@ -98,6 +101,7 @@ namespace HyperRTS.Editor.Destruction
                     exterior = exterior,
                     outward = exterior ? properties.Vector("outward") : Vector3.zero,
                     supports = properties.List("supports"),
+                    rests = properties.List("rests"),
                     holed = properties.List("holed"),
                     pieces = properties.String("pieces"),
                     stub = properties.String("stub"),
@@ -120,6 +124,12 @@ namespace HyperRTS.Editor.Destruction
                 if (support != null)
                 {
                     throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' is held by '{support}', which no mesh names as its section.");
+                }
+
+                var rest = part.rests.FirstOrDefault(name => sections.All(other => other.name != name));
+                if (rest != null)
+                {
+                    throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' rests on '{rest}', which no mesh names as its section.");
                 }
 
                 var holed = part.holed.FirstOrDefault(name => holes.All(hole => hole.model != name));
@@ -177,7 +187,8 @@ namespace HyperRTS.Editor.Destruction
                 exterior = part.exterior,
                 parts = parts.Where(moving => moving.section == part.name).Select(moving => FindModel(owner, moving.node)).ToArray(),
                 weapons = Weapons(owner, part.name),
-                supports = part.supports.Select(name => FindModel(owner, sections.Find(other => other.name == name).intact)).ToArray(),
+                supports = SectionModels(owner, part.supports),
+                rests = SectionModels(owner, part.rests),
                 pieces = Hidden(owner, part.pieces),
                 stub = Hidden(owner, part.stub),
                 heap = Hidden(owner, part.heap),
@@ -197,6 +208,9 @@ namespace HyperRTS.Editor.Destruction
 
             return entry;
         }
+
+        private GameObject[] SectionModels(SectionsAuthoring owner, string[] names) =>
+            names.Select(name => FindModel(owner, sections.Find(other => other.name == name).intact)).ToArray();
 
         private SectionsAuthoring.Hole[] Holes(SectionsAuthoring owner, Part part, GameObject intact) =>
             part.holed.Select(name => new SectionsAuthoring.Hole

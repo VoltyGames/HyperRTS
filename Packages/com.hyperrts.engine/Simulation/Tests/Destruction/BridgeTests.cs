@@ -42,7 +42,7 @@ namespace HyperRTS.Simulation.Tests.Destruction
                 sections.Add(new Section
                 {
                     Center = Span(i), HalfSize = new float3(4.5f, 0.3f, SpanLength * 0.5f), Health = 100f,
-                    MaxHealth = 100f, Anchored = onBank, Deck = true, Supports = rests, Outward = math.up(),
+                    MaxHealth = 100f, Anchored = onBank, Deck = true, Holders = rests, Outward = math.up(),
                 });
             }
 
@@ -115,8 +115,8 @@ namespace HyperRTS.Simulation.Tests.Destruction
             var bridge = Bridge();
             var sections = World.Buffer<Section>(bridge);
             var span = sections[1];
-            span.Supports = 1ul | (1ul << (SpanCount - 1));
-            span.NeedsAllSupports = true;
+            span.Holders = 1ul | (1ul << (SpanCount - 1));
+            span.NeedsAllHolders = true;
             sections[1] = span;
             World.Tick(frames: 2);
             Assert.IsTrue(Open(1));

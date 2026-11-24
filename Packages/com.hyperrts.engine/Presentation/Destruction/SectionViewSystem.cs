@@ -151,14 +151,14 @@ namespace HyperRTS.Presentation.Destruction
             return changed;
         }
 
-        /// <summary>Broken sections not mid-clip whose supports changed, since their stub shows only while one stands.</summary>
+        /// <summary>Broken sections not mid-clip whose supports or rests changed, which gate their stub and debris.</summary>
         private static ulong Unpropped(Context at, ulong changed, ulong broken, ulong breaking)
         {
             var touched = 0ul;
             for (var i = 0; i < at.Models.Length; i++)
             {
                 var bit = 1ul << i;
-                if ((broken & bit) != 0ul && (breaking & bit) == 0ul && (at.Sections[i].Supports & changed) != 0ul)
+                if ((broken & bit) != 0ul && (breaking & bit) == 0ul && ((at.Sections[i].Holders | at.Sections[i].Rests) & changed) != 0ul)
                 {
                     touched |= bit;
                 }
@@ -207,8 +207,7 @@ namespace HyperRTS.Presentation.Destruction
             shown.Settled = settles ? shown.Settled | bit : shown.Settled & ~bit;
             phase = phase == Phase.Broken && settles ? Phase.Settled : phase;
             at.Looks[index] = look;
-            var hangs = phase is Phase.Broken or Phase.Settled && at.Sections[index].Hangs(broken);
-            Display(at, parts, index, look, phase, hangs);
+            Display(at, parts, index, look, phase, broken);
         }
 
         /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
@@ -227,9 +226,11 @@ namespace HyperRTS.Presentation.Destruction
             return Phase.Breaking;
         }
 
-        private void Display(Context at, NativeList<Entity> parts, int index, in SectionLook look, Phase phase, bool hangs)
+        private void Display(Context at, NativeList<Entity> parts, int index, in SectionLook look, Phase phase, ulong broken)
         {
             var model = at.Models[index];
+            var hangs = phase is Phase.Broken or Phase.Settled && at.Sections[index].Hangs(broken);
+            var lost = at.Sections[index].DebrisHangs(broken);
             var standing = phase == Phase.Standing;
             var hidden = !standing || look.Hole != 0;
             _switch.SetBranch(parts, model.Intact, HideReason.Section, hidden);
@@ -246,11 +247,10 @@ namespace HyperRTS.Presentation.Destruction
                 at.Copies.Set(at.Entity, model.Hole(i).Model, standing && look.Hole == i + 1);
             }
 
-            // A break started its pieces playing already, so this keeps them.
-            at.Copies.Set(at.Entity, model.Pieces, phase is Phase.Breaking or Phase.Settled);
-
+            // A break started its pieces playing already, so this keeps them. Debris goes down with what it lay on.
+            at.Copies.Set(at.Entity, model.Pieces, phase is Phase.Breaking or Phase.Settled && !lost);
             at.Copies.Set(at.Entity, model.Stub, !standing && !hangs);
-            at.Copies.Set(at.Entity, model.Heap, phase == Phase.Broken);
+            at.Copies.Set(at.Entity, model.Heap, phase == Phase.Broken && !lost);
             at.Copies.Set(at.Entity, model.Broken, !standing);
         }
 

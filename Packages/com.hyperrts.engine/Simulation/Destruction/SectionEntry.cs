@@ -60,6 +60,9 @@ namespace HyperRTS.Simulation.Destruction
         [Tooltip("Sections it rests on, by their intact model; it falls once none of them reach the ground.")]
         public GameObject[] supports;
 
+        [Tooltip("Sections its broken pieces and heap lie on, by their intact model; they hide while any of them is broken.")]
+        public GameObject[] rests;
+
         [Tooltip("Moving parts (a turret, a gun, a door, a radar head) that hide and show with the intact model.")]
         public GameObject[] parts;
 

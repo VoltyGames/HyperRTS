@@ -24,8 +24,11 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>The storey it belongs to, 0 for the ground floor.</summary>
         public byte Floor;
 
-        /// <summary>Bits of the sections it rests on.</summary>
-        public ulong Supports;
+        /// <summary>Bits of the sections holding it up.</summary>
+        public ulong Holders;
+
+        /// <summary>Bits of the sections this one's broken pieces and heap lie on.</summary>
+        public ulong Rests;
 
         /// <summary>Stands on the ground, so it holds up whatever rests on it.</summary>
         public bool Anchored;
@@ -50,8 +53,8 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>Carries the walkable deck of the building's <see cref="NavArea"/>, which closes while it is broken.</summary>
         public bool Deck;
 
-        /// <summary>Needs every support standing, not just one (a bridge span), so it falls when any goes.</summary>
-        public bool NeedsAllSupports;
+        /// <summary>Needs every holder standing, not just one (a bridge span), so it falls when any goes.</summary>
+        public bool NeedsAllHolders;
 
         /// <summary>Horizontal, or up for a roof over the centre; the way debris flies.</summary>
         public float3 Outward;
@@ -62,7 +65,10 @@ namespace HyperRTS.Simulation.Destruction
         public readonly bool IsBroken => BreakOrder > 0;
 
         /// <summary>Whether it rests on something and every support is in <paramref name="broken"/>, so a stub would hang in the air.</summary>
-        public readonly bool Hangs(ulong broken) => Supports != 0ul && (Supports & ~broken) == 0ul;
+        public readonly bool Hangs(ulong broken) => Holders != 0ul && (Holders & ~broken) == 0ul;
+
+        /// <summary>Whether a section its broken pieces and heap lie on is in <paramref name="broken"/>, so they would hang in the air.</summary>
+        public readonly bool DebrisHangs(ulong broken) => (Rests & broken) != 0ul;
 
         /// <summary>Whether it stands on <paramref name="supported"/>: anchored, or resting on one support or on all of them.</summary>
         public readonly bool StandsOn(ulong supported)
@@ -72,12 +78,12 @@ namespace HyperRTS.Simulation.Destruction
                 return true;
             }
 
-            if (NeedsAllSupports)
+            if (NeedsAllHolders)
             {
-                return Supports != 0ul && (Supports & ~supported) == 0ul;
+                return Holders != 0ul && (Holders & ~supported) == 0ul;
             }
 
-            return (Supports & supported) != 0ul;
+            return (Holders & supported) != 0ul;
         }
 
         /// <summary>Distance from <paramref name="local"/> to the box, 0 inside it.</summary>

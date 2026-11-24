@@ -90,13 +90,13 @@ Building sections and toppling scenery; presentation is in [client](../presentat
 
 `SectionsAuthoring` splits a building into up to 64 `Section`s (walls, roofs, floors). Each is a box with a share of
 the health, a `SectionMaterial`, a floor, the sections it rests on, and flags for anchored (stands on the ground) and
-exterior. The building's health is the sum of its sections', so the HUD, AI, capture and repair read it.
+exterior. The building's health is the sum of its sections'.
 
 - **Filling the list.** **Fill from parts** lists sections from `<Name>_Intact` children and their `<Name>_Broken`
   siblings and guesses the rest. For a building from the structure tool
   ([tools](../../../docs/art/generators.md#structure-builds)), **Fill from model** reads the sections its model's import
   keeps (`ModelSections`, from the FBX properties `section` and `hole` on the intact and holed meshes): materials,
-  floors, supports, facing, holes and parts (nodes with `section` but no `order`), and gives a mount to the section whose parts hold its
+  floors, supports, rests (what its debris lies on, as `supports`), facing, holes and parts (nodes with `section` but no `order`), and gives a mount to the section whose parts hold its
   muzzle, turret or barrel. It measures each box from the intact mesh and takes the `In`, `Out` and
   `Collapse` break clips from the [rigid](../presentation/animation.md#rigid-vertex-animation) clip table the pieces
   play. Map material names in `materialNames`. A refill keeps shares and decks of existing entries. `SectionsRule` checks pairs, materials, clips, parts, mounts and that everything reaches the ground.

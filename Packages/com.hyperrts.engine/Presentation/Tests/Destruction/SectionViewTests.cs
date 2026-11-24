@@ -103,7 +103,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             var house = Building(0ul, true, out var models);
             var sections = _em.GetBuffer<Section>(house);
             var resting = sections[2];
-            resting.Supports = 0b1000ul;
+            resting.Holders = 0b1000ul;
             sections[2] = resting;
             Update(0f);
             SetBroken(house, 0b0100ul);
@@ -118,6 +118,54 @@ namespace HyperRTS.Presentation.Tests.Destruction
             SetBroken(house, 0b0100ul);
             Update(11f);
             AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+        }
+
+        [Test]
+        public void Debris_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
+        {
+            var house = Building(0ul, true, out var models);
+            var sections = _em.GetBuffer<Section>(house);
+            var resting = sections[2];
+            resting.Rests = 0b1000ul;
+            sections[2] = resting;
+            Update(0f);
+            SetBroken(house, 0b0100ul);
+            Update(1f);
+            Update(1f + Clips.Collapse.Seconds + 0.1f);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+
+            SetBroken(house, 0b1100ul);
+            Update(10f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: false);
+
+            SetBroken(house, 0b0100ul);
+            Update(11f);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+        }
+
+        [Test]
+        public void Heap_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
+        {
+            var house = Building(0ul, true, out var models);
+            var sections = _em.GetBuffer<Section>(house);
+            var resting = sections[2];
+            resting.Rests = 0b1000ul;
+            sections[2] = resting;
+            Update(0f);
+            var shown = _em.GetComponentData<ShownSections>(house);
+            shown.Seen = false;
+            _em.SetComponentData(house, shown);
+            SetBroken(house, 0b0100ul);
+            Update(5f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+
+            SetBroken(house, 0b1100ul);
+            Update(6f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: false);
+
+            SetBroken(house, 0b0100ul);
+            Update(7f);
+            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
         }
 
         [Test]

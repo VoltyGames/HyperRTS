@@ -126,12 +126,13 @@ thread.
 **Sections.** A building with `SectionsAuthoring` ([combat](../simulation/combat.md#sections)) gives each section models
 (`SectionModel`): intact, holed variants, rigid pieces, a stub and a heap, or just a broken model. Models other than the
 intact one are saved at scale 0, so editor views show the standing building, and bake as prefabs copied in while they
-show (see model copies above). `SectionViewSystem` shows each section in one of four cosmetic states following the simulation's broken mask:
+show (see model copies above). `SectionViewSystem` shows each section by the simulation's broken mask:
 
 - **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.
 - **Breaking:** a break this client saw plays the pieces' clip once (`SectionClips`), blown in or out by the side the
   last impact came from, and the pieces stay on its last frame (`ShownSections.Settled`), so nothing jumps.
 - **Broken:** stub and heap with no clip, for a break nobody saw or a building first seen broken.
+- **Resting debris:** pieces and heap hide while a section in `Section.Rests` is broken, and return on repair.
 - **Repair:** the intact model returns.
 
 ## Shaders
@@ -151,8 +152,8 @@ structured buffer the shader reads as `_Instances[SV_InstanceID]`.
 
 | Term | Meaning |
 | --- | --- |
-| Pass | One way a shader draws a mesh. URP runs a mesh's passes at different points of the frame: its shadow, its depth, its colour (`UniversalForward`), its motion |
-| Keyword | A switch compiled into the shader, such as `_BONES`. Each combination of keywords is a separate compiled variant, so every new keyword doubles the variants that use it |
+| Pass | One way a shader draws a mesh, run at its own point of the frame: shadow, depth, colour (`UniversalForward`), motion |
+| Keyword | A switch compiled into the shader, such as `_BONES`. Each combination is a separate variant, so a new keyword doubles them |
 | `UnityPerMaterial` | The block of material values (colours, tiling, strengths). Every pass of a shader must declare the same block, or URP's SRP Batcher stops batching its draws |
 | DOTS instancing | Values Entities Graphics writes per entity (team colour, build progress) instead of per material, through a `[MaterialProperty]` component |
 | Depth and depth-normals | Prepasses that write each pixel's distance and facing. SSAO, contact shadows, screen-space reflections and soft particles read them |
