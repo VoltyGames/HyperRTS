@@ -9,13 +9,13 @@ developers writing shaders.
 
 `HyperRTS/LitTeam` is URP Lit that repaints the albedo in the owner's colour where the `_TeamMask` red channel allows
 (UV0), inside the `TeamStripAuthoring` height band if there is one. `OwnerPalette` holds this client's colours;
-`TeamColorOverride` swaps them. The validator flags units and buildings without a team colour material. LitTeam takes
+`TeamColorOverride` swaps them. LitTeam takes
 the metallic workflow, opaque, alpha-tested or transparent, and `LitTeamGUI` keeps its keywords, blend, queue and passes
 in step with the maps and toggles.
 
 **Team markers.** A team marker is a child mesh (a roof panel, pennant, flag or placard) on a LitTeam material with a
 white team mask, which `TeamColorSystem` paints like every mesh under the root. `TeamMarkerAuthoring` bakes nothing; it
-lets `TeamColorRule` count markers against `TeamMarkerSettings.minMarkers` (the project keeps exactly one such asset, which `TeamMarkerSettingsRule` requires) on vehicles and buildings that can take an
+lets `TeamColorRule` count markers against `TeamMarkerSettings.minMarkers` on vehicles and buildings that can take an
 owner (not neutral, or capturable, or a neutral garrison), have no team strip and are no base prefab that variants
 derive from; a variant's inherited markers count. A marker hides with the damage stage it sits under and dies with its entity, since
 remains are their own prefab. A building's marker turns `_BUILD` on with UV3 at 1, or it shows before the building
@@ -59,7 +59,9 @@ behind them.
 Structure materials on LitTeam turn on `_BUILD`, and the model rises piece by piece with its `ConstructionProgress`
 (`BuildRevealSystem`). UV3 holds each piece's build order. A one-piece model such as a wall panel sets a long
 `_BuildDropSlice` and a big `_BuildDropHeight`; pieces below `_BuildDropFrom`, such as slabs, are laid in place. Meshes
-without UV3 data, materials without `_BUILD` and finished buildings draw as authored.
+without UV3 data, materials without `_BUILD` (glass too) and finished buildings draw whole. Unbuilt pieces collapse to
+the origin, so `BuildPieceLods.KeepPiecesWhole`, called on import, splits triangles that import or Mesh LOD welded
+across pieces.
 
 ## Building lights
 
