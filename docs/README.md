@@ -49,6 +49,7 @@ What a player sees and touches, on clients only. [Interaction, input, audio and 
 | --- | --- |
 | [Editor](editor/README.md) | Menus, Tools window, commands, validation, debug tools |
 | [Play mode](editor/play-mode.md) | Cheats, debug layers, the Play page launcher, virtual players |
+| [Creation menus](editor/creation.md) | GameObject and Create menus, the New Entity wizard and its game steps |
 | [Authoring](editor/authoring.md) | Authoring conventions, inspectors, Hierarchy and Project rows |
 | [Maps](maps/README.md) | Workflow, spec format, map library |
 | [Map Editor](maps/editor.md) | Editing specs |

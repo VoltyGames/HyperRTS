@@ -42,6 +42,21 @@ namespace HyperRTS.Editor.Templates
         /// <summary>Builds the entity named <paramref name="name"/> as a scene object, ready to save as a prefab.</summary>
         public GameObject Build(string name) => _build(name);
 
+        /// <summary>Saves the entity named <paramref name="name"/> as a prefab in <paramref name="folder"/>, then runs each step on it.</summary>
+        public GameObject Save(string name, string folder, IEnumerable<EntityWizardStep> steps)
+        {
+            var go = Build(name);
+            var path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{name}.prefab");
+            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+            UnityEngine.Object.DestroyImmediate(go);
+            foreach (var step in steps)
+            {
+                step.Run(prefab);
+            }
+
+            return prefab;
+        }
+
         private static EntityChoice Heading(string label) => new(label, null, null);
 
         private static EntityChoice Template(EntityTemplate template) =>

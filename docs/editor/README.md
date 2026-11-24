@@ -140,15 +140,7 @@ is shown; leaving it restores the wind and fog globals. Saving a recipe rebuilds
 
 ## Creation menus
 
-**GameObject ▸ HyperRTS** places the `EngineRig`, a Match, or a template for a unit, building, upgrade or map object.
-New scene objects go into the SubScene open for editing. Authoring components sit under **Add Component ▸ HyperRTS**,
-one submenu per module, each with a help button to its module section.
-
-**Assets ▸ Create ▸ HyperRTS ▸ Entity...** opens the New Entity wizard: search, pick an entry, type the prefab name,
-**Create**. It lists every group of every `EntityBases` asset (**Create ▸ HyperRTS ▸ Entity Bases**, where a project
-names its base prefabs) and then the engine templates in `TemplateRegistry`. A base becomes a prefab variant of it. The
-name sets the HUD display name, underscores read as spaces. **Assets ▸ Create ▸ HyperRTS** also creates data assets
-(Resource Type, Damage Type, Impact Mark, Sound Cue, AI Build Order).
+Creating objects and assets has its own page: [creation menus](creation.md).
 
 ## Validation
 

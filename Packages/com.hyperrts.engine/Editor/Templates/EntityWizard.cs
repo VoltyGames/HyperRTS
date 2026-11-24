@@ -12,7 +12,8 @@ namespace HyperRTS.Editor.Templates
 {
     /// <summary>
     /// Assets ▸ Create ▸ HyperRTS ▸ Entity...: a searchable list of the project's base prefabs and the engine
-    /// templates; Create saves the pick, named, as a prefab (a variant for a base) in the selected folder.
+    /// templates; Create saves the pick, named, as a prefab (a variant for a base) in the selected folder and runs the
+    /// game's <see cref="EntityWizardStep"/>s on it.
     /// </summary>
     public sealed class EntityWizard : EditorWindow
     {
@@ -22,6 +23,8 @@ namespace HyperRTS.Editor.Templates
         private TreeView _choices;
         private TextField _name;
         private Button _create;
+        private Label _problem;
+        private List<EntityWizardStep> _steps;
         private List<(EntityChoice Heading, List<EntityChoice> Choices)> _all;
 
         [MenuItem("Assets/Create/HyperRTS/Entity...", false, 0)]
@@ -50,6 +53,10 @@ namespace HyperRTS.Editor.Templates
             _create.clicked += Create;
             root.Require<ToolbarSearchField>("search").RegisterValueChangedCallback(change => Fill(change.newValue));
             root.Require<Label>("folder").text = $"Saves in {_folder}";
+            _problem = root.Require<Label>("problem");
+            var form = root.Require<VisualElement>("steps");
+            _steps = EntityWizardStep.For(_folder);
+            _steps.ForEach(step => form.Add(step.CreateForm(Refresh)));
             _all = EntityChoice.All().ToList();
             Fill("");
         }
@@ -91,16 +98,17 @@ namespace HyperRTS.Editor.Templates
         private void Refresh()
         {
             var picked = Picked;
-            _create.SetEnabled(picked is { IsHeading: false } && !string.IsNullOrWhiteSpace(_name.value));
+            var name = _name.value.Trim();
+            var ready = picked is { IsHeading: false } && name.Length > 0;
+            var problem = ready ? _steps.Select(step => step.Problem(name)).FirstOrDefault(text => text != null) : null;
+            _problem.text = problem;
+            _problem.SetHidden(problem == null);
+            _create.SetEnabled(ready && problem == null);
         }
 
         private void Create()
         {
-            var name = _name.value.Trim();
-            var go = Picked.Build(name);
-            var path = AssetDatabase.GenerateUniqueAssetPath($"{_folder}/{name}.prefab");
-            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
-            DestroyImmediate(go);
+            var prefab = Picked.Save(_name.value.Trim(), _folder, _steps);
             ProjectWindowUtil.ShowCreatedAsset(prefab);
             Close();
         }

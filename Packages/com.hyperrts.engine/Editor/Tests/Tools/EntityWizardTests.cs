@@ -1,9 +1,11 @@
+using System;
 using System.Linq;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Simulation.GameEntities;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Tests.Tools
 {
@@ -35,12 +37,41 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [Test]
+        public void StepRunsOnTheSavedPrefab()
+        {
+            AssetDatabase.CreateFolder("Assets", "_EntityWizardTests");
+            var choice = EntityChoice.All().Single(group => group.Heading.Label == "Templates").Choices.First();
+            var steps = EntityWizardStep.For(Folder);
+            Assert.That(steps.Select(step => step.GetType()), Is.EqualTo(new[] { typeof(RecordingStep) }));
+
+            var prefab = choice.Save("Stepped", Folder, steps);
+
+            Assert.AreEqual(prefab, ((RecordingStep)steps.Single()).Seen);
+            Assert.IsTrue(AssetDatabase.Contains(prefab));
+            Assert.That(EntityWizardStep.For("Assets"), Is.Empty);
+        }
+
+        [Test]
         public void EveryTemplateIsOffered()
         {
             var templates = EntityChoice.All().Single(group => group.Heading.Label == "Templates").Choices;
 
             Assert.AreEqual(TemplateRegistry.All.Count, templates.Count);
             Assert.That(templates.Select(choice => choice.IsHeading), Has.All.False);
+        }
+
+        /// <summary>Applies only to the test folder and keeps the prefab it was given.</summary>
+        public sealed class RecordingStep : EntityWizardStep
+        {
+            public GameObject Seen;
+
+            public override bool Applies(string folder) => folder == Folder;
+
+            public override VisualElement CreateForm(Action changed) => new();
+
+            public override string Problem(string name) => null;
+
+            public override void Run(GameObject prefab) => Seen = prefab;
         }
     }
 }
