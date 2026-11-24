@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Effects.Stages
         public abstract StageState State(EffectRigEntry rig);
 
         /// <summary>The project-relative images the stage made, shown under the rig's stages.</summary>
-        public virtual IReadOnlyList<string> Sheet(EffectRigEntry rig) => new List<string>();
+        public virtual IReadOnlyList<string> Sheet(EffectRigEntry rig) => Array.Empty<string>();
 
         /// <summary>
         /// Runs the stage for <paramref name="rig"/>, writing its log as it goes or at the end, and throws when it fails,

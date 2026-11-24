@@ -33,16 +33,16 @@ namespace HyperRTS.Simulation.Tests.Destruction
             for (var i = 0; i < SpanCount; i++)
             {
                 var onBank = i == 0 || i == SpanCount - 1;
-                var rests = i == 1 ? 1ul : 0ul;
+                var holders = i == 1 ? 1ul : 0ul;
                 if (i == 2)
                 {
-                    rests = 1ul << (SpanCount - 1);
+                    holders = 1ul << (SpanCount - 1);
                 }
 
                 sections.Add(new Section
                 {
                     Center = Span(i), HalfSize = new float3(4.5f, 0.3f, SpanLength * 0.5f), Health = 100f,
-                    MaxHealth = 100f, Anchored = onBank, Deck = true, Holders = rests, Outward = math.up(),
+                    MaxHealth = 100f, Anchored = onBank, Deck = true, Holders = holders, Outward = math.up(),
                 });
             }
 

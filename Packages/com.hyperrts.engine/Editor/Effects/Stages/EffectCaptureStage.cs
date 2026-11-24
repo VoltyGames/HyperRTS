@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.Effects.Stages
             var log = Log(rig);
             if (!log.Exists || log.Failed)
             {
-                return new List<string>();
+                return Array.Empty<string>();
             }
 
             return log.Text().Split('\n').Select(line => line.Trim())

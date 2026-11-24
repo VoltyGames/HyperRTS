@@ -190,7 +190,7 @@ namespace HyperRTS.Editor.Destruction
         }
 
         /// <summary>The bounds of every mesh under <paramref name="node"/>, in the building's space.</summary>
-        public Bounds Measure(Transform node)
+        private Bounds Measure(Transform node)
         {
             var bounds = new Bounds();
             var any = false;

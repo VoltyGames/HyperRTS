@@ -23,7 +23,15 @@ namespace HyperRTS.Editor.Generators
                     throw new ArgumentException("HyperRTS: an item needs the name of its generator.");
                 }
 
-                RunEvery(stale);
+                if (stale)
+                {
+                    GeneratorRunner.RunOutOfDate();
+                }
+                else
+                {
+                    GeneratorRunner.RunAll();
+                }
+
                 return Describe(GeneratorRunner.All());
             }
 
@@ -44,18 +52,7 @@ namespace HyperRTS.Editor.Generators
             return Describe(new[] { generator });
         }
 
-        private static void RunEvery(bool stale)
-        {
-            if (stale)
-            {
-                GeneratorRunner.RunOutOfDate();
-                return;
-            }
-
-            GeneratorRunner.RunAll();
-        }
-
-        [CliCommand("generator", "list", "List every generator and its items with what they read and writes and its last run, running none.", Tags = new[] { Tag })]
+        [CliCommand("generator", "list", "List every generator and its items with what they read and write and their last run, running none.", Tags = new[] { Tag })]
         public static List<GeneratorEntry> List() => Describe(GeneratorRunner.All());
 
         private static List<GeneratorEntry> Describe(IEnumerable<Generator> generators)
