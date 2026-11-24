@@ -19,26 +19,27 @@ namespace HyperRTS.Editor.Validation.Rules.UI
         /// <summary>The text with comments blanked, so indexes and line numbers still match the file.</summary>
         public readonly string Code;
 
+        private readonly List<int> _lineStarts = new() { 0 };
+
         public UIFile(string path, string text)
         {
             Path = path;
             Code = Blank(path.EndsWith(".uxml") ? XmlComment : CssComment, text);
+            for (var i = 0; i < Code.Length; i++)
+            {
+                if (Code[i] == '\n')
+                {
+                    _lineStarts.Add(i + 1);
+                }
+            }
         }
 
         public bool IsLayout => Path.EndsWith(".uxml");
 
         public int LineAt(int index)
         {
-            var line = 1;
-            for (var i = 0; i < index; i++)
-            {
-                if (Code[i] == '\n')
-                {
-                    line++;
-                }
-            }
-
-            return line;
+            var found = _lineStarts.BinarySearch(index);
+            return found >= 0 ? found + 1 : ~found;
         }
 
         /// <summary>Every class a selector in this style sheet names, compound selectors included.</summary>

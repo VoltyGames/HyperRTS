@@ -64,28 +64,30 @@ namespace HyperRTS.Editor.Generators
             row.Require<Label>("description").text = generator.Description;
             row.Require<Label>("sources").text = $"Reads: {generator.Sources}";
             row.Require<Label>("outputs").text = $"Writes: {generator.Outputs}";
-            row.Require<Label>("out-of-date").SetHidden(!generator.IsOutOfDate(log));
-            ShowLastRun(row.Require<Label>("last-run"), generator, log);
+            ShowLastRun(row, generator, log);
             row.Require<Button>("run").clicked += () => RunThenFill(() => GeneratorRunner.Run(generator), root);
             return row;
         }
 
         // A generator with items shows their counts; the Models page or the command lists each one.
-        private static void ShowLastRun(Label label, Generator generator, GeneratorRunLog log)
+        private static void ShowLastRun(VisualElement row, Generator generator, GeneratorRunLog log)
         {
+            var label = row.Require<Label>("last-run");
             var items = generator.Items;
             if (items.Count == 0)
             {
                 var last = log.Find(generator.Name, "");
                 label.text = last == null ? "Not run in this project yet" : last.ToString();
                 label.EnableInClassList("hrts-generators__last-run--failed", last is { Failed: true });
+                row.Require<Label>("out-of-date").SetHidden(!generator.IsOutOfDate(log));
                 return;
             }
 
             var failed = items.Count(item => log.Find(generator.Name, item.Name) is { Failed: true });
-            var outOfDate = items.Count(item => generator.IsOutOfDate(item, log)) - failed;
-            label.text = $"{items.Count} items, {outOfDate} out of date, {failed} failed";
+            var stale = items.Count(item => generator.IsOutOfDate(item, log));
+            label.text = $"{items.Count} items, {stale - failed} out of date, {failed} failed";
             label.EnableInClassList("hrts-generators__last-run--failed", failed > 0);
+            row.Require<Label>("out-of-date").SetHidden(stale == 0);
         }
     }
 }

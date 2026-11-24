@@ -8,6 +8,8 @@ using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Validation.Rules.UI
 {
+    using Match = System.Text.RegularExpressions.Match;
+
     /// <summary>What the UI file rule asks the project: whether an asset or an element type exists, and the asset to point an issue at.</summary>
     public sealed class UIProject
     {
@@ -26,7 +28,21 @@ namespace HyperRTS.Editor.Validation.Rules.UI
 
         /// <summary>The class names a C# file passes to class list calls and queries, or holds in a const named for a class.</summary>
         public static IEnumerable<string> ClassNamesIn(string code) =>
-            ClassName.Matches(code).Select(match => match.Groups.Cast<Group>().Skip(1).First(group => group.Success).Value);
+            ClassName.Matches(code).Select(FirstGroup);
+
+        /// <summary>The text of the first capture group that matched, or empty when none did.</summary>
+        public static string FirstGroup(Match match)
+        {
+            for (var i = 1; i < match.Groups.Count; i++)
+            {
+                if (match.Groups[i].Success)
+                {
+                    return match.Groups[i].Value;
+                }
+            }
+
+            return "";
+        }
 
         /// <summary>The open project: its asset database and every loaded type UXML can name.</summary>
         public static UIProject Open()

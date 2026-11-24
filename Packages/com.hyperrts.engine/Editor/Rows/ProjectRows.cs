@@ -29,6 +29,7 @@ namespace HyperRTS.Editor.Rows
 
         private readonly Dictionary<string, Texture2D> _icons = new();
         private Dictionary<string, Color> _itemDots;
+        private bool _repaintQueued;
         private Texture _prefabBadge;
 
         [InitializeOnLoadMethod]
@@ -46,10 +47,21 @@ namespace HyperRTS.Editor.Rows
             _itemDots = null;
         }
 
+        // A run records many items; one repaint after them rebuilds the dots once.
         private void ClearItemDots()
         {
             _itemDots = null;
-            EditorApplication.RepaintProjectWindow();
+            if (_repaintQueued)
+            {
+                return;
+            }
+
+            _repaintQueued = true;
+            EditorApplication.delayCall += () =>
+            {
+                _repaintQueued = false;
+                EditorApplication.RepaintProjectWindow();
+            };
         }
 
         private Texture2D FindIcon(string guid)
@@ -94,7 +106,17 @@ namespace HyperRTS.Editor.Rows
 
         private void DrawItemDot(string guid, Rect row)
         {
-            _itemDots ??= FindItemDots();
+            if (_itemDots == null)
+            {
+                // The run's last record queues the repaint that builds them.
+                if (GeneratorRunner.Running)
+                {
+                    return;
+                }
+
+                _itemDots = FindItemDots();
+            }
+
             if (!_itemDots.TryGetValue(guid, out var color))
             {
                 return;

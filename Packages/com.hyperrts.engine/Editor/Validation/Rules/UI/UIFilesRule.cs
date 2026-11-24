@@ -15,8 +15,25 @@ namespace HyperRTS.Editor.Validation.Rules.UI
         public void Check(AssetSet assets, ValidationIssues issues)
         {
             var project = UIProject.Open();
-            project.CodeClassNames = ReadCodeClassNames();
-            Check(ReadFiles(), project, issues);
+            var files = new Dictionary<string, string>();
+            var classNames = new HashSet<string>();
+            foreach (var (folder, assetFolder) in Roots())
+            {
+                foreach (var file in Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories))
+                {
+                    if (file.EndsWith(".cs"))
+                    {
+                        classNames.UnionWith(UIProject.ClassNamesIn(File.ReadAllText(file)));
+                    }
+                    else if (file.EndsWith(".uxml") || file.EndsWith(".uss"))
+                    {
+                        files[assetFolder + "/" + Path.GetRelativePath(folder, file).Replace('\\', '/')] = File.ReadAllText(file);
+                    }
+                }
+            }
+
+            project.CodeClassNames = classNames;
+            Check(files, project, issues);
         }
 
         /// <summary>Checks files by asset path and text; the part of the rule that needs no Editor state.</summary>
@@ -37,41 +54,10 @@ namespace HyperRTS.Editor.Validation.Rules.UI
             }
         }
 
-        private static Dictionary<string, string> ReadFiles()
-        {
-            var files = new Dictionary<string, string>();
-            foreach (var (folder, assetFolder) in Roots())
-            {
-                foreach (var file in Files(folder, ".uxml", ".uss"))
-                {
-                    files[assetFolder + "/" + Path.GetRelativePath(folder, file).Replace('\\', '/')] = File.ReadAllText(file);
-                }
-            }
-
-            return files;
-        }
-
-        private static HashSet<string> ReadCodeClassNames()
-        {
-            var names = new HashSet<string>();
-            foreach (var (folder, _) in Roots())
-            {
-                foreach (var file in Files(folder, ".cs"))
-                {
-                    names.UnionWith(UIProject.ClassNamesIn(File.ReadAllText(file)));
-                }
-            }
-
-            return names;
-        }
-
         private static (string Folder, string AssetFolder)[] Roots()
         {
             var engine = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(UIFilesRule).Assembly);
             return new[] { ("Assets", "Assets"), (engine.resolvedPath, engine.assetPath) };
         }
-
-        private static IEnumerable<string> Files(string folder, params string[] extensions) =>
-            Directory.EnumerateFiles(folder, "*.*", SearchOption.AllDirectories).Where(file => extensions.Any(file.EndsWith));
     }
 }

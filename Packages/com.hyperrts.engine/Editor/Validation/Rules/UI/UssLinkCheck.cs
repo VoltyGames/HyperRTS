@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Validation.Rules.UI
         {
             foreach (Match match in Link.Matches(file.Code))
             {
-                var link = FirstGroup(match);
+                var link = UIProject.FirstGroup(match);
                 var target = link.Length > 0 ? file.Resolve(link) : null;
                 if (target != null && !project.AssetExists(target))
                 {
@@ -23,19 +23,6 @@ namespace HyperRTS.Editor.Validation.Rules.UI
                         $"{file.Path}:{file.LineAt(match.Index)}: the link '{link}' names no asset.");
                 }
             }
-        }
-
-        private static string FirstGroup(Match match)
-        {
-            for (var i = 1; i < match.Groups.Count; i++)
-            {
-                if (match.Groups[i].Success)
-                {
-                    return match.Groups[i].Value;
-                }
-            }
-
-            return "";
         }
     }
 }
