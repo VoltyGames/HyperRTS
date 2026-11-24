@@ -116,7 +116,7 @@ namespace HyperRTS.Editor.Tests.Tools
         }
 
         [Test]
-        public void LitTeamVertexStagesCompileWithRigidVATBonesAndBuild()
+        public void LitTeamVertexStagesCompileWithRigidVATBonesClothAndBuild()
         {
             var shader = Shader.Find("HyperRTS/LitTeam");
 
@@ -127,6 +127,7 @@ namespace HyperRTS.Editor.Tests.Tools
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "DOTS_INSTANCING_ON"));
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
             Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_CLOTH", "_BUILD", "DOTS_INSTANCING_ON"));
         }
 
         private static IEnumerable<TestCaseData> Channels() =>

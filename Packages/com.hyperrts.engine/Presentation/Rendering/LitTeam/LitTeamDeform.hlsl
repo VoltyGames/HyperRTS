@@ -1,10 +1,11 @@
-// Vertex animation for units: rigid pieces moved by a baked clip texture (VAT), or bone skinning, plus build reveal,
-// track bend and crater sink.
+// Vertex animation for units: rigid pieces moved by a baked clip texture (VAT), or bone skinning, plus cloth waving,
+// build reveal, track bend and crater sink.
 #ifndef HYPERRTS_LIT_TEAM_DEFORM_INCLUDED
 #define HYPERRTS_LIT_TEAM_DEFORM_INCLUDED
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamInput.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamBuild.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamCloth.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamTrack.hlsl"
 #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Craters/CraterSink.hlsl"
 
@@ -69,6 +70,12 @@ float3 DeformObject(float3 positionOS)
     #define LIT_TEAM_POSE(vatIndex, positionOS, normalOS, time)
 #endif
 
+#ifdef _CLOTH
+    #define LIT_TEAM_CLOTH(positionOS, normalOS, time) ApplyCloth(time, positionOS, normalOS);
+#else
+    #define LIT_TEAM_CLOTH(positionOS, normalOS, time)
+#endif
+
 #ifdef _BUILD
     #define LIT_TEAM_BUILD(positionOS, normalOS) ApplyBuild(buildOrder, positionOS, normalOS);
 #else
@@ -77,8 +84,10 @@ float3 DeformObject(float3 positionOS)
 
 // Every LitTeam pass moves its vertices through this, so all of them agree on depth. Reads the buildOrder, boneIndex
 // and boneWeight inputs. The _AT form poses the clips at another time, as the motion vector pass does for last frame.
+// Cloth waves before the build reveal, so a piece not yet built still collapses to the origin.
 #define LIT_TEAM_DEFORM_AT(vatIndex, positionOS, normalOS, time) \
     LIT_TEAM_POSE(vatIndex, positionOS, normalOS, time) \
+    LIT_TEAM_CLOTH(positionOS, normalOS, time) \
     LIT_TEAM_BUILD(positionOS, normalOS) \
     positionOS = DeformObject(positionOS);
 #define LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS) LIT_TEAM_DEFORM_AT(vatIndex, positionOS, normalOS, _ClipTime)

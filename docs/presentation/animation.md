@@ -93,6 +93,16 @@ door, `Extend` for a sliding one and `Stretch` for a roll-up curtain. `Dropping`
 an aircraft with `FlightAuthoring`. A `Releasing` machine without `ProducerAuthoring` above it, or a `Dropping` one
 without `FlightAuthoring`, fails the bake.
 
+## Cloth
+
+A flag, pennant or banner modelled into a mesh waves on the GPU with LitTeam's `_CLOTH` toggle, so it needs no machine
+or entity. The material names, in the mesh's object space, a point on the hoist edge (`_ClothHoist`), the run from the
+hoist to the fly end (`_ClothAlong`) and the way it ripples (`_ClothSide`). Nothing at or behind the hoist moves, so a
+pole, bracket or rod on the same material stays still; the ripple grows toward the fly end, runs faster and wider with
+the scene's wind strength, plays on the clip clock (so it pauses with the game) and starts its phase from the object's
+position. It deforms before the build reveal. A mesh with its own flag cloth and owner flag is a `FlagMount` instead
+([flags](rendering.md#flags)).
+
 ## Motion rig
 
 `MotionRigAuthoring` on a unit or building root moves the model's parts on the client; each part is one mesh whose

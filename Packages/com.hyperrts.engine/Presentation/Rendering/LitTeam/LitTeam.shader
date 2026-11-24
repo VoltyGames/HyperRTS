@@ -50,6 +50,15 @@ Shader "HyperRTS/LitTeam"
         [Header(Ground)]
         _CraterSink("Crater Sink (1 drops into a crater under it, 0 for a model that brings its own dent)", Range(0, 1)) = 1
 
+        [Header(Cloth)]
+        [Toggle(_CLOTH)] _Cloth("Cloth (waves out from its hoist, for flags and banners)", Float) = 0
+        _ClothHoist("Cloth Hoist (object space point on the edge that stays still)", Vector) = (0, 0, 0, 0)
+        _ClothAlong("Cloth Along (object space, hoist to fly end)", Vector) = (1, 0, 0, 0)
+        _ClothSide("Cloth Side (object space, the way it ripples)", Vector) = (0, 0, 1, 0)
+        _ClothAmplitude("Cloth Amplitude (m at the fly end in still air)", Float) = 0.06
+        _ClothWaves("Cloth Waves (along its length)", Float) = 1.2
+        _ClothSpeed("Cloth Speed", Float) = 6
+
         [Header(Construction)]
         [Toggle(_BUILD)] _Build("Build Piece By Piece (UV3)", Float) = 0
         [HideInInspector] _BuildProgress("Build Progress", Range(0, 1)) = 1
