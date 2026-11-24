@@ -31,6 +31,9 @@ namespace HyperRTS.Editor.Maps.Tools
             return reports.Select(Summary).ToList();
         }
 
+        [CliCommand("map", "build_missing", "Build every listed map whose scene is missing, as after a fresh clone (minutes each); returns what map build does, empty when none is missing. Fails while open scenes have unsaved changes.", Tags = new[] { Tag })]
+        public static object BuildMissing() => MapBuildRunner.BuildMissing(ask: false).Select(Summary).ToList();
+
         [CliCommand("map", "capture", "Render a built map's standard views from the match camera; returns the image paths.", Tags = new[] { Tag })]
         public static List<string> Capture([CliArg("map", MapHelp, Required = true)] string map) => MapViewCapture.Capture(MapPaths.Find(map));
 

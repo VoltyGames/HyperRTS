@@ -56,6 +56,7 @@ detached jobs. `--tag hyperrts` lists them.
 | --- | --- |
 | `map preview <map>` | Previews a map spec: issues, land shares, counts, report and image paths |
 | `map build [map]` | Builds one map, or every map when none is named; returns rush times, issues and report paths |
+| `map build_missing` | Builds every listed map whose scene is missing, as after a fresh clone ([stable GUIDs](../maps/build.md#stable-guids)) |
 | `map capture <map>` | Captures the map's view images |
 | `map look <map> [weathers] [quality] [graded] [cost]` | Enters Play, captures the spec's `looks` per weather once GI settles, writes `summary.json`, leaves Play. `--graded false` turns Color Lookup off (for fitting lookups); `--cost true` takes no images and writes a per-feature GPU and main-thread cost to `cost.json` |
 | `map look_status` | Whether a look capture runs, and how it ended |

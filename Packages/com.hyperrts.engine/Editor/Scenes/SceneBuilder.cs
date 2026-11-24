@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Scenes
             }
 
             PrefabUtility.InstantiatePrefab(spec.Rig != null ? spec.Rig : EditorAssets.RigPrefab, scene);
-            EditorSceneManager.SaveScene(scene, spec.ScenePath);
+            new PathGuid(spec.ScenePath).SaveScene(scene);
 
             var subScenePath = Path.ChangeExtension(spec.ScenePath, null) + "_Entities.unity";
             CreateSubScene(spec, subScenePath);
@@ -104,7 +104,7 @@ namespace HyperRTS.Editor.Scenes
             }
 
             spec.Furnish?.Invoke(new EntitiesScene(entities, match, bases));
-            EditorSceneManager.SaveScene(entities, path);
+            new PathGuid(path).SaveScene(entities);
             EditorSceneManager.CloseScene(entities, true);
         }
 

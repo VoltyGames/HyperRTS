@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Maps.Build;
 using HyperRTS.Editor.Maps.Report;
+using HyperRTS.Editor.Maps.Spec;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
@@ -33,16 +35,29 @@ namespace HyperRTS.Editor.Maps.Tools
         }
 
         /// <summary>Builds every spec in the project with a progress bar.</summary>
-        public static List<MapReport> BuildAll(bool ask = true)
+        public static List<MapReport> BuildAll(bool ask = true) => BuildEach(MapPaths.All(), ask);
+
+        /// <summary>
+        /// Builds every listed map whose scene is missing, as in a fresh clone, since build output stays out of
+        /// version control.
+        /// </summary>
+        public static List<MapReport> BuildMissing(bool ask = true) => BuildEach(MapPaths.All().Where(IsMissing).ToArray(), ask);
+
+        private static bool IsMissing(string spec)
+        {
+            var map = MapSpecJson.Read(File.ReadAllText(spec));
+            return map.listed && !File.Exists(new MapPaths(spec, map.name).Scene);
+        }
+
+        private static List<MapReport> BuildEach(string[] specs, bool ask)
         {
             var results = new List<MapReport>();
-            if (!ScenesSaved(ask))
+            if (specs.Length == 0 || !ScenesSaved(ask))
             {
                 return results;
             }
 
             var scene = EditorSceneManager.GetActiveScene().path;
-            var specs = MapPaths.All();
             try
             {
                 for (var i = 0; i < specs.Length; i++)

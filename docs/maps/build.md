@@ -115,6 +115,18 @@ Put hand-placed objects under `[Dressing]`, which the build never touches. Error
 build and leave the last good scene alone. Without a graphics device, a build skips lighting, minimap and views and
 keeps the last ones; a map's first build needs graphics.
 
+## Stable GUIDs
+
+A project may keep `Generated/` out of version control and build each map on demand, with `map build_missing` for
+every listed map whose scene is missing. Tracked assets still point into the folder by GUID: the build's scene list
+at the scene, a game's catalog at what its `IMapBuildHook` adds. So a file the build creates takes the GUID derived
+from its project path, the MD5 of the path as 32 hex digits, the same in every clone and every rebuild into an empty
+folder. A file that already exists keeps its GUID.
+
+`PathGuid` does it: `SaveScene` saves a scene the first time (`SceneBuilder` saves the scene and SubScene through it),
+and `Create<T>` creates a `ScriptableObject` asset, for a hook's own outputs. `AssetDatabase.CreateAsset` ignores a
+`.meta` written before it, so `Create<T>` writes the file and its `.meta` itself, then imports them.
+
 ## Adding a kind of land use
 
 1. Add a kit in `Kits/`, like `MapFarmlandKit`, held by `MapClimate`. Give it a library type, check its keys in
