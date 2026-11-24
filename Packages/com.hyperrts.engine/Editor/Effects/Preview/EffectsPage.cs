@@ -2,10 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Effects.Graph;
 using HyperRTS.Editor.Effects.Layer;
+using HyperRTS.Editor.Effects.Stages;
 using HyperRTS.Editor.Hub;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
@@ -20,7 +19,7 @@ namespace HyperRTS.Editor.Effects.Preview
 {
     /// <summary>
     /// Tools ▸ Effects: every effect rig prefab by kind. Picking one plays it at the Scene view pivot on a loop, the way
-    /// the pool plays it, with its recipes to build and a frame capture. It plays only while the page is shown.
+    /// the pool plays it, with its recipes and the stages that make it. It plays only while the page is shown.
     /// </summary>
     public class EffectsPage : HubPage
     {
@@ -41,7 +40,7 @@ namespace HyperRTS.Editor.Effects.Preview
         private VisualElement _controls;
         private VisualElement _recipes;
         private Label _noRecipes;
-        private Button _capture;
+        private EffectStagesView _stages;
         private IssueList _issues;
 
         public override string Title => "Effects";
@@ -61,7 +60,8 @@ namespace HyperRTS.Editor.Effects.Preview
             _controls = _root.Require<VisualElement>("controls");
             _recipes = _root.Require<VisualElement>("recipes");
             _noRecipes = _root.Require<Label>("no-recipes");
-            _capture = _root.Require<Button>("capture");
+            _stages = new EffectStagesView(_root, _shell);
+            _stages.Finished += ShowAfterRun;
             _issues = _root.Require<IssueList>("issues");
             _list = new EffectRigList(_root.Require<TreeView>("list"), Layout("Row"));
             _list.Picked += Show;
@@ -81,7 +81,6 @@ namespace HyperRTS.Editor.Effects.Preview
             }
 
             _root.Require<Button>("replay").clicked += () => _playback.Replay(true);
-            _capture.clicked += () => _ = CaptureFrames();
 
             _root.WhileAttached(Subscribe, Unsubscribe);
             Reload();
@@ -141,6 +140,7 @@ namespace HyperRTS.Editor.Effects.Preview
             EditorState.instance.Save();
             _title.text = $"{rig.Name} ({rig.Kind})";
             ShowRecipes(rig.Recipes);
+            _stages.Show(rig);
             var problems = EffectRig.Problems(prefab)
                 .Select(problem => new ValidationIssue { Severity = MessageType.Error, Message = problem,
                     Context = prefab })
@@ -202,75 +202,30 @@ namespace HyperRTS.Editor.Effects.Preview
             {
                 var row = template.CloneRoot();
                 row.Require<Label>("name").text = Path.GetFileName(path);
-                ShowState(row.Require<Label>("state"), EffectGraphBuilder.State(path));
                 row.Require<Button>("select").clicked += () => EditorAssets.Reveal(AssetDatabase.LoadAssetAtPath<EffectRecipe>(path));
-                row.Require<Button>("build").clicked += () => BuildGraphs(new List<string> { path });
                 _recipes.Add(row);
             }
         }
 
-        private static void ShowState(Label label, EffectGraphState state)
+        // A stage may have rebuilt a graph or changed what the rig draws, so the shown rig loads again.
+        private void ShowAfterRun(EffectRigEntry rig)
         {
-            label.text = state switch
+            if (_playback != null && rig.Path == _current?.Path)
             {
-                EffectGraphState.Built => "Built",
-                EffectGraphState.OutOfDate => "Out of date",
-                _ => "Missing",
-            };
-            label.EnableInClassList("hrts-effects__state--stale", state == EffectGraphState.OutOfDate);
-            label.EnableInClassList("hrts-effects__state--missing", state == EffectGraphState.Missing);
-        }
-
-        private void BuildGraphs(List<string> recipes)
-        {
-            try
-            {
-                recipes.ForEach(EffectGraphBuilder.Build);
+                Show(_current);
             }
-            catch (Exception exception)
-            {
-                Say(exception.Message);
-                return;
-            }
-
-            Show(_current);
         }
 
         // A saved recipe rebuilds after the import, since a build imports the graph it writes.
         private void OnImported(string[] imported)
         {
-            var changed = _current?.Recipes.Where(imported.Contains).ToList();
-            if (changed is not { Count: > 0 })
+            var rig = _current;
+            if (rig == null || !rig.Recipes.Any(imported.Contains))
             {
                 return;
             }
 
-            EditorApplication.delayCall += () =>
-            {
-                if (_playback != null)
-                {
-                    BuildGraphs(changed);
-                }
-            };
-        }
-
-        private async Task CaptureFrames()
-        {
-            _capture.SetEnabled(false);
-            try
-            {
-                var capture = new EffectCapture(_current.Name, new EffectCaptureSettings());
-                await capture.Render();
-                EditorUtility.RevealInFinder(Path.GetFullPath(capture.Folder));
-            }
-            catch (Exception exception)
-            {
-                Say(exception.Message);
-            }
-            finally
-            {
-                _capture.SetEnabled(true);
-            }
+            EditorApplication.delayCall += () => _stages.Add(rig, new EffectGraphStage());
         }
 
         private void Say(string message)

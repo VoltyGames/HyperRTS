@@ -1,7 +1,7 @@
 @import url("../Icons/Glyphs.uss");
 
 /*
- * The shared editor layout: pages, sections, figures, rows, buttons, notes and the hide toggles, plus the colour
+ * The shared editor layout: pages, sections, figures, rows, stages, buttons, notes and the hide toggles, plus the colour
  * tokens every feature sheet uses. Root windows, inspectors and drawers link it; a feature keeps its own sheet.
  */
 
@@ -103,6 +103,31 @@
   margin-right: 3px;
 }
 
+/* A stage row's state, tinted when the stage needs a run. */
+.hrts-stage__state {
+  margin: 0 6px;
+  color: var(--hrts-dim-text);
+}
+
+.hrts-stage__state--stale {
+  color: var(--hrts-warning);
+}
+
+.hrts-stage__state--failed {
+  color: var(--hrts-error);
+}
+
+.hrts-stage__log {
+  height: 200px;
+  border-width: 1px;
+  border-color: var(--hrts-border);
+}
+
+.hrts-stage__log-text {
+  white-space: pre;
+  padding: 2px 4px;
+}
+
 /* Last, so a toggle wins over any rule above that sets display or visibility. */
 .hrts-hidden {
   display: none;
@@ -111,3 +136,4 @@
 .hrts-invisible {
   visibility: hidden;
 }
+

@@ -23,7 +23,7 @@ pill, red when any counted item is an error, amber otherwise.
 | Page | Does |
 | --- | --- |
 | **Catalog** | Every unit and building in one editable stats table, and the tech tree |
-| **Effects** | Every effect rig prefab by kind, played at the Scene view pivot, with its recipes. See [Effects page](#effects-page) |
+| **Effects** | Every effect rig prefab by kind, played at the Scene view pivot, with its recipes and stages. See [Effects page](#effects-page) |
 | **Validate** | Every rule's issues in prefabs, assets and open scenes, with quick fixes. See [Validation](#validation) |
 | **Play** | The launcher outside Play mode; network, bot matches and replays in it. See [Play mode](play-mode.md#play-page) |
 | **Build** | Tabs for the generators, a game's art commands and player builds. See [Build page](#build-page) |
@@ -130,9 +130,15 @@ and a graph that is missing or older than its recipe. The recipe format and buil
 
 **HyperRTS ▸ Tools ▸ Effects** lists every prefab whose root has an `EffectRig` under its kind (the second field of an
 `FX_<Kind>_...` name, else the folder), with a search box. Picking a row plays the rig on a loop at the Scene view
-pivot, as the pool plays it. The right pane has Replay, Pause, Loop, Scale and wind controls, then the rig's recipes,
-each with its state (**Built**, **Out of date**, **Missing**), **Select** and **Build graph**. **Capture frames** does
-what `effect capture` does. The rig's validation problems list under it.
+pivot, as the pool plays it. The right pane has Replay, Pause, Loop, Scale and wind controls, the rig's recipes, its
+validation problems and its stages: **Graph** builds its recipes' graphs and **Capture** does what `effect capture` does
+without a label, with the images shown on the page. Each stage has a state (**Done**, **Out of date**, **Missing**,
+**Failed**), **Log** and **Run**; **Run out of date** queues the first stage not Done and every one after it, one at a
+time. Logs go to `Logs/Effects/<Rig>/<stage>.log`, ending with an `exit code N` line.
+
+A game adds a stage by subclassing `EffectRigStage` (found by itself): a `Title`, an `Order` before `GraphOrder` for
+a stage that makes what the graph or capture reads, `Applies`, `State` (`StageFiles` judges it by input and output
+times and the log), and `Run`, which writes the log and throws on failure so the rig's later stages drop.
 
 **Follow selection** selects the row of a rig or recipe picked in the Project window. The recipe inspector's
 **Preview** opens the page on the first rig that uses it. The effect plays and holds the fog clear only while the page

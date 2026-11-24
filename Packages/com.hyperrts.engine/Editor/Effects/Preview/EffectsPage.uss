@@ -34,15 +34,13 @@
   white-space: nowrap;
 }
 
-.hrts-effects__state {
-  margin: 0 6px;
-  color: var(--hrts-dim-text);
+.hrts-effects__sheet {
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 
-.hrts-effects__state--stale {
-  color: var(--hrts-warning);
-}
-
-.hrts-effects__state--missing {
-  color: var(--hrts-error);
+.hrts-effects__sheet-image {
+  width: 240px;
+  height: 135px;
+  margin: 2px;
 }

@@ -25,7 +25,22 @@
             <ui:VisualElement name="recipes" />
             <ui:Label name="no-recipes" class="hrts-hint" text="No recipe builds this effect's graphs." />
           </HyperRTS.Editor.Common.TitledSection>
-          <ui:Button name="capture" text="Capture frames" />
+          <HyperRTS.Editor.Common.TitledSection title="Stages">
+            <ui:VisualElement name="stages" />
+            <ui:VisualElement class="hrts-buttons">
+              <ui:Button name="run-all" text="Run out of date" />
+              <ui:Button name="stop" text="Stop" />
+            </ui:VisualElement>
+          </HyperRTS.Editor.Common.TitledSection>
+          <HyperRTS.Editor.Common.TitledSection title="Log">
+            <ui:Label name="log-title" class="hrts-hint" />
+            <ui:ScrollView name="log-scroll" class="hrts-stage__log">
+              <ui:Label name="log" class="hrts-stage__log-text" />
+            </ui:ScrollView>
+          </HyperRTS.Editor.Common.TitledSection>
+          <HyperRTS.Editor.Common.TitledSection title="Capture">
+            <ui:VisualElement name="sheet" class="hrts-effects__sheet" />
+          </HyperRTS.Editor.Common.TitledSection>
           <HyperRTS.Editor.Validation.Issues.IssueList name="issues" />
         </ui:VisualElement>
       </ui:ScrollView>
