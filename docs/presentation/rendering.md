@@ -126,8 +126,8 @@ entity per piece would be simpler, but at 20,000 pieces it cost 20% more main-th
 thread.
 
 **Sections.** A building with `SectionsAuthoring` ([combat](../simulation/combat.md#sections)) gives each section models
-(`SectionModel`): intact, holed variants, rigid pieces, a stub and a heap, or just a broken model. Models other than the
-intact one are saved at scale 0, so editor views show the standing building, and bake as prefabs copied in while they
+(`SectionModel`): intact, rigid pieces, a stub and a heap, or a broken model, and holed variants (`SectionHole`).
+Models other than the intact one are saved at scale 0, so editor views show the standing building, and bake as prefabs copied in while they
 show (see model copies above). `SectionViewSystem` shows each section by the simulation's broken mask:
 
 - **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.

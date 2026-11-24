@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Animation.Clips;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Rendering.Parts;
@@ -35,6 +36,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         protected EntityManager _em;
         private SectionViewSystem _views;
         protected Entity _house;
+        private readonly List<SectionHole> _holes = new();
 
         [SetUp]
         public void SetUp()
@@ -89,6 +91,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         {
             var house = _em.CreateEntity();
             _house = house;
+            _holes.Clear();
             _em.AddComponentData(house, new LocalToWorld { Value = float4x4.Translate(Origin) });
             _em.AddComponentData(house, new SectionedBuilding { Broken = broken });
             _em.AddComponentData(house, new ShownSections());
@@ -104,7 +107,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             for (var i = 0; i < sides.Length; i++)
             {
                 models[i] = withPieces
-                    ? PiecesModel(house, sides[i])
+                    ? PiecesModel(house, i, sides[i])
                     : new SectionModel { Intact = Piece(house), Broken = Prefab(house) };
             }
 
@@ -124,6 +127,12 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _em.AddBuffer<SectionLook>(house);
             _em.AddBuffer<SectionModel>(house);
             _em.AddBuffer<SectionPart>(house);
+            var holes = _em.AddBuffer<SectionHole>(house);
+            foreach (var hole in _holes)
+            {
+                holes.Add(hole);
+            }
+
             var sections = _em.GetBuffer<Section>(house);
             var looks = _em.GetBuffer<SectionLook>(house);
             var list = _em.GetBuffer<SectionModel>(house);
@@ -136,18 +145,18 @@ namespace HyperRTS.Presentation.Tests.Destruction
             }
         }
 
-        private SectionModel PiecesModel(Entity house, float3 side)
+        private SectionModel PiecesModel(Entity house, int section, float3 side)
         {
             var pieces = Prefab(house);
             _em.AddComponentData(pieces, new PlayingClip());
+            _holes.Add(new SectionHole { Section = (byte)section, Model = Prefab(house), Center = side - new float3(0f, 0f, 1f) });
+            _holes.Add(new SectionHole { Section = (byte)section, Model = Prefab(house), Center = side + new float3(0f, 0f, 1f) });
             return new SectionModel
             {
                 Intact = Piece(house),
                 Pieces = pieces,
                 Stub = Prefab(house),
                 Heap = Prefab(house),
-                FirstHole = new SectionHole { Model = Prefab(house), Center = side - new float3(0f, 0f, 1f) },
-                SecondHole = new SectionHole { Model = Prefab(house), Center = side + new float3(0f, 0f, 1f) },
             };
         }
 
@@ -201,11 +210,18 @@ namespace HyperRTS.Presentation.Tests.Destruction
             Assert.AreEqual(heap, Shown(model.Heap), "heap drawn");
         }
 
-        protected void AssertHole(SectionModel model, int drawn)
+        protected void AssertHole(SectionModel model, int section, int drawn)
         {
             Assert.IsFalse(Drawn(model.Intact), "the standing model gives way to the hole");
-            Assert.AreEqual(drawn == 0, Shown(model.FirstHole.Model), "first hole");
-            Assert.AreEqual(drawn == 1, Shown(model.SecondHole.Model), "second hole");
+            var number = 0;
+            foreach (var hole in _em.GetBuffer<SectionHole>(_house))
+            {
+                if (hole.Section == section)
+                {
+                    Assert.AreEqual(drawn == number, Shown(hole.Model), $"hole {number}");
+                    number++;
+                }
+            }
         }
 
         protected void AssertBroken(SectionModel[] models, params bool[] broken)

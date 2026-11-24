@@ -87,7 +87,18 @@ namespace HyperRTS.Presentation.Rendering.Parts
             {
                 foreach (var model in em.GetBuffer<SectionModel>(root, true))
                 {
-                    model.ForEachPrefab(prefab => models.Add(prefab));
+                    model.AddPrefabs(models);
+                }
+            }
+
+            if (em.HasBuffer<SectionHole>(root))
+            {
+                foreach (var hole in em.GetBuffer<SectionHole>(root, true))
+                {
+                    if (hole.Model != Entity.Null)
+                    {
+                        models.Add(hole.Model);
+                    }
                 }
             }
 

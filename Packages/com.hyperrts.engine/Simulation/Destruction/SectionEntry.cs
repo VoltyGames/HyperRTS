@@ -99,11 +99,6 @@ namespace HyperRTS.Simulation.Destruction
                 return $"Section '{intact.name}' on '{owner.name}' has no material.";
             }
 
-            if ((holes?.Length ?? 0) > SectionModel.MostHoles)
-            {
-                return $"Section '{intact.name}' on '{owner.name}' has more than {SectionModel.MostHoles} holed variants.";
-            }
-
             return CarriedProblem(owner) ?? ModelProblem(owner);
         }
 

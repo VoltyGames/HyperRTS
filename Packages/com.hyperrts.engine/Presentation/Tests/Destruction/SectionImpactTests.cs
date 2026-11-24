@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             Impact(new float3(15.2f, 1f, 6f));
             Update(1f);
 
-            AssertHole(models[1], 1);
+            AssertHole(models[1], 1, 1);
             AssertDrawn(models[0], intact: true, pieces: false, stub: false, heap: false);
         }
 

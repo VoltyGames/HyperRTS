@@ -64,10 +64,10 @@ namespace HyperRTS.Presentation.Destruction
                              DynamicBuffer<SectionLook>, DynamicBuffer<SectionPart>, RefRW<ShownSections>,
                              RefRO<LocalToWorld>>().WithEntityAccess())
             {
-                var context = new Context
+                var context = new SectionViewContext
                 {
                     Entity = entity, Sections = sections, Models = models, Looks = looks, Place = place.ValueRO, Now = now,
-                    Copies = copies, Carried = carried,
+                    Copies = copies, Carried = carried, Holes = new SectionHoles(EntityManager.GetBuffer<SectionHole>(entity, true)),
                 };
                 Refresh(context, building.ValueRO.Broken, impacts, ref shown.ValueRW);
             }
@@ -94,7 +94,7 @@ namespace HyperRTS.Presentation.Destruction
             return impacts;
         }
 
-        private void Refresh(Context at, ulong broken, NativeList<float3> impacts, ref ShownSections shown)
+        private void Refresh(SectionViewContext at, ulong broken, NativeList<float3> impacts, ref ShownSections shown)
         {
             var quiet = !shown.Seen;
             var changed = broken ^ shown.Broken;
@@ -120,7 +120,7 @@ namespace HyperRTS.Presentation.Destruction
         }
 
         /// <summary>Points each standing section hit by a seen impact at its nearest hole; returns the ones that changed.</summary>
-        private static ulong Record(Context at, NativeList<float3> impacts, ulong broken)
+        private static ulong Record(SectionViewContext at, NativeList<float3> impacts, ulong broken)
         {
             var changed = 0ul;
             if (impacts.Length == 0)
@@ -140,7 +140,7 @@ namespace HyperRTS.Presentation.Destruction
                     }
 
                     var look = at.Looks[i];
-                    var hole = (byte)(at.Models[i].NearestHole(local) + 1);
+                    var hole = (byte)(at.Holes.Nearest(i, local) + 1);
                     changed |= hole != look.Hole ? 1ul << i : 0ul;
                     look.Hole = hole;
                     look.Impact = local;
@@ -153,7 +153,7 @@ namespace HyperRTS.Presentation.Destruction
         }
 
         /// <summary>Broken sections not mid-clip whose supports or rests changed, which gate their stub and debris.</summary>
-        private static ulong Unpropped(Context at, ulong changed, ulong broken, ulong breaking)
+        private static ulong Unpropped(SectionViewContext at, ulong changed, ulong broken, ulong breaking)
         {
             var touched = 0ul;
             for (var i = 0; i < at.Models.Length; i++)
@@ -168,7 +168,7 @@ namespace HyperRTS.Presentation.Destruction
             return touched;
         }
 
-        private static ulong Finished(Context at, ulong breaking)
+        private static ulong Finished(SectionViewContext at, ulong breaking)
         {
             var done = 0ul;
             for (var i = 0; i < at.Models.Length; i++)
@@ -183,7 +183,7 @@ namespace HyperRTS.Presentation.Destruction
             return done;
         }
 
-        private void Step(Context at, NativeList<Entity> parts, int index, ulong broken, bool quiet, ref ShownSections shown)
+        private void Step(SectionViewContext at, NativeList<Entity> parts, int index, ulong broken, bool quiet, ref ShownSections shown)
         {
             var bit = 1ul << index;
             var isBroken = (broken & bit) != 0ul;
@@ -212,7 +212,7 @@ namespace HyperRTS.Presentation.Destruction
         }
 
         /// <summary>Starts a seen break: its effect and debris, and the pieces' clip when it has them.</summary>
-        private Phase Break(Context at, int index, ref SectionLook look, in ShownSections shown)
+        private Phase Break(SectionViewContext at, int index, ref SectionLook look, in ShownSections shown)
         {
             Play(at, shown, at.Sections[index]);
             if (!at.Models[index].HasPieces || !SystemAPI.HasComponent<SectionClips>(at.Entity))
@@ -227,7 +227,7 @@ namespace HyperRTS.Presentation.Destruction
             return Phase.Breaking;
         }
 
-        private void Display(Context at, NativeList<Entity> parts, int index, in SectionLook look, Phase phase, ulong broken)
+        private void Display(SectionViewContext at, NativeList<Entity> parts, int index, in SectionLook look, Phase phase, ulong broken)
         {
             var model = at.Models[index];
             var hangs = phase is Phase.Broken or Phase.Settled && at.Sections[index].Hangs(broken);
@@ -243,9 +243,13 @@ namespace HyperRTS.Presentation.Destruction
                 }
             }
 
-            for (var i = 0; i < SectionModel.MostHoles; i++)
+            var number = 0;
+            foreach (var hole in at.Holes.All)
             {
-                at.Copies.Set(at.Entity, model.Hole(i).Model, standing && look.Hole == i + 1);
+                if (hole.Section == index)
+                {
+                    at.Copies.Set(at.Entity, hole.Model, standing && look.Hole == ++number);
+                }
             }
 
             // A break started its pieces playing already, so this keeps them. Debris goes down with what it lay on.
@@ -259,7 +263,7 @@ namespace HyperRTS.Presentation.Destruction
         /// The building's break effect and debris from the section that broke, and a dust wave off the ground floor. Out of
         /// the local player's sight only the debris falls.
         /// </summary>
-        private void Play(Context at, in ShownSections shown, in Section section)
+        private void Play(SectionViewContext at, in ShownSections shown, in Section section)
         {
             var position = math.transform(at.Place.Value, section.Center);
             var outward = section.Outward;
@@ -281,19 +285,6 @@ namespace HyperRTS.Presentation.Destruction
                 var debris = SystemAPI.GetComponent<Debris>(at.Entity);
                 _debris.Throw(debris.Set.Value, position, math.rotate(at.Place.Rotation, outward), debris.Radius, 0);
             }
-        }
-
-        // One building's data for the frame, so the steps take one argument.
-        private struct Context
-        {
-            public Entity Entity;
-            public DynamicBuffer<Section> Sections;
-            public DynamicBuffer<SectionModel> Models;
-            public DynamicBuffer<SectionLook> Looks;
-            public DynamicBuffer<SectionPart> Carried;
-            public LocalToWorld Place;
-            public float Now;
-            public ModelCopies Copies;
         }
     }
 }

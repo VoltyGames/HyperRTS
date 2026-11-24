@@ -104,9 +104,10 @@ namespace HyperRTS.Simulation.Destruction
                 var sections = SectionShape.Bake(authoring.sections, building.maxHealth, materials);
                 var models = new List<SectionModel>(sections.Count);
                 var looks = new List<SectionLook>(sections.Count);
+                var holes = new List<SectionHole>();
                 var parts = new List<SectionPart>();
                 var weapons = new List<SectionWeapon>();
-                ListEntries(authoring, models, looks, parts, weapons);
+                ListEntries(authoring, models, looks, holes, parts, weapons);
 
                 var rubble = authoring.rubble != null
                     ? GetEntity(authoring.rubble, TransformUsageFlags.Dynamic)
@@ -121,6 +122,7 @@ namespace HyperRTS.Simulation.Destruction
                 SectionsSetup.AddCarriedParts(writer, parts);
                 WeaponSetup.AddSectionWeapons(writer, weapons);
                 writer.AddBuffer(models);
+                writer.AddBuffer(holes);
                 writer.AddBuffer(looks);
                 writer.Add(new ShownSections { Effect = authoring.effect, DustWave = authoring.dustWave });
                 if (authoring.clips.IsSet)
@@ -130,13 +132,18 @@ namespace HyperRTS.Simulation.Destruction
             }
 
             private void ListEntries(SectionsAuthoring authoring, List<SectionModel> models, List<SectionLook> looks,
-                List<SectionPart> parts, List<SectionWeapon> weapons)
+                List<SectionHole> holes, List<SectionPart> parts, List<SectionWeapon> weapons)
             {
                 for (var i = 0; i < authoring.sections.Length; i++)
                 {
                     var entry = authoring.sections[i];
                     models.Add(Model(entry));
                     looks.Add(SectionLook.Untouched);
+                    foreach (var hole in entry.holes ?? Array.Empty<Hole>())
+                    {
+                        holes.Add(new SectionHole { Section = (byte)i, Model = Find(hole.model), Center = hole.center });
+                    }
+
                     foreach (var part in entry.parts ?? Array.Empty<GameObject>())
                     {
                         parts.Add(new SectionPart { Section = (byte)i, Part = Find(part) });
@@ -151,7 +158,6 @@ namespace HyperRTS.Simulation.Destruction
 
             private SectionModel Model(in SectionEntry entry)
             {
-                var holes = entry.holes ?? Array.Empty<Hole>();
                 return new SectionModel
                 {
                     Intact = Find(entry.intact),
@@ -159,15 +165,8 @@ namespace HyperRTS.Simulation.Destruction
                     Pieces = Find(entry.pieces),
                     Stub = Find(entry.stub),
                     Heap = Find(entry.heap),
-                    FirstHole = Find(holes, 0),
-                    SecondHole = Find(holes, 1),
-                    ThirdHole = Find(holes, 2),
                 };
             }
-
-            private SectionHole Find(Hole[] holes, int index) => index < holes.Length
-                ? new SectionHole { Model = Find(holes[index].model), Center = holes[index].center }
-                : default;
 
             private Entity Find(GameObject model) =>
                 model != null ? GetEntity(model, TransformUsageFlags.Dynamic) : Entity.Null;
