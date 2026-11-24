@@ -130,8 +130,8 @@ show (see model copies above). `SectionViewSystem` shows each section in one of 
 
 - **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.
 - **Breaking:** a break this client saw plays the pieces' clip once (`SectionClips`), blown in or out by the side the
-  last impact came from, then the heap shows.
-- **Broken:** stub and heap with no clip, for a break nobody saw.
+  last impact came from, and the pieces stay on its last frame (`ShownSections.Settled`), so nothing jumps.
+- **Broken:** stub and heap with no clip, for a break nobody saw or a building first seen broken.
 - **Repair:** the intact model returns.
 
 ## Shaders

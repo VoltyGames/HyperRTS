@@ -61,7 +61,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
-        public void SeenBreak_PlaysItsClipOnceThenShowsTheHeap()
+        public void SeenBreak_PlaysItsClipOnce_AndItsPiecesStayWhereItLeftThem()
         {
             var house = Building(0ul, true, out var models);
             Update(0f);
@@ -75,7 +75,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
             AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
 
             Update(10f + Clips.Collapse.Seconds + 0.1f);
-            AssertDrawn(piece, intact: false, pieces: false, stub: true, heap: true);
+            AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
             AssertDrawn(models[0], intact: true, pieces: false, stub: false, heap: false);
         }
 
@@ -109,15 +109,15 @@ namespace HyperRTS.Presentation.Tests.Destruction
             SetBroken(house, 0b0100ul);
             Update(1f);
             Update(1f + Clips.Collapse.Seconds + 0.1f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
 
             SetBroken(house, 0b1100ul);
             Update(10f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: false, heap: true);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
 
             SetBroken(house, 0b0100ul);
             Update(11f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
         }
 
         [Test]

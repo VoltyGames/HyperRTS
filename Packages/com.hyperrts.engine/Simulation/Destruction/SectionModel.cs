@@ -147,6 +147,9 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>The sections whose break clip is still playing.</summary>
         public ulong Breaking;
 
+        /// <summary>The broken sections whose pieces lie where their break clip left them, shown in place of the heap.</summary>
+        public ulong Settled;
+
         /// <summary>False until shown, so a loaded or unseen building shows its state without effects.</summary>
         public bool Seen;
     }

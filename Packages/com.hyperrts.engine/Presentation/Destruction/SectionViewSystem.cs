@@ -32,6 +32,9 @@ namespace HyperRTS.Presentation.Destruction
             Standing,
             Breaking,
             Broken,
+
+            // Broken after a seen break: its pieces stay where the clip left them, so nothing jumps to the heap.
+            Settled,
         }
 
         private EffectPool _pool;
@@ -200,8 +203,11 @@ namespace HyperRTS.Presentation.Destruction
             }
 
             shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
+            var settles = phase == Phase.Breaking || (isBroken && !quiet && (shown.Settled & bit) != 0ul);
+            shown.Settled = settles ? shown.Settled | bit : shown.Settled & ~bit;
+            phase = phase == Phase.Broken && settles ? Phase.Settled : phase;
             at.Looks[index] = look;
-            var hangs = phase == Phase.Broken && at.Sections[index].Hangs(broken);
+            var hangs = phase is Phase.Broken or Phase.Settled && at.Sections[index].Hangs(broken);
             Display(at, parts, index, look, phase, hangs);
         }
 
@@ -241,7 +247,7 @@ namespace HyperRTS.Presentation.Destruction
             }
 
             // A break started its pieces playing already, so this keeps them.
-            at.Copies.Set(at.Entity, model.Pieces, phase == Phase.Breaking);
+            at.Copies.Set(at.Entity, model.Pieces, phase is Phase.Breaking or Phase.Settled);
 
             at.Copies.Set(at.Entity, model.Stub, !standing && !hangs);
             at.Copies.Set(at.Entity, model.Heap, phase == Phase.Broken);
