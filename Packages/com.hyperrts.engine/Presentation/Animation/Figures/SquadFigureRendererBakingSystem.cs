@@ -26,9 +26,9 @@ namespace HyperRTS.Presentation.Animation.Figures
         public void OnUpdate(ref SystemState state)
         {
             var em = state.EntityManager;
-            var squadOf = MapModels(em);
-            var drawn = ListRenderers(em, squadOf);
-            foreach (var model in squadOf.GetKeyArray(Allocator.Temp))
+            var figureParts = MapModels(em);
+            var drawn = ListRenderers(em, figureParts);
+            foreach (var model in figureParts.GetKeyArray(Allocator.Temp))
             {
                 if (!drawn.Contains(model))
                 {
@@ -40,7 +40,7 @@ namespace HyperRTS.Presentation.Animation.Figures
 
         private NativeHashMap<Entity, FigurePart> MapModels(EntityManager em)
         {
-            var squadOf = new NativeHashMap<Entity, FigurePart>(16, Allocator.Temp);
+            var figureParts = new NativeHashMap<Entity, FigurePart>(16, Allocator.Temp);
             using var squads = _squads.ToEntityArray(Allocator.Temp);
             foreach (var squad in squads)
             {
@@ -49,19 +49,19 @@ namespace HyperRTS.Presentation.Animation.Figures
                 for (var i = 0; i < figures.Length; i++)
                 {
                     var model = figures[i].Figure;
-                    squadOf[model] = new FigurePart { Root = squad, Index = i, Model = model };
+                    figureParts[model] = new FigurePart { Root = squad, Index = i, Model = model };
                     if (figures[i].HasOtherModel)
                     {
                         var other = figures[i].Other.Model.Figure;
-                        squadOf[other] = new FigurePart { Root = squad, Index = i, Model = other };
+                        figureParts[other] = new FigurePart { Root = squad, Index = i, Model = other };
                     }
                 }
             }
 
-            return squadOf;
+            return figureParts;
         }
 
-        private NativeHashSet<Entity> ListRenderers(EntityManager em, NativeHashMap<Entity, FigurePart> squadOf)
+        private NativeHashSet<Entity> ListRenderers(EntityManager em, NativeHashMap<Entity, FigurePart> figureParts)
         {
             var drawn = new NativeHashSet<Entity>(16, Allocator.Temp);
             using var renderers = _renderers.ToEntityArray(Allocator.Temp);
@@ -70,7 +70,7 @@ namespace HyperRTS.Presentation.Animation.Figures
                 var link = renderer;
                 while (link != Entity.Null)
                 {
-                    if (squadOf.TryGetValue(link, out var part))
+                    if (figureParts.TryGetValue(link, out var part))
                     {
                         em.GetBuffer<FigureRenderer>(part.Root).Add(new FigureRenderer { Model = link, Part = renderer });
                         em.AddComponentData(renderer, part);

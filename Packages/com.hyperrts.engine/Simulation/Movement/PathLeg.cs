@@ -90,9 +90,9 @@ namespace HyperRTS.Simulation.Movement
             return new PathLeg(new PathLeg(position, corner, next, turn, remaining, isFinal), waypoints[0].Reverse);
         }
 
-        private static float Turn(float2 into, float2 outOf)
+        private static float Turn(float2 entering, float2 leaving)
         {
-            var cos = math.dot(math.normalizesafe(into), math.normalizesafe(outOf));
+            var cos = math.dot(math.normalizesafe(entering), math.normalizesafe(leaving));
             return math.acos(math.clamp(cos, -1f, 1f));
         }
     }

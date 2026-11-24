@@ -36,7 +36,7 @@ namespace HyperRTS.Presentation.Destruction
         private readonly float3x4[] _objectToWorld;
         private readonly float3x4[] _worldToObject;
         private readonly Dictionary<(Mesh, Material), int> _batchIndex = new();
-        private readonly int[] _batchOf;
+        private readonly int[] _slotBatch;
         private readonly int[] _listIndex;
         private NativeList<LastingDebrisBatch> _batches = new(Allocator.Persistent);
         private NativeList<int> _members = new(Allocator.Persistent);
@@ -50,7 +50,7 @@ namespace HyperRTS.Presentation.Destruction
             _capacity = capacity;
             _objectToWorld = new float3x4[capacity];
             _worldToObject = new float3x4[capacity];
-            _batchOf = new int[capacity];
+            _slotBatch = new int[capacity];
             _listIndex = new int[capacity];
             _bounds = new NativeArray<float4>(capacity, Allocator.Persistent);
             _group = new BatchRendererGroup(Cull, IntPtr.Zero);
@@ -73,7 +73,7 @@ namespace HyperRTS.Presentation.Destruction
             ref var entry = ref _batches.ElementAt(batch);
             _members[batch * _capacity + entry.Count] = slot;
             _listIndex[slot] = entry.Count++;
-            _batchOf[slot] = batch;
+            _slotBatch[slot] = batch;
             Write(slot, matrix);
         }
 
@@ -87,7 +87,7 @@ namespace HyperRTS.Presentation.Destruction
         public void Remove(int slot)
         {
             _culling.Complete();
-            var batch = _batchOf[slot];
+            var batch = _slotBatch[slot];
             ref var entry = ref _batches.ElementAt(batch);
             var moved = _members[batch * _capacity + --entry.Count];
             _members[batch * _capacity + _listIndex[slot]] = moved;
@@ -124,7 +124,7 @@ namespace HyperRTS.Presentation.Destruction
         {
             _objectToWorld[slot] = Packed(matrix);
             _worldToObject[slot] = Packed(math.inverse(matrix));
-            _bounds[slot] = _batches[_batchOf[slot]].Sphere(matrix);
+            _bounds[slot] = _batches[_slotBatch[slot]].Sphere(matrix);
             _changedFirst = math.min(_changedFirst, slot);
             _changedLast = math.max(_changedLast, slot);
         }
