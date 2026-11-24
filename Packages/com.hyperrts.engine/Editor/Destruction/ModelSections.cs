@@ -226,19 +226,22 @@ namespace HyperRTS.Editor.Destruction
             return mounts.ToArray();
         }
 
-        private static GameObject Hidden(SectionsAuthoring owner, string modelName)
+        private GameObject Hidden(SectionsAuthoring owner, string modelName)
         {
             var model = FindModel(owner, modelName);
             model.transform.localScale = Vector3.zero;
             return model;
         }
 
-        private static GameObject FindModel(SectionsAuthoring owner, string modelName)
+        // Only the nodes of this model count, so dressing or a base prefab's child with the same name can't be taken.
+        private GameObject FindModel(SectionsAuthoring owner, string modelName)
         {
+            var modelPath = AssetDatabase.GetAssetPath(this);
             GameObject found = null;
             foreach (var child in owner.GetComponentsInChildren<Transform>(true))
             {
-                if (child.name != modelName)
+                var source = PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject);
+                if (child.name != modelName || source == null || AssetDatabase.GetAssetPath(source) != modelPath)
                 {
                     continue;
                 }
