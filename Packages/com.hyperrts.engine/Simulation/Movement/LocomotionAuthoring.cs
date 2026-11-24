@@ -1,7 +1,4 @@
 using HyperRTS.Simulation.Navigation.Agents;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
@@ -102,41 +99,5 @@ namespace HyperRTS.Simulation.Movement
                 Add(writer, authoring.Locomotion);
             }
         }
-
-        private static readonly Regex LeftWheel = new(@"^Wheel_L\d+$");
-
-        // Wheels of one axle, or the same wheel in a damaged model, sit within this of each other along the hull.
-        private const float AxleTolerance = 0.1f;
-
-        /// <summary>Whether <paramref name="wheel"/> sits on one of the steering axles of a wheeled hull.</summary>
-        public bool IsOnSteeringAxle(Transform wheel)
-        {
-            if (!Chassis.IsWheeled)
-            {
-                return false;
-            }
-
-            var along = Along(wheel);
-            return Axles().Take(steeringAxles).Any(axle => Mathf.Abs(axle - along) < AxleTolerance);
-        }
-
-        /// <summary>Each axle of the model's Wheel_L01... wheels, as its distance ahead of the hull centre, front first.</summary>
-        public List<float> Axles()
-        {
-            var positions = GetComponentsInChildren<Transform>(true).Where(part => LeftWheel.IsMatch(part.name))
-                .Select(Along).OrderByDescending(along => along);
-            var axles = new List<float>();
-            foreach (var along in positions)
-            {
-                if (axles.Count == 0 || axles[^1] - along >= AxleTolerance)
-                {
-                    axles.Add(along);
-                }
-            }
-
-            return axles;
-        }
-
-        private float Along(Transform part) => transform.InverseTransformPoint(part.position).z;
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using HyperRTS.Editor.Authoring;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Combat.Weapons;
@@ -106,7 +107,7 @@ namespace HyperRTS.Editor.Animation
             _rig.TryGetComponent<LocomotionAuthoring>(out var locomotion);
             foreach (var wheel in _rig.wheels)
             {
-                wheel.steers = locomotion != null && locomotion.IsOnSteeringAxle(wheel.part);
+                wheel.steers = locomotion != null && LocomotionModelFill.IsOnSteeringAxle(locomotion, wheel.part);
             }
         }
 

@@ -2,7 +2,6 @@ using System;
 using HyperRTS.Simulation.Common.Geometry;
 using Unity.Entities;
 using Unity.Mathematics;
-using UnityEngine;
 
 namespace HyperRTS.Simulation.Destruction
 {
@@ -68,89 +67,5 @@ namespace HyperRTS.Simulation.Destruction
                 }
             }
         }
-    }
-
-    /// <summary>One break clip's rows in the building's vertex animation textures.</summary>
-    [System.Serializable]
-    public struct SectionClip
-    {
-        public int StartRow;
-        public int FrameCount;
-        public float Fps;
-
-        public readonly float Seconds => FrameCount / Fps;
-    }
-
-    /// <summary>The three ways a section's pieces break, shared by every section of the building.</summary>
-    [System.Serializable]
-    public struct SectionClips : IComponentData
-    {
-        /// <summary>Seconds an impact still decides how a section breaks.</summary>
-        public const float ImpactMemory = 2f;
-
-        /// <summary>Blown inward by a hit from outside.</summary>
-        public SectionClip BlownIn;
-
-        /// <summary>Blown outward by a hit from inside.</summary>
-        public SectionClip BlownOut;
-
-        /// <summary>Falling apart with nothing hitting it, once its supports are gone.</summary>
-        public SectionClip Collapse;
-
-        /// <summary>Blown in by a hit from outside, out by one from inside, else falling apart on its own.</summary>
-        public readonly SectionClip Pick(in Section section, in SectionLook look, float now)
-        {
-            if (now - look.ImpactTime > ImpactMemory)
-            {
-                return Collapse;
-            }
-
-            var fromOutside = math.dot(look.Impact - section.Center, section.Outward) > 0f;
-            return fromOutside ? BlownIn : BlownOut;
-        }
-
-        /// <summary>Whether all three clips have frames, which pieces need to play.</summary>
-        public readonly bool IsSet => BlownIn.FrameCount > 0 && BlownOut.FrameCount > 0 && Collapse.FrameCount > 0;
-    }
-
-    /// <summary>What this client has seen happen to a <see cref="Section"/>, at the same index; presentation keeps it.</summary>
-    [InternalBufferCapacity(0)]
-    public struct SectionLook : IBufferElementData
-    {
-        /// <summary>The holed variant showing plus one, 0 for the standing model.</summary>
-        public byte Hole;
-
-        /// <summary>Where the latest seen impact landed, in the building's space.</summary>
-        public float3 Impact;
-
-        /// <summary>When it landed on the world clock, or minus infinity for none.</summary>
-        public float ImpactTime;
-
-        /// <summary>When its break clip ends on the world clock, while it is breaking.</summary>
-        public float BreakEnd;
-
-        public static SectionLook Untouched => new() { ImpactTime = float.NegativeInfinity };
-    }
-
-    /// <summary>The sections on screen; presentation keeps it, and scenery sync resets it for changes nobody saw.</summary>
-    public struct ShownSections : IComponentData
-    {
-        /// <summary>Effect rig played at a section as it breaks, +Z pointing out of the building.</summary>
-        public UnityObjectRef<GameObject> Effect;
-
-        /// <summary>Dust wave played at the foot of a ground floor section as it breaks.</summary>
-        public UnityObjectRef<GameObject> DustWave;
-
-        /// <summary>The broken mask on screen.</summary>
-        public ulong Broken;
-
-        /// <summary>The sections whose break clip is still playing.</summary>
-        public ulong Breaking;
-
-        /// <summary>The broken sections whose pieces lie where their break clip left them, shown in place of the heap.</summary>
-        public ulong Settled;
-
-        /// <summary>False until shown, so a loaded or unseen building shows its state without effects.</summary>
-        public bool Seen;
     }
 }
