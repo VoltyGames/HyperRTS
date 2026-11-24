@@ -19,6 +19,7 @@ namespace HyperRTS.Editor.Generators
         public static GeneratorEntry From(Generator generator, GeneratorRunLog log)
         {
             var last = log.Find(generator.Name, "");
+            var items = generator.Items;
             return new GeneratorEntry
             {
                 name = generator.Name,
@@ -28,8 +29,8 @@ namespace HyperRTS.Editor.Generators
                 outputs = generator.Outputs,
                 lastRun = last?.time,
                 error = last?.error,
-                outOfDate = generator.IsOutOfDate(log),
-                items = generator.Items.Select(item => GeneratorItemEntry.From(generator, item, log)).ToList(),
+                outOfDate = generator.IsOutOfDate(items, log),
+                items = items.Select(item => GeneratorItemEntry.From(generator, item, log)).ToList(),
             };
         }
     }

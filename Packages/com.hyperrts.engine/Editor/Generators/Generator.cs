@@ -47,12 +47,14 @@ namespace HyperRTS.Editor.Generators
             throw new InvalidOperationException($"HyperRTS: generator {Name} has no items, so it must override Run.");
 
         /// <summary>True when this asset path is one of the <see cref="Inputs"/> or below an input folder. Override it when the inputs are a list that lags a delete.</summary>
-        public virtual bool Reads(string assetPath) => Inputs.Any(input => assetPath == input || assetPath.StartsWith(input + "/", StringComparison.Ordinal));
+        public virtual bool Reads(string assetPath) => GeneratorItem.ReadsPath(Inputs, assetPath);
 
         /// <summary>True when the step never ran here, failed last time, or an input changed since it ran; with items, when any item is.</summary>
-        public bool IsOutOfDate(GeneratorRunLog log)
+        public bool IsOutOfDate(GeneratorRunLog log) => IsOutOfDate(Items, log);
+
+        /// <summary>As <see cref="IsOutOfDate(GeneratorRunLog)"/>, for a caller that already read <see cref="Items"/>.</summary>
+        public bool IsOutOfDate(IReadOnlyList<GeneratorItem> items, GeneratorRunLog log)
         {
-            var items = Items;
             if (items.Count > 0)
             {
                 return items.Any(item => IsOutOfDate(item, log));
@@ -69,12 +71,19 @@ namespace HyperRTS.Editor.Generators
             return last == null || last.IsOlderThan(item.Inputs);
         }
 
-        public List<GeneratorItem> OutOfDateItems(GeneratorRunLog log) => Items.Where(item => IsOutOfDate(item, log)).ToList();
+        public List<GeneratorItem> OutOfDateItems(GeneratorRunLog log) => OutOfDateItems(Items, log);
+
+        /// <summary>As <see cref="OutOfDateItems(GeneratorRunLog)"/>, for a caller that already read <see cref="Items"/>.</summary>
+        public List<GeneratorItem> OutOfDateItems(IReadOnlyList<GeneratorItem> items, GeneratorRunLog log) =>
+            items.Where(item => IsOutOfDate(item, log)).ToList();
 
         /// <summary>The item with this name; throws listing the names when there is none.</summary>
-        public GeneratorItem FindItem(string name) =>
-            Items.FirstOrDefault(item => item.Name == name)
-            ?? throw new ArgumentException($"HyperRTS: generator {Name} has no item named '{name}'. Items: {string.Join(", ", Items.Select(item => item.Name))}.");
+        public GeneratorItem FindItem(string name)
+        {
+            var items = Items;
+            return items.FirstOrDefault(item => item.Name == name)
+                ?? throw new ArgumentException($"HyperRTS: generator {Name} has no item named '{name}'. Items: {string.Join(", ", items.Select(item => item.Name))}.");
+        }
 
         /// <summary>The path of this type's own script, for a step whose settings are constants in its code.</summary>
         protected string ScriptPath() => _scriptPath ??= FindScript();

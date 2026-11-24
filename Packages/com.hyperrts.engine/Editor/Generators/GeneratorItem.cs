@@ -35,6 +35,10 @@ namespace HyperRTS.Editor.Generators
         public Action Run { get; }
 
         /// <summary>True when this asset path is one of the <see cref="Inputs"/> or below an input folder.</summary>
-        public bool Reads(string assetPath) => Inputs.Any(input => assetPath == input || assetPath.StartsWith(input + "/", StringComparison.Ordinal));
+        public bool Reads(string assetPath) => ReadsPath(Inputs, assetPath);
+
+        /// <summary>True when the path is one of the inputs or below an input folder.</summary>
+        public static bool ReadsPath(IEnumerable<string> inputs, string assetPath) =>
+            inputs.Any(input => assetPath == input || assetPath.StartsWith(input + "/", StringComparison.Ordinal));
     }
 }

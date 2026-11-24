@@ -56,13 +56,14 @@ namespace HyperRTS.Editor.Generators
         /// <summary>Runs the generator's out of date items, or the whole generator when it has none and is out of date.</summary>
         public static void RunOutOfDate(Generator generator, GeneratorRunLog log)
         {
-            if (generator.Items.Count > 0)
+            var items = generator.Items;
+            if (items.Count > 0)
             {
-                RunItems(generator, generator.OutOfDateItems(log));
+                RunItems(generator, generator.OutOfDateItems(items, log));
                 return;
             }
 
-            if (generator.IsOutOfDate(log))
+            if (generator.IsOutOfDate(items, log))
             {
                 Run(generator);
             }

@@ -83,11 +83,12 @@ namespace HyperRTS.Editor.Destruction
         public void Read(GameObject node, FbxProperties properties)
         {
             // A moving part names its section the same way, but has no order.
-            if (properties.TryString(SectionProperty, out var owner) && !properties.Has("order"))
+            var named = properties.TryString(SectionProperty, out var section);
+            if (named && !properties.Has("order"))
             {
-                parts.Add(new MovingPart { node = node.name, section = owner });
+                parts.Add(new MovingPart { node = node.name, section = section });
             }
-            else if (properties.TryString(SectionProperty, out var section))
+            else if (named)
             {
                 var exterior = properties.Has("outward");
                 sections.Add(new Part
@@ -250,8 +251,13 @@ namespace HyperRTS.Editor.Destruction
             GameObject found = null;
             foreach (var child in owner.GetComponentsInChildren<Transform>(true))
             {
+                if (child.name != modelName)
+                {
+                    continue;
+                }
+
                 var source = PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject);
-                if (child.name != modelName || source == null || AssetDatabase.GetAssetPath(source) != modelPath)
+                if (source == null || AssetDatabase.GetAssetPath(source) != modelPath)
                 {
                     continue;
                 }

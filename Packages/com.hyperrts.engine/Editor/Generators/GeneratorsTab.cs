@@ -79,7 +79,7 @@ namespace HyperRTS.Editor.Generators
                 var last = log.Find(generator.Name, "");
                 label.text = last == null ? "Not run in this project yet" : last.ToString();
                 label.EnableInClassList("hrts-generators__last-run--failed", last is { Failed: true });
-                row.Require<Label>("out-of-date").SetHidden(!generator.IsOutOfDate(log));
+                row.Require<Label>("out-of-date").SetHidden(!generator.IsOutOfDate(items, log));
                 return;
             }
 

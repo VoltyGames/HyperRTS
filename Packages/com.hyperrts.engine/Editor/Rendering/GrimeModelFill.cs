@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using HyperRTS.Editor.Authoring;
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Rendering.LitTeam;
@@ -12,11 +11,9 @@ namespace HyperRTS.Editor.Rendering
     /// <summary>Grime's mud line at the top of the road wheels and its dust line at the top of the hull.</summary>
     internal sealed class GrimeModelFill : ModelFill<GrimeAuthoring>
     {
-        private static readonly Regex RoadWheelName = new(@"^Wheel_[LR]\d+$");
-
         protected override void Fill(GrimeAuthoring grime)
         {
-            var wheels = Parts(grime).Where(part => RoadWheelName.IsMatch(part.name)).ToList();
+            var wheels = Parts(grime).Where(part => LocomotionModelFill.RoadWheelName.IsMatch(part.name)).ToList();
             if (wheels.Count == 0)
             {
                 throw new InvalidOperationException($"'{grime.name}' has no road wheels (Wheel_L01...) to measure its mud height from.");

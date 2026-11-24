@@ -24,9 +24,6 @@ namespace HyperRTS.Editor.Animation
 
         private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
 
-        // Only road wheels meet the ground; sprockets and idlers hold the track's ends.
-        private static readonly Regex RoadWheelName = new(@"^Wheel_([LR])\d+$");
-
         private static readonly Regex TrackName = new(@"^Track_([LR])$");
 
         // Propellers turn about the aircraft's nose axis.
@@ -104,10 +101,11 @@ namespace HyperRTS.Editor.Animation
         // The wheels on the Locomotion's steering axles steer; refilling after a chassis change updates them.
         private void FillSteering()
         {
-            _rig.TryGetComponent<LocomotionAuthoring>(out var locomotion);
+            var found = _rig.TryGetComponent<LocomotionAuthoring>(out var locomotion);
+            var axles = found ? LocomotionModelFill.SteeringAxles(locomotion) : new List<float>();
             foreach (var wheel in _rig.wheels)
             {
-                wheel.steers = locomotion != null && LocomotionModelFill.IsOnSteeringAxle(locomotion, wheel.part);
+                wheel.steers = found && LocomotionModelFill.IsOnAxle(locomotion, axles, wheel.part);
             }
         }
 
@@ -116,7 +114,7 @@ namespace HyperRTS.Editor.Animation
         {
             foreach (var wheel in _rig.wheels)
             {
-                wheel.followsGround = RoadWheelName.IsMatch(wheel.part.name);
+                wheel.followsGround = LocomotionModelFill.RoadWheelName.IsMatch(wheel.part.name);
             }
 
             _rig.tracks = parts.Where(part => TrackName.IsMatch(part.name)).Select(part => new TrackSlot
@@ -135,7 +133,7 @@ namespace HyperRTS.Editor.Animation
             var side = TrackName.Match(track.name).Groups[1].Value;
             var model = FindModel(track);
             return _rig.wheels.Select(slot => slot.part)
-                .Where(wheel => RoadWheelName.Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
+                .Where(wheel => LocomotionModelFill.RoadWheelName.Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
         }
 
         // The model under the rig that holds a part, such as the intact or the damaged one.
@@ -233,7 +231,7 @@ namespace HyperRTS.Editor.Animation
         // Metres from the trailer's pivot back to the middle of the road wheels below it, in the rig's frame.
         private float MeasureAxleDistance(Transform trailer)
         {
-            var roadWheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => RoadWheelName.IsMatch(child.name)).ToList();
+            var roadWheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => LocomotionModelFill.RoadWheelName.IsMatch(child.name)).ToList();
             if (roadWheels.Count == 0)
             {
                 throw new InvalidOperationException($"'{trailer.name}' has no road wheels to measure its axles from.");

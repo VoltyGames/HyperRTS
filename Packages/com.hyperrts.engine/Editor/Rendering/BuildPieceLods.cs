@@ -28,6 +28,7 @@ namespace HyperRTS.Editor.Rendering
             var orders = new List<Vector2>();
             mesh.GetUVs(3, orders);
             var stride = mesh.GetVertexBufferStride(0);
+            var offset = Offset(mesh);
             var vertices = new List<byte>(ReadVertices(mesh));
             var indices = new List<int>[mesh.subMeshCount];
             var ranges = new MeshLodRange[mesh.subMeshCount][];
@@ -39,19 +40,30 @@ namespace HyperRTS.Editor.Rendering
                 {
                     var level = mesh.GetIndices(sub, lod, true);
                     ranges[sub][lod] = new MeshLodRange { indexStart = (uint)indices[sub].Count, indexCount = (uint)level.Length };
-                    for (var i = 0; i < level.Length; i += 3)
-                    {
-                        var corners = new[] { level[i], level[i + 1], level[i + 2] };
-                        var spans = SpansPieces(orders, corners);
-                        foreach (var corner in corners)
-                        {
-                            indices[sub].Add(spans ? CopyCorner(vertices, stride, Offset(mesh), corner, Last(orders, corners)) : corner);
-                        }
-                    }
+                    KeepTrianglesWhole(level, orders, vertices, stride, offset, indices[sub]);
                 }
             }
 
             Write(mesh, vertices, stride, indices, ranges);
+        }
+
+        private static void KeepTrianglesWhole(int[] level, List<Vector2> orders, List<byte> vertices, int stride, int offset, List<int> into)
+        {
+            for (var i = 0; i < level.Length; i += 3)
+            {
+                var corners = new[] { level[i], level[i + 1], level[i + 2] };
+                if (!SpansPieces(orders, corners))
+                {
+                    into.AddRange(corners);
+                    continue;
+                }
+
+                var last = Last(orders, corners);
+                foreach (var corner in corners)
+                {
+                    into.Add(CopyCorner(vertices, stride, offset, corner, last));
+                }
+            }
         }
 
         private static void RequireOneFloatStream(Mesh mesh)
@@ -103,7 +115,8 @@ namespace HyperRTS.Editor.Rendering
 
         private static int CopyCorner(List<byte> vertices, int stride, int offset, int corner, Vector2 order)
         {
-            var copy = vertices.GetRange(corner * stride, stride).ToArray();
+            var copy = new byte[stride];
+            vertices.CopyTo(corner * stride, copy, 0, stride);
             BitConverter.GetBytes(order.x).CopyTo(copy, offset);
             BitConverter.GetBytes(order.y).CopyTo(copy, offset + sizeof(float));
             vertices.AddRange(copy);
