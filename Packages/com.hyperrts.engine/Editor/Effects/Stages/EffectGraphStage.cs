@@ -10,7 +10,10 @@ namespace HyperRTS.Editor.Effects.Stages
     /// <summary>Builds the VFX graphs of a rig's recipes; Done while every graph matches its recipe.</summary>
     public sealed class EffectGraphStage : EffectRigStage
     {
-        public override string Title => "Graph";
+        public EffectGraphStage()
+            : base("Graph")
+        {
+        }
 
         public override int Order => GraphOrder;
 

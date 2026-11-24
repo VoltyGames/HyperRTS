@@ -28,7 +28,7 @@
           <HyperRTS.Editor.Common.TitledSection title="Stages">
             <ui:VisualElement name="stages" />
             <ui:VisualElement class="hrts-buttons">
-              <ui:Button name="run-all" text="Run out of date" />
+              <ui:Button name="run-stale" text="Run out of date" />
               <ui:Button name="stop" text="Stop" />
             </ui:VisualElement>
           </HyperRTS.Editor.Common.TitledSection>

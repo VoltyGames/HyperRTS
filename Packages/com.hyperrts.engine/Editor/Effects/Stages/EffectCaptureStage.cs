@@ -15,16 +15,19 @@ namespace HyperRTS.Editor.Effects.Stages
     /// </summary>
     public sealed class EffectCaptureStage : EffectRigStage
     {
-        public override string Title => "Capture";
+        public EffectCaptureStage()
+            : base("Capture")
+        {
+        }
 
         public override int Order => CaptureOrder;
 
         public override bool Applies(EffectRigEntry rig) => true;
 
-        public override StageState State(EffectRigEntry rig) => new StageFiles(Log(rig), Inputs(rig), Sheet(rig)).State();
+        public override StageState State(EffectRigEntry rig) => new StageFiles(Log(rig), Inputs(rig), Sheets(rig)).State();
 
         /// <summary>The images the last good capture wrote, which its log lists.</summary>
-        public override IReadOnlyList<string> Sheet(EffectRigEntry rig)
+        public override IReadOnlyList<string> Sheets(EffectRigEntry rig)
         {
             var log = Log(rig);
             if (!log.Exists || log.Failed)

@@ -6,6 +6,7 @@ using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Effects.Stages;
 using HyperRTS.Editor.Hub;
+using HyperRTS.Editor.Stages;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.HUD;
@@ -40,7 +41,8 @@ namespace HyperRTS.Editor.Effects.Preview
         private VisualElement _controls;
         private VisualElement _recipes;
         private Label _noRecipes;
-        private EffectStagesView _stages;
+        private StagesView<EffectRigEntry> _stages;
+        private EffectSheet _sheet;
         private IssueList _issues;
 
         public override string Title => "Effects";
@@ -60,8 +62,10 @@ namespace HyperRTS.Editor.Effects.Preview
             _controls = _root.Require<VisualElement>("controls");
             _recipes = _root.Require<VisualElement>("recipes");
             _noRecipes = _root.Require<Label>("no-recipes");
-            _stages = new EffectStagesView(_root, _shell);
-            _stages.Finished += ShowAfterRun;
+            _stages = new StagesView<EffectRigEntry>(_root, _shell, EffectRigStage.For, rig => rig.Path);
+            _stages.Queue.Finished += ShowAfterRun;
+            _root.Require<Button>("run-stale").clicked += () => _stages.RunOutOfDate(new[] { _current });
+            _sheet = new EffectSheet(_root.Require<VisualElement>("sheet"));
             _issues = _root.Require<IssueList>("issues");
             _list = new EffectRigList(_root.Require<TreeView>("list"), Layout("Row"));
             _list.Picked += Show;
@@ -141,6 +145,7 @@ namespace HyperRTS.Editor.Effects.Preview
             _title.text = $"{rig.Name} ({rig.Kind})";
             ShowRecipes(rig.Recipes);
             _stages.Show(rig);
+            _sheet.Show(EffectRigStage.For(rig).SelectMany(stage => stage.Sheets(rig)));
             var problems = EffectRig.Problems(prefab)
                 .Select(problem => new ValidationIssue { Severity = MessageType.Error, Message = problem,
                     Context = prefab })
@@ -225,7 +230,7 @@ namespace HyperRTS.Editor.Effects.Preview
                 return;
             }
 
-            EditorApplication.delayCall += () => _stages.Add(rig, new EffectGraphStage());
+            EditorApplication.delayCall += () => _stages.Queue.Add(rig, new EffectGraphStage());
         }
 
         private void Say(string message)

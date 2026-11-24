@@ -133,13 +133,15 @@ and a graph that is missing or older than its recipe. The recipe format and buil
 `FX_<Kind>_...` name, else the folder), with a search box. Picking a row plays the rig on a loop at the Scene view
 pivot, as the pool plays it. The right pane has Replay, Pause, Loop, Scale and wind controls, the rig's recipes, its
 validation problems and its stages: **Graph** builds its recipes' graphs and **Capture** does what `effect capture` does
-without a label, with the images shown on the page. Each stage has a state (**Done**, **Out of date**, **Missing**,
+without a label, its images shown below. Each stage has a state (**Done**, **Out of date**, **Missing**,
 **Failed**), **Log** and **Run**; **Run out of date** queues the first stage not Done and every one after it, one at a
 time. Logs go to `Logs/Effects/<Rig>/<stage>.log`, ending with an `exit code N` line.
 
-A game adds a stage by subclassing `EffectRigStage` (found by itself): a `Title`, an `Order` before `GraphOrder` for
+A game adds a stage by subclassing `EffectRigStage` (found by itself): a constructor title, an `Order` before `GraphOrder` for
 a stage that makes what the graph or capture reads, `Applies`, `State` (`StageFiles` judges it by input and output
 times and the log), and `Run`, which writes the log and throws on failure so the rig's later stages drop.
+
+Other tool pages reuse `Stage<TSource>`, `GeneratorStage<TSource>`, `StageQueue` and `StagesView` from `Editor/Stages/`.
 
 **Follow selection** selects the row of a rig or recipe picked in the Project window. The recipe inspector's
 **Preview** opens the page on the first rig that uses it. The effect plays and holds the fog clear only while the page

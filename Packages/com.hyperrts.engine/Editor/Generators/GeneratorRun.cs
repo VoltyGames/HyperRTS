@@ -23,12 +23,15 @@ namespace HyperRTS.Editor.Generators
 
         public bool Failed => !string.IsNullOrEmpty(error);
 
+        /// <summary>When the run ended, in local time.</summary>
+        public DateTime Ran => DateTime.ParseExact(time, TimeFormat, CultureInfo.InvariantCulture);
+
         public bool Matches(string generatorName, string itemName) => generator == generatorName && item == itemName;
 
         /// <summary>True when the run failed or any file under <paramref name="inputs"/> was written after it.</summary>
         public bool IsOlderThan(IEnumerable<string> inputs)
         {
-            var ran = DateTime.ParseExact(time, TimeFormat, CultureInfo.InvariantCulture);
+            var ran = Ran;
             return Failed || inputs.SelectMany(Files).Any(file => File.GetLastWriteTime(file) > ran);
         }
 
