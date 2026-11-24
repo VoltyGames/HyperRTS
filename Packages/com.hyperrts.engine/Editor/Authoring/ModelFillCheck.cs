@@ -44,12 +44,13 @@ namespace HyperRTS.Editor.Authoring
         }
 
         // A SerializedObject keeps the values it read until Update, so it outlives the restore. A fill may also set
-        // the component's siblings, such as weapon pivots, and add components below it.
+        // the component's siblings, such as weapon pivots, hide or move the models below it, and add components there.
         private SerializedObject Filled()
         {
             var siblings = _component.GetComponents<Component>().Where(sibling => sibling != null && sibling is not Transform).ToList();
             var saved = siblings.ConvertAll(EditorJsonUtility.ToJson);
             var before = new HashSet<Component>(_component.GetComponentsInChildren<Component>(true));
+            var placed = new TransformSnapshot(_component.transform);
             try
             {
                 ModelFillCommands.Fill(_component);
@@ -61,6 +62,8 @@ namespace HyperRTS.Editor.Authoring
                 {
                     EditorJsonUtility.FromJsonOverwrite(saved[i], siblings[i]);
                 }
+
+                placed.Restore();
 
                 foreach (var added in _component.GetComponentsInChildren<Component>(true).Where(added => !before.Contains(added)))
                 {
