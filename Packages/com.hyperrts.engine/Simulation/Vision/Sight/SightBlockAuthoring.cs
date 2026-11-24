@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
@@ -43,15 +44,9 @@ namespace HyperRTS.Simulation.Vision.Sight
             var top = 0f;
             foreach (var renderer in GetComponentsInChildren<MeshRenderer>())
             {
-                var bounds = renderer.localBounds;
-                for (var corner = 0; corner < 8; corner++)
-                {
-                    var local = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1);
-                    var point = transform.InverseTransformPoint(
-                        renderer.transform.TransformPoint(bounds.min + Vector3.Scale(bounds.size, local)));
-                    reach = Vector3.Max(reach, new Vector3(Mathf.Abs(point.x), 0f, Mathf.Abs(point.z)));
-                    top = Mathf.Max(top, point.y);
-                }
+                var box = BoundsMath.Moved(renderer.localBounds, transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix);
+                reach = Vector3.Max(reach, new Vector3(Mathf.Max(-box.min.x, box.max.x), 0f, Mathf.Max(-box.min.z, box.max.z)));
+                top = Mathf.Max(top, box.max.y);
             }
 
             size = new Vector2(reach.x * 2f, reach.z * 2f);

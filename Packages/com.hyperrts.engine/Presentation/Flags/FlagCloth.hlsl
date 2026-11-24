@@ -3,7 +3,7 @@
 #define HYPERRTS_FLAG_CLOTH_INCLUDED
 
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-#include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/WindGlobals.hlsl"
+#include "Packages/com.hyperrts.engine/Presentation/Environment/Weather/ClothWave.hlsl"
 
 TEXTURE2D_ARRAY(_FlagArray);
 SAMPLER(sampler_FlagArray);
@@ -80,21 +80,17 @@ Cloth FlagCloth(float3 positionOS, float2 uv, float time, float4x4 objectToWorld
     float strength = saturate(_HyperRTSWindStrength);
 
     float along = positionOS.x;
-    float k = TWO_PI / _WaveLength;
-    float phase = along * k - time * _WaveSpeed * (0.6 + strength) + dot(origin.xz, float2(0.37, 0.23));
-    float amplitude = _WaveAmplitude * (0.5 + strength) * uv.x;
-    float ripple = amplitude * sin(phase);
-    float slope = amplitude * k * cos(phase);
+    ClothWave wave = WaveCloth(along, TWO_PI / _WaveLength, _WaveSpeed, _WaveAmplitude, uv.x, origin, time);
     float sag = (1.0 - strength) * 0.25 * uv.x * uv.x;
     float drop = (1.0 - _FlagState.y) * _FlagState.w;
 
     float3 downwind = Downwind(objectToWorld);
     float3 side = float3(-downwind.z, 0.0, downwind.x);
-    float3 offset = downwind * along + side * ripple + float3(0.0, positionOS.y - drop - sag, 0.0);
+    float3 offset = downwind * along + side * wave.offset + float3(0.0, positionOS.y - drop - sag, 0.0);
 
     Cloth cloth;
     cloth.positionWS = origin + offset * height;
-    cloth.normalWS = normalize(cross(float3(0.0, 1.0, 0.0), normalize(downwind + side * slope)));
+    cloth.normalWS = normalize(cross(float3(0.0, 1.0, 0.0), normalize(downwind + side * wave.slope)));
     return cloth;
 }
 

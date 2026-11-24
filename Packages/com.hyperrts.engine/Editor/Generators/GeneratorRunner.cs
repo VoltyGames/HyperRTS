@@ -96,37 +96,23 @@ namespace HyperRTS.Editor.Generators
                 return;
             }
 
-            try
-            {
-                _running++;
-                generator.Run();
-                AssetDatabase.SaveAssets();
-            }
-            catch (Exception exception)
-            {
-                GeneratorRunLog.Record(generator.Name, "", exception.Message);
-                throw;
-            }
-            finally
-            {
-                _running--;
-            }
-
-            GeneratorRunLog.Record(generator.Name, "", null);
+            Record(generator.Name, "", generator.Run);
         }
 
         /// <summary>Runs one item and records how it ended.</summary>
-        public static void Run(Generator generator, GeneratorItem item)
+        public static void Run(Generator generator, GeneratorItem item) => Record(generator.Name, item.Name, item.Run);
+
+        private static void Record(string generator, string item, Action run)
         {
             try
             {
                 _running++;
-                item.Run();
+                run();
                 AssetDatabase.SaveAssets();
             }
             catch (Exception exception)
             {
-                GeneratorRunLog.Record(generator.Name, item.Name, exception.Message);
+                GeneratorRunLog.Record(generator, item, exception.Message);
                 throw;
             }
             finally
@@ -134,7 +120,7 @@ namespace HyperRTS.Editor.Generators
                 _running--;
             }
 
-            GeneratorRunLog.Record(generator.Name, item.Name, null);
+            GeneratorRunLog.Record(generator, item, null);
         }
 
         /// <summary>Runs every item even when one fails, so one broken input holds back no other, then throws naming the failed ones.</summary>

@@ -84,9 +84,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         {
             var house = Building(0ul, true, out var models);
             Update(0f);
-            var shown = _em.GetComponentData<ShownSections>(house);
-            shown.Seen = false;
-            _em.SetComponentData(house, shown);
+            Unseen(house);
 
             SetBroken(house, 0b0011ul);
             Update(5f);
@@ -101,14 +99,8 @@ namespace HyperRTS.Presentation.Tests.Destruction
         public void Stub_HidesWhileNoSupportStands_AndReturnsOnRepair()
         {
             var house = Building(0ul, true, out var models);
-            var sections = _em.GetBuffer<Section>(house);
-            var resting = sections[2];
-            resting.Holders = 0b1000ul;
-            sections[2] = resting;
-            Update(0f);
-            SetBroken(house, 0b0100ul);
-            Update(1f);
-            Update(1f + Clips.Collapse.Seconds + 0.1f);
+            Lean(house, holders: 0b1000ul, rests: 0ul);
+            BreakAndSettle(house);
             AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
 
             SetBroken(house, 0b1100ul);
@@ -124,14 +116,8 @@ namespace HyperRTS.Presentation.Tests.Destruction
         public void Debris_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
         {
             var house = Building(0ul, true, out var models);
-            var sections = _em.GetBuffer<Section>(house);
-            var resting = sections[2];
-            resting.Rests = 0b1000ul;
-            sections[2] = resting;
-            Update(0f);
-            SetBroken(house, 0b0100ul);
-            Update(1f);
-            Update(1f + Clips.Collapse.Seconds + 0.1f);
+            Lean(house, holders: 0ul, rests: 0b1000ul);
+            BreakAndSettle(house);
             AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
 
             SetBroken(house, 0b1100ul);
@@ -147,14 +133,9 @@ namespace HyperRTS.Presentation.Tests.Destruction
         public void Heap_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
         {
             var house = Building(0ul, true, out var models);
-            var sections = _em.GetBuffer<Section>(house);
-            var resting = sections[2];
-            resting.Rests = 0b1000ul;
-            sections[2] = resting;
+            Lean(house, holders: 0ul, rests: 0b1000ul);
             Update(0f);
-            var shown = _em.GetComponentData<ShownSections>(house);
-            shown.Seen = false;
-            _em.SetComponentData(house, shown);
+            Unseen(house);
             SetBroken(house, 0b0100ul);
             Update(5f);
             AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
@@ -188,6 +169,32 @@ namespace HyperRTS.Presentation.Tests.Destruction
             Update(2f);
             Assert.IsFalse(_em.Exists(copy));
             Assert.AreEqual(standing, _em.GetBuffer<LinkedEntityGroup>(house).Length);
+        }
+
+        // Section 2 stands on, or lies on, section 3.
+        private void Lean(Entity house, ulong holders, ulong rests)
+        {
+            var sections = _em.GetBuffer<Section>(house);
+            var resting = sections[2];
+            resting.Holders = holders;
+            resting.Rests = rests;
+            sections[2] = resting;
+        }
+
+        private void Unseen(Entity house)
+        {
+            var shown = _em.GetComponentData<ShownSections>(house);
+            shown.Seen = false;
+            _em.SetComponentData(house, shown);
+        }
+
+        // Breaks section 2 in view and plays its clip to the end.
+        private void BreakAndSettle(Entity house)
+        {
+            Update(0f);
+            SetBroken(house, 0b0100ul);
+            Update(1f);
+            Update(1f + Clips.Collapse.Seconds + 0.1f);
         }
     }
 }

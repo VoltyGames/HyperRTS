@@ -59,14 +59,15 @@ namespace HyperRTS.Presentation.Destruction
             var impacts = SeenImpacts();
             var now = (float)SystemAPI.Time.ElapsedTime;
             var copies = ModelCopies.Create();
-            foreach (var (building, sections, models, looks, shown, place, entity) in SystemAPI
+            foreach (var (building, sections, models, looks, carried, shown, place, entity) in SystemAPI
                          .Query<RefRO<SectionedBuilding>, DynamicBuffer<Section>, DynamicBuffer<SectionModel>,
-                             DynamicBuffer<SectionLook>, RefRW<ShownSections>, RefRO<LocalToWorld>>().WithEntityAccess())
+                             DynamicBuffer<SectionLook>, DynamicBuffer<SectionPart>, RefRW<ShownSections>,
+                             RefRO<LocalToWorld>>().WithEntityAccess())
             {
                 var context = new Context
                 {
                     Entity = entity, Sections = sections, Models = models, Looks = looks, Place = place.ValueRO, Now = now,
-                    Copies = copies, Carried = SystemAPI.GetBuffer<SectionPart>(entity),
+                    Copies = copies, Carried = carried,
                 };
                 Refresh(context, building.ValueRO.Broken, impacts, ref shown.ValueRW);
             }

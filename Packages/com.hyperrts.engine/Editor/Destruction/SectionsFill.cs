@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Presentation.Animation.VAT;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Destruction;
 using Unity.Mathematics;
 using UnityEditor;
@@ -141,19 +142,6 @@ namespace HyperRTS.Editor.Destruction
             return entry;
         }
 
-        /// <summary>The box round <paramref name="box"/>'s corners moved by <paramref name="matrix"/>.</summary>
-        public static Bounds Moved(Bounds box, Matrix4x4 matrix)
-        {
-            var moved = new Bounds(matrix.MultiplyPoint3x4(box.min), Vector3.zero);
-            for (var corner = 1; corner < 8; corner++)
-            {
-                var sign = new Vector3((corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
-                moved.Encapsulate(matrix.MultiplyPoint3x4(box.center + Vector3.Scale(box.extents, sign)));
-            }
-
-            return moved;
-        }
-
         /// <summary>A full share for a wall and half for anything else.</summary>
         public static float Share(Vector3 size) => IsWall(size) ? 1f : 0.5f;
 
@@ -201,7 +189,7 @@ namespace HyperRTS.Editor.Destruction
                     continue;
                 }
 
-                var box = Moved(filter.sharedMesh.bounds, Root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
+                var box = BoundsMath.Moved(filter.sharedMesh.bounds, Root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
                 if (any)
                 {
                     bounds.Encapsulate(box);

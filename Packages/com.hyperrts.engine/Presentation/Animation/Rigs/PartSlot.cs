@@ -1,4 +1,5 @@
 using System;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Entities;
 using UnityEngine;
 
@@ -33,16 +34,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 throw new InvalidOperationException($"'{part.name}' has no mesh to measure: a part carries its own mesh.");
             }
 
-            var toSpace = space.worldToLocalMatrix * part.localToWorldMatrix;
-            var mesh = filter.sharedMesh.bounds;
-            var bounds = new Bounds(toSpace.MultiplyPoint3x4(mesh.center), Vector3.zero);
-            for (var corner = 0; corner < 8; corner++)
-            {
-                var sign = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1) * 2f - Vector3.one;
-                bounds.Encapsulate(toSpace.MultiplyPoint3x4(mesh.center + Vector3.Scale(mesh.extents, sign)));
-            }
-
-            return bounds;
+            return BoundsMath.Moved(filter.sharedMesh.bounds, space.worldToLocalMatrix * part.localToWorldMatrix);
         }
 
         protected virtual MotionRigPart AtRest(Entity entity, MotionPartKind kind) => new()

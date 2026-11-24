@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Geometry;
 using Unity.Entities;
 using UnityEngine;
 
@@ -63,20 +64,8 @@ namespace HyperRTS.Simulation.Navigation.Areas
             return points;
         }
 
-        private Bounds LocalBounds(Renderer renderer)
-        {
-            var toLocal = transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix;
-            var source = renderer.localBounds;
-            var bounds = new Bounds(toLocal.MultiplyPoint3x4(source.center), Vector3.zero);
-            for (var corner = 0; corner < 8; corner++)
-            {
-                var offset = new Vector3(
-                    (corner & 1) == 0 ? -1f : 1f, (corner & 2) == 0 ? -1f : 1f, (corner & 4) == 0 ? -1f : 1f);
-                bounds.Encapsulate(toLocal.MultiplyPoint3x4(source.center + Vector3.Scale(source.extents, offset)));
-            }
-
-            return bounds;
-        }
+        private Bounds LocalBounds(Renderer renderer) =>
+            BoundsMath.Moved(renderer.localBounds, transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix);
 
         public class Baker : Baker<NavAreaAuthoring>
         {

@@ -1,4 +1,5 @@
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Geometry;
 using System;
 using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
@@ -60,14 +61,8 @@ namespace HyperRTS.Simulation.Death
                         continue;
                     }
 
-                    var bounds = mesh.bounds;
-                    for (var corner = 0; corner < 8; corner++)
-                    {
-                        var sign = new Vector3(corner & 1, (corner >> 1) & 1, (corner >> 2) & 1) * 2f - Vector3.one;
-                        var point = bounds.center + Vector3.Scale(bounds.extents, sign);
-                        var local = root.InverseTransformPoint(filter.transform.TransformPoint(point));
-                        canopy = math.max(canopy, math.max(math.abs(local.x), math.abs(local.z)));
-                    }
+                    var box = BoundsMath.Moved(mesh.bounds, root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
+                    canopy = math.max(canopy, BoundsMath.FlatReach(box));
                 }
 
                 return canopy;

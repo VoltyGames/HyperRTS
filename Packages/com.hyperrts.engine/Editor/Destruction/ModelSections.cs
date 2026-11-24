@@ -120,22 +120,18 @@ namespace HyperRTS.Editor.Destruction
             sections.Sort((a, b) => a.order.CompareTo(b.order));
             foreach (var part in sections)
             {
-                var support = part.supports.FirstOrDefault(name => sections.All(other => other.name != name));
-                if (support != null)
-                {
-                    throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' is held by '{support}', which no mesh names as its section.");
-                }
+                bool IsSection(string name) => sections.Any(other => other.name == name);
+                Require(part.supports, IsSection, name => $"is held by '{name}', which no mesh names as its section");
+                Require(part.rests, IsSection, name => $"rests on '{name}', which no mesh names as its section");
+                Require(part.holed, name => holes.Any(hole => hole.model == name), name => $"names holed mesh '{name}', which has no '{HoleProperty}'");
 
-                var rest = part.rests.FirstOrDefault(name => sections.All(other => other.name != name));
-                if (rest != null)
+                void Require(IEnumerable<string> names, Func<string, bool> exists, Func<string, string> problem)
                 {
-                    throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' rests on '{rest}', which no mesh names as its section.");
-                }
-
-                var holed = part.holed.FirstOrDefault(name => holes.All(hole => hole.model != name));
-                if (holed != null)
-                {
-                    throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' names holed mesh '{holed}', which has no '{HoleProperty}'.");
+                    var missing = names.FirstOrDefault(name => !exists(name));
+                    if (missing != null)
+                    {
+                        throw new InvalidDataException($"HyperRTS: {source} section '{part.name}' {problem(missing)}.");
+                    }
                 }
             }
 
