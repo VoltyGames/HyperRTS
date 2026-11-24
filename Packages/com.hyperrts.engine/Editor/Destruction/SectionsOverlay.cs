@@ -90,6 +90,11 @@ namespace HyperRTS.Editor.Destruction
             }
 
             _building = found;
+            ListSections();
+        }
+
+        private void ListSections()
+        {
             _picked = -1;
             _names.Clear();
             if (_building != null)
@@ -114,6 +119,12 @@ namespace HyperRTS.Editor.Destruction
             }
 
             var entries = _building.sections;
+            // A fill or an edit can change the sections while the same building stays picked.
+            if (_names.Count != entries.Length)
+            {
+                ListSections();
+            }
+
             var oldMatrix = Handles.matrix;
             var oldTest = Handles.zTest;
             Handles.matrix = _building.transform.localToWorldMatrix;
