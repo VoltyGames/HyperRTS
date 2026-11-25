@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Animation.Bones
         }
 
         /// <summary>Eleven bodies on the rig's pelvis, spine, head, arms and legs.</summary>
-        public List<RagdollBone> Build()
+        public List<RagdollBodyEntry> Build()
         {
             var boneNames = HumanBoneNames();
             using var posed = new BoneRig(_set.rig, _set.skeleton, _set.upperRoot, _set.rootBone, _set.sockets);
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Animation.Bones
                 : throw new InvalidOperationException($"Bone set '{_set.name}' maps no {bone} in its avatar or Human Bones.");
             Matrix4x4 Rest(HumanBodyBones bone) => binds[posed.BoneIndex(Bone(bone))].inverse;
 
-            var bodies = new List<RagdollBone>();
+            var bodies = new List<RagdollBodyEntry>();
             foreach (var body in HumanBodies(bone => Rest(bone).GetPosition()))
             {
                 bodies.Add(Fill(body, Rest(body.Bone), Bone(body.Bone), body.Parent.HasValue ? Bone(body.Parent.Value) : null));
@@ -119,7 +119,7 @@ namespace HyperRTS.Editor.Animation.Bones
             new(bone, parent, at(bone), at(toward), settings);
 
         // Radius is a share of the capsule's length; its core ends pull in by the radius so neighbours barely touch.
-        private static RagdollBone Fill(HumanBody body, Matrix4x4 rest, string bone, string parentBone)
+        private static RagdollBodyEntry Fill(HumanBody body, Matrix4x4 rest, string bone, string parentBone)
         {
             var place = rest.GetPosition();
             var toBone = Quaternion.Inverse(rest.rotation);
@@ -131,7 +131,7 @@ namespace HyperRTS.Editor.Animation.Bones
             var inset = along * Mathf.Min(radius, 0.4f * length);
             var across = Vector3.ProjectOnPlane(toBone * Vector3.right, along).normalized;
             var limit = Mathf.Min(body.Settings.Cone, 90f);
-            return new RagdollBone
+            return new RagdollBodyEntry
             {
                 bone = bone,
                 parentBone = parentBone,

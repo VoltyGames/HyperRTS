@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Templates
     /// Ready-to-bake GameObjects per role: a root with pick box, authoring and ghost (so it replicates), and a primitive
     /// Model child in the team-coloured material.
     /// </summary>
-    public static class EntityTemplates
+    public static class TemplateObjects
     {
         private const float MarkerThickness = 0.05f;
         private const string TeamMaterial = "Packages/com.hyperrts.engine/Presentation/Materials/TeamLit.mat";

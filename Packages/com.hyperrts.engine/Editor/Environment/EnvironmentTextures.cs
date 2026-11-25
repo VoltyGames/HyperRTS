@@ -171,7 +171,7 @@ namespace HyperRTS.Editor.Environment
                 pixels[i] = (byte)Mathf.RoundToInt(Mathf.Clamp01(values[i]) * 255f);
             }
 
-            WriteTiling(path, size, TextureFormat.R8, pixels, Configure);
+            WriteTiling(path, size, TextureFormat.R8, pixels, ConfigureCookie);
         }
 
         private static void WriteRGB(string path, int size, Vector3[] texels, Func<float, byte> encode,
@@ -199,7 +199,7 @@ namespace HyperRTS.Editor.Environment
             });
 
         /// <summary>One linear channel in red, since the light cookie reads it as a red-format cookie.</summary>
-        private static void Configure(TextureImporter importer)
+        private static void ConfigureCookie(TextureImporter importer)
         {
             importer.textureType = TextureImporterType.SingleChannel;
             var settings = new TextureImporterSettings();

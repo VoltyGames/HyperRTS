@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Tests.Commands
         [Test]
         public void ValidateReportsABrokenSceneObject()
         {
-            var node = Track(EntityTemplates.ResourceNode());
+            var node = Track(TemplateObjects.ResourceNode());
 
             var report = ValidationReport.From(ProjectValidator.OpenScenes());
             var issue = report.issues.FirstOrDefault(i => i.name == node.name && i.message.Contains("no resource type"));

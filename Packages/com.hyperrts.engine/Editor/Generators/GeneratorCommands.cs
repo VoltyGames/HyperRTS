@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Generators
         private const string Tag = "hyperrts/generate";
 
         [CliCommand("generator", "run", "Run one generator or item by name, or every generator in order; returns each generator and its items with what they read and write and their last run.", Tags = new[] { Tag })]
-        public static List<GeneratorEntry> Generate(
+        public static List<GeneratorEntry> Run(
             [CliArg("name", "A generator's name as the Generators tab lists it; empty runs them all")] string name = "",
             [CliArg("item", "With a name, run only this item of the generator")] string item = "",
             [CliArg("stale", "Run only what is out of date: the generators and items, or with a name that generator's")] bool stale = false)

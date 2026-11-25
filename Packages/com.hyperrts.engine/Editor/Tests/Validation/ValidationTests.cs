@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Tests.Validation
         [Test]
         public void UnsortedVeterancyRanksAreReported()
         {
-            var veterancy = Add<VeterancyAuthoring>(EntityTemplates.CombatUnit());
+            var veterancy = Add<VeterancyAuthoring>(TemplateObjects.CombatUnit());
             veterancy.ranks.Add(new VeterancyAuthoring.Rank { experience = 200f });
             veterancy.ranks.Add(new VeterancyAuthoring.Rank { experience = 100f });
 
@@ -66,14 +66,14 @@ namespace HyperRTS.Editor.Tests.Validation
             switch (broken)
             {
                 case "ResourceNode":
-                    return Template<ResourceNodeAuthoring>(EntityTemplates.ResourceNode());
+                    return Template<ResourceNodeAuthoring>(TemplateObjects.ResourceNode());
                 case "Aura":
-                    var field = Add<AuraAuthoring>(EntityTemplates.Building());
+                    var field = Add<AuraAuthoring>(TemplateObjects.Building());
                     field.affects = AuraTargets.Units;
                     return field;
                 default:
-                    var source = Add<DeliverySourceAuthoring>(EntityTemplates.Building());
-                    source.carrier = Template<UnitAuthoring>(EntityTemplates.CombatUnit());
+                    var source = Add<DeliverySourceAuthoring>(TemplateObjects.Building());
+                    source.carrier = Template<UnitAuthoring>(TemplateObjects.CombatUnit());
                     return source;
             }
         }
@@ -86,7 +86,7 @@ namespace HyperRTS.Editor.Tests.Validation
             AssetDatabase.CreateFolder("Assets", "_ValidationGroupTests");
             try
             {
-                var template = Track(EntityTemplates.Unit());
+                var template = Track(TemplateObjects.Unit());
                 var basePrefab = PrefabUtility.SaveAsPrefabAsset(template, folder + "/Base.prefab");
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab);
                 var variant = PrefabUtility.SaveAsPrefabAsset(instance, folder + "/Variant.prefab");
@@ -110,8 +110,8 @@ namespace HyperRTS.Editor.Tests.Validation
 
         private static IEnumerable<Func<GameObject>> Templates() => new Func<GameObject>[]
         {
-            EntityTemplates.CombatUnit, EntityTemplates.Worker, EntityTemplates.Harvester, EntityTemplates.Producer,
-            EntityTemplates.DropOff, EntityTemplates.DefenseTower,
+            TemplateObjects.CombatUnit, TemplateObjects.Worker, TemplateObjects.Harvester, TemplateObjects.Producer,
+            TemplateObjects.DropOff, TemplateObjects.DefenseTower,
         };
     }
 }

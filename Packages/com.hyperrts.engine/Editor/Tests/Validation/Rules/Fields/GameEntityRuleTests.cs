@@ -15,11 +15,11 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Fields
         [Test]
         public void GameEntityRule_WarnsOnUnitPrerequisites_NotOnResearch()
         {
-            var unit = Template<UnitAuthoring>(EntityTemplates.Unit());
-            unit.prerequisites.Add(Template<UpgradeAuthoring>(EntityTemplates.Upgrade()));
+            var unit = Template<UnitAuthoring>(TemplateObjects.Unit());
+            unit.prerequisites.Add(Template<UpgradeAuthoring>(TemplateObjects.Upgrade()));
             Assert.IsFalse(PrerequisiteWarned(unit), "research is a prerequisite a player can finish");
 
-            unit.prerequisites.Add(Template<UnitAuthoring>(EntityTemplates.Unit("Tank")));
+            unit.prerequisites.Add(Template<UnitAuthoring>(TemplateObjects.Unit("Tank")));
             Assert.IsTrue(PrerequisiteWarned(unit));
         }
 

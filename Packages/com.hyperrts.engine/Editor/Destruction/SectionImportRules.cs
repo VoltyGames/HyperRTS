@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Destruction
                 return;
             }
 
-            _sections.Check(assetPath);
+            _sections.Finish(assetPath);
             context.AddObjectToAsset("sections", _sections);
         }
     }

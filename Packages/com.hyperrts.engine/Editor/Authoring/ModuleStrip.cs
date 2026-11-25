@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.Authoring
 
         private static Button CreateChip(AuthoringBehaviour[] all, AuthoringBehaviour component, bool isSole)
         {
-            var chip = new Button(() => Focus(all, component));
+            var chip = new Button(() => ShowOnly(all, component));
             chip.AddToClassList("hrts-chip");
             chip.EnableInClassList("hrts-chip--sole", isSole);
             chip.tooltip = ObjectNames.NicifyVariableName(component.GetType().Name);
@@ -81,7 +81,7 @@ namespace HyperRTS.Editor.Authoring
             return chip;
         }
 
-        private static void Focus(AuthoringBehaviour[] all, AuthoringBehaviour clicked)
+        private static void ShowOnly(AuthoringBehaviour[] all, AuthoringBehaviour clicked)
         {
             var showAll = SoleExpanded(all) == clicked;
             foreach (var component in all)

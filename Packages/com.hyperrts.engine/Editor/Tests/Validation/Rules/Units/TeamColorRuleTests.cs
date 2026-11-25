@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
         [Test]
         public void TeamColorRule_CountsMarkers_AndWarnsOnAnUnpaintedOne()
         {
-            var unit = Template<UnitAuthoring>(EntityTemplates.Unit());
+            var unit = Template<UnitAuthoring>(TemplateObjects.Unit());
             Assert.IsEmpty(MarkerWarnings(unit), "the template carries the two markers it needs");
 
             RemoveMarker(unit);
@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             AddMarker(unit, Track(new Material(Shader.Find("Universal Render Pipeline/Lit"))));
             Assert.IsTrue(MarkerWarnings(unit).Any(message => message.Contains("no _TeamColor material")));
 
-            var prop = Template<UnitAuthoring>(EntityTemplates.Unit("Prop"));
+            var prop = Template<UnitAuthoring>(TemplateObjects.Unit("Prop"));
             prop.owner = 0;
             RemoveMarker(prop);
             RemoveMarker(prop);
@@ -41,7 +41,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             AssetDatabase.CreateFolder("Assets", "_TeamMarkerTests");
             try
             {
-                var template = Track(EntityTemplates.Unit());
+                var template = Track(TemplateObjects.Unit());
                 RemoveMarker(template.GetComponent<UnitAuthoring>());
                 var basePrefab = PrefabUtility.SaveAsPrefabAsset(template, folder + "/Base.prefab");
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(basePrefab);

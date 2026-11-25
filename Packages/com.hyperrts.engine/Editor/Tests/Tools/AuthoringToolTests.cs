@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void ShowIfFollowsNumbersAndObjects_AndRejectsOtherConditions()
         {
-            var weapon = Template<WeaponAuthoring>(EntityTemplates.CombatUnit());
+            var weapon = Template<WeaponAuthoring>(TemplateObjects.CombatUnit());
             var serialized = new SerializedObject(weapon);
             bool IsMet(string field) => ConditionalFields.IsMet(serialized.FindProperty(Stat(field)));
             Assert.IsFalse(IsMet(Hit(nameof(DamageSettings.splashRadius))));
@@ -52,8 +52,8 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void SummariesListRoleModulesStatsAndTime()
         {
-            var soldier = Template<GameEntityAuthoring>(EntityTemplates.CombatUnit());
-            var upgrade = Template<UpgradeAuthoring>(EntityTemplates.Upgrade());
+            var soldier = Template<GameEntityAuthoring>(TemplateObjects.CombatUnit());
+            var upgrade = Template<UpgradeAuthoring>(TemplateObjects.Upgrade());
             upgrade.buildTime = 30f;
 
             Assert.AreEqual("Unit · Weapon", EntitySummary.Role(soldier));
@@ -68,7 +68,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void HeadersStartFoldoutsAndFieldsBeforeThemStayOutside()
         {
-            var weapon = Template<WeaponAuthoring>(EntityTemplates.CombatUnit());
+            var weapon = Template<WeaponAuthoring>(TemplateObjects.CombatUnit());
             var editor = UnityEditor.Editor.CreateEditor(weapon);
             try
             {
@@ -98,7 +98,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void FieldIssuesNameTheirPathInsideListEntries()
         {
-            var weapon = Template<WeaponAuthoring>(EntityTemplates.CombatUnit());
+            var weapon = Template<WeaponAuthoring>(TemplateObjects.CombatUnit());
             weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
             weapon.extraWeapons[0].stats.projectilePrefab = Make("Shell");
 

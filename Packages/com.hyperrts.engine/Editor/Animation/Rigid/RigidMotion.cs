@@ -65,7 +65,7 @@ namespace HyperRTS.Editor.Animation.Rigid
         {
             if (properties.TryInt(ColumnProperty, out var column))
             {
-                // Unity calls this before it parents the node; Check turns the name into a path.
+                // Unity calls this before it parents the node; Finish turns the name into a path.
                 pieces.Add(new Piece { node = node.name, column = column });
             }
             else if (properties.TryString(ClipProperty, out var clip))
@@ -85,7 +85,7 @@ namespace HyperRTS.Editor.Animation.Rigid
         /// Sorts pieces and clips, turns each piece's node name into its path under <paramref name="model"/>, and
         /// throws unless the columns run 0 to n - 1 and some clip exists.
         /// </summary>
-        public void Check(GameObject model, string source)
+        public void Finish(GameObject model, string source)
         {
             var paths = model.GetComponentsInChildren<Transform>(true).ToDictionary(node => node.name, node => AnimationUtility.CalculateTransformPath(node, model.transform));
             for (var i = 0; i < pieces.Count; i++)

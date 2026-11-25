@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>One ragdoll body of a bone set as edited: a capsule on a rig bone and its joint to the parent body's bone.</summary>
     [Serializable]
-    public class RagdollBone
+    public class RagdollBodyEntry
     {
         [Tooltip("The rig bone the body moves; the bones below it with no body of their own ride on it.")]
         public string bone;

@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Tests.Tools
         public void BaseBecomesANamedVariant()
         {
             AssetDatabase.CreateFolder("Assets", "_EntityWizardTests");
-            var template = Track(EntityTemplates.CombatUnit());
+            var template = Track(TemplateObjects.CombatUnit());
             var basePrefab = PrefabUtility.SaveAsPrefabAsset(template, Folder + "/Tank_Base.prefab");
             var bases = ScriptableObject.CreateInstance<EntityBases>();
             bases.groups.Add(new EntityBaseGroup { name = "Wizard test units", prefabs = { basePrefab } });

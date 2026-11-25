@@ -71,19 +71,19 @@ namespace HyperRTS.Editor.Templates
         private static void Producer(MenuCommand c) => Create(R.Producer, c);
 
         [MenuItem(Menu + R.ResearchBuilding, false, 52)]
-        private static void Lab(MenuCommand c) => Create(R.ResearchBuilding, c);
+        private static void ResearchBuilding(MenuCommand c) => Create(R.ResearchBuilding, c);
 
         [MenuItem(Menu + R.DropOff, false, 53)]
         private static void DropOff(MenuCommand c) => Create(R.DropOff, c);
 
         [MenuItem(Menu + R.DefenseTower, false, 54)]
-        private static void Tower(MenuCommand c) => Create(R.DefenseTower, c);
+        private static void DefenseTower(MenuCommand c) => Create(R.DefenseTower, c);
 
         [MenuItem(Menu + R.Airfield, false, 55)]
         private static void Airfield(MenuCommand c) => Create(R.Airfield, c);
 
         [MenuItem(Menu + R.CapturableBuilding, false, 56)]
-        private static void Capturable(MenuCommand c) => Create(R.CapturableBuilding, c);
+        private static void CapturableBuilding(MenuCommand c) => Create(R.CapturableBuilding, c);
 
         [MenuItem(Menu + R.Upgrade, false, 60)]
         private static void Upgrade(MenuCommand c) => Create(R.Upgrade, c);

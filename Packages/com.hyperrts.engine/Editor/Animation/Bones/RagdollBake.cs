@@ -9,10 +9,10 @@ namespace HyperRTS.Editor.Animation.Bones
     internal sealed class RagdollBake
     {
         private readonly string _setName;
-        private readonly List<RagdollBone> _bodies;
+        private readonly List<RagdollBodyEntry> _bodies;
         private readonly RagdollTuning _tuning;
 
-        public RagdollBake(string setName, List<RagdollBone> bodies, RagdollTuning tuning)
+        public RagdollBake(string setName, List<RagdollBodyEntry> bodies, RagdollTuning tuning)
         {
             (_setName, _bodies, _tuning) = (setName, bodies, tuning);
         }
@@ -30,7 +30,7 @@ namespace HyperRTS.Editor.Animation.Bones
             table.ragdollTuning = _tuning;
         }
 
-        private int ParentBody(RagdollBone body) =>
+        private int ParentBody(RagdollBodyEntry body) =>
             string.IsNullOrEmpty(body.parentBone) ? -1 : _bodies.FindIndex(other => other.bone == body.parentBone);
 
         // A bone rides on its own body, else on its nearest ancestor's, else on the root body (body 0).

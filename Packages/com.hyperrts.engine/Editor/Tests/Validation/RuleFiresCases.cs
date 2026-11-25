@@ -73,22 +73,22 @@ namespace HyperRTS.Editor.Tests.Validation
 
         private static IEnumerable<RuleCase> Gameplay()
         {
-            yield return Case<AbilityRule>("'Smoke'", f => f.Add<AbilityAuthoring>(EntityTemplates.CombatUnit()).With(a =>
+            yield return Case<AbilityRule>("'Smoke'", f => f.Add<AbilityAuthoring>(TemplateObjects.CombatUnit()).With(a =>
             {
                 a.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
                 a.abilities.Add(new AbilityAuthoring.Entry { name = "Smoke", hit = new DamageSettings { damage = 1f } });
             }));
             yield return Case<AirdropReceiverRule>("no aircraft prefab",
-                f => f.Add<AirdropReceiverAuthoring>(EntityTemplates.Building()));
-            yield return Case<BomberStrikeRule>("no aircraft prefab", f => f.Add<BomberStrikeAuthoring>(EntityTemplates.Building()));
-            yield return Case<MissileStrikeRule>("no missile prefab", f => f.Add<MissileStrikeAuthoring>(EntityTemplates.Building()));
-            yield return Case<AircraftRemainsRule>("don't fall", f => f.Template<UnitAuthoring>(EntityTemplates.Aircraft())
+                f => f.Add<AirdropReceiverAuthoring>(TemplateObjects.Building()));
+            yield return Case<BomberStrikeRule>("no aircraft prefab", f => f.Add<BomberStrikeAuthoring>(TemplateObjects.Building()));
+            yield return Case<MissileStrikeRule>("no missile prefab", f => f.Add<MissileStrikeAuthoring>(TemplateObjects.Building()));
+            yield return Case<AircraftRemainsRule>("don't fall", f => f.Template<UnitAuthoring>(TemplateObjects.Aircraft())
                 .With(aircraft => aircraft.remains = f.Make("Wreck")).GetComponent<FlightAuthoring>());
-            yield return Case<AuraRule>("Affects nobody", f => f.Add<AuraAuthoring>(EntityTemplates.Building())
+            yield return Case<AuraRule>("Affects nobody", f => f.Add<AuraAuthoring>(TemplateObjects.Building())
                 .With(aura => aura.affects = AuraTargets.Units));
             yield return Case<ModelFillRule>("no road wheels", f => f.Add<GrimeAuthoring>(TruckWithoutWheels()));
             yield return Case<FieldAttributeRule>("Extra Weapons 1: Projectile 'Shell' is a scene object", f =>
-                f.Template<WeaponAuthoring>(EntityTemplates.CombatUnit()).With(weapon =>
+                f.Template<WeaponAuthoring>(TemplateObjects.CombatUnit()).With(weapon =>
                 {
                     weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
                     weapon.extraWeapons[0].stats.projectilePrefab = f.Make("Shell");
@@ -97,17 +97,17 @@ namespace HyperRTS.Editor.Tests.Validation
 
         private static IEnumerable<RuleCase> Squads()
         {
-            yield return Case<ContainerRule>("exceeds capacity", f => f.Add<ContainerAuthoring>(EntityTemplates.Building())
+            yield return Case<ContainerRule>("exceeds capacity", f => f.Add<ContainerAuthoring>(TemplateObjects.Building())
                 .With(container =>
                 {
                     container.capacity = 2;
                     container.maxPassengerSize = 4;
                 }));
-            yield return Case<SquadRule>("no members", f => f.Add<SquadAuthoring>(EntityTemplates.CombatUnit()));
+            yield return Case<SquadRule>("no members", f => f.Add<SquadAuthoring>(TemplateObjects.CombatUnit()));
             yield return Case<SquadFiguresRule>("both an upgraded and an emplaced figure", f =>
             {
                 var root = f.Make("Figure").transform;
-                return f.Add<SquadFiguresAuthoring>(EntityTemplates.CombatUnit()).With(squad =>
+                return f.Add<SquadFiguresAuthoring>(TemplateObjects.CombatUnit()).With(squad =>
                     squad.figures.Add(new SquadFiguresAuthoring.Figure { root = root, upgradedRoot = root, emplacedRoot = root }));
             });
             yield return Case<CoverSpotRule>("faces away from the prop", f => f.Add<CoverSpotAuthoring>(new GameObject("Wall"))
@@ -116,27 +116,27 @@ namespace HyperRTS.Editor.Tests.Validation
                     position = new Vector3(0f, 0f, -0.8f), facing = new Vector2(0f, -1f), kind = CoverKind.Heavy,
                 })));
             yield return Case<DeliverySourceRule>("no carrier prefab",
-                f => f.Add<DeliverySourceAuthoring>(EntityTemplates.Building()));
+                f => f.Add<DeliverySourceAuthoring>(TemplateObjects.Building()));
         }
 
         private static IEnumerable<RuleCase> Entities()
         {
-            yield return Case<GameEntityRule>("never met", f => f.Template<UnitAuthoring>(EntityTemplates.Unit())
-                .With(unit => unit.prerequisites.Add(f.Template<UnitAuthoring>(EntityTemplates.Unit("Scout")))));
+            yield return Case<GameEntityRule>("never met", f => f.Template<UnitAuthoring>(TemplateObjects.Unit())
+                .With(unit => unit.prerequisites.Add(f.Template<UnitAuthoring>(TemplateObjects.Unit("Scout")))));
             yield return Case<MatchRule>("no players", f => f.Add<MatchAuthoring>(new GameObject("Match"))
                 .With(match => match.players.Clear()));
-            yield return Case<ProducerRule>("inside the footprint", f => f.Template<ProducerAuthoring>(EntityTemplates.Producer())
+            yield return Case<ProducerRule>("inside the footprint", f => f.Template<ProducerAuthoring>(TemplateObjects.Producer())
                 .With(producer => producer.spawnOffset = Vector3.zero));
-            yield return Case<RequiredAuthoringRule>("needs a Unit", f => f.Add<HarvesterAuthoring>(EntityTemplates.Building()));
+            yield return Case<RequiredAuthoringRule>("needs a Unit", f => f.Add<HarvesterAuthoring>(TemplateObjects.Building()));
             yield return Case<RequiresGhostRule>("Not a ghost", f => f.Add<ResourceNodeAuthoring>(new GameObject("Node")));
             yield return Case<ResourceNodeRule>("no resource type",
-                f => f.Template<ResourceNodeAuthoring>(EntityTemplates.ResourceNode()));
+                f => f.Template<ResourceNodeAuthoring>(TemplateObjects.ResourceNode()));
         }
 
         private static IEnumerable<RuleCase> Units()
         {
             yield return Case<GarrisonPartRule>("no Container above it", f => f.Add<GarrisonPartAuthoring>(new GameObject("Gun")));
-            yield return Case<LocomotionRule>("has no wheelbase", f => f.Add<LocomotionAuthoring>(EntityTemplates.Unit())
+            yield return Case<LocomotionRule>("has no wheelbase", f => f.Add<LocomotionAuthoring>(TemplateObjects.Unit())
                 .With(locomotion =>
                 {
                     locomotion.pivots = false;
@@ -156,12 +156,12 @@ namespace HyperRTS.Editor.Tests.Validation
         private static IEnumerable<RuleCase> UnitStats()
         {
             yield return Case<SceneryRemainsRule>("show twice", f => f.Add<DestructibleAuthoring>(new GameObject("Fence"))
-                .With(scenery => scenery.remains = f.Track(EntityTemplates.Unit("Rubble"))));
+                .With(scenery => scenery.remains = f.Track(TemplateObjects.Unit("Rubble"))));
             yield return Case<TurretTossRule>("hull and a turret", f => f.Add<TurretTossAuthoring>(new GameObject("Tank")));
             yield return Case<TeamColorRule>("owner's colour", f =>
             {
                 var plain = f.Track(new Material(Shader.Find("Universal Render Pipeline/Lit")));
-                return f.Template<UnitAuthoring>(EntityTemplates.Unit()).With(unit =>
+                return f.Template<UnitAuthoring>(TemplateObjects.Unit()).With(unit =>
                 {
                     foreach (var renderer in unit.GetComponentsInChildren<Renderer>())
                     {
@@ -169,11 +169,11 @@ namespace HyperRTS.Editor.Tests.Validation
                     }
                 });
             });
-            yield return Case<UnitRule>("no Flight component", f => f.Template<UnitAuthoring>(EntityTemplates.Unit())
+            yield return Case<UnitRule>("no Flight component", f => f.Template<UnitAuthoring>(TemplateObjects.Unit())
                 .With(unit => unit.navLayer = NavLayer.Air));
-            yield return Case<UpgradeRule>("No stat bonuses", f => f.Template<UpgradeAuthoring>(EntityTemplates.Upgrade()));
-            yield return Case<VeterancyRule>("No ranks", f => f.Add<VeterancyAuthoring>(EntityTemplates.CombatUnit()));
-            yield return Case<WeaponRule>("negative arc height", f => f.Template<WeaponAuthoring>(EntityTemplates.CombatUnit())
+            yield return Case<UpgradeRule>("No stat bonuses", f => f.Template<UpgradeAuthoring>(TemplateObjects.Upgrade()));
+            yield return Case<VeterancyRule>("No ranks", f => f.Add<VeterancyAuthoring>(TemplateObjects.CombatUnit()));
+            yield return Case<WeaponRule>("negative arc height", f => f.Template<WeaponAuthoring>(TemplateObjects.CombatUnit())
                 .With(weapon => weapon.stats.arcHeight = -1f));
         }
 
@@ -190,7 +190,7 @@ namespace HyperRTS.Editor.Tests.Validation
         private static IEnumerable<RuleCase> Scenes()
         {
             yield return Case<DuplicateNameRule>("'Tank'", f =>
-                new PrefabSet(new[] { f.Track(EntityTemplates.Unit("Tank")), f.Track(EntityTemplates.Unit("Tank")) }));
+                new PrefabSet(new[] { f.Track(TemplateObjects.Unit("Tank")), f.Track(TemplateObjects.Unit("Tank")) }));
             yield return Case<MatchCountRule>("More than one Match", f => f.InNewScene(false, () =>
             {
                 f.Add<MatchAuthoring>(new GameObject("Match"));
@@ -199,7 +199,7 @@ namespace HyperRTS.Editor.Tests.Validation
             yield return Case<MatchPlacementRule>("has no player slot", f => f.InNewScene(false, () =>
             {
                 f.Add<MatchAuthoring>(new GameObject("Match"));
-                f.Template<GameEntityAuthoring>(EntityTemplates.Unit()).owner = 3;
+                f.Template<GameEntityAuthoring>(TemplateObjects.Unit()).owner = 3;
             }));
             // Inactive, so the SubScene doesn't start an edit-mode Entities world.
             yield return Case<NetcodeBootstrapRule>("No OverrideAutomaticNetcodeBootstrap", f => f.InNewScene(false, () =>

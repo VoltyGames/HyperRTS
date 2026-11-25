@@ -67,7 +67,7 @@ namespace HyperRTS.Editor.Animation.Rigid
         {
             if (_motion != null)
             {
-                _motion.Check(model, assetPath);
+                _motion.Finish(model, assetPath);
                 context.AddObjectToAsset("motion", _motion);
                 return;
             }

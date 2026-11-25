@@ -114,7 +114,7 @@ namespace HyperRTS.Editor.Rows
                     return;
                 }
 
-                _itemDots = FindItemDots();
+                _itemDots = BuildItemDots();
             }
 
             if (!_itemDots.TryGetValue(guid, out var color))
@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Rows
         }
 
         // Every item's state once, keyed by the GUID of its project path; current items get no entry.
-        private static Dictionary<string, Color> FindItemDots()
+        private static Dictionary<string, Color> BuildItemDots()
         {
             var dots = new Dictionary<string, Color>();
             var log = GeneratorRunLog.Load();

@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Destruction
         internal const string HoleProperty = "hole";
 
         [Serializable]
-        public class Part
+        public class Section
         {
             public string name;
 
@@ -70,7 +70,7 @@ namespace HyperRTS.Editor.Destruction
         }
 
         [Tooltip("By mask bit.")]
-        public List<Part> sections = new();
+        public List<Section> sections = new();
 
         public List<Hole> holes = new();
 
@@ -91,7 +91,7 @@ namespace HyperRTS.Editor.Destruction
             else if (named)
             {
                 var exterior = properties.Has("outward");
-                sections.Add(new Part
+                sections.Add(new Section
                 {
                     name = section,
                     order = properties.Int("order"),
@@ -116,7 +116,7 @@ namespace HyperRTS.Editor.Destruction
         }
 
         /// <summary>Sorts the sections by mask bit and throws unless every support and holed mesh they name exists.</summary>
-        public void Check(string source)
+        public void Finish(string source)
         {
             sections.Sort((a, b) => a.order.CompareTo(b.order));
             foreach (var part in sections)
@@ -167,7 +167,7 @@ namespace HyperRTS.Editor.Destruction
             return found;
         }
 
-        private SectionEntry Entry(SectionsAuthoring owner, Part part, GameObject intact, Bounds box, Vector3 middle)
+        private SectionEntry Entry(SectionsAuthoring owner, Section part, GameObject intact, Bounds box, Vector3 middle)
         {
             var keptAt = Array.FindIndex(owner.sections, item => item.intact == intact);
             var entry = new SectionEntry
@@ -209,7 +209,7 @@ namespace HyperRTS.Editor.Destruction
         private GameObject[] SectionModels(SectionsAuthoring owner, string[] names) =>
             names.Select(name => FindModel(owner, sections.Find(other => other.name == name).intact)).ToArray();
 
-        private SectionsAuthoring.Hole[] Holes(SectionsAuthoring owner, Part part, GameObject intact) =>
+        private SectionsAuthoring.Hole[] Holes(SectionsAuthoring owner, Section part, GameObject intact) =>
             part.holed.Select(name => new SectionsAuthoring.Hole
             {
                 model = Hidden(owner, name),

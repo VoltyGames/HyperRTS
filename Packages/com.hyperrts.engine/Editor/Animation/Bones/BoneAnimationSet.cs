@@ -105,7 +105,7 @@ namespace HyperRTS.Editor.Animation.Bones
         public List<Socket> sockets = new();
 
         [Tooltip("Bodies a dying figure falls as, the root body first; empty for none. The context menu fills them from a humanoid avatar or Human Bones.")]
-        public List<RagdollBone> ragdoll = new();
+        public List<RagdollBodyEntry> ragdoll = new();
 
         [Tooltip("The rig bone for each human body part, for filling the ragdoll on a rig without a humanoid avatar.")]
         public List<HumanBone> humanBones = new();

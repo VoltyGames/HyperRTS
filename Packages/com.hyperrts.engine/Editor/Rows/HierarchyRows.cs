@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Rows
     {
         // The Hierarchy window and its decorated rows outlive Play mode, so this state does too.
         [NoAutoStaticsCleanup]
-        private static readonly Dictionary<EntityId, HierarchyRow> Rows = new();
+        private static readonly Dictionary<EntityId, HierarchyRow> Decorations = new();
 
         // Each bound item's view and the elements added to it, so a rebind or unbind removes them.
         [NoAutoStaticsCleanup]
@@ -64,7 +64,7 @@ namespace HyperRTS.Editor.Rows
         /// <summary>Drops the row data and decorates every bound row again, as after a preference change.</summary>
         public static void Refresh()
         {
-            Rows.Clear();
+            Decorations.Clear();
             foreach (var (item, bound) in Bound.ToList())
             {
                 Decorate(bound.View, item);
@@ -110,10 +110,10 @@ namespace HyperRTS.Editor.Rows
 
         private static HierarchyRow Find(EntityId entityId)
         {
-            if (!Rows.TryGetValue(entityId, out var row))
+            if (!Decorations.TryGetValue(entityId, out var row))
             {
                 row = Build(EditorUtility.EntityIdToObject(entityId) as GameObject);
-                Rows[entityId] = row;
+                Decorations[entityId] = row;
             }
 
             return row;

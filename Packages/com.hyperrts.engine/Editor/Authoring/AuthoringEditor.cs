@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Authoring
     [CanEditMultipleObjects]
     public class AuthoringEditor : UnityEditor.Editor
     {
-        private const BindingFlags Methods = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        private const BindingFlags Members = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private const long ChangeDelayMilliseconds = 100;
 
         private IssueBadge _issues;
@@ -129,7 +129,7 @@ namespace HyperRTS.Editor.Authoring
         {
             for (var declaring = type; declaring != null && declaring != typeof(MonoBehaviour); declaring = declaring.BaseType)
             {
-                var found = declaring.GetField(field, Methods | BindingFlags.DeclaredOnly);
+                var found = declaring.GetField(field, Members | BindingFlags.DeclaredOnly);
                 if (found != null)
                 {
                     return found.GetCustomAttribute<HeaderAttribute>();
@@ -181,7 +181,7 @@ namespace HyperRTS.Editor.Authoring
         /// <summary>The component's own [InspectorButton] methods, the static editor ones that take it, then its fill from model.</summary>
         private static IEnumerable<(string Label, string Glyph, MethodInfo Method)> Buttons(Type type)
         {
-            foreach (var method in type.GetMethods(Methods))
+            foreach (var method in type.GetMethods(Members))
             {
                 var button = method.GetCustomAttribute<InspectorButtonAttribute>();
                 if (button == null)
