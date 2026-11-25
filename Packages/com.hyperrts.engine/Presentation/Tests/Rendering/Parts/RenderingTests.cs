@@ -94,45 +94,31 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
         }
 
         [Test]
-        public void UnitParts_GetTheUnitsLayer_BuildingsAndSceneryKeepTheirs()
+        public void UnitParts_GetTheUnitsLayer_SceneContentGetsLightTransport_PrefabsKeepTheirs()
         {
-            var unit = _em.CreateEntity(typeof(UnitTag), typeof(Prefab));
-            var part = Rendered(1u);
-            _em.AddComponentData(part, new Parent { Value = unit });
-            var building = _em.CreateEntity(typeof(BuildingTag), typeof(Prefab));
-            var wall = Rendered(1u);
-            _em.AddComponentData(wall, new Parent { Value = building });
-            var scenery = Rendered(1u);
-
-            Update<RenderingLayerBakingSystem>();
-
-            Assert.AreEqual(1u | UnitRenderingLayer.Mask, _em.GetSharedComponent<RenderFilterSettings>(part).RenderingLayerMask);
-            Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(wall).RenderingLayerMask);
-            Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(scenery).RenderingLayerMask);
-        }
-
-        [Test]
-        public void LightTransport_TakesSceneContent_NotUnitPartsOrPrefabs()
-        {
-            var scenery = Placed(1u);
-            var building = _em.CreateEntity(typeof(BuildingTag));
-            var wall = Placed(1u);
-            _em.AddComponentData(wall, new Parent { Value = building });
+            var prefabUnit = _em.CreateEntity(typeof(UnitTag), typeof(Prefab));
+            var prefabPart = Rendered(1u);
+            _em.AddComponentData(prefabPart, new Parent { Value = prefabUnit });
             var unit = _em.CreateEntity(typeof(UnitTag));
             var part = Placed(1u);
             _em.AddComponentData(part, new Parent { Value = unit });
-            var spawned = Rendered(1u);
+            var building = _em.CreateEntity(typeof(BuildingTag));
+            var wall = Placed(1u);
+            _em.AddComponentData(wall, new Parent { Value = building });
+            var scenery = Placed(1u);
             var prefabBuilding = _em.CreateEntity(typeof(BuildingTag), typeof(Prefab));
             var prefabWall = Rendered(1u);
             _em.AddComponentData(prefabWall, new Parent { Value = prefabBuilding });
+            var spawned = Rendered(1u);
 
-            Update<LightTransportBakingSystem>();
+            Update<RenderingLayerBakingSystem>();
 
-            Assert.AreEqual(1u | LightTransportLayer.Mask, _em.GetSharedComponent<RenderFilterSettings>(scenery).RenderingLayerMask);
-            Assert.AreEqual(1u | LightTransportLayer.Mask, _em.GetSharedComponent<RenderFilterSettings>(wall).RenderingLayerMask);
-            Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(part).RenderingLayerMask);
-            Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(spawned).RenderingLayerMask);
-            Assert.AreEqual(1u, _em.GetSharedComponent<RenderFilterSettings>(prefabWall).RenderingLayerMask);
+            Assert.AreEqual(1u | UnitRenderingLayer.Mask, Layers(prefabPart));
+            Assert.AreEqual(1u | UnitRenderingLayer.Mask, Layers(part));
+            Assert.AreEqual(1u | LightTransportLayer.Mask, Layers(wall));
+            Assert.AreEqual(1u | LightTransportLayer.Mask, Layers(scenery));
+            Assert.AreEqual(1u, Layers(prefabWall));
+            Assert.AreEqual(1u, Layers(spawned));
         }
 
         [Test]
@@ -257,6 +243,8 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             _em.AddSharedComponent(entity, new RenderFilterSettings { RenderingLayerMask = layers });
             return entity;
         }
+
+        private uint Layers(Entity entity) => _em.GetSharedComponent<RenderFilterSettings>(entity).RenderingLayerMask;
 
         private Entity Placed(uint layers)
         {

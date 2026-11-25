@@ -23,10 +23,10 @@ costly there, and a battle makes all of them every frame:
 ## How it is set up
 
 - `LightTransportLayer` names rendering layer 9. A game sets its Surface Cache volume's **Light Transport ▸ Rendering
-  Layer Mask** to that layer alone (`LightTransportSettings.Restrict`), and only renderers on the layer bounce light.
-  A volume left at Everything turns the rule off: then every rendered thing takes part.
-- `LightTransportBakingSystem` puts every rendered entity a scene places on the layer, except the parts of units.
-  Prefab entities never get it, so nothing spawned during a match joins.
+  Layer Mask** to that layer alone (`LightTransportSettings.Restrict`, a validator quick fix), and only renderers on
+  the layer bounce light. A volume left at Everything turns the rule off: then every rendered thing takes part.
+- `RenderingLayerBakingSystem` puts every rendered entity a scene places on the layer, except the parts of units,
+  which it puts on the units layer. Prefab entities never get it, so nothing spawned during a match joins.
 - The map build adds a hidden `GroundBounce` mesh on the layer (`MapGroundBounceMesh`): the terrain's shape at about
   2 m a vertex, drawn with the terrain material, whose Meta pass gives the ground's colour from above. The Unity
   Terrain keeps the default layer, so craters and building levelling cost the GI nothing.
