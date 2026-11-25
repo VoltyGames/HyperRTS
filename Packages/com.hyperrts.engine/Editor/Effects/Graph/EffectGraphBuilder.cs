@@ -18,9 +18,6 @@ namespace HyperRTS.Editor.Effects.Graph
     /// </summary>
     public static class EffectGraphBuilder
     {
-        private const string BuildMenu = "Assets/HyperRTS/Build Effect Graph";
-        private const string BuildAllMenu = "Assets/HyperRTS/Build All Effect Graphs";
-
         /// <summary>Builds the graph beside the recipe at <paramref name="recipePath"/>, saving the recipe first so its stamp matches what was built.</summary>
         public static void Build(string recipePath)
         {
@@ -168,17 +165,5 @@ namespace HyperRTS.Editor.Effects.Graph
                 }
             }
         }
-
-        [MenuItem(BuildMenu)]
-        private static void BuildSelected() => BuildAll(SelectedRecipes());
-
-        [MenuItem(BuildMenu, true)]
-        private static bool CanBuildSelected() => SelectedRecipes().Any();
-
-        [MenuItem(BuildAllMenu)]
-        private static void BuildEvery() => BuildAll(RecipePaths());
-
-        private static IEnumerable<string> SelectedRecipes() =>
-            Selection.assetGUIDs.Select(AssetDatabase.GUIDToAssetPath).Where(EffectRecipe.IsRecipe);
     }
 }

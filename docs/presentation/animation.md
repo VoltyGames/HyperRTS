@@ -25,7 +25,7 @@ build):
 - `meshLods`: Mesh LOD levels Unity generates below each part mesh, so one renderer per part draws near and far
   without a LOD Group. They are index ranges over the same vertices, which the bone texture still finds.
 
-**Bake** with **Assets ▸ HyperRTS ▸ Bake Bone Animation Set** or the `bone bake [set]`
+**Bake** from the set's Inspector context menu or the `bone bake [set]`
 [command](../editor/README.md#commands). It writes `Generated/` beside the set: a bone texture, a `BoneClipTable` and a
 plain mesh per part, and reloads the meshes and texture so open scenes draw the new bake. A skinned part whose bind
 pose differs from the skeleton's fails the bake. Upper-body bones are written relative to the root bone of their
@@ -54,7 +54,7 @@ A `RigidAnimationSet` bakes them from two models: the model whose meshes carry t
 `VAT/<Model>_Motion.fbx`. The motion model has an empty per piece with an integer `column` FBX property, keyed on every
 frame of one take, and an empty per clip with `clip`, `startRow`, `frameCount` and `fps`. `VATImportRules` imports it
 unreduced and keeps its pieces and clips inside it (`RigidMotion`), and gives the model beside it full-float UV1.
-**Assets ▸ HyperRTS ▸ Bake Rigid Animation Set** or `rigid bake` samples the take into half-float EXRs (the set's
+**Bake** in the set's Inspector context menu or `rigid bake` samples the take into half-float EXRs (the set's
 `positions` and `rotations`, else `T_<Set>_Pos.exr` and `_Rot.exr` beside it) and writes the `VATClipTable`'s width,
 clips and bounds. Sampling the curves needs no scene; a channel without a curve keeps its node's pose.
 

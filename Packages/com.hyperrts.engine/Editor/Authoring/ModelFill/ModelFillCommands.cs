@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
 using Unity.Scripting.LifecycleManagement;
-using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring.ModelFill
 {
-    /// <summary>Runs every <see cref="ModelFill"/> on a component, or on every component of the selected prefabs.</summary>
+    /// <summary>Runs every <see cref="ModelFill"/> on a component, or on every component under a prefab root.</summary>
     public static class ModelFillCommands
     {
         public const string Label = "Fill from model";
-        private const string Menu = "Assets/HyperRTS/Fill From Model";
 
         [NoAutoStaticsCleanup]
         private static readonly ModelFill[] Fills = TypeDiscovery.Instances<ModelFill>();
@@ -50,41 +48,6 @@ namespace HyperRTS.Editor.Authoring.ModelFill
             }
 
             return failures;
-        }
-
-        [MenuItem(Menu)]
-        private static void FillSelected()
-        {
-            foreach (var path in SelectedPrefabs())
-            {
-                FillPrefab(path);
-            }
-        }
-
-        [MenuItem(Menu, true)]
-        private static bool CanFillSelected() => SelectedPrefabs().Any();
-
-        private static IEnumerable<string> SelectedPrefabs() =>
-            Selection.GetFiltered<GameObject>(SelectionMode.Assets).Select(AssetDatabase.GetAssetPath)
-                .Where(path => path.EndsWith(".prefab", StringComparison.Ordinal));
-
-        // What a model lacks keeps its value as it was, and the console names it; the rest still fill and save.
-        private static void FillPrefab(string path)
-        {
-            var root = PrefabUtility.LoadPrefabContents(path);
-            try
-            {
-                foreach (var failure in FillAll(root))
-                {
-                    Debug.LogError($"HyperRTS: fill from model on '{path}': {failure}");
-                }
-
-                PrefabUtility.SaveAsPrefabAsset(root, path);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(root);
-            }
         }
     }
 }

@@ -12,8 +12,8 @@ with live validation and Play-mode debug tools ([Play mode](play-mode.md)). Read
 | **HyperRTS ▸ Map Editor** (Ctrl+Shift+M) | Opens the [Map Editor](../maps/editor.md); so does double-clicking a `.map.json` |
 | **HyperRTS ▸ Documentation** | Opens these docs; each component's help button opens its own section |
 
-Rebind the hotkeys under **Main Menu** in **Edit ▸ Shortcuts**. Commands on one kind of asset sit in its context menu
-under **Assets ▸ HyperRTS** (Build Effect Graph, Bake Bone Animation Set).
+Rebind the hotkeys under **Main Menu** in **Edit ▸ Shortcuts**. A command on one asset or component sits in its
+Inspector; pipeline steps run from the Tools window.
 
 ## Tools window
 
@@ -119,9 +119,8 @@ they show only when it is embedded or local.
 ## Effect graphs
 
 An effect's VFX graph is generated from its `<Graph>.effect.asset` recipe, an `EffectRecipe` made with **Assets ▸
-Create ▸ HyperRTS ▸ Effects ▸ Effect Recipe**. Build it from **Assets ▸ HyperRTS ▸ Build Effect Graph**, **Build All
-Effect Graphs**, the **Effect graphs** [generator](#generators), the recipe inspector's **Build graph** or the
-`effect build` [command](#commands); `effect show` and `effect set` read and edit a recipe's layers from the command
+Create ▸ HyperRTS ▸ Effects ▸ Effect Recipe**. Build it from the recipe inspector's **Build graph**, the Effects page, the
+**Effect graphs** [generator](#generators) or the `effect build` [command](#commands); `effect show` and `effect set` read and edit a recipe's layers from the command
 line. A build is in place: the graph keeps its GUID, so prefabs keep their reference.
 `EffectRecipeRule` reports a recipe without layers, a broken texture or mesh link, a debris layer without 1 to 4 meshes
 and a graph that is missing or older than its recipe. The recipe format and builder are in

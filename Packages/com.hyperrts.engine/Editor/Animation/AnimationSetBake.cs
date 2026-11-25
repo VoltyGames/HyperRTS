@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Animation
 {
-    /// <summary>What the bake commands and menu items share: baking one named set, every set or the selection.</summary>
+    /// <summary>What the bake commands share: baking one named set or every set.</summary>
     public static class AnimationSetBake
     {
         /// <summary>The largest width or height the GPU texture limit allows a baked animation texture.</summary>
@@ -19,18 +19,6 @@ namespace HyperRTS.Editor.Animation
             var sets = string.IsNullOrEmpty(set) ? EditorAssets.FindAssets<T>() : new List<T> { Find<T>(set) };
             return sets.Select(found => new { set = AssetDatabase.GetAssetPath(found), written = found.Bake() }).ToList();
         }
-
-        /// <summary>Bakes every set of this type selected in the Project window.</summary>
-        public static void BakeSelected<T>() where T : Object, IAnimationSet
-        {
-            foreach (var found in Selection.GetFiltered<T>(SelectionMode.Assets))
-            {
-                found.Bake();
-            }
-        }
-
-        /// <summary>Whether the Project window selection holds a set of this type.</summary>
-        public static bool HasSelected<T>() where T : Object => Selection.GetFiltered<T>(SelectionMode.Assets).Length > 0;
 
         private static T Find<T>(string set) where T : ScriptableObject
         {
