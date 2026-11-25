@@ -2,7 +2,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Rows
+namespace HyperRTS.Editor.Decorations
 {
     /// <summary>What a Hierarchy row shows for one entity object: its component icon, owner colour and worst issue.</summary>
     internal readonly struct HierarchyRow

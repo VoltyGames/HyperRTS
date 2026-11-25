@@ -5,7 +5,7 @@ using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Rows
+namespace HyperRTS.Editor.Decorations
 {
     /// <summary>Draws a unit prefab's command card icon over its thumbnail in the Project window's grid view, found once per project change.</summary>
     internal sealed class ProjectUnitIcons

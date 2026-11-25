@@ -14,7 +14,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Rows
+namespace HyperRTS.Editor.Decorations
 {
     /// <summary>
     /// Decorates Hierarchy rows of entity objects through the Hierarchy window's UI Toolkit item events. Row data is
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Rows
         [InitializeOnLoadMethod]
         private static void Install()
         {
-            HierarchyWindow.BindView += (_, view) => view.StyleContainer.styleSheets.Add(EditorAssets.Sheet("Rows"));
+            HierarchyWindow.BindView += (_, view) => view.StyleContainer.styleSheets.Add(EditorAssets.Sheet("Decorations"));
             HierarchyWindow.BindViewItem += (_, view, item) => Decorate(view, item);
             HierarchyWindow.UnbindViewItem += (_, _, item) => Strip(item);
             EditorApplication.hierarchyChanged += QueueRefresh;

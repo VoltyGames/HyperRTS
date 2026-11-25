@@ -99,7 +99,7 @@ session stay in `SessionState`.
 
 ## Hierarchy and Project rows
 
-`Editor/Rows/` decorates two built-in windows. In the Hierarchy, a row of an object with a `ProducibleAuthoring` shows
+`Editor/Decorations/` decorates two built-in windows. In the Hierarchy, a row of an object with a `ProducibleAuthoring` shows
 its icon at the right edge, a 2 px edge in the owner's colour and a red or amber dot for a component rule error or
 warning (UI Toolkit item events, `HierarchyWindow.BindViewItem`). The Project window offers only
 `projectWindowItemOnGUI`, the second IMGUI exception after Scene view `Handles`: in the grid view a prefab whose root

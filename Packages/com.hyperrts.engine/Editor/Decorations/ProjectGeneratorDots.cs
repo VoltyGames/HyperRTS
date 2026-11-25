@@ -6,7 +6,7 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Rows
+namespace HyperRTS.Editor.Decorations
 {
     /// <summary>Draws a dot on the Project window entry of a generator item that is out of date or failed, found once and kept until the project changes or a run is recorded.</summary>
     internal sealed class ProjectGeneratorDots

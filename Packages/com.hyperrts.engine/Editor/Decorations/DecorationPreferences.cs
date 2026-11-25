@@ -5,10 +5,10 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Rows
+namespace HyperRTS.Editor.Decorations
 {
     /// <summary>Preferences > HyperRTS: switches for the Hierarchy and Project window row decorations.</summary>
-    internal static class RowPreferences
+    internal static class DecorationPreferences
     {
         [NoAutoStaticsCleanup]
         private static readonly (string Label, string Field, Action Repaint)[] Toggles =
