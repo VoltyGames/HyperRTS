@@ -5,6 +5,7 @@ namespace HyperRTS.Presentation.Environment.Weather
 {
     /// <summary>Shows its children (puddle decals) only while the ground is at least <see cref="threshold"/> wet.</summary>
     [ExecuteAlways]
+    [AddComponentMenu("")]
     public sealed class WetnessGroup : PresentationBehaviour
     {
         [Tooltip("Wetness (0 dry, 1 soaked) from which the children show.")]

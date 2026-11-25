@@ -11,6 +11,7 @@ namespace HyperRTS.Input.Cameras.CostProbe
     /// Run with <c>-camera-cost &lt;points file&gt; -camera-cost-report &lt;path&gt;</c>: times frames at each point and height of
     /// the <see cref="CameraCostPlan"/>, writes a <see cref="CameraCostReport"/> and quits 0, or quits 1 with the reason.
     /// </summary>
+    [AddComponentMenu("")]
     public sealed class CameraCostProbe : PresentationBehaviour
     {
         public const string PointsFlag = "-camera-cost";

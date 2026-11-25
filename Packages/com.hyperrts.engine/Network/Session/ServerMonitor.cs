@@ -15,6 +15,7 @@ namespace HyperRTS.Network.Session
     /// Watches a command-line server that ends itself: samples its cost each second of play, quits when the match
     /// ends or the time limit passes, and writes the <see cref="ServerReport"/>.
     /// </summary>
+    [AddComponentMenu("")]
     internal sealed class ServerMonitor : MonoBehaviour
     {
         public const int EndedCode = 0;
