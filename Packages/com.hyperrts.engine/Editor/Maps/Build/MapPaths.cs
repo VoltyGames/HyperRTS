@@ -47,6 +47,9 @@ namespace HyperRTS.Editor.Maps.Build
 
         public string Water => $"{Generated}/{Name}_Water.asset";
 
+        /// <summary>The fixed ground mesh light transport bounces off in place of the terrain.</summary>
+        public string GroundBounce => $"{Generated}/{Name}_GroundBounce.asset";
+
         /// <summary>The terrain shader's per-map tint and wetness picture.</summary>
         public string GroundTint => $"{Generated}/{Name}_GroundTint.png";
 

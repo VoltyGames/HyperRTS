@@ -1,7 +1,5 @@
-using System;
 using System.Linq;
 using HyperRTS.Presentation.Rendering.Silhouettes;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -14,8 +12,6 @@ namespace HyperRTS.Editor.Validation.Project
     /// </summary>
     public static class UnitSilhouetteSettings
     {
-        private const string TagManagerPath = "ProjectSettings/TagManager.asset";
-
         // After the opaques, skybox and URP's volumetric fog, and before the fog of war and the transparents, so smoke
         // and effects still cover the silhouettes.
         private const RenderPassEvent Event = RenderPassEvent.AfterRenderingSkybox + 2;
@@ -61,37 +57,8 @@ namespace HyperRTS.Editor.Validation.Project
         }
 
         /// <summary>The name of the units' rendering layer in Tags and Layers; empty when unnamed.</summary>
-        public static string LayerName()
-        {
-            var layers = Property(TagManager(), "m_RenderingLayers");
-            if (UnitRenderingLayer.Index >= layers.arraySize)
-            {
-                return string.Empty;
-            }
+        public static string LayerName() => RenderingLayerNames.Name(UnitRenderingLayer.Index);
 
-            return layers.GetArrayElementAtIndex(UnitRenderingLayer.Index).stringValue;
-        }
-
-        public static void NameLayer()
-        {
-            var tagManager = TagManager();
-            var layers = Property(tagManager, "m_RenderingLayers");
-            // Growing an array copies its last name into the new slots, so blank them.
-            for (var i = layers.arraySize; i <= UnitRenderingLayer.Index; i++)
-            {
-                layers.arraySize = i + 1;
-                layers.GetArrayElementAtIndex(i).stringValue = string.Empty;
-            }
-
-            layers.GetArrayElementAtIndex(UnitRenderingLayer.Index).stringValue = UnitRenderingLayer.Name;
-            tagManager.ApplyModifiedProperties();
-        }
-
-        private static SerializedObject TagManager() =>
-            new(AssetDatabase.LoadAllAssetsAtPath(TagManagerPath)[0]);
-
-        private static SerializedProperty Property(SerializedObject settings, string path) =>
-            settings.FindProperty(path)
-            ?? throw new InvalidOperationException($"HyperRTS: {settings.targetObject.name} has no setting '{path}'.");
+        public static void NameLayer() => RenderingLayerNames.SetName(UnitRenderingLayer.Index, UnitRenderingLayer.Name);
     }
 }

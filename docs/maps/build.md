@@ -68,7 +68,8 @@ never wins, so edges never follow the alphamap's texels. Layers are hex-tiled an
 turned (`antiTiling`) to hide repeats, layers with `followsRows` turn with the row map, and a `plants` setting thins
 scattered plants where a layer is painted. Close up it adds a micro-texture grain, a sideways-projected slope layer
 and parallax; layer relief softens with distance so the ground reads by colour from the match camera. Its Meta pass
-gives Surface Cache GI the ground's colour from above (`MapGroundColor`).
+gives Surface Cache GI the ground's colour from above (`MapGroundColor`), through the hidden `GroundBounce` mesh that
+stands in for the terrain in the GI ([light transport](../presentation/light-transport.md)).
 
 Each map's terrain material is a Material Variant of the climate's `terrain` base material that `MapTerrainMaterial`
 writes, overriding only the layer arrays and the map's textures. `PresentationQuality.Apply` sets the shader quality

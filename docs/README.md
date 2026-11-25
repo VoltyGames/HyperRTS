@@ -39,6 +39,7 @@ What a player sees and touches, on clients only. [Interaction, input, audio and 
 | [Animation](presentation/animation.md) | Bone and vertex animation, machines, motion rig, squad figures |
 | [Rendering](presentation/rendering.md) | Team colour, build reveal, visibility, fog of war, flags, destruction, shaders |
 | [Environment](presentation/environment.md) | Atmosphere, wind, water, field fires, ambient life |
+| [Light transport](presentation/light-transport.md) | What bounces light in Surface Cache GI, and why units and the terrain stay out |
 | [Ground](presentation/ground.md) | Trample maps, ruts and craters, stains, building decals and footprints |
 | [Vegetation](presentation/vegetation.md) | Row crops, the scatter host, foliage lighting |
 | [Effects](presentation/effects.md) | Effect rigs, VFX Graph conventions, pools, loop lights |

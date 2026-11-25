@@ -10,6 +10,7 @@ using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Water;
 using HyperRTS.Presentation.Environment.Weather;
+using HyperRTS.Presentation.Rendering.LightTransport;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Heights;
@@ -56,6 +57,7 @@ namespace HyperRTS.Editor.Maps.Scenes
         {
             var (layout, climate) = (generation.Layout, generation.Project.Climate);
             var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
+            CreateGroundBounce(scene, generation, terrain, ground.Material);
             CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
             CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
             CreateGrass(scene, generation.Project.Paths.Grass, terrain);
@@ -186,6 +188,24 @@ namespace HyperRTS.Editor.Maps.Scenes
             terrain.treeBillboardDistance = climate.treeDistance;
             terrain.allowAutoConnect = false;
             return terrain;
+        }
+
+        // Light transport leaves the terrain out, so this fixed copy of it bounces the light, never drawn.
+        private static void CreateGroundBounce(MapScene scene, MapGeneration generation, Terrain terrain, Material material)
+        {
+            var path = generation.Project.Paths.GroundBounce;
+            var mesh = MapGroundBounceMesh.Build(terrain.terrainData);
+            AssetDatabase.DeleteAsset(path);
+            AssetDatabase.CreateAsset(mesh, path);
+            var ground = scene.CreateChild("Ground Bounce").gameObject;
+            ground.transform.position = terrain.transform.position;
+            ground.AddComponent<MeshFilter>().sharedMesh = mesh;
+            var renderer = ground.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.renderingLayerMask = LightTransportLayer.Mask;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            ground.AddComponent<GroundBounce>();
         }
 
         private static void CreateWater(MapScene scene, MapGeneration generation)

@@ -140,6 +140,10 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - A `NavGrid` held privately inside a helper struct that jobs carry stops those jobs with no error. Pass it from the
   job's own `[ReadOnly] public NavGrid Grid` field.
 - `Debug.Log` from a system doesn't reach the console in EditMode tests: bisect by file.
+- Surface Cache GI re-bakes a material on the main thread whenever a `[MaterialProperty]` value changes on an entity
+  it traces, and rebuilds a terrain whose `TerrainData` changes. Only static map content is on `LightTransportLayer`
+  ([light transport](docs/presentation/light-transport.md)); never put something that animates or spawns on it.
+- Measure frame cost in a fight with fog of war off, not on an idle view: per-entity costs hide until armies exist.
 
 ## Docs
 
