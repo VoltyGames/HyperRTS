@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Generators
     {
         // Generator name to the names of its touched items; empty for a generator that runs whole.
         [NoAutoStaticsCleanup]
-        private static readonly Dictionary<string, HashSet<string>> Changed = new();
+        internal static readonly Dictionary<string, HashSet<string>> Changed = new();
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Generators
             }
         }
 
-        private static void Collect(Generator generator, List<string> paths)
+        internal static void Collect(Generator generator, List<string> paths)
         {
             var items = generator.Items;
             if (items.Count == 0)

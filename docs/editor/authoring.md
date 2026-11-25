@@ -91,9 +91,10 @@ from outside.
 ## Editor state
 
 Per-user, per-project editor settings are `UserSettings<T>` singletons, each in its own file under `UserSettings/` and
-owned by the module that reads it. `EditorState` keeps what several tools share (last page and tab, filters, row
-icons, folded groups), `PlayModeState` the launcher, bot matches, cheats and debug layers, and `EffectPreviewSettings`
-the Effects page's controls. A layout binds fields with `binding-path` and `<Settings>.Bind(root)`; defaults, `[Min]`
+owned by the module that reads it. `EditorState` keeps only the inspector's folded groups. `HubSettings` holds the
+Tools window's last page and tab, `ValidationSettings` the Validate page's filters, `DecorationSettings` the row
+decorations, `MapDesignerSettings` the live preview, `PlayModeState` the launcher, bot matches, cheats and debug
+layers, and `EffectPreviewSettings` the Effects page's controls. A layout binds fields with `binding-path` and `<Settings>.Bind(root)`; defaults, `[Min]`
 and `[Range]` live on the fields, never in UXML. Code that sets a value calls `Save()`. Values that must reset each
 session stay in `SessionState`.
 

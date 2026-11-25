@@ -24,7 +24,7 @@ namespace HyperRTS.Editor.Hub
                 tabs.Add(new Tab(buildTab.Title) { userData = buildTab });
             }
 
-            var saved = EditorState.instance.buildTab;
+            var saved = HubSettings.instance.buildTab;
             var chosen = tabs.Children().OfType<Tab>().FirstOrDefault(tab => tab.userData.GetType().FullName == saved);
             if (chosen != null)
             {
@@ -51,8 +51,8 @@ namespace HyperRTS.Editor.Hub
             }
 
             var buildTab = (BuildTab)tab.userData;
-            EditorState.instance.buildTab = buildTab.GetType().FullName;
-            EditorState.instance.Save();
+            HubSettings.instance.buildTab = buildTab.GetType().FullName;
+            HubSettings.instance.Save();
             var content = buildTab.Build();
             content.AddToClassList("hrts-fill");
             tab.Add(content);

@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.Generators
                 description = generator.Description,
                 sources = generator.Sources,
                 outputs = generator.Outputs,
-                lastRun = last?.time,
+                lastRun = last?.RanText,
                 error = last?.error,
                 outOfDate = generator.IsOutOfDate(items, log),
                 items = items.Select(item => GeneratorItemEntry.From(generator, item, log)).ToList(),

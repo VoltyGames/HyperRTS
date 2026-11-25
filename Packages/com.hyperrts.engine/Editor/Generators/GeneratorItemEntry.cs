@@ -23,7 +23,7 @@ namespace HyperRTS.Editor.Generators
                 inputs = item.Inputs,
                 outputs = item.Outputs,
                 projectPath = item.ProjectPath,
-                lastRun = last?.time,
+                lastRun = last?.RanText,
                 error = last?.error,
                 outOfDate = generator.State(item, log) != StageState.Done,
             };

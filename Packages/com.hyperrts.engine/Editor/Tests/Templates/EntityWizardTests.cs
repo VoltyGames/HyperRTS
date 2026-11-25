@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Tests.Tools
+namespace HyperRTS.Editor.Tests.Templates
 {
     /// <summary>The New Entity wizard's choices: a project base becomes a named variant, and every template is offered.</summary>
     public class EntityWizardTests : TemplateFixture

@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Authoring
             {
                 var entity = (GameEntityAuthoring)target;
                 _card.Show(entity);
-                _modules.Show(entity.gameObject);
+                _modules.Show(entity.gameObject, IssuesFor);
             }
         }
 

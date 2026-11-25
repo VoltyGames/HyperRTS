@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.Decorations
 {
     /// <summary>
     /// Decorates Hierarchy rows of entity objects through the Hierarchy window's UI Toolkit item events. Row data is
-    /// built on first bind and kept until the scene, an undo or any object change clears it, because validating on
+    /// built on first bind and kept until a change to that object or one under it, or a scene or asset change, clears it, because validating on
     /// every bind is too slow.
     /// </summary>
     internal static class HierarchyRows
@@ -31,6 +31,13 @@ namespace HyperRTS.Editor.Decorations
         [NoAutoStaticsCleanup]
         private static readonly Dictionary<HierarchyViewItem, (HierarchyView View, VisualElement Marks, VisualElement Edge)> Bound = new();
 
+        // Rows to rebuild since the last refresh: the changed objects and their ancestors, or all of them.
+        [NoAutoStaticsCleanup]
+        private static readonly HashSet<EntityId> Dirty = new();
+
+        [NoAutoStaticsCleanup]
+        private static bool _dirtyAll;
+
         [NoAutoStaticsCleanup]
         private static bool _refreshQueued;
 
@@ -40,9 +47,77 @@ namespace HyperRTS.Editor.Decorations
             HierarchyWindow.BindView += (_, view) => view.StyleContainer.styleSheets.Add(EditorAssets.Sheet("Decorations"));
             HierarchyWindow.BindViewItem += (_, view, item) => Decorate(view, item);
             HierarchyWindow.UnbindViewItem += (_, _, item) => Strip(item);
-            EditorApplication.hierarchyChanged += QueueRefresh;
-            Undo.undoRedoPerformed += QueueRefresh;
-            ObjectChangeEvents.changesPublished += (ref ObjectChangeEventStream _) => QueueRefresh();
+            // Undo and redo publish their changes here too.
+            ObjectChangeEvents.changesPublished += (ref ObjectChangeEventStream stream) =>
+            {
+                MarkDirty(ref stream);
+                QueueRefresh();
+            };
+        }
+
+        private static void MarkDirty(ref ObjectChangeEventStream stream)
+        {
+            for (var i = 0; i < stream.length; i++)
+            {
+                MarkEvent(ref stream, i);
+            }
+        }
+
+        private static void MarkEvent(ref ObjectChangeEventStream stream, int i)
+        {
+            switch (stream.GetEventType(i))
+            {
+                case ObjectChangeKind.CreateGameObjectHierarchy:
+                    stream.GetCreateGameObjectHierarchyEvent(i, out var created);
+                    MarkWithAncestors(created.entityId);
+                    break;
+                case ObjectChangeKind.ChangeGameObjectStructureHierarchy:
+                    stream.GetChangeGameObjectStructureHierarchyEvent(i, out var hierarchy);
+                    MarkWithAncestors(hierarchy.entityId);
+                    break;
+                case ObjectChangeKind.ChangeGameObjectStructure:
+                    stream.GetChangeGameObjectStructureEvent(i, out var structure);
+                    MarkWithAncestors(structure.entityId);
+                    break;
+                case ObjectChangeKind.ChangeGameObjectParent:
+                    stream.GetChangeGameObjectParentEvent(i, out var parent);
+                    MarkWithAncestors(parent.entityId);
+                    MarkWithAncestors(parent.previousParentEntityId);
+                    break;
+                case ObjectChangeKind.ChangeChildrenOrder:
+                    stream.GetChangeChildrenOrderEvent(i, out var order);
+                    MarkWithAncestors(order.entityId);
+                    break;
+                case ObjectChangeKind.ChangeGameObjectOrComponentProperties:
+                    stream.GetChangeGameObjectOrComponentPropertiesEvent(i, out var properties);
+                    MarkWithAncestors(properties.entityId);
+                    break;
+                case ObjectChangeKind.DestroyGameObjectHierarchy:
+                    stream.GetDestroyGameObjectHierarchyEvent(i, out var destroyed);
+                    MarkWithAncestors(destroyed.parentEntityId);
+                    break;
+                default:
+                    // Scene, asset and prefab changes name no single object, and rules read assets.
+                    _dirtyAll = true;
+                    break;
+            }
+        }
+
+        private static void MarkWithAncestors(EntityId entityId)
+        {
+            Dirty.Add(entityId);
+            var changed = EditorUtility.EntityIdToObject(entityId);
+            var transform = changed switch
+            {
+                GameObject gameObject => gameObject.transform,
+                Component component => component.transform,
+                _ => null,
+            };
+
+            for (var ancestor = transform == null ? null : transform.parent; ancestor != null; ancestor = ancestor.parent)
+            {
+                Dirty.Add(ancestor.gameObject.GetEntityId());
+            }
         }
 
         // One edit raises several of these events, and a drag raises them every frame, so they share one refresh.
@@ -61,20 +136,45 @@ namespace HyperRTS.Editor.Decorations
             };
         }
 
-        /// <summary>Drops the row data and decorates every bound row again, as after a preference change.</summary>
-        public static void Refresh()
+        /// <summary>Drops all row data and decorates every bound row again, as after a preference change.</summary>
+        public static void RefreshAll()
         {
-            Decorations.Clear();
+            _dirtyAll = true;
+            Refresh();
+        }
+
+        private static void Refresh()
+        {
+            var all = _dirtyAll;
+            if (all)
+            {
+                Decorations.Clear();
+            }
+            else
+            {
+                foreach (var entityId in Dirty)
+                {
+                    Decorations.Remove(entityId);
+                }
+            }
+
             foreach (var (item, bound) in Bound.ToList())
             {
-                Decorate(bound.View, item);
+                var node = item.Node;
+                if (all || Dirty.Contains(bound.View.Source.GetEntityIdFromNode(in node)))
+                {
+                    Decorate(bound.View, item);
+                }
             }
+
+            Dirty.Clear();
+            _dirtyAll = false;
         }
 
         private static void Decorate(HierarchyView view, HierarchyViewItem item)
         {
             Strip(item);
-            if (!EditorState.instance.hierarchyRowIcons)
+            if (!DecorationSettings.instance.hierarchyRowIcons)
             {
                 return;
             }

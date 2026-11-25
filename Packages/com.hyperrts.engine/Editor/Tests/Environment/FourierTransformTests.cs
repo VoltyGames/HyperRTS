@@ -4,7 +4,7 @@ using System.Numerics;
 using HyperRTS.Editor.Environment;
 using NUnit.Framework;
 
-namespace HyperRTS.Editor.Tests.Tools
+namespace HyperRTS.Editor.Tests.Environment
 {
     /// <summary>The editor Fourier transform and the ripple spectrum built on it.</summary>
     public class FourierTransformTests

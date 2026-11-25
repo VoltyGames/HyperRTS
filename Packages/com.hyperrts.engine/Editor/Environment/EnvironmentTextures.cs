@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.Environment
             WriteGray(CloudCookiePath, Clouds(), CloudSize);
             WriteGray(EdgeNoisePath, EdgeNoise(), NoiseSize);
             WriteRGB(TerrainNoisePath, TerrainSize, TerrainNoise(), ToByte, EditorTextures.ConfigureLinearTiling);
-            WriteRGB(WaterRipplesPath, RippleSize, RippleNormals(), v => (byte)Mathf.Floor((v * 0.5f + 0.5f) * 255f + 0.5f),
+            WriteRGB(WaterRipplesPath, RippleSize, RippleNormals(), v => ToByte(v * 0.5f + 0.5f),
                 ConfigureWaterRipples);
             WriteRGB(WaterLacePath, LaceSize, FoamLace.Texels(LaceSize, LaceSeed), ToByte,
                 EditorTextures.ConfigureLinearTiling);
@@ -143,7 +143,7 @@ namespace HyperRTS.Editor.Environment
             var pixels = new byte[values.Length];
             for (var i = 0; i < values.Length; i++)
             {
-                pixels[i] = (byte)Mathf.RoundToInt(Mathf.Clamp01(values[i]) * 255f);
+                pixels[i] = ToByte(values[i]);
             }
 
             WriteTiling(path, size, TextureFormat.R8, pixels, ConfigureCookie);

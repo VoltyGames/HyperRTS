@@ -1,6 +1,5 @@
 using System;
 using System.Linq;
-using HyperRTS.Editor.Common;
 using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine.UIElements;
@@ -13,9 +12,9 @@ namespace HyperRTS.Editor.Decorations
         [NoAutoStaticsCleanup]
         private static readonly (string Label, string Field, Action Repaint)[] Toggles =
         {
-            ("Hierarchy row icons", nameof(EditorState.hierarchyRowIcons), HierarchyRows.Refresh),
-            ("Project unit icons", nameof(EditorState.projectUnitIcons), EditorApplication.RepaintProjectWindow),
-            ("Project generator states", nameof(EditorState.projectGeneratorStates), EditorApplication.RepaintProjectWindow),
+            ("Hierarchy row icons", nameof(DecorationSettings.hierarchyRowIcons), HierarchyRows.RefreshAll),
+            ("Project unit icons", nameof(DecorationSettings.projectUnitIcons), EditorApplication.RepaintProjectWindow),
+            ("Project generator states", nameof(DecorationSettings.projectGeneratorStates), EditorApplication.RepaintProjectWindow),
         };
 
         [SettingsProvider]
@@ -31,7 +30,7 @@ namespace HyperRTS.Editor.Decorations
                     root.Add(CreateToggle(label, field, repaint));
                 }
 
-                EditorState.Bind(root);
+                DecorationSettings.Bind(root);
             },
         };
 

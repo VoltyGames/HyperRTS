@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.Stages
 
         public Button Run { get; }
 
-        public static string Label(StageState state) => state switch
+        public static string Text(StageState state) => state switch
         {
             StageState.Done => "Done",
             StageState.OutOfDate => "Out of date",
@@ -33,7 +33,7 @@ namespace HyperRTS.Editor.Stages
         /// <summary>Writes <paramref name="state"/> on <paramref name="label"/>, tinted by the <c>hrts-stage__state</c> classes.</summary>
         public static void ShowState(Label label, StageState state)
         {
-            label.text = Label(state);
+            label.text = Text(state);
             label.EnableInClassList("hrts-stage__state--stale", state is StageState.OutOfDate or StageState.Missing);
             label.EnableInClassList("hrts-stage__state--failed", state == StageState.Failed);
         }

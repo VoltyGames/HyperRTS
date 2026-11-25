@@ -29,7 +29,7 @@ namespace HyperRTS.Editor.Decorations
             {
                 var dot = new VisualElement();
                 dot.AddToClassList("hrts-row-marks__dot");
-                dot.AddToClassList(severity == MessageType.Error ? "hrts-row-marks__dot--error" : "hrts-row-marks__dot--warning");
+                dot.style.backgroundColor = DecorationStyle.DotColor(severity);
                 marks.Add(dot);
             }
 

@@ -134,10 +134,11 @@ namespace HyperRTS.Editor.Destruction
                 }
             }
 
-            var lost = parts.Find(moving => sections.All(part => part.name != moving.section));
-            if (lost.node != null)
+            var lost = parts.FindIndex(moving => sections.All(part => part.name != moving.section));
+            if (lost >= 0)
             {
-                throw new InvalidDataException($"HyperRTS: {source} part '{lost.node}' belongs to section '{lost.section}', which no mesh names as its section.");
+                var moving = parts[lost];
+                throw new InvalidDataException($"HyperRTS: {source} part '{moving.node}' belongs to section '{moving.section}', which no mesh names as its section.");
             }
         }
     }

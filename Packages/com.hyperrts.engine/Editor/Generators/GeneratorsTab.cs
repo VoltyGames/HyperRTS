@@ -85,8 +85,9 @@ namespace HyperRTS.Editor.Generators
                 return;
             }
 
-            var failed = items.Count(item => generator.State(item, log) == StageState.Failed);
-            var stale = items.Count(item => generator.State(item, log) != StageState.Done);
+            var states = items.Select(item => generator.State(item, log)).ToList();
+            var failed = states.Count(state => state == StageState.Failed);
+            var stale = states.Count(state => state != StageState.Done);
             label.text = $"{items.Count} items, {stale - failed} out of date, {failed} failed";
             label.EnableInClassList("hrts-generators__last-run--failed", failed > 0);
             row.Require<Label>("out-of-date").SetHidden(stale == 0);

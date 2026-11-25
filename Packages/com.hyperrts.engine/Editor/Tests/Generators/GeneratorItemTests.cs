@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using HyperRTS.Editor.Generators;
@@ -83,7 +82,7 @@ namespace HyperRTS.Editor.Tests.Generators
         {
             generator = TestGenerator.TestName,
             item = item,
-            time = _ran.ToString(GeneratorRun.TimeFormat, CultureInfo.InvariantCulture),
+            utcTicks = _ran.ToUniversalTime().Ticks,
             error = error,
         };
 

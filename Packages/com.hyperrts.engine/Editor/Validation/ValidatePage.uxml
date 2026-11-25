@@ -15,7 +15,7 @@
         <ui:VisualElement class="hrts-glyph hrts-glyph--wand-sparkles hrts-severity-chip__glyph" />
         <ui:Label text="Fix all" class="hrts-severity-chip__count" />
       </uie:ToolbarButton>
-      <uie:ToolbarToggle name="selection-only" text="Selection only" binding-path="validateSelectionOnly" />
+      <uie:ToolbarToggle name="selection-only" text="Selection only" binding-path="selectionOnly" />
       <uie:ToolbarSpacer class="hrts-fill" />
       <uie:ToolbarSearchField name="search" />
     </uie:Toolbar>

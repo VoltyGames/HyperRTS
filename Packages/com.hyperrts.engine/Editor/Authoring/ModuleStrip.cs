@@ -1,6 +1,7 @@
+using System;
 using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Validation;
+using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
@@ -25,14 +26,15 @@ namespace HyperRTS.Editor.Authoring
             _chips = this.Require<VisualElement>("chips");
         }
 
-        public void Show(GameObject target)
+        /// <summary>Shows a chip per component; <paramref name="issuesFor"/> is the inspector's per-refresh check.</summary>
+        public void Show(GameObject target, Func<Component, ValidationIssues> issuesFor)
         {
             _chips.Clear();
             var components = target.GetComponents<AuthoringBehaviour>();
             var alone = SoleExpanded(components);
             foreach (var component in components)
             {
-                _chips.Add(CreateChip(components, component, component == alone));
+                _chips.Add(CreateChip(components, component, component == alone, issuesFor(component)));
             }
 
             _chips.Add(CreateAddChip(target));
@@ -45,7 +47,7 @@ namespace HyperRTS.Editor.Authoring
             return expanded.Count == 1 && components.Length > 1 ? expanded[0] : null;
         }
 
-        private static Button CreateChip(AuthoringBehaviour[] all, AuthoringBehaviour component, bool isSole)
+        private static Button CreateChip(AuthoringBehaviour[] all, AuthoringBehaviour component, bool isSole, ValidationIssues issues)
         {
             var chip = new Button(() => ShowOnly(all, component));
             chip.AddToClassList("hrts-chip");
@@ -60,7 +62,6 @@ namespace HyperRTS.Editor.Authoring
             name.AddToClassList("hrts-chip__name");
             chip.Add(name);
 
-            var issues = ProjectValidator.Check(component);
             if (issues.Count > 0)
             {
                 var dot = new VisualElement();

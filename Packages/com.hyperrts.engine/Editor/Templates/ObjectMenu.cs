@@ -5,7 +5,6 @@ using Unity.Scenes;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using R = HyperRTS.Editor.Templates.TemplateRegistry;
 
 namespace HyperRTS.Editor.Templates
 {
@@ -46,58 +45,58 @@ namespace HyperRTS.Editor.Templates
             UnityEditor.Selection.activeGameObject = match;
         }
 
-        [MenuItem(Menu + R.Unit, false, 40)]
-        private static void Unit(MenuCommand c) => Create(R.Unit, c);
+        [MenuItem(Menu + TemplateRegistry.Unit, false, 40)]
+        private static void Unit(MenuCommand c) => Create(TemplateRegistry.Unit, c);
 
-        [MenuItem(Menu + R.CombatUnit, false, 41)]
-        private static void CombatUnit(MenuCommand c) => Create(R.CombatUnit, c);
+        [MenuItem(Menu + TemplateRegistry.CombatUnit, false, 41)]
+        private static void CombatUnit(MenuCommand c) => Create(TemplateRegistry.CombatUnit, c);
 
-        [MenuItem(Menu + R.Worker, false, 42)]
-        private static void Worker(MenuCommand c) => Create(R.Worker, c);
+        [MenuItem(Menu + TemplateRegistry.Worker, false, 42)]
+        private static void Worker(MenuCommand c) => Create(TemplateRegistry.Worker, c);
 
-        [MenuItem(Menu + R.Harvester, false, 43)]
-        private static void Harvester(MenuCommand c) => Create(R.Harvester, c);
+        [MenuItem(Menu + TemplateRegistry.Harvester, false, 43)]
+        private static void Harvester(MenuCommand c) => Create(TemplateRegistry.Harvester, c);
 
-        [MenuItem(Menu + R.Transport, false, 44)]
-        private static void Transport(MenuCommand c) => Create(R.Transport, c);
+        [MenuItem(Menu + TemplateRegistry.Transport, false, 44)]
+        private static void Transport(MenuCommand c) => Create(TemplateRegistry.Transport, c);
 
-        [MenuItem(Menu + R.Aircraft, false, 45)]
-        private static void Aircraft(MenuCommand c) => Create(R.Aircraft, c);
+        [MenuItem(Menu + TemplateRegistry.Aircraft, false, 45)]
+        private static void Aircraft(MenuCommand c) => Create(TemplateRegistry.Aircraft, c);
 
-        [MenuItem(Menu + R.Building, false, 50)]
-        private static void Building(MenuCommand c) => Create(R.Building, c);
+        [MenuItem(Menu + TemplateRegistry.Building, false, 50)]
+        private static void Building(MenuCommand c) => Create(TemplateRegistry.Building, c);
 
-        [MenuItem(Menu + R.Producer, false, 51)]
-        private static void Producer(MenuCommand c) => Create(R.Producer, c);
+        [MenuItem(Menu + TemplateRegistry.Producer, false, 51)]
+        private static void Producer(MenuCommand c) => Create(TemplateRegistry.Producer, c);
 
-        [MenuItem(Menu + R.ResearchBuilding, false, 52)]
-        private static void ResearchBuilding(MenuCommand c) => Create(R.ResearchBuilding, c);
+        [MenuItem(Menu + TemplateRegistry.ResearchBuilding, false, 52)]
+        private static void ResearchBuilding(MenuCommand c) => Create(TemplateRegistry.ResearchBuilding, c);
 
-        [MenuItem(Menu + R.DropOff, false, 53)]
-        private static void DropOff(MenuCommand c) => Create(R.DropOff, c);
+        [MenuItem(Menu + TemplateRegistry.DropOff, false, 53)]
+        private static void DropOff(MenuCommand c) => Create(TemplateRegistry.DropOff, c);
 
-        [MenuItem(Menu + R.DefenseTower, false, 54)]
-        private static void DefenseTower(MenuCommand c) => Create(R.DefenseTower, c);
+        [MenuItem(Menu + TemplateRegistry.DefenseTower, false, 54)]
+        private static void DefenseTower(MenuCommand c) => Create(TemplateRegistry.DefenseTower, c);
 
-        [MenuItem(Menu + R.Airfield, false, 55)]
-        private static void Airfield(MenuCommand c) => Create(R.Airfield, c);
+        [MenuItem(Menu + TemplateRegistry.Airfield, false, 55)]
+        private static void Airfield(MenuCommand c) => Create(TemplateRegistry.Airfield, c);
 
-        [MenuItem(Menu + R.CapturableBuilding, false, 56)]
-        private static void CapturableBuilding(MenuCommand c) => Create(R.CapturableBuilding, c);
+        [MenuItem(Menu + TemplateRegistry.CapturableBuilding, false, 56)]
+        private static void CapturableBuilding(MenuCommand c) => Create(TemplateRegistry.CapturableBuilding, c);
 
-        [MenuItem(Menu + R.Upgrade, false, 60)]
-        private static void Upgrade(MenuCommand c) => Create(R.Upgrade, c);
+        [MenuItem(Menu + TemplateRegistry.Upgrade, false, 60)]
+        private static void Upgrade(MenuCommand c) => Create(TemplateRegistry.Upgrade, c);
 
-        [MenuItem(Menu + R.ResourceNode, false, 70)]
-        private static void ResourceNode(MenuCommand c) => Create(R.ResourceNode, c);
+        [MenuItem(Menu + TemplateRegistry.ResourceNode, false, 70)]
+        private static void ResourceNode(MenuCommand c) => Create(TemplateRegistry.ResourceNode, c);
 
-        [MenuItem(Menu + R.NavObstacle, false, 71)]
-        private static void NavObstacle(MenuCommand c) => Create(R.NavObstacle, c);
+        [MenuItem(Menu + TemplateRegistry.NavObstacle, false, 71)]
+        private static void NavObstacle(MenuCommand c) => Create(TemplateRegistry.NavObstacle, c);
 
-        [MenuItem(Menu + R.NavArea, false, 72)]
-        private static void NavArea(MenuCommand c) => Create(R.NavArea, c);
+        [MenuItem(Menu + TemplateRegistry.NavArea, false, 72)]
+        private static void NavArea(MenuCommand c) => Create(TemplateRegistry.NavArea, c);
 
-        private static void Create(string path, MenuCommand cmd) => Place(R.Get(path).Create(), cmd);
+        private static void Create(string path, MenuCommand cmd) => Place(TemplateRegistry.Get(path).Create(), cmd);
 
         // Under the right-clicked object, else into the SubScene being edited.
         private static GameObject Place(GameObject go, MenuCommand cmd)

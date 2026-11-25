@@ -47,15 +47,12 @@ namespace HyperRTS.Editor.Hub
             _sidebar.selectedIndicesChanged += _ => ShowSelected();
             _content = root.Require<VisualElement>("content");
 
+            // A poll, since the badge is session state a validation run writes, which raises no change event.
             root.schedule.Execute(RefreshBadges).Every(BadgeMilliseconds);
             SelectSaved();
         }
 
         private void OnDisable() => ReleaseCurrent();
-
-        private void OnHierarchyChange() => RefreshBadges();
-
-        private void OnProjectChange() => RefreshBadges();
 
         private void SelectSaved()
         {
@@ -64,7 +61,7 @@ namespace HyperRTS.Editor.Hub
                 return;
             }
 
-            var saved = EditorState.instance.toolsPage;
+            var saved = HubSettings.instance.toolsPage;
             var index = Array.FindIndex(_pages, page => page.GetType().FullName == saved);
             _sidebar.SetSelection(Math.Max(index, 0));
         }
@@ -100,8 +97,8 @@ namespace HyperRTS.Editor.Hub
 
         private static void RememberPage(Type page)
         {
-            EditorState.instance.toolsPage = page.FullName;
-            EditorState.instance.Save();
+            HubSettings.instance.toolsPage = page.FullName;
+            HubSettings.instance.Save();
         }
 
         // Clearing detaches the page, which drops its callbacks and polling.

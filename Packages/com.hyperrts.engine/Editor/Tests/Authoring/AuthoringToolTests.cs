@@ -19,7 +19,7 @@ using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Tests.Tools
+namespace HyperRTS.Editor.Tests.Authoring
 {
     /// <summary>Inspector helpers, scene handles, and the topple and stretch parts measured from models.</summary>
     public class AuthoringToolTests : TemplateFixture

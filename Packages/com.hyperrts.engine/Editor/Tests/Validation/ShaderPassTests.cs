@@ -8,7 +8,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Editor.Tests.Tools
+namespace HyperRTS.Editor.Tests.Validation
 {
     /// <summary>
     /// Every URP-lit engine shader has a Meta pass; opaque and cutout shaders join the shadow, depth and motion
@@ -92,6 +92,21 @@ namespace HyperRTS.Editor.Tests.Tools
 
             var stale = WithoutMeta.Where(name => shaders.All(shader => shader.name != name));
             Assert.That(stale, Is.Empty, "Exempt shaders that no longer exist.");
+        }
+
+        [Test]
+        public void LitTeamVertexStagesCompileWithRigidVATBonesClothAndBuild()
+        {
+            var shader = Shader.Find("HyperRTS/LitTeam");
+
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
+            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_CLOTH", "_BUILD", "DOTS_INSTANCING_ON"));
         }
 
         // The passes of the subshader URP runs, UsePass ones included. Unity reports built-in light modes upper case (META).

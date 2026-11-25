@@ -8,7 +8,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Tests.Tools
+namespace HyperRTS.Editor.Tests.Hub
 {
     /// <summary>The Tools window, its UXML controls, the generator list and the template menu.</summary>
     public class ToolsWindowTests : TemplateFixture

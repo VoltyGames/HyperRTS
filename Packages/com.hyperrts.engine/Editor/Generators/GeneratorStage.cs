@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.Generators
         public override DateTime? LoggedUtc(TSource source)
         {
             var runs = LastRuns(source);
-            return runs.Count == 0 ? null : runs.Max(run => run.Ran).ToUniversalTime();
+            return runs.Count == 0 ? null : runs.Max(run => run.RanUtc);
         }
 
         public override string LogText(TSource source)

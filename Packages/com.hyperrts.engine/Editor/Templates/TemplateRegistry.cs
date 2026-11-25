@@ -6,8 +6,8 @@ using Unity.Scripting.LifecycleManagement;
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
-    /// Every role template, listed once: GameObject ▸ HyperRTS places them in a scene, and the New Entity wizard saves
-    /// them as prefabs, under the same names.
+    /// Every role template, placed in a scene from the GameObject menu or saved as a prefab by the New Entity wizard.
+    /// The path constants exist for the menu attributes; <see cref="All"/> is the list.
     /// </summary>
     public static class TemplateRegistry
     {
@@ -51,8 +51,12 @@ namespace HyperRTS.Editor.Templates
             new EntityTemplate(NavArea, TemplateObjects.NavArea),
         };
 
+        [NoAutoStaticsCleanup]
+        private static readonly Dictionary<string, EntityTemplate> ByPath = All.ToDictionary(template => template.Path);
+
         public static EntityTemplate Get(string path) =>
-            All.FirstOrDefault(template => template.Path == path)
-            ?? throw new ArgumentException($"No HyperRTS template has the path '{path}'.");
+            ByPath.TryGetValue(path, out var template)
+                ? template
+                : throw new ArgumentException($"No HyperRTS template has the path '{path}'.");
     }
 }

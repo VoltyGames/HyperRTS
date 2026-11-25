@@ -1,16 +1,14 @@
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Decorations
 {
-    /// <summary>Draws a unit prefab's command card icon over its thumbnail in the Project window's grid view, found once per project change.</summary>
+    /// <summary>Draws a unit prefab's command card icon over its thumbnail in the Project window's grid view, found once and dropped when its asset changes.</summary>
     internal sealed class ProjectUnitIcons
     {
-        private const float ListRowHeight = 20f;
         private const float LabelHeight = 16f;
         private const float BadgeSize = 16f;
 
@@ -22,7 +20,16 @@ namespace HyperRTS.Editor.Decorations
         {
             var icons = new ProjectUnitIcons();
             EditorApplication.projectWindowItemOnGUI += icons.Draw;
-            EditorApplication.projectChanged += icons._icons.Clear;
+            ChangedAssets.Subscribe(icons.Forget);
+        }
+
+        // A deleted asset has no GUID left to look up; nothing draws it either.
+        private void Forget(string[] paths)
+        {
+            foreach (var path in paths)
+            {
+                _icons.Remove(AssetDatabase.AssetPathToGUID(path));
+            }
         }
 
         private Texture2D FindIcon(string guid)
@@ -39,7 +46,7 @@ namespace HyperRTS.Editor.Decorations
 
         private void Draw(string guid, Rect row)
         {
-            if (!EditorState.instance.projectUnitIcons || row.height <= ListRowHeight)
+            if (!DecorationSettings.instance.projectUnitIcons || row.height <= DecorationStyle.ListRowHeight)
             {
                 return;
             }

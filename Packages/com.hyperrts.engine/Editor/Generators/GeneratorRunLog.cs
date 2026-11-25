@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
@@ -80,7 +79,7 @@ namespace HyperRTS.Editor.Generators
             {
                 generator = generator,
                 item = item,
-                time = DateTime.Now.ToString(GeneratorRun.TimeFormat, CultureInfo.InvariantCulture),
+                utcTicks = DateTime.UtcNow.Ticks,
                 error = error,
             });
             Directory.CreateDirectory(Folder);

@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.IO;
 using System.Linq;
 using UnityEditor.PackageManager;
 
 namespace HyperRTS.Editor.Generators
 {
-    /// <summary>The last run of one generator, or of one of its items: its local time and, when it failed, why.</summary>
+    /// <summary>The last run of one generator, or of one of its items: its UTC time and, when it failed, why.</summary>
     [Serializable]
     public sealed class GeneratorRun
     {
@@ -16,23 +15,23 @@ namespace HyperRTS.Editor.Generators
         /// <summary>The <see cref="GeneratorItem"/>'s name, empty for a generator that runs whole.</summary>
         public string item;
 
-        public string time;
+        public long utcTicks;
         public string error;
-
-        public const string TimeFormat = "yyyy-MM-dd HH:mm:ss";
 
         public bool Failed => !string.IsNullOrEmpty(error);
 
-        /// <summary>When the run ended, in local time.</summary>
-        public DateTime Ran => DateTime.ParseExact(time, TimeFormat, CultureInfo.InvariantCulture);
+        public DateTime RanUtc => new(utcTicks, DateTimeKind.Utc);
+
+        /// <summary>When the run ended, as local time for display.</summary>
+        public string RanText => RanUtc.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss");
 
         public bool Matches(string generatorName, string itemName) => generator == generatorName && item == itemName;
 
         /// <summary>True when the run failed or any file under <paramref name="inputs"/> was written after it.</summary>
         public bool IsOlderThan(IEnumerable<string> inputs)
         {
-            var ran = Ran;
-            return Failed || inputs.SelectMany(Files).Any(file => File.GetLastWriteTime(file) > ran);
+            var ran = RanUtc;
+            return Failed || inputs.SelectMany(Files).Any(file => File.GetLastWriteTimeUtc(file) > ran);
         }
 
         private static IEnumerable<string> Files(string assetPath)
@@ -49,6 +48,6 @@ namespace HyperRTS.Editor.Generators
                 : Enumerable.Empty<string>();
         }
 
-        public override string ToString() => Failed ? $"Failed {time}: {error}" : $"Ran {time}";
+        public override string ToString() => Failed ? $"Failed {RanText}: {error}" : $"Ran {RanText}";
     }
 }

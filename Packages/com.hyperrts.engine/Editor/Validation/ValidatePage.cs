@@ -52,12 +52,12 @@ namespace HyperRTS.Editor.Validation
         public override VisualElement Build()
         {
             var root = Layout().Instantiate();
-            EditorState.Bind(root);
+            ValidationSettings.Bind(root);
             root.Require<ToolbarButton>("validate").clicked += Refresh;
             _errors = root.Require<ToolbarButton>("errors");
-            _errors.clicked += () => Toggle(ref EditorState.instance.validateErrors);
+            _errors.clicked += () => Toggle(ref ValidationSettings.instance.errors);
             _warnings = root.Require<ToolbarButton>("warnings");
-            _warnings.clicked += () => Toggle(ref EditorState.instance.validateWarnings);
+            _warnings.clicked += () => Toggle(ref ValidationSettings.instance.warnings);
             _fixAll = root.Require<ToolbarButton>("fix-all");
             _fixAll.clicked += FixAll;
             root.Require<ToolbarSearchField>("search").RegisterValueChangedCallback(change =>
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Validation
             return root;
         }
 
-        private static bool SelectionOnly => EditorState.instance.validateSelectionOnly;
+        private static bool SelectionOnly => ValidationSettings.instance.selectionOnly;
 
         private void Refresh()
         {
@@ -87,7 +87,7 @@ namespace HyperRTS.Editor.Validation
         private void Toggle(ref bool shown)
         {
             shown = !shown;
-            EditorState.instance.Save();
+            ValidationSettings.instance.Save();
             Show(SelectionOnly);
         }
 
@@ -109,10 +109,10 @@ namespace HyperRTS.Editor.Validation
         private void Show(bool selectionOnly)
         {
             var scoped = _groups.Filter(group => (!selectionOnly || OnSelection(group.Issue.Context)) && group.Matches(_search));
-            var state = EditorState.instance;
-            _shown = scoped.Filter(group => group.Issue.Severity == MessageType.Error ? state.validateErrors : state.validateWarnings);
-            ShowChip(_errors, "errors-count", state.validateErrors, scoped.Tally(MessageType.Error), "error");
-            ShowChip(_warnings, "warnings-count", state.validateWarnings, scoped.Tally(MessageType.Warning), "warning");
+            var state = ValidationSettings.instance;
+            _shown = scoped.Filter(group => group.Issue.Severity == MessageType.Error ? state.errors : state.warnings);
+            ShowChip(_errors, "errors-count", state.errors, scoped.Tally(MessageType.Error), "error");
+            ShowChip(_warnings, "warnings-count", state.warnings, scoped.Tally(MessageType.Warning), "warning");
             _fixAll.SetEnabled(_shown.HasFix);
             _shell.EmptyText = EmptyText(selectionOnly);
             _shell.ShowEmpty(_shown.Count == 0);

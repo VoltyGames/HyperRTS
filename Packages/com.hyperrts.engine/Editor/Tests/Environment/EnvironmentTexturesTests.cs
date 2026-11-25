@@ -1,26 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using HyperRTS.Editor.Environment;
-using HyperRTS.Editor.Validation.Project;
 using NUnit.Framework;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.TestTools;
 using Random = Unity.Mathematics.Random;
 
-namespace HyperRTS.Editor.Tests.Tools
+namespace HyperRTS.Editor.Tests.Environment
 {
-    /// <summary>Generated environment textures tile and stay balanced, and VAT models and their motion import for the LitTeam shader.</summary>
-    public class AssetPipelineTests
+    /// <summary>Generated environment textures tile and stay balanced.</summary>
+    public class EnvironmentTexturesTests
     {
-        private const string VATFolder = "Assets/_VATImportTests";
-        private const string VATModel = VATFolder + "/Quad.obj";
-        private const string VATMotion = VATFolder + "/VAT/Quad_Motion.obj";
-        private const string Triangle = "v 0 0 0\nv 1 0 0\nv 1 1 0\nvt 0 0\nvt 1 0\nvt 1 1\nf 1/1 2/2 3/3\n";
-
         private Vector3[] _terrain;
         private Vector3[] _ripples;
         private Color[] _micro;
@@ -32,9 +22,6 @@ namespace HyperRTS.Editor.Tests.Tools
             _ripples = EnvironmentTextures.RippleNormals();
             _micro = TerrainMicroTexture.Texels();
         }
-
-        [TearDown]
-        public void DeleteVATFolder() => AssetDatabase.DeleteAsset(VATFolder);
 
         [Test]
         public void LowpassIsStandardised()
@@ -93,41 +80,6 @@ namespace HyperRTS.Editor.Tests.Tools
                     AssertTiles(_micro.Select(t => t[channel]).ToArray(), TerrainMicroTexture.Size);
                     break;
             }
-        }
-
-        [Test]
-        public void VATModelImportsWithFullUVsAndItsMotionUnreduced()
-        {
-            AssetDatabase.CreateFolder("Assets", "_VATImportTests");
-            Directory.CreateDirectory(VATFolder + "/VAT");
-            File.WriteAllText(VATMotion, Triangle);
-            File.WriteAllText(VATModel, Triangle);
-            // An OBJ carries no UV1, which the rule reports.
-            LogAssert.Expect(LogType.Error, new Regex("has no mesh with a UV1 texel index"));
-            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-
-            var model = (ModelImporter)AssetImporter.GetAtPath(VATModel);
-            var motion = (ModelImporter)AssetImporter.GetAtPath(VATMotion);
-
-            Assert.IsFalse(model.generateSecondaryUV);
-            Assert.AreEqual(ModelImporterMeshCompression.Off, model.meshCompression);
-            Assert.AreEqual(ModelImporterAnimationCompression.Off, motion.animationCompression);
-            Assert.IsTrue(motion.resampleCurves);
-        }
-
-        [Test]
-        public void LitTeamVertexStagesCompileWithRigidVATBonesClothAndBuild()
-        {
-            var shader = Shader.Find("HyperRTS/LitTeam");
-
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_CLOTH", "_BUILD", "DOTS_INSTANCING_ON"));
         }
 
         private static IEnumerable<TestCaseData> Channels() =>

@@ -1,4 +1,4 @@
-/* Hierarchy row decorations: a severity dot and the entity's component icon on the right, the owner colour edge on the left. */
+/* Hierarchy row decorations: a severity dot (coloured in code, as DecorationStyle) and the entity's component icon on the right, the owner colour edge on the left. */
 
 .hrts-row-marks {
   flex-direction: row;
@@ -16,14 +16,6 @@
   height: 6px;
   border-radius: 3px;
   margin-right: 3px;
-}
-
-.hrts-row-marks__dot--error {
-  background-color: rgb(222, 64, 52);
-}
-
-.hrts-row-marks__dot--warning {
-  background-color: rgb(196, 136, 0);
 }
 
 .hrts-row-owner {

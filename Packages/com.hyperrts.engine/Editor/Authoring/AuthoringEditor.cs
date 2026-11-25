@@ -27,6 +27,7 @@ namespace HyperRTS.Editor.Authoring
         private IssueBadge _issues;
         private FieldIssueMarks _marks;
         private IVisualElementScheduledItem _change;
+        private readonly Dictionary<Component, ValidationIssues> _checked = new();
 
         public override VisualElement CreateInspectorGUI()
         {
@@ -77,6 +78,7 @@ namespace HyperRTS.Editor.Authoring
                 return;
             }
 
+            _checked.Clear();
             Refresh();
             var issues = Validate();
             _issues.Show(issues);
@@ -91,8 +93,20 @@ namespace HyperRTS.Editor.Authoring
             {
                 if (selected is Component component)
                 {
-                    issues.AddRange(ProjectValidator.Check(component));
+                    issues.AddRange(IssuesFor(component));
                 }
+            }
+
+            return issues;
+        }
+
+        /// <summary>A component's issues, checked once per refresh however many parts of the inspector ask.</summary>
+        protected ValidationIssues IssuesFor(Component component)
+        {
+            if (!_checked.TryGetValue(component, out var issues))
+            {
+                issues = ProjectValidator.Check(component);
+                _checked[component] = issues;
             }
 
             return issues;
