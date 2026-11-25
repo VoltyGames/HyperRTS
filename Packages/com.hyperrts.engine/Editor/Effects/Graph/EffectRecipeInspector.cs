@@ -1,5 +1,4 @@
 using System.Linq;
-using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Editor.Effects.Preview;
 using HyperRTS.Editor.Hub;
@@ -44,8 +43,8 @@ namespace HyperRTS.Editor.Effects.Graph
                 return;
             }
 
-            EditorState.instance.effectPreview.lastEffect = rig.Path;
-            EditorState.instance.Save();
+            EffectPreviewSettings.instance.lastEffect = rig.Path;
+            EffectPreviewSettings.instance.Save();
             ToolsWindow.Show<EffectsPage>();
         }
 

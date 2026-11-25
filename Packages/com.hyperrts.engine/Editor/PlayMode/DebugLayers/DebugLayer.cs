@@ -1,4 +1,3 @@
-using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Common.Systems;
 using Unity.Entities;
 
@@ -22,8 +21,8 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
         /// <summary>Remembered per layer type in the editor state, so switches survive domain reloads and restarts.</summary>
         public bool Shown
         {
-            get => EditorState.instance.IsLayerShown(GetType().FullName);
-            set => EditorState.instance.ShowLayer(GetType().FullName, value);
+            get => PlayModeState.instance.IsLayerShown(GetType().FullName);
+            set => PlayModeState.instance.ShowLayer(GetType().FullName, value);
         }
 
         /// <summary>The world drawn: server-side truth by default; <see cref="SimulationWorlds.Presented"/> for client-only state.</summary>

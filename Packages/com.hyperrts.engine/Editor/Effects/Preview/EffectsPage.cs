@@ -51,7 +51,7 @@ namespace HyperRTS.Editor.Effects.Preview
 
         public override int Order => 25;
 
-        private static EffectPreviewSettings Settings => EditorState.instance.effectPreview;
+        private static EffectPreviewSettings Settings => EffectPreviewSettings.instance;
 
         public override VisualElement Build()
         {
@@ -76,7 +76,7 @@ namespace HyperRTS.Editor.Effects.Preview
                 ShowList();
             });
 
-            EditorState.Bind(_root);
+            EffectPreviewSettings.Bind(_root);
             _root.Require<Toggle>("pause").RegisterValueChangedCallback(change => _playback.Paused = change.newValue);
             foreach (var setting in PlaySettings)
             {
@@ -141,7 +141,7 @@ namespace HyperRTS.Editor.Effects.Preview
             }
 
             Settings.lastEffect = rig.Path;
-            EditorState.instance.Save();
+            Settings.Save();
             _title.text = $"{rig.Name} ({rig.Kind})";
             ShowRecipes(rig.Recipes);
             _stages.Show(rig);

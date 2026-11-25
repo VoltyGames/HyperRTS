@@ -90,10 +90,12 @@ from outside.
 
 ## Editor state
 
-`EditorState`, a `ScriptableSingleton` in `UserSettings/HyperRTS.asset`, keeps per-user, per-project editor settings:
-last page and tab, filters, debug layers, cheat amounts, launcher choice and so on. A layout binds fields with
-`binding-path` and `EditorState.Bind(root)`; defaults, `[Min]` and `[Range]` live on the fields, never in UXML. Code
-that sets a value calls `Save()`. Values that must reset each session stay in `SessionState`.
+Per-user, per-project editor settings are `UserSettings<T>` singletons, each in its own file under `UserSettings/` and
+owned by the module that reads it. `EditorState` keeps what several tools share (last page and tab, filters, row
+icons, folded groups), `PlayModeState` the launcher, bot matches, cheats and debug layers, and `EffectPreviewSettings`
+the Effects page's controls. A layout binds fields with `binding-path` and `<Settings>.Bind(root)`; defaults, `[Min]`
+and `[Range]` live on the fields, never in UXML. Code that sets a value calls `Save()`. Values that must reset each
+session stay in `SessionState`.
 
 ## Hierarchy and Project rows
 

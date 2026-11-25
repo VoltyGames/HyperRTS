@@ -18,7 +18,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private static readonly string[] Networks = { "Offline", "Host", "Dedicated server" };
         private static readonly AIDifficulty[] Difficulties = (AIDifficulty[])Enum.GetValues(typeof(AIDifficulty));
 
-        private readonly LaunchChoice _choice = EditorState.instance.launch;
+        private readonly LaunchChoice _choice = PlayModeState.instance.launch;
         private readonly GameLauncher _game = GameLauncher.Find();
         private readonly VisualTreeAsset _slotRow;
         private readonly VisualElement _slots;
@@ -189,7 +189,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         // Saves the choice, shows what blocks the start and lets the main toolbar show the new label.
         private void Refresh()
         {
-            EditorState.instance.Save();
+            PlayModeState.instance.Save();
             var problem = _choice.Problem(_map.Slots);
             _problem.text = problem;
             _problem.SetHidden(problem.Length == 0);

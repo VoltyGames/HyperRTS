@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.PlayMode
         public override VisualElement Build()
         {
             var root = Layout().Instantiate();
-            EditorState.Bind(root);
+            PlayModeState.Bind(root);
             _launch = root.Require<VisualElement>("launch");
             new LaunchPanel(_launch, EditorAssets.Layout(typeof(LaunchPanel), "SlotRow"));
             _network = root.Require<VisualElement>("network");
@@ -77,7 +77,7 @@ namespace HyperRTS.Editor.PlayMode
         private void BindBots(VisualElement root)
         {
             _runBots = root.Require<Button>("run-bots");
-            _runBots.clicked += () => BotMatchRun.Start(EditorState.instance.bots);
+            _runBots.clicked += () => BotMatchRun.Start(PlayModeState.instance.bots);
             _stopBots = root.Require<Button>("stop-bots");
             _stopBots.clicked += BotMatchRun.Stop;
             _botStatus = root.Require<Label>("bot-status");

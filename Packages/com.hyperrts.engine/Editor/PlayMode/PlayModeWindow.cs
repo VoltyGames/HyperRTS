@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.PlayMode
         {
             var root = rootVisualElement;
             EditorAssets.Layout(GetType()).CloneTree(root);
-            EditorState.Bind(root);
+            PlayModeState.Bind(root);
             root.Query<Foldout>().ForEach(RememberOpen);
             root.Query<Foldout>().ForEach(ShowGlyph);
             Build(root);

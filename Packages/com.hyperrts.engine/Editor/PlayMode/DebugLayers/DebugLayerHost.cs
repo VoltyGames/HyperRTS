@@ -45,7 +45,7 @@ namespace HyperRTS.Editor.PlayMode.DebugLayers
 
         public static void HideAll()
         {
-            EditorState.instance.HideLayers();
+            PlayModeState.instance.HideLayers();
             foreach (var shapes in Shapes)
             {
                 shapes.Hide();

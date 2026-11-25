@@ -1,5 +1,4 @@
 ﻿using System;
-using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -26,7 +25,7 @@ namespace HyperRTS.Editor.Effects.Preview
             EditorSceneManager.activeSceneChangedInEditMode += OnSceneChanged;
         }
 
-        private static EffectPreviewSettings Settings => EditorState.instance.effectPreview;
+        private static EffectPreviewSettings Settings => EffectPreviewSettings.instance;
 
         public bool Paused
         {

@@ -1,4 +1,3 @@
-using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
 using UnityEditor;
 using UnityEditor.Toolbars;
@@ -15,7 +14,7 @@ namespace HyperRTS.Editor.PlayMode.Launch
         private static MainToolbarElement Create()
         {
             var game = GameLauncher.Find();
-            var choice = EditorState.instance.launch;
+            var choice = PlayModeState.instance.launch;
             var label = "Launch";
             if (game != null && game.TryFindMap(choice.map, out var map))
             {

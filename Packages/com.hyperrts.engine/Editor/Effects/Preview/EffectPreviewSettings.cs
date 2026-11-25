@@ -1,11 +1,12 @@
-using System;
+using HyperRTS.Editor.Common;
+using UnityEditor;
 using UnityEngine;
 
 namespace HyperRTS.Editor.Effects.Preview
 {
-    /// <summary>The Effects page's remembered controls, kept in the editor state.</summary>
-    [Serializable]
-    public class EffectPreviewSettings
+    /// <summary>The Effects page's remembered controls.</summary>
+    [FilePath("UserSettings/HyperRTSEffectPreview.asset", FilePathAttribute.Location.ProjectFolder)]
+    internal sealed class EffectPreviewSettings : UserSettings<EffectPreviewSettings>
     {
         public bool follow = true;
 

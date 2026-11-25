@@ -47,7 +47,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             _control = root.Require<Button>("control");
             _control.clicked += () => Act((manager, player, _) => MatchCheats.MakeLocal(manager, player));
             root.Require<Button>("add").clicked += () => Act((manager, player, _) =>
-                MatchCheats.AddResources(manager, player, EditorState.instance.cheatResources));
+                MatchCheats.AddResources(manager, player, PlayModeState.instance.cheatResources));
             root.Require<Button>("instant-build").clicked +=
                 () => Act((manager, _, owner) => MatchCheats.InstantBuild(manager, owner));
 
@@ -76,9 +76,9 @@ namespace HyperRTS.Editor.PlayMode.Cheats
         private void WireSpawnAndCombat()
         {
             _spawn.clicked += () => ActOnPrefab((manager, prefab, owner) =>
-                SpawnCheat.Spawn(manager, prefab, owner, EditorState.instance.spawnCount));
+                SpawnCheat.Spawn(manager, prefab, owner, PlayModeState.instance.spawnCount));
             _battle.clicked += () => ActOnPrefab((manager, prefab, _) =>
-                BattleCheat.Start(manager, prefab, EditorState.instance.armiesPerSide));
+                BattleCheat.Start(manager, prefab, PlayModeState.instance.armiesPerSide));
             _repair.clicked += () => Act((manager, _, _) => MatchCheats.Repair(manager, MatchCheats.Selection(manager)));
             _destroy.clicked += () => Act((manager, _, _) => MatchCheats.Destroy(manager, MatchCheats.Selection(manager)));
             _readySelected.clicked += () =>
@@ -107,7 +107,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             SetChoices(_player, PlayerLabels(manager, players));
             _control.SetEnabled(CanControl(manager, SelectedPlayer(players)));
 
-            var prefabName = SpawnPicker.FindName(manager, EditorState.instance.spawnTypeId);
+            var prefabName = SpawnPicker.FindName(manager, PlayModeState.instance.spawnTypeId);
             _prefab.text = prefabName ?? "Choose a prefab";
             _spawn.SetEnabled(prefabName != null);
             _battle.SetEnabled(prefabName != null);
@@ -195,7 +195,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats
 
         private void ActOnPrefab(System.Action<EntityManager, Entity, byte> cheat) => Act((manager, _, owner) =>
         {
-            var prefab = SpawnCheat.FindPrefab(manager, EditorState.instance.spawnTypeId);
+            var prefab = SpawnCheat.FindPrefab(manager, PlayModeState.instance.spawnTypeId);
             if (prefab != Entity.Null)
             {
                 cheat(manager, prefab, owner);
@@ -208,8 +208,8 @@ namespace HyperRTS.Editor.PlayMode.Cheats
             {
                 SpawnPicker.Open(manager, _prefab.worldBound, typeId =>
                 {
-                    EditorState.instance.spawnTypeId = typeId;
-                    EditorState.instance.Save();
+                    PlayModeState.instance.spawnTypeId = typeId;
+                    PlayModeState.instance.Save();
                     Poll();
                 });
             }
