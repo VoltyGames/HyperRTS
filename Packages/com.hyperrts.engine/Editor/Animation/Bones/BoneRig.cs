@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>
     /// A temporary instance of a bone set's rig model, posed by its clips so the baked meshes need no skin and no

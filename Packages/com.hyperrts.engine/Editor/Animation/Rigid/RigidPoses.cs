@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Rigid
 {
     /// <summary>
     /// Every piece's position and rotation in the model's space at every row of a rigid motion: the texels of the

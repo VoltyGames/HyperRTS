@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>A socket baked as a bone: its node, the skeleton bone carrying it and, for gear held in both hands, where the other hand holds it.</summary>
     internal readonly struct SocketBone

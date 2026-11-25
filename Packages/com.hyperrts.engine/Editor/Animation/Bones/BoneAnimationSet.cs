@@ -10,7 +10,7 @@ using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>
     /// One rig, its clips and the meshes skinned to it, baked into a shared bone texture, clip table and part meshes

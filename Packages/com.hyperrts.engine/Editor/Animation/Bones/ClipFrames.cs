@@ -1,7 +1,7 @@
 using HyperRTS.Presentation.Animation.Clips;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>One clip of a <see cref="BoneAnimationSet"/>: how many frames it bakes and the clip time each samples.</summary>
     internal sealed class ClipFrames

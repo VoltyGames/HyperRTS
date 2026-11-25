@@ -1,11 +1,11 @@
 using System;
-using HyperRTS.Editor.Animation;
+using HyperRTS.Editor.Animation.Bones;
 using HyperRTS.Presentation.Animation.Bones;
 using NUnit.Framework;
 using UnityEngine;
 
 
-namespace HyperRTS.Editor.Tests.Animation
+namespace HyperRTS.Editor.Tests.Animation.Bones
 {
     /// <summary>A small rig model, rig and clip for the bone rig tests.</summary>
     public abstract class BoneRigFixture : TemplateFixture

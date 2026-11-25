@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>Mesh edits for the bone bake that need no rig: joining parts into one mesh and moving a mesh rigidly.</summary>
     internal static class BoneMesh

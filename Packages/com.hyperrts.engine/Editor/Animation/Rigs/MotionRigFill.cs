@@ -10,7 +10,7 @@ using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Movement;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Rigs
 {
     /// <summary>Fills a Motion Rig's slots and the weapons' pivots from the parts the art names.</summary>
     internal sealed class MotionRigFill

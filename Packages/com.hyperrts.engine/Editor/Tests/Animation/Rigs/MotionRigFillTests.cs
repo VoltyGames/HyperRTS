@@ -9,7 +9,7 @@ using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Tests.Animation
+namespace HyperRTS.Editor.Tests.Animation.Rigs
 {
     /// <summary>The motion rig's and locomotion's fill from model: parts found by name, weapons wired, steering axles, tuned slots kept.</summary>
     public class MotionRigFillTests

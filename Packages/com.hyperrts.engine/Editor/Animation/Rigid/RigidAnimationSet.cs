@@ -9,7 +9,7 @@ using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Rigid
 {
     /// <summary>
     /// A model whose pieces move rigidly, such as a sectioned building, and its motion model, baked into the position

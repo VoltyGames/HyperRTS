@@ -2,7 +2,7 @@ using System;
 using HyperRTS.Presentation.Animation.Bones;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>One ragdoll body of a bone set as edited: a capsule on a rig bone and its joint to the parent body's bone.</summary>
     [Serializable]

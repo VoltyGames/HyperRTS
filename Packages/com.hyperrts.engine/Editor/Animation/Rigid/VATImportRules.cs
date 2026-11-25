@@ -5,7 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Rigid
 {
     /// <summary>
     /// Import settings for rigid vertex animation: a model with <c>VAT/&lt;Model&gt;_Motion.fbx</c> beside it keeps

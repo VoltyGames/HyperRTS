@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Presentation.Animation.Bones;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>A bone set's ragdoll bodies resolved to texture bones: what a live pose is rebuilt from.</summary>
     internal sealed class RagdollBake

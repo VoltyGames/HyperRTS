@@ -2,7 +2,7 @@ using HyperRTS.Presentation.Animation.Bones;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>
     /// The skin matrices of every bone for every baked frame: the bone texture's pixels and the all-frame bounds. An

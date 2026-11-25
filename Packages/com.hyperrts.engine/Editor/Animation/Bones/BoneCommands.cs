@@ -1,7 +1,7 @@
 using Unity.Pipeline.Commands;
 using UnityEditor;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>The bone animation bake as a pipeline command and a menu item.</summary>
     public static class BoneCommands

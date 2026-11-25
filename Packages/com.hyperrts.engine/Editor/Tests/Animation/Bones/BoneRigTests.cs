@@ -1,12 +1,12 @@
 using HyperRTS.Presentation.Animation.Bones;
 using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Animation;
 using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using HyperRTS.Editor.Animation.Bones;
 
-namespace HyperRTS.Editor.Tests.Animation
+namespace HyperRTS.Editor.Tests.Animation.Bones
 {
     /// <summary>
     /// Parts from other models on the same skeleton: a differently turned skinned part is moved into the skeleton's

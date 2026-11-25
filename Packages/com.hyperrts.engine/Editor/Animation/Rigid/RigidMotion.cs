@@ -7,7 +7,7 @@ using HyperRTS.Presentation.Animation.Clips;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Rigid
 {
     /// <summary>
     /// The pieces and clips of a motion model, <c>VAT/&lt;Model&gt;_Motion.fbx</c> beside a rigid VAT model, read from

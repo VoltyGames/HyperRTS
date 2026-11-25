@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using HyperRTS.Presentation.Animation.Bones;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>A first ragdoll for a humanoid rig, read from its avatar's bone map, for hand tuning after.</summary>
     internal sealed class HumanRagdoll

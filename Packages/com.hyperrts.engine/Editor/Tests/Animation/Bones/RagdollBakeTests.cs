@@ -1,11 +1,11 @@
-using System;
 using System.Collections.Generic;
-using HyperRTS.Editor.Animation;
+using System;
+using HyperRTS.Editor.Animation.Bones;
 using HyperRTS.Presentation.Animation.Bones;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Tests.Animation
+namespace HyperRTS.Editor.Tests.Animation.Bones
 {
     /// <summary>The ragdoll bake writes the rest pose and the body each bone rides on, and refuses a missing bone.</summary>
     public class RagdollBakeTests : BoneRigFixture

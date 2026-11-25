@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation
+namespace HyperRTS.Editor.Animation.Bones
 {
     /// <summary>The root bone's ground travel over each clip, measured once and removed from in place poses.</summary>
     internal sealed class RootTravel
