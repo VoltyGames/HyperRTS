@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Common
 
         public bool TryInt(string name, out int value)
         {
-            var found = TryFind(name, out var raw) && raw is int or long or float or double;
+            var found = TryNumber(name, out var raw);
             value = found ? Convert.ToInt32(raw, CultureInfo.InvariantCulture) : 0;
             return found;
         }
@@ -39,7 +39,7 @@ namespace HyperRTS.Editor.Common
 
         public int Int(string name) => TryInt(name, out var value) ? value : throw Missing(name, "a whole number");
 
-        public float Float(string name) => TryFind(name, out var raw) && raw is int or long or float or double
+        public float Float(string name) => TryNumber(name, out var raw)
             ? Convert.ToSingle(raw, CultureInfo.InvariantCulture)
             : throw Missing(name, "a number");
 
@@ -71,6 +71,9 @@ namespace HyperRTS.Editor.Common
 
             throw Missing(name, "a vector");
         }
+
+        private bool TryNumber(string name, out object value) =>
+            TryFind(name, out value) && value is int or long or float or double;
 
         private bool TryFind(string name, out object value)
         {

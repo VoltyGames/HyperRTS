@@ -49,7 +49,7 @@ namespace HyperRTS.Editor.Generators
         public static void RunOutOfDate()
         {
             var log = GeneratorRunLog.Load();
-            var outOfDate = All().Where(generator => generator.IsOutOfDate(log)).ToList();
+            var outOfDate = All().Where(generator => generator.IsOutOfDate(generator.Items, log)).ToList();
             RunInOrder(outOfDate, "out of date generators", generator => RunOutOfDate(generator, log));
         }
 

@@ -18,10 +18,9 @@ namespace HyperRTS.Editor.Catalog
         private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _madeBy = new();
         private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _unlocks = new();
 
-        /// <summary>Rebuilds the links from <paramref name="all"/> and shows the <paramref name="visible"/> ones.</summary>
-        public void Show(IEnumerable<GameEntityAuthoring> all, IEnumerable<GameEntityAuthoring> visible)
+        /// <summary>Shows the <paramref name="visible"/> prefabs with the links of the last <see cref="Link"/>.</summary>
+        public void Show(IEnumerable<GameEntityAuthoring> visible)
         {
-            Link(all);
             Clear();
             foreach (var prefab in visible)
             {
@@ -29,7 +28,8 @@ namespace HyperRTS.Editor.Catalog
             }
         }
 
-        private void Link(IEnumerable<GameEntityAuthoring> all)
+        /// <summary>Rebuilds the links between <paramref name="all"/> prefabs.</summary>
+        public void Link(IEnumerable<GameEntityAuthoring> all)
         {
             _makes.Clear();
             _madeBy.Clear();

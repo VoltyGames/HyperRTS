@@ -1,3 +1,4 @@
+using System;
 using Unity.Mathematics;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
@@ -179,6 +180,33 @@ namespace HyperRTS.Editor.Environment
                     sum += source[start + Wrap(i + radius + 1, size) * step] - source[start + Wrap(i - radius, size) * step];
                 }
             }
+        }
+
+        /// <summary>Two fields weighted and added, written into the first.</summary>
+        public static float[] WeightedSum(float[] first, float firstWeight, float[] second, float secondWeight)
+        {
+            for (var i = 0; i < first.Length; i++)
+            {
+                first[i] = first[i] * firstWeight + second[i] * secondWeight;
+            }
+
+            return first;
+        }
+
+        /// <summary>A square of samples spanning <paramref name="period"/> lattice cells, so it tiles.</summary>
+        public static float[] Field(int size, int period, Func<Vector2, float> sample)
+        {
+            var values = new float[size * size];
+            var scale = (float)period / size;
+            for (var y = 0; y < size; y++)
+            {
+                for (var x = 0; x < size; x++)
+                {
+                    values[y * size + x] = sample(new Vector2(x + 0.5f, y + 0.5f) * scale);
+                }
+            }
+
+            return values;
         }
 
         internal static int Wrap(int value, int period) => (value % period + period) % period;

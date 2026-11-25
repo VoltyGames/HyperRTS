@@ -2,6 +2,7 @@ using System.Linq;
 using System;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Hub;
+using HyperRTS.Editor.Stages;
 using HyperRTS.Presentation.HUD;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
@@ -84,8 +85,8 @@ namespace HyperRTS.Editor.Generators
                 return;
             }
 
-            var failed = items.Count(item => log.Find(generator.Name, item.Name) is { Failed: true });
-            var stale = items.Count(item => generator.IsOutOfDate(item, log));
+            var failed = items.Count(item => generator.State(item, log) == StageState.Failed);
+            var stale = items.Count(item => generator.State(item, log) != StageState.Done);
             label.text = $"{items.Count} items, {stale - failed} out of date, {failed} failed";
             label.EnableInClassList("hrts-generators__last-run--failed", failed > 0);
             row.Require<Label>("out-of-date").SetHidden(stale == 0);

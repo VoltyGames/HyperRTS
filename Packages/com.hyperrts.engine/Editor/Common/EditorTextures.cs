@@ -31,6 +31,16 @@ namespace HyperRTS.Editor.Common
             return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
         }
 
+        /// <summary>Linear, uncompressed, repeating and mipped, for textures whose channels are separate data.</summary>
+        public static void ConfigureLinearTiling(TextureImporter importer)
+        {
+            importer.textureType = TextureImporterType.Default;
+            importer.sRGBTexture = false;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.wrapMode = TextureWrapMode.Repeat;
+            importer.mipmapEnabled = true;
+        }
+
         /// <summary>Writes the pixels as a PNG in <paramref name="format"/>, then <see cref="Import"/>s it.</summary>
         public static Texture2D WritePng(string path, int width, int height, TextureFormat format, Color32[] pixels,
             Action<TextureImporter> configure) =>

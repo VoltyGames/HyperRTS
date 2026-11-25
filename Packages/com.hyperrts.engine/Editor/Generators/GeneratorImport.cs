@@ -13,12 +13,9 @@ namespace HyperRTS.Editor.Generators
     /// </summary>
     public sealed class GeneratorImport : AssetPostprocessor
     {
+        // Generator name to the names of its touched items; empty for a generator that runs whole.
         [NoAutoStaticsCleanup]
-        private static readonly HashSet<string> Changed = new();
-
-        // Generator name to the names of its touched items.
-        [NoAutoStaticsCleanup]
-        private static readonly Dictionary<string, HashSet<string>> ChangedItems = new();
+        private static readonly Dictionary<string, HashSet<string>> Changed = new();
 
         private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
         {
@@ -29,14 +26,14 @@ namespace HyperRTS.Editor.Generators
             }
 
             var paths = imported.Concat(deleted).Concat(moved).Concat(movedFrom).ToList();
-            var pending = Changed.Count + ChangedItems.Count > 0;
+            var pending = Changed.Count > 0;
             foreach (var generator in GeneratorRunner.All().Where(generator => generator.RunOnImport))
             {
                 Collect(generator, paths);
             }
 
             // After the batch, so every changed asset has loaded; batches before the run join it.
-            if (!pending && Changed.Count + ChangedItems.Count > 0)
+            if (!pending && Changed.Count > 0)
             {
                 EditorApplication.delayCall += RunChanged;
             }
@@ -49,7 +46,7 @@ namespace HyperRTS.Editor.Generators
             {
                 if (paths.Any(generator.Reads))
                 {
-                    Changed.Add(generator.Name);
+                    Changed[generator.Name] = new HashSet<string>();
                 }
 
                 return;
@@ -61,10 +58,10 @@ namespace HyperRTS.Editor.Generators
                 return;
             }
 
-            if (!ChangedItems.TryGetValue(generator.Name, out var names))
+            if (!Changed.TryGetValue(generator.Name, out var names))
             {
                 names = new HashSet<string>();
-                ChangedItems[generator.Name] = names;
+                Changed[generator.Name] = names;
             }
 
             names.UnionWith(touched);
@@ -72,16 +69,14 @@ namespace HyperRTS.Editor.Generators
 
         private static void RunChanged()
         {
-            var changed = new HashSet<string>(Changed);
-            var changedItems = new Dictionary<string, HashSet<string>>(ChangedItems);
+            var changed = new Dictionary<string, HashSet<string>>(Changed);
             Changed.Clear();
-            ChangedItems.Clear();
             foreach (var generator in GeneratorRunner.All())
             {
                 // One failing generator holds back no other; the run log keeps the failure.
                 try
                 {
-                    RunChanged(generator, changed, changedItems);
+                    RunChanged(generator, changed);
                 }
                 catch (Exception exception)
                 {
@@ -90,13 +85,18 @@ namespace HyperRTS.Editor.Generators
             }
         }
 
-        private static void RunChanged(Generator generator, HashSet<string> changed, Dictionary<string, HashSet<string>> changedItems)
+        private static void RunChanged(Generator generator, Dictionary<string, HashSet<string>> changed)
         {
-            if (changedItems.TryGetValue(generator.Name, out var names))
+            if (!changed.TryGetValue(generator.Name, out var names))
+            {
+                return;
+            }
+
+            if (names.Count > 0)
             {
                 GeneratorRunner.RunItems(generator, generator.Items.Where(item => names.Contains(item.Name)).ToList());
             }
-            else if (changed.Contains(generator.Name))
+            else
             {
                 GeneratorRunner.Run(generator);
             }

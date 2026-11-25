@@ -48,7 +48,11 @@ namespace HyperRTS.Editor.Catalog
             _techTree = _root.Require<TechTreeView>("tree");
             _tabs = _root.Require<TabView>("tabs");
             _treeTab = _root.Require<Tab>("tree-tab");
-            _tabs.activeTabChanged += (_, _) => ShowPrefabs();
+            _tabs.activeTabChanged += (_, _) =>
+            {
+                _techTree.Link(_prefabs);
+                ShowPrefabs();
+            };
 
             _root.WhileAttached(Subscribe, Unsubscribe);
             Reload();
@@ -97,10 +101,8 @@ namespace HyperRTS.Editor.Catalog
         private void RefreshTree()
         {
             _treePending = false;
-            if (_tabs.activeTab == _treeTab)
-            {
-                _techTree.Show(_prefabs, Visible());
-            }
+            _techTree.Link(_prefabs);
+            ShowPrefabs();
         }
 
         private void Reload()
@@ -110,6 +112,7 @@ namespace HyperRTS.Editor.Catalog
                 .OrderBy(prefab => prefab is BuildingAuthoring)
                 .ThenBy(prefab => prefab.DisplayName)
                 .ToList();
+            _techTree.Link(_prefabs);
             ShowPrefabs();
         }
 
@@ -117,7 +120,7 @@ namespace HyperRTS.Editor.Catalog
         {
             if (_tabs.activeTab == _treeTab)
             {
-                _techTree.Show(_prefabs, Visible());
+                _techTree.Show(Visible());
                 return;
             }
 

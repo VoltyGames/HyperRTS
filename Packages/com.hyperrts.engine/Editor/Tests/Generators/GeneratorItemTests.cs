@@ -39,12 +39,12 @@ namespace HyperRTS.Editor.Tests.Generators
             var log = new GeneratorRunLog();
             log.Add(Run("first", null));
             log.Add(Run("second", null));
-            Assert.That(generator.IsOutOfDate(log), Is.False);
+            Assert.That(generator.IsOutOfDate(generator.Items, log), Is.False);
 
             File.SetLastWriteTime(First, _ran.AddMinutes(5));
 
-            Assert.That(generator.OutOfDateItems(log).Select(item => item.Name), Is.EqualTo(new[] { "first" }));
-            Assert.That(generator.IsOutOfDate(log), Is.True);
+            Assert.That(generator.OutOfDateItems(generator.Items, log).Select(item => item.Name), Is.EqualTo(new[] { "first" }));
+            Assert.That(generator.IsOutOfDate(generator.Items, log), Is.True);
         }
 
         [Test]
@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Tests.Generators
             var log = new GeneratorRunLog();
             log.Add(Run("first", "broken"));
 
-            Assert.That(generator.OutOfDateItems(log).Select(item => item.Name), Is.EqualTo(new[] { "first", "second" }));
+            Assert.That(generator.OutOfDateItems(generator.Items, log).Select(item => item.Name), Is.EqualTo(new[] { "first", "second" }));
         }
 
         [Test]
@@ -63,11 +63,11 @@ namespace HyperRTS.Editor.Tests.Generators
             var generator = new TestGenerator();
             var log = new GeneratorRunLog();
             log.Add(Run("", null));
-            Assert.That(generator.IsOutOfDate(log), Is.False);
+            Assert.That(generator.IsOutOfDate(generator.Items, log), Is.False);
 
             File.SetLastWriteTime(Second, _ran.AddMinutes(5));
 
-            Assert.That(generator.IsOutOfDate(log), Is.True);
+            Assert.That(generator.IsOutOfDate(generator.Items, log), Is.True);
         }
 
         private static TestGenerator TwoItems() => new()

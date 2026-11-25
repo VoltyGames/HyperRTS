@@ -23,13 +23,34 @@ namespace HyperRTS.Editor.Generators
         [NoAutoStaticsCleanup]
         public static event Action Recorded;
 
+        // The parsed file and when it was written, so a write by another process still shows.
+        [NoAutoStaticsCleanup]
+        private static GeneratorRunLog _loaded;
+
+        [NoAutoStaticsCleanup]
+        private static DateTime _loadedWritten;
+
+        /// <summary>The log on disk, parsed again only after the file changed; treat it as read-only.</summary>
         public static GeneratorRunLog Load()
         {
             if (!File.Exists(FilePath))
             {
+                _loaded = null;
                 return new GeneratorRunLog();
             }
 
+            var written = File.GetLastWriteTimeUtc(FilePath);
+            if (_loaded == null || written != _loadedWritten)
+            {
+                _loaded = Read();
+                _loadedWritten = written;
+            }
+
+            return _loaded;
+        }
+
+        private static GeneratorRunLog Read()
+        {
             try
             {
                 return JsonUtility.FromJson<GeneratorRunLog>(File.ReadAllText(FilePath))
@@ -54,7 +75,7 @@ namespace HyperRTS.Editor.Generators
         /// <summary>Records a run that ended now; <paramref name="item"/> is empty for a whole generator and <paramref name="error"/> null when it succeeded.</summary>
         public static void Record(string generator, string item, string error)
         {
-            var log = Load();
+            var log = File.Exists(FilePath) ? Read() : new GeneratorRunLog();
             log.Add(new GeneratorRun
             {
                 generator = generator,
@@ -63,6 +84,7 @@ namespace HyperRTS.Editor.Generators
                 error = error,
             });
             Directory.CreateDirectory(Folder);
+            _loaded = null;
             File.WriteAllText(FilePath, JsonUtility.ToJson(log, true));
             Recorded?.Invoke();
         }

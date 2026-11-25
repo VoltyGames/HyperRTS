@@ -34,12 +34,12 @@ namespace HyperRTS.Editor.Generators
             return Task.CompletedTask;
         }
 
-        // Missing before an item's first run, Failed after a failed one, else Done or Out of date by its inputs.
+        // The worst state of the items.
         public override StageState State(TSource source)
         {
             var (generator, items) = Items(source);
             var log = GeneratorRunLog.Load();
-            return items.Select(item => ItemState(generator, item, log)).DefaultIfEmpty(StageState.Done).Max();
+            return items.Select(item => generator.State(item, log)).DefaultIfEmpty(StageState.Done).Max();
         }
 
         public override DateTime? LoggedUtc(TSource source)
@@ -52,22 +52,6 @@ namespace HyperRTS.Editor.Generators
         {
             var runs = LastRuns(source);
             return string.Join("\n", runs.Select(run => runs.Count == 1 ? run.ToString() : $"{run.item}: {run}"));
-        }
-
-        private static StageState ItemState(Generator generator, GeneratorItem item, GeneratorRunLog log)
-        {
-            var last = log.Find(generator.Name, item.Name);
-            if (last == null)
-            {
-                return StageState.Missing;
-            }
-
-            if (last.Failed)
-            {
-                return StageState.Failed;
-            }
-
-            return generator.IsOutOfDate(item, log) ? StageState.OutOfDate : StageState.Done;
         }
 
         // The last run of each of the stage's items that ran here.

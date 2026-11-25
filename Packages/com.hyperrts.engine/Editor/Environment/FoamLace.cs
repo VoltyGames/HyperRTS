@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Environment
             var random = new Random(seed);
             var large = Strands(size, LargeCells, LargeStrand, ref random);
             var small = Strands(size, SmallCells, SmallStrand, ref random);
-            var clumps = EnvironmentTextures.WeightedSum(TileableNoise.Lowpass(size, 5f, ref random), 0.75f, TileableNoise.Lowpass(size, 14f, ref random), 0.45f);
+            var clumps = TileableNoise.WeightedSum(TileableNoise.Lowpass(size, 5f, ref random), 0.75f, TileableNoise.Lowpass(size, 14f, ref random), 0.45f);
             TileableNoise.RankUniform(clumps);
             var blobs = TileableNoise.Lowpass(size, 3f, ref random);
             TileableNoise.RankUniform(blobs);
@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Environment
                 points[i] = new Vector2(random.NextFloat(0.1f, 0.9f), random.NextFloat(0.1f, 0.9f));
             }
 
-            return EnvironmentTextures.Field(size, cells, p =>
+            return TileableNoise.Field(size, cells, p =>
             {
                 var (nearest, second) = TwoNearest(points, cells, p);
                 return 1f - Mathf.SmoothStep(0f, 1f, (second - nearest) / width);

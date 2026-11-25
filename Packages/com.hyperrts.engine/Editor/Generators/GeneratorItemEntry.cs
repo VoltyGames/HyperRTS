@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Editor.Stages;
 
 namespace HyperRTS.Editor.Generators
 {
@@ -24,7 +25,7 @@ namespace HyperRTS.Editor.Generators
                 projectPath = item.ProjectPath,
                 lastRun = last?.time,
                 error = last?.error,
-                outOfDate = generator.IsOutOfDate(item, log),
+                outOfDate = generator.State(item, log) != StageState.Done,
             };
         }
     }

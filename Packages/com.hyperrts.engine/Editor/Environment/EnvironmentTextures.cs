@@ -59,12 +59,11 @@ namespace HyperRTS.Editor.Environment
         {
             WriteGray(CloudCookiePath, Clouds(), CloudSize);
             WriteGray(EdgeNoisePath, EdgeNoise(), NoiseSize);
-            WriteRGB(TerrainNoisePath, TerrainSize, TerrainNoise(), v => (byte)Mathf.Floor(Mathf.Clamp01(v) * 255f + 0.5f),
-                ConfigureChannels);
+            WriteRGB(TerrainNoisePath, TerrainSize, TerrainNoise(), ToByte, EditorTextures.ConfigureLinearTiling);
             WriteRGB(WaterRipplesPath, RippleSize, RippleNormals(), v => (byte)Mathf.Floor((v * 0.5f + 0.5f) * 255f + 0.5f),
                 ConfigureWaterRipples);
-            WriteRGB(WaterLacePath, LaceSize, FoamLace.Texels(LaceSize, LaceSeed),
-                v => (byte)Mathf.Floor(Mathf.Clamp01(v) * 255f + 0.5f), ConfigureChannels);
+            WriteRGB(WaterLacePath, LaceSize, FoamLace.Texels(LaceSize, LaceSeed), ToByte,
+                EditorTextures.ConfigureLinearTiling);
         }
 
         /// <summary>
@@ -73,7 +72,7 @@ namespace HyperRTS.Editor.Environment
         /// </summary>
         private static float[] Clouds()
         {
-            var density = Field(CloudSize, CloudPeriod, p => TileableNoise.Fbm(p, CloudPeriod, 4, 3));
+            var density = TileableNoise.Field(CloudSize, CloudPeriod, p => TileableNoise.Fbm(p, CloudPeriod, 4, 3));
             var edge = TileableNoise.Percentile(density, 1f - CloudCover);
             var core = TileableNoise.Percentile(density, 0.995f);
             for (var i = 0; i < density.Length; i++)
@@ -90,7 +89,7 @@ namespace HyperRTS.Editor.Environment
         /// <summary>Fine fBm stretched over 0..1.</summary>
         private static float[] EdgeNoise()
         {
-            var values = Field(NoiseSize, NoisePeriod, p => TileableNoise.Fbm(p, NoisePeriod, 5, 7));
+            var values = TileableNoise.Field(NoiseSize, NoisePeriod, p => TileableNoise.Fbm(p, NoisePeriod, 5, 7));
             var low = TileableNoise.Percentile(values, 0.02f);
             var high = TileableNoise.Percentile(values, 0.98f);
             for (var i = 0; i < values.Length; i++)
@@ -127,7 +126,7 @@ namespace HyperRTS.Editor.Environment
         /// <summary>Two standardised fields weighted, scaled about 0.5 and clipped to 0..1, written into the first.</summary>
         private static float[] Brightness(float[] first, float firstWeight, float[] second, float secondWeight)
         {
-            WeightedSum(first, firstWeight, second, secondWeight);
+            TileableNoise.WeightedSum(first, firstWeight, second, secondWeight);
             for (var i = 0; i < first.Length; i++)
             {
                 first[i] = Mathf.Clamp01(0.5f + TerrainContrast * first[i]);
@@ -136,32 +135,8 @@ namespace HyperRTS.Editor.Environment
             return first;
         }
 
-        /// <summary>Two fields weighted and added, written into the first.</summary>
-        internal static float[] WeightedSum(float[] first, float firstWeight, float[] second, float secondWeight)
-        {
-            for (var i = 0; i < first.Length; i++)
-            {
-                first[i] = first[i] * firstWeight + second[i] * secondWeight;
-            }
-
-            return first;
-        }
-
-        /// <summary>A square of samples spanning <paramref name="period"/> lattice cells, so it tiles.</summary>
-        internal static float[] Field(int size, int period, Func<Vector2, float> sample)
-        {
-            var values = new float[size * size];
-            var scale = (float)period / size;
-            for (var y = 0; y < size; y++)
-            {
-                for (var x = 0; x < size; x++)
-                {
-                    values[y * size + x] = sample(new Vector2(x + 0.5f, y + 0.5f) * scale);
-                }
-            }
-
-            return values;
-        }
+        /// <summary>0..1 rounded half up to a byte, clipped.</summary>
+        private static byte ToByte(float value) => (byte)Mathf.Floor(Mathf.Clamp01(value) * 255f + 0.5f);
 
         private static void WriteGray(string path, float[] values, int size)
         {
@@ -207,14 +182,6 @@ namespace HyperRTS.Editor.Environment
             settings.singleChannelComponent = TextureImporterSingleChannelComponent.Red;
             importer.SetTextureSettings(settings);
             importer.sRGBTexture = false;
-        }
-
-        /// <summary>Linear and uncompressed, since the terrain and water shaders read each channel as separate data.</summary>
-        private static void ConfigureChannels(TextureImporter importer)
-        {
-            importer.textureType = TextureImporterType.Default;
-            importer.sRGBTexture = false;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
         }
 
         // Seen at a grazing angle from the match camera, so trilinear and anisotropic, and full size.

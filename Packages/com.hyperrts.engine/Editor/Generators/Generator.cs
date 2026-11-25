@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Stages;
 using UnityEditor;
 
 namespace HyperRTS.Editor.Generators
@@ -49,33 +50,38 @@ namespace HyperRTS.Editor.Generators
         /// <summary>True when this asset path is one of the <see cref="Inputs"/> or below an input folder. Override it when the inputs are a list that lags a delete.</summary>
         public virtual bool Reads(string assetPath) => GeneratorItem.ReadsPath(Inputs, assetPath);
 
-        /// <summary>True when the step never ran here, failed last time, or an input changed since it ran; with items, when any item is.</summary>
-        public bool IsOutOfDate(GeneratorRunLog log) => IsOutOfDate(Items, log);
-
-        /// <summary>As <see cref="IsOutOfDate(GeneratorRunLog)"/>, for a caller that already read <see cref="Items"/>.</summary>
+        /// <summary>True when the step never ran here, failed last time, or an input changed since it ran; with <paramref name="items"/>, when any item is.</summary>
         public bool IsOutOfDate(IReadOnlyList<GeneratorItem> items, GeneratorRunLog log)
         {
             if (items.Count > 0)
             {
-                return items.Any(item => IsOutOfDate(item, log));
+                return items.Any(item => State(item, log) != StageState.Done);
             }
 
             var last = log.Find(Name, "");
             return last == null || last.IsOlderThan(Inputs);
         }
 
-        /// <summary>True when the item never ran here, failed last time, or one of its inputs changed since it ran.</summary>
-        public bool IsOutOfDate(GeneratorItem item, GeneratorRunLog log)
+        /// <summary>Missing before the item's first run here, Failed after a failed one, else OutOfDate when one of its inputs changed since, or Done.</summary>
+        public StageState State(GeneratorItem item, GeneratorRunLog log)
         {
             var last = log.Find(Name, item.Name);
-            return last == null || last.IsOlderThan(item.Inputs);
+            if (last == null)
+            {
+                return StageState.Missing;
+            }
+
+            if (last.Failed)
+            {
+                return StageState.Failed;
+            }
+
+            return last.IsOlderThan(item.Inputs) ? StageState.OutOfDate : StageState.Done;
         }
 
-        public List<GeneratorItem> OutOfDateItems(GeneratorRunLog log) => OutOfDateItems(Items, log);
-
-        /// <summary>As <see cref="OutOfDateItems(GeneratorRunLog)"/>, for a caller that already read <see cref="Items"/>.</summary>
+        /// <summary>The items that are not Done, from <paramref name="items"/> the caller already read.</summary>
         public List<GeneratorItem> OutOfDateItems(IReadOnlyList<GeneratorItem> items, GeneratorRunLog log) =>
-            items.Where(item => IsOutOfDate(item, log)).ToList();
+            items.Where(item => State(item, log) != StageState.Done).ToList();
 
         /// <summary>The item with this name; throws listing the names when there is none.</summary>
         public GeneratorItem FindItem(string name)

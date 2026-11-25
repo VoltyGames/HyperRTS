@@ -47,14 +47,7 @@ namespace HyperRTS.Editor.Environment
                 pixels[i] = texels[i];
             }
 
-            EditorTextures.WritePng(Path, Size, Size, TextureFormat.RGBA32, pixels, importer =>
-            {
-                importer.textureType = TextureImporterType.Default;
-                importer.sRGBTexture = false;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-                importer.wrapMode = TextureWrapMode.Repeat;
-                importer.mipmapEnabled = true;
-            });
+            EditorTextures.WritePng(Path, Size, Size, TextureFormat.RGBA32, pixels, EditorTextures.ConfigureLinearTiling);
         }
 
         /// <summary>RG normal xy remapped to 0..1, B occlusion (1 open), A albedo variation centred on 0.5.</summary>

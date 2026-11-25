@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Editor.Icons
@@ -17,14 +16,29 @@ namespace HyperRTS.Editor.Icons
         /// <summary>Draws <paramref name="glyph"/> on <paramref name="element"/>, replacing the glyph a recycled row held.</summary>
         public static VisualElement SetGlyph(this VisualElement element, string glyph)
         {
-            foreach (var name in element.GetClasses().Where(name => name.StartsWith(NamePrefix, StringComparison.Ordinal)).ToList())
+            while (TryFindGlyphName(element, out var held))
             {
-                element.RemoveFromClassList(name);
+                element.RemoveFromClassList(held);
             }
 
             element.AddToClassList(GlyphClass);
             element.AddToClassList(NamePrefix + glyph);
             return element;
+        }
+
+        private static bool TryFindGlyphName(VisualElement element, out string found)
+        {
+            foreach (var name in element.GetClasses())
+            {
+                if (name.StartsWith(NamePrefix, StringComparison.Ordinal))
+                {
+                    found = name;
+                    return true;
+                }
+            }
+
+            found = null;
+            return false;
         }
     }
 }

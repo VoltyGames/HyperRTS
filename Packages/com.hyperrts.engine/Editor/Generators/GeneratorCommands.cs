@@ -18,24 +18,36 @@ namespace HyperRTS.Editor.Generators
         {
             if (string.IsNullOrEmpty(name))
             {
-                if (!string.IsNullOrEmpty(item))
-                {
-                    throw new ArgumentException("HyperRTS: an item needs the name of its generator.");
-                }
-
-                if (stale)
-                {
-                    GeneratorRunner.RunOutOfDate();
-                }
-                else
-                {
-                    GeneratorRunner.RunAll();
-                }
-
-                return Describe(GeneratorRunner.All());
+                return RunAll(item, stale);
             }
 
-            var generator = GeneratorRunner.Find(name);
+            return RunOne(GeneratorRunner.Find(name), item, stale);
+        }
+
+        [CliCommand("generator", "list", "List every generator and its items with what they read and write and their last run, running none.", Tags = new[] { Tag })]
+        public static List<GeneratorEntry> List() => Describe(GeneratorRunner.All());
+
+        private static List<GeneratorEntry> RunAll(string item, bool stale)
+        {
+            if (!string.IsNullOrEmpty(item))
+            {
+                throw new ArgumentException("HyperRTS: an item needs the name of its generator.");
+            }
+
+            if (stale)
+            {
+                GeneratorRunner.RunOutOfDate();
+            }
+            else
+            {
+                GeneratorRunner.RunAll();
+            }
+
+            return Describe(GeneratorRunner.All());
+        }
+
+        private static List<GeneratorEntry> RunOne(Generator generator, string item, bool stale)
+        {
             if (!string.IsNullOrEmpty(item))
             {
                 GeneratorRunner.Run(generator, generator.FindItem(item));
@@ -51,9 +63,6 @@ namespace HyperRTS.Editor.Generators
 
             return Describe(new[] { generator });
         }
-
-        [CliCommand("generator", "list", "List every generator and its items with what they read and write and their last run, running none.", Tags = new[] { Tag })]
-        public static List<GeneratorEntry> List() => Describe(GeneratorRunner.All());
 
         private static List<GeneratorEntry> Describe(IEnumerable<Generator> generators)
         {
