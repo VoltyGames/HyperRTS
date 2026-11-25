@@ -7,7 +7,7 @@
     <ui:TextField name="name" label="Name" tooltip="Prefab name, such as USA_M1A2; the HUD name reads it with spaces." />
     <ui:VisualElement name="steps" />
     <ui:Label name="problem" class="hrts-note" />
-    <ui:Label name="folder"class="hrts-note hrts-entity-wizard__folder" />
+    <ui:Label name="folder" class="hrts-note hrts-entity-wizard__folder" />
     <ui:VisualElement class="hrts-buttons">
       <ui:Button name="create" text="Create" />
     </ui:VisualElement>
