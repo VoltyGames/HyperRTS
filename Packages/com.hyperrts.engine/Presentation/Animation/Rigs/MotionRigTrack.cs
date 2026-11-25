@@ -91,10 +91,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>Metres the belt has run, wrapped to <see cref="TravelPeriod"/>.</summary>
         public float Travel;
 
-        /// <summary>The <see cref="Travel"/> the mesh shows.</summary>
-        public float Shown;
-
-        /// <summary>True when the last <see cref="Scroll"/> changed <see cref="Shown"/>, so the mesh needs it again.</summary>
+        /// <summary>True when the last <see cref="Scroll"/> changed <see cref="Travel"/>, so the mesh needs it again.</summary>
         public bool Scrolled;
 
         /// <summary>
@@ -103,11 +100,11 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// </summary>
         public void Scroll(float rolled, float turn)
         {
-            Travel = math.fmod(Travel + rolled + turn * Side, TravelPeriod);
-            Scrolled = math.abs(Travel - Shown) > MinChange;
+            var run = rolled + turn * Side;
+            Scrolled = run != 0f;
             if (Scrolled)
             {
-                Shown = Travel;
+                Travel = math.fmod(Travel + run, TravelPeriod);
             }
         }
 

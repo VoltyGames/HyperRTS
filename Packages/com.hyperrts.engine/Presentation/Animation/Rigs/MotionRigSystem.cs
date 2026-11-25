@@ -220,33 +220,40 @@ namespace HyperRTS.Presentation.Animation.Rigs
             public ComponentTypeHandle<TrackLift1> Backs;
             public ComponentTypeHandle<TrackTravel> Travels;
 
-            // Takes the writable arrays only for a chunk with a moved track, so settled tracks keep their version
-            // and skip the re-upload.
+            // Takes each writable array only for a chunk where that value changed, so a driving tread doesn't
+            // re-upload the lift and settled tracks keep their versions.
             public void Execute(in ArchetypeChunk chunk, int unfilteredChunkIndex, bool useEnabledMask,
                 in v128 chunkEnabledMask)
             {
                 var sources = chunk.GetNativeArray(ref Sources);
                 var moved = false;
-                for (var i = 0; i < chunk.Count && !moved; i++)
-                {
-                    var track = Tracks[sources[i].Rig][sources[i].Track];
-                    moved = track.Moved || track.Scrolled;
-                }
-
-                if (!moved)
-                {
-                    return;
-                }
-
-                var fronts = chunk.GetNativeArray(ref Fronts);
-                var backs = chunk.GetNativeArray(ref Backs);
-                var travels = chunk.GetNativeArray(ref Travels);
+                var scrolled = false;
                 for (var i = 0; i < chunk.Count; i++)
                 {
                     var track = Tracks[sources[i].Rig][sources[i].Track];
-                    fronts[i] = new TrackLift0 { Value = track.Lift0 };
-                    backs[i] = new TrackLift1 { Value = track.Lift1 };
-                    travels[i] = new TrackTravel { Value = track.Shown };
+                    moved |= track.Moved;
+                    scrolled |= track.Scrolled;
+                }
+
+                if (moved)
+                {
+                    var fronts = chunk.GetNativeArray(ref Fronts);
+                    var backs = chunk.GetNativeArray(ref Backs);
+                    for (var i = 0; i < chunk.Count; i++)
+                    {
+                        var track = Tracks[sources[i].Rig][sources[i].Track];
+                        fronts[i] = new TrackLift0 { Value = track.Lift0 };
+                        backs[i] = new TrackLift1 { Value = track.Lift1 };
+                    }
+                }
+
+                if (scrolled)
+                {
+                    var travels = chunk.GetNativeArray(ref Travels);
+                    for (var i = 0; i < chunk.Count; i++)
+                    {
+                        travels[i] = new TrackTravel { Value = Tracks[sources[i].Rig][sources[i].Track].Travel };
+                    }
                 }
             }
         }

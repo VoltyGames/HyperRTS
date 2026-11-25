@@ -118,7 +118,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         {
             Rolled = rolled;
             Turn = Frames > 0 ? Planar.SignedAngle(LastHeading, heading) : 0f;
-            if (Frames > 0 && math.abs(rolled) > MinRoll)
+            if (math.abs(rolled) > MinRoll)
             {
                 Curvature = Turn / rolled;
             }

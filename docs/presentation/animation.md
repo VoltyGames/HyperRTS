@@ -125,7 +125,7 @@ Road wheels (`Wheel_` parts, `followsGround`) lift to the terrain under them. Tr
 
 The same component scrolls the tread. Each track sums the metres its side of the hull travels (`MotionRigTrack.Scroll`):
 the distance rolled, plus the turn times the track part's x in rig space, so a pivoting hull runs its two sides opposite
-ways. The sum wraps at 1000 m and reaches `LitTeam` as `_TrackTravel`, written only when it changed by 5 mm. A track
+ways. The sum wraps at 1000 m and reaches `LitTeam` as `_TrackTravel`, written only on frames the hull moved, and apart from the lift. A track
 mesh's UV channel 0 must follow this belt convention: V runs along the belt in metres, one V unit per metre of belt,
 increasing from front to back along the ground run, the way that run moves relative to the hull when the unit drives
 forward; U runs across the belt. The shader subtracts the travel from V before the base map's tiling, so the tread

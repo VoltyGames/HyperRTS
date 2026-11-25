@@ -25,18 +25,7 @@ float3 BendTrack(float3 positionOS)
 }
 
 // Runs the belt: V is metres along it, increasing toward the back, so the tread moves back as the travel grows. Done
-// on the mesh UV before the base map's tiling, so the tiling scales it.
-float2 ScrollTrackUV(float2 uv)
-{
-    if (_TrackSpan.x == _TrackSpan.y)
-    {
-        return uv;
-    }
-
-    uv.y -= _TrackTravel;
-    return uv;
-}
-
-#define SCROLL_TRACK_UV(uv) uv = ScrollTrackUV(uv);
+// on the mesh UV before the base map's tiling, so the tiling scales it. Other meshes have no travel and stay put.
+#define SCROLL_TRACK_UV(uv) uv.y -= _TrackTravel;
 
 #endif
