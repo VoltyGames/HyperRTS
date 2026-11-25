@@ -1,16 +1,12 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 using Object = UnityEngine.Object;
 
 namespace HyperRTS.Editor.Common
 {
-    /// <summary>Texture asset import, PNG writing and GPU read-back shared by the map and environment tools.</summary>
+    /// <summary>Texture asset import, PNG writing and GPU read-back shared by the editor tools.</summary>
     internal static class EditorTextures
     {
         /// <summary>
@@ -49,21 +45,6 @@ namespace HyperRTS.Editor.Common
         public static Texture2D WritePng(string path, int width, int height, TextureFormat format, byte[] pixels,
             Action<TextureImporter> configure) =>
             WritePng(path, width, height, format, image => image.SetPixelData(pixels, 0), configure);
-
-        /// <summary>Renders a camera to a width × height PNG.</summary>
-        public static void RenderPng(Camera camera, int width, int height, string path)
-        {
-            var target = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32);
-            try
-            {
-                Render(camera, target, path);
-                WritePng(target, path);
-            }
-            finally
-            {
-                RenderTexture.ReleaseTemporary(target);
-            }
-        }
 
         /// <summary>Reads a render texture back and saves it as a PNG, without importing it.</summary>
         public static void WritePng(RenderTexture source, string path)
@@ -105,55 +86,6 @@ namespace HyperRTS.Editor.Common
                 RenderTexture.ReleaseTemporary(target);
             }
         }
-
-        /// <summary>
-        /// Renders with shader variants compiled first and Surface Cache GI off. Throws if the frame fails, which would
-        /// leave the target blank.
-        /// </summary>
-        private static void Render(Camera camera, RenderTexture target, string path)
-        {
-            string failure = null;
-            void Record(string message, string stackTrace, LogType type)
-            {
-                if (type == LogType.Exception)
-                {
-                    failure ??= message;
-                }
-            }
-
-            var surfaceCaches = ActiveSurfaceCaches();
-            var asyncCompilation = ShaderUtil.allowAsyncCompilation;
-            Application.logMessageReceived += Record;
-            try
-            {
-                // Right after a build, variants not yet compiled would render as nothing (trees as bare bark).
-                ShaderUtil.allowAsyncCompilation = false;
-                surfaceCaches.ForEach(feature => feature.SetActive(false));
-                RenderPipeline.SubmitRenderRequest(camera, new RenderPipeline.StandardRequest { destination = target });
-            }
-            finally
-            {
-                surfaceCaches.ForEach(feature => feature.SetActive(true));
-                ShaderUtil.allowAsyncCompilation = asyncCompilation;
-                Application.logMessageReceived -= Record;
-            }
-
-            if (failure != null)
-            {
-                throw new InvalidOperationException($"HyperRTS: rendering '{path}' failed: {failure}");
-            }
-        }
-
-        /// <summary>
-        /// Surface Cache GI builds up over frames, so a one-frame capture lights by the ambient probe instead. On Unity 7
-        /// alpha its update also throws after a map build replaces the scene, which blanks the frame.
-        /// </summary>
-        private static List<SurfaceCacheGIRendererFeature> ActiveSurfaceCaches() =>
-            UniversalRenderPipeline.asset.rendererDataList.ToArray()
-                .SelectMany(data => data.rendererFeatures)
-                .OfType<SurfaceCacheGIRendererFeature>()
-                .Where(feature => feature.isActive)
-                .ToList();
 
         private static Texture2D WritePng(string path, int width, int height, TextureFormat format,
             Action<Texture2D> fill, Action<TextureImporter> configure)

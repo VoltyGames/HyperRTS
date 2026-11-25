@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Report;
@@ -86,7 +85,7 @@ namespace HyperRTS.Editor.Maps.Views
                 {
                     Aim(camera, view, controller);
                     var path = Path.Combine(folder, view.Name + ".png");
-                    EditorTextures.RenderPng(camera, Width, Height, path);
+                    MapRender.WritePng(camera, Width, Height, path);
                     paths.Add(path);
                 }
             }

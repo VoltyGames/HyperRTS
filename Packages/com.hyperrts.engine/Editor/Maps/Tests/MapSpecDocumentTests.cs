@@ -1,5 +1,4 @@
 using System.IO;
-using HyperRTS.Editor.Common.Json;
 using HyperRTS.Editor.Maps.Designer.Canvas;
 using HyperRTS.Editor.Maps.Designer.Features;
 using HyperRTS.Editor.Maps.Designer.Tools;

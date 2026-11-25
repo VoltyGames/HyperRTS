@@ -6,7 +6,7 @@ using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-namespace HyperRTS.Editor.Common.Json
+namespace HyperRTS.Editor.Maps.Spec
 {
     /// <summary>
     /// The one layout map specs are written in, so saves diff cleanly. Parses with Newtonsoft,

@@ -25,7 +25,7 @@ namespace HyperRTS.Editor.Maps.Views
                     Quaternion.Euler(90f, 0f, 0f));
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = Color.black;
-                EditorTextures.RenderPng(camera, Size, Size, path);
+                MapRender.WritePng(camera, Size, Size, path);
             }
             finally
             {
