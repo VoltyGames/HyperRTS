@@ -50,6 +50,7 @@ Shader "HyperRTS/LitTeam"
 
         [Header(Ground)]
         _CraterSink("Crater Sink (1 drops into a crater under it, 0 for a model that brings its own dent)", Range(0, 1)) = 1
+        [HideInInspector] _SinkRadius("Sink Radius (m its body reaches: it drops only to the shallowest ground that far round it)", Float) = 0
 
         [Header(Cloth)]
         [Toggle(_CLOTH)] _Cloth("Cloth (waves out from its hoist, for flags and banners)", Float) = 0

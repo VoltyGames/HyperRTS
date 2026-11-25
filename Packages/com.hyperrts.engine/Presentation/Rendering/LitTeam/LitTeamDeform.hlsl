@@ -59,7 +59,7 @@ void ApplyRigidVAT(float2 vatIndex, float time, inout float3 positionOS, inout f
 float3 DeformObject(float3 positionOS)
 {
     float3 bent = BendTrack(positionOS);
-    return lerp(bent, SinkObjectIntoCrater(bent), _CraterSink);
+    return lerp(bent, SinkObjectIntoCrater(bent, _SinkRadius), _CraterSink);
 }
 
 #if defined(_VAT_RIGID)

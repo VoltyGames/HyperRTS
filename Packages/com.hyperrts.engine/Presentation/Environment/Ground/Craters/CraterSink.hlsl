@@ -33,6 +33,27 @@ float CraterDepth(float2 positionXZ, float4 tracks)
     return OnTrampleMaps(TrampleUV(positionXZ)) ? GroundSunk(tracks.a) : 0.0;
 }
 
+#define SINK_RING_SAMPLES 8
+
+// The depth a body rests at when it reaches radius metres from positionXZ: the shallowest ground on that ring, so a
+// hull wider than a bowl stands across it instead of dropping into the ground beside it. Rims lift it as a point.
+float BodyCraterDepth(float2 positionXZ, float radius)
+{
+    float depth = CraterDepth(positionXZ);
+    UNITY_BRANCH
+    if (radius > 0.0 && depth > 0.0)
+    {
+        for (int i = 0; i < SINK_RING_SAMPLES; i++)
+        {
+            float angle = i * (6.2831853 / SINK_RING_SAMPLES);
+            float2 onRing = positionXZ + radius * float2(cos(angle), sin(angle));
+            depth = min(depth, max(CraterDepth(onRing), 0.0));
+        }
+    }
+
+    return depth;
+}
+
 float UndentedGroundHeight(float2 positionXZ)
 {
     // Unpublished: flat ground at y = 0, as the simulation has without a terrain.
@@ -47,24 +68,24 @@ float UndentedGroundHeight(float2 positionXZ)
     return ground;
 }
 
-// The whole object drops by the depth at its origin (rises on a rim), so it keeps its shape; raised objects move
-// less or not at all.
-float CraterSink(float3 originWS)
+// The whole object drops by the depth under its origin (rises on a rim), so it keeps its shape; raised objects move
+// less or not at all. radius is how far the body it belongs to reaches, 0 for a point.
+float CraterSink(float3 originWS, float radius)
 {
     float above = originWS.y - UndentedGroundHeight(originWS.xz);
-    return CraterDepth(originWS.xz) * (1.0 - smoothstep(SINK_FULL_HEIGHT, SINK_NONE_HEIGHT, above));
+    return BodyCraterDepth(originWS.xz, radius) * (1.0 - smoothstep(SINK_FULL_HEIGHT, SINK_NONE_HEIGHT, above));
 }
 
 float3 SinkIntoCrater(float3 positionWS, float3 originWS)
 {
-    return positionWS - float3(0.0, CraterSink(originWS), 0.0);
+    return positionWS - float3(0.0, CraterSink(originWS, 0.0), 0.0);
 }
 
 // Compute kernels have no object matrices.
 #if defined(UNIVERSAL_PIPELINE_CORE_INCLUDED)
-float3 SinkObjectIntoCrater(float3 positionOS)
+float3 SinkObjectIntoCrater(float3 positionOS, float radius)
 {
-    float depth = CraterSink(TransformObjectToWorld(float3(0.0, 0.0, 0.0)));
+    float depth = CraterSink(TransformObjectToWorld(float3(0.0, 0.0, 0.0)), radius);
     return positionOS + mul((float3x3)GetWorldToObjectMatrix(), float3(0.0, -depth, 0.0));
 }
 #endif

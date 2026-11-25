@@ -46,7 +46,7 @@ float3 BarkWindPosition(float3 positionOS, float2 uv2, float2 uv3, float2 uv4, h
 {
     TreeWindSettings settings = TreeWind(_WindStrength, _WindSpeed, _BranchSway, 0.0, _TreeHeight, _WindScale);
     TreeWindVertex v = TreeWindData(positionOS, uv2, uv3, uv4, color);
-    return SinkObjectIntoCrater(TreeWindPosition(v, settings, frame));
+    return SinkObjectIntoCrater(TreeWindPosition(v, settings, frame), 0.0);
 }
 
 // URP's pass files call this by name.
