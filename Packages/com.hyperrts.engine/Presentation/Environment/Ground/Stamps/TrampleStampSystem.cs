@@ -171,11 +171,18 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Stamps.AddRuts(marks, front, heading, math.dot(frontStep, heading), 2);
         }
 
-        // Stamped every frame: max blending is idempotent and holds grass down.
+        // Stamped every frame: max blending is idempotent and holds grass down. Remains hold it down too, or grass
+        // stands up through a ruin the moment its building dies.
         private void AddBuildings()
         {
-            using var footprints = _buildings.ToComponentDataArray<NavObstacle>(Allocator.Temp);
-            using var transforms = _buildings.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            AddFootprints(_buildings);
+            AddFootprints(_remains);
+        }
+
+        private void AddFootprints(EntityQuery standing)
+        {
+            using var footprints = standing.ToComponentDataArray<NavObstacle>(Allocator.Temp);
+            using var transforms = standing.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < footprints.Length; i++)
             {
                 Stamps.AddFootprint(transforms[i].Position.xz, footprints[i].Size);

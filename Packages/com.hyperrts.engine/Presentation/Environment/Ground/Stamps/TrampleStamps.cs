@@ -106,8 +106,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Stains.Add(Disc(center, radius, math.saturate(amounts)));
 
         /// <summary>
-        /// Wet mud of <paramref name="strength"/> round a footprint, out to about <paramref name="width"/> metres past it:
-        /// overlapping ragged discs along each side, jittered from <paramref name="seed"/> so the edge is never straight.
+        /// Wet mud of <paramref name="strength"/> over a footprint and out to about <paramref name="width"/> metres past
+        /// it: overlapping ragged discs along each side, jittered from <paramref name="seed"/> so the edge is never
+        /// straight, and across the inside, so the plot is one worn patch once the building is gone.
         /// </summary>
         public void AddWornGround(in TurnedRect footprint, float width, float strength, uint seed)
         {
@@ -123,6 +124,18 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
                 {
                     var along = math.lerp(from, to, (i + random.NextFloat(0.2f, 0.8f)) / discs);
                     var center = along + outward * (width * random.NextFloat(0f, 0.25f));
+                    AddStain(center, width * random.NextFloat(0.8f, 1.2f), mud);
+                }
+            }
+
+            var cells = (int2)math.ceil(footprint.Half * 2f / (width * WornSpacing));
+            for (var x = 0; x < cells.x; x++)
+            {
+                for (var y = 0; y < cells.y; y++)
+                {
+                    var share = (new float2(x, y) + random.NextFloat2(0.2f, 0.8f)) / cells * 2f - 1f;
+                    var center = footprint.Center + footprint.Right * (share.x * footprint.Half.x)
+                        + footprint.Forward * (share.y * footprint.Half.y);
                     AddStain(center, width * random.NextFloat(0.8f, 1.2f), mud);
                 }
             }
@@ -178,7 +191,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Trample.Add(Stamp(feet - forward * (stride * 0.5f), forward, new float2(FootWidth, FootWidth + stride * 0.5f),
                 new float4(FootFlatten, FootCropDamage, 1f, 0f)));
 
-        /// <summary>A building's footprint: plants under it stay flat and crops never come back.</summary>
+        /// <summary>The footprint of a building or its remains: plants under it stay flat and crops never come back.</summary>
         public void AddFootprint(float2 center, float2 size) =>
             Trample.Add(Stamp(center, new float2(0f, 1f), size * 0.5f, new float4(1f, 1f, 0f, 0f)));
 

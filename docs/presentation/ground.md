@@ -41,7 +41,8 @@ degrees and are gone past about 53.
 **Buildings wear the ground round them.** A Building with a `wornGroundWidth` above 0 gets a `WornGround`. The first
 time it is seen finished, `WornGroundStampSystem` stamps wet mud of its `wornGroundStrength` into the stain map round
 its turned footprint (`TrampleStamps.AddWornGround`) as overlapping, jittered stain discs, so the mud reaches about the
-width past the footprint with an uneven edge. It lasts the match. The system forgets its buildings on a replay seek
+width past the footprint with an uneven edge. The discs cover the inside too, so the plot is one worn patch when the
+building is gone, and its remains keep the grass under them flat until they are buried. It lasts the match. The system forgets its buildings on a replay seek
 back, as `TrenchStampSystem` does, so the cleared maps get the mud again. Plants ignore mud, and a `Trench` never gets
 it.
 
@@ -61,7 +62,9 @@ them into the bowl.
 `CraterTerrainSystem` lowers the active Unity Terrain's heights under each new bowl and raises them under its rim,
 without touching the `TerrainData` asset. `CraterSink.hlsl` moves objects by the same signed depth in the LitTeam,
 Foliage, Bark and RowCrop vertex stages. A LitTeam material's `_CraterSink` scales it: 0 for a model that brings its
-own dent, such as a trench, 1 otherwise. The terrain darkens only where the ground sank. The simulation's ground never
+own dent, such as a trench, 1 otherwise. A vehicle or wreck is wider than most bowls, so `SinkRadiusBakingSystem` gives
+each of its meshes the body's half length as `SinkRadius`, and the mesh drops only as far as the shallowest ground on
+that ring: a hull stands across a bowl narrower than itself instead of dropping into the ground beside it. The terrain darkens only where the ground sank. The simulation's ground never
 changes.
 
 **Buildings level the drawn ground.** `CraterHeight.shader` also levels the heights under every finished, seen building
