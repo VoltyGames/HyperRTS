@@ -1,12 +1,10 @@
 using HyperRTS.Presentation.HUD.Panels;
-using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace HyperRTS.Presentation.HUD
 {
     /// <summary>The HUD tree (its panel shells are slots in it) and the row templates the HUD's panels clone.</summary>
-    [CreateAssetMenu(menuName = HyperRTSMenu.Rig + "HUD Panel Layouts", fileName = "HUDPanelLayouts")]
     public sealed class HUDPanelLayouts : ScriptableObject
     {
         [SerializeField]
