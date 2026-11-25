@@ -10,7 +10,8 @@ namespace HyperRTS.Editor.Maps.Meshes
     /// </summary>
     public static class MapGroundBounceMesh
     {
-        private const float VertexSpacing = 2f;
+        // Bounce light is soft and the colour comes from UV0, so the grid only needs the terrain's broad shape.
+        private const float VertexSpacing = 4f;
         private const int MinResolution = 65;
         private const int MaxResolution = 513;
 

@@ -28,7 +28,7 @@ costly there, and a battle makes all of them every frame:
 - `RenderingLayerBakingSystem` puts every rendered entity a scene places on the layer, except the parts of units,
   which it puts on the units layer. Prefab entities never get it, so nothing spawned during a match joins.
 - The map build adds a hidden `GroundBounce` mesh on the layer (`MapGroundBounceMesh`): the terrain's shape at about
-  2 m a vertex, drawn with the terrain material, whose Meta pass gives the ground's colour from above. The Unity
+  4 m a vertex, drawn with the terrain material, whose Meta pass gives the ground's colour from above. The Unity
   Terrain keeps the default layer, so craters and building levelling cost the GI nothing.
 - `LightTransportSettings` holds the checks a game's validator runs: the layer's name and the volume's mask.
 
