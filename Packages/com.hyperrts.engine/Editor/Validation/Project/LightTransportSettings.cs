@@ -1,14 +1,15 @@
 using System;
 using HyperRTS.Presentation.Rendering.LightTransport;
 using UnityEditor;
+using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace HyperRTS.Editor.Validation.Project
 {
     /// <summary>
-    /// The project settings static light transport needs: the <see cref="LightTransportLayer"/> name, and a Surface
-    /// Cache volume limited to that layer. Checks for the validator and their quick fixes.
+    /// What static light transport needs: the <see cref="LightTransportLayer"/> name, a Surface Cache volume limited
+    /// to that layer, and the sun on it. Checks for the validator and their quick fixes.
     /// </summary>
     public static class LightTransportSettings
     {
@@ -38,6 +39,20 @@ namespace HyperRTS.Editor.Validation.Project
             surfaceCache.lightTransportRenderingLayerMask.overrideState = true;
             surfaceCache.lightTransportRenderingLayerMask.value = LightTransportLayer.Mask;
             EditorUtility.SetDirty(profile);
+        }
+
+        /// <summary>Whether the light is on the layer: Surface Cache drops a light off its mask, as it drops a mesh.</summary>
+        public static bool Bounces(Light light) => ((uint)light.renderingLayerMask & LightTransportLayer.Mask) != 0;
+
+        public static void Bounce(Light light)
+        {
+            Undo.RecordObject(light, "Bounce Light");
+            light.renderingLayerMask |= (int)LightTransportLayer.Mask;
+            if (light.TryGetComponent(out UniversalAdditionalLightData data))
+            {
+                Undo.RecordObject(data, "Bounce Light");
+                data.renderingLayers |= LightTransportLayer.Mask;
+            }
         }
     }
 }

@@ -30,7 +30,10 @@ costly there, and a battle makes all of them every frame:
 - The map build adds a hidden `GroundBounce` mesh on the layer (`MapGroundBounceMesh`): the terrain's shape at about
   4 m a vertex, drawn with the terrain material, whose Meta pass gives the ground's colour from above. The Unity
   Terrain keeps the default layer, so craters and building levelling cost the GI nothing.
-- `LightTransportSettings` holds the checks a game's validator runs: the layer's name and the volume's mask.
+- Surface Cache drops lights off the mask as it drops meshes. The sun's rendering layers include the layer, or no
+  sunlight bounces and whatever stands in shadow is lit by the sky alone, near black on its shaded sides.
+- `LightTransportSettings` holds the checks a game's validator runs: the layer's name, the volume's mask and whether
+  a light is on the layer (`Bounces`, with `Bounce` as its fix).
 
 ## Adding to it
 
