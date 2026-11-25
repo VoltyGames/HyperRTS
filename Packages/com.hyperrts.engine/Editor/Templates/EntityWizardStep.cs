@@ -8,8 +8,7 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
-    /// A game's extra step of the New Entity wizard: it adds fields to the dialog and, once the prefab is saved, makes
-    /// what belongs beside it. Every concrete subclass is found by itself.
+    /// A game's extra step of the New Entity dialog: its own fields, and what it makes beside the saved prefab.
     /// </summary>
     public abstract class EntityWizardStep
     {

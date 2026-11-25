@@ -11,9 +11,8 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
-    /// Assets ▸ Create ▸ HyperRTS ▸ Entity...: a searchable list of the project's base prefabs and the engine
-    /// templates; Create saves the pick, named, as a prefab (a variant for a base) in the selected folder and runs the
-    /// game's <see cref="EntityWizardStep"/>s on it.
+    /// The New Entity dialog: saves a picked base prefab or engine template as a named prefab, then runs the game's
+    /// <see cref="EntityWizardStep"/>s on it.
     /// </summary>
     public sealed class EntityWizard : EditorWindow
     {

@@ -33,10 +33,7 @@ namespace HyperRTS.Editor.Destruction
         [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
         private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
 
-        /// <summary>
-        /// Lists every <c>X_Intact</c> child with its <c>X_Broken</c> sibling and guesses box, anchored, exterior,
-        /// share and supports for you to correct. Materials and floors already set stay.
-        /// </summary>
+        /// <summary>The sections from the <c>X_Intact</c> and <c>X_Broken</c> children, with guesses to correct by hand.</summary>
         public void FromParts()
         {
             var found = new List<SectionEntry>();
@@ -51,10 +48,7 @@ namespace HyperRTS.Editor.Destruction
             _owner.sections = Guess(found).ToArray();
         }
 
-        /// <summary>
-        /// Lists the sections kept inside the building's model (see <see cref="SectionEntries"/>) and takes the
-        /// break clips from the clip table its pieces play.
-        /// </summary>
+        /// <summary>The sections kept inside the building's model, with the break clips its pieces play.</summary>
         internal void FromModel()
         {
             _owner.sections = new SectionEntries(FindSections(), _owner).Build(Measure).ToArray();

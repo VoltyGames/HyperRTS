@@ -119,9 +119,8 @@ namespace HyperRTS.Editor.Animation.Bones
         }
 
         /// <summary>
-        /// Every bone's skin matrix with <paramref name="clip"/> sampled at <paramref name="time"/>. In place removes the
-        /// root bone's ground travel, the straight line from its first to its last position, and keeps its height and sway.
-        /// With <paramref name="bothHands"/>, each socket with a support swings its gear to meet the other hand.
+        /// Every bone's skin matrix with <paramref name="clip"/> sampled at <paramref name="time"/>. In place drops the
+        /// root bone's straight ground travel; both hands swing supported gear to meet the other hand.
         /// </summary>
         public Matrix4x4[] Pose(AnimationClip clip, float time, bool inPlace, bool bothHands)
         {

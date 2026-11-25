@@ -10,8 +10,8 @@ using R = HyperRTS.Editor.Templates.TemplateRegistry;
 namespace HyperRTS.Editor.Templates
 {
     /// <summary>
-    /// GameObject ▸ HyperRTS menu: the engine rig, a Match, and every <see cref="TemplateRegistry"/> role. New objects
-    /// go into the SubScene open for editing, when there is one.
+    /// The create menu items for the engine rig, a Match and every <see cref="TemplateRegistry"/> role, placed in the
+    /// SubScene open for editing when there is one.
     /// </summary>
     internal static class ObjectMenu
     {
