@@ -12,9 +12,9 @@ namespace HyperRTS.Editor.Authoring
         /// <summary>Adds a suffix to every <c>[Unit]</c> field of <paramref name="type"/> drawn in <paramref name="root"/>.</summary>
         public static void Bind(VisualElement root, Type type)
         {
-            foreach (var (path, unit) in ConditionalFields.Marked<UnitAttribute>(type))
+            foreach (var (path, unit) in DrawnFields.Marked<UnitAttribute>(type))
             {
-                ConditionalFields.WhenDrawn(root, path, field => Append(field, unit.Unit));
+                DrawnFields.WhenDrawn(root, path, field => Append(field, unit.Unit));
             }
         }
 

@@ -102,10 +102,10 @@ namespace HyperRTS.Editor.Animation.Rigs
         private void FillSteering()
         {
             var found = _rig.TryGetComponent<LocomotionAuthoring>(out var locomotion);
-            var axles = found ? LocomotionModelFill.SteeringAxles(locomotion) : new List<float>();
+            var axles = found ? WheelParts.SteeringAxles(locomotion) : new List<float>();
             foreach (var wheel in _rig.wheels)
             {
-                wheel.steers = found && LocomotionModelFill.IsOnAxle(locomotion, axles, wheel.part);
+                wheel.steers = found && WheelParts.IsOnAxle(locomotion, axles, wheel.part);
             }
         }
 
@@ -114,7 +114,7 @@ namespace HyperRTS.Editor.Animation.Rigs
         {
             foreach (var wheel in _rig.wheels)
             {
-                wheel.followsGround = LocomotionModelFill.RoadWheelName.IsMatch(wheel.part.name);
+                wheel.followsGround = WheelParts.RoadWheelName.IsMatch(wheel.part.name);
             }
 
             _rig.tracks = parts.Where(part => TrackName.IsMatch(part.name)).Select(part => new TrackSlot
@@ -133,7 +133,7 @@ namespace HyperRTS.Editor.Animation.Rigs
             var side = TrackName.Match(track.name).Groups[1].Value;
             var model = FindModel(track);
             return _rig.wheels.Select(slot => slot.part)
-                .Where(wheel => LocomotionModelFill.RoadWheelName.Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
+                .Where(wheel => WheelParts.RoadWheelName.Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
         }
 
         // The model under the rig that holds a part, such as the intact or the damaged one.
@@ -231,7 +231,7 @@ namespace HyperRTS.Editor.Animation.Rigs
         // Metres from the trailer's pivot back to the middle of the road wheels below it, in the rig's frame.
         private float MeasureAxleDistance(Transform trailer)
         {
-            var roadWheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => LocomotionModelFill.RoadWheelName.IsMatch(child.name)).ToList();
+            var roadWheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => WheelParts.RoadWheelName.IsMatch(child.name)).ToList();
             if (roadWheels.Count == 0)
             {
                 throw new InvalidOperationException($"'{trailer.name}' has no road wheels to measure its axles from.");

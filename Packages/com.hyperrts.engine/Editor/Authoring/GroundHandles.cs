@@ -40,12 +40,11 @@ namespace HyperRTS.Editor.Authoring
         /// <summary>Ground disc with a drag dot on its edge at <paramref name="angle"/>; returns the edited radius.</summary>
         public static float Radius(Vector3 center, float radius, in RadiusDot dot)
         {
-            var (color, label, angle) = (dot.Color, dot.Label, dot.Angle);
-            Handles.color = color;
+            Handles.color = dot.Color;
             Handles.DrawWireDisc(center, Vector3.up, radius);
-            var direction = Direction(angle);
+            var direction = Direction(dot.Angle);
             var position = center + direction * radius;
-            Handles.Label(position + Vector3.forward * 0.3f, $"{label} {radius:0.##}");
+            Handles.Label(position + Vector3.forward * 0.3f, $"{dot.Label} {radius:0.##}");
             var moved = Handles.Slider(position, direction, HandleUtility.GetHandleSize(position) * 0.08f, Handles.DotHandleCap, 0f);
             return Mathf.Max(0f, Vector3.Dot(moved - center, direction));
         }

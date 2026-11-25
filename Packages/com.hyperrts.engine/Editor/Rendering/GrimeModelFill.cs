@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Rendering
     {
         protected override void Fill(GrimeAuthoring grime)
         {
-            var wheels = Parts(grime).Where(part => LocomotionModelFill.RoadWheelName.IsMatch(part.name)).ToList();
+            var wheels = Parts(grime).Where(part => WheelParts.RoadWheelName.IsMatch(part.name)).ToList();
             if (wheels.Count == 0)
             {
                 throw new InvalidOperationException($"'{grime.name}' has no road wheels (Wheel_L01...) to measure its mud height from.");

@@ -14,11 +14,6 @@ namespace HyperRTS.Editor.Authoring
     [CustomEditor(typeof(MatchAuthoring))]
     public class MatchAuthoringEditor : AuthoringEditor
     {
-        // Drawing more lines than this would stall the Scene view on fine grids.
-        private const int MaxGridLines = 1000;
-
-        private static readonly Color MapColor = new(1f, 0.85f, 0.2f);
-
         [NoAutoStaticsCleanup]
         private static bool _showNavGrid;
         [NoAutoStaticsCleanup]
@@ -92,14 +87,6 @@ namespace HyperRTS.Editor.Authoring
             return counts;
         }
 
-        // Keeps the map visible when the Match isn't selected; the draggable box replaces it when it is.
-        [DrawGizmo(GizmoType.NonSelected)]
-        private static void DrawMapOutline(MatchAuthoring match, GizmoType type)
-        {
-            Gizmos.color = GroundHandles.Faded(MapColor, 0.8f);
-            Gizmos.DrawWireCube(match.transform.position, new Vector3(match.mapSize.x, 0f, match.mapSize.y));
-        }
-
         private void OnSceneGUI()
         {
             var match = (MatchAuthoring)target;
@@ -107,37 +94,15 @@ namespace HyperRTS.Editor.Authoring
 
             if (_showNavGrid)
             {
-                DrawGrid(center, match.mapSize, match.navCellSize, new Color(0.2f, 0.75f, 0.7f, 0.25f));
+                MatchGizmos.DrawGrid(center, match.mapSize, match.navCellSize, MatchGizmos.NavGridColor);
             }
 
             if (_showFogGrid)
             {
-                DrawGrid(center, match.mapSize, match.fogCellSize, new Color(0.6f, 0.6f, 0.25f, 0.35f));
+                MatchGizmos.DrawGrid(center, match.mapSize, match.fogCellSize, MatchGizmos.FogGridColor);
             }
 
-            GroundHandles.EditBox(match, center, match.mapSize, MapColor, "Resize Map", size => match.mapSize = size);
-        }
-
-        private static void DrawGrid(Vector3 center, Vector2 size, float cell, Color color)
-        {
-            var lines = Mathf.CeilToInt(size.x / cell) + Mathf.CeilToInt(size.y / cell);
-            if (cell <= 0f || lines > MaxGridLines)
-            {
-                Handles.Label(center, $"Grid too fine to preview ({lines} lines)");
-                return;
-            }
-
-            var min = center - new Vector3(size.x, 0f, size.y) * 0.5f;
-            Handles.color = color;
-            for (var x = 0f; x <= size.x; x += cell)
-            {
-                Handles.DrawLine(min + new Vector3(x, 0f, 0f), min + new Vector3(x, 0f, size.y));
-            }
-
-            for (var z = 0f; z <= size.y; z += cell)
-            {
-                Handles.DrawLine(min + new Vector3(0f, 0f, z), min + new Vector3(size.x, 0f, z));
-            }
+            GroundHandles.EditBox(match, center, match.mapSize, MatchGizmos.MapColor, "Resize Map", size => match.mapSize = size);
         }
     }
 }

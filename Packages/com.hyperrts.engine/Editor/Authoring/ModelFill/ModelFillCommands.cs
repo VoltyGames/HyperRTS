@@ -8,14 +8,14 @@ using UnityEngine;
 
 namespace HyperRTS.Editor.Authoring.ModelFill
 {
-    /// <summary>Runs every <see cref="IModelFill"/> on a component, or on every component of the selected prefabs.</summary>
+    /// <summary>Runs every <see cref="ModelFill"/> on a component, or on every component of the selected prefabs.</summary>
     public static class ModelFillCommands
     {
         public const string Label = "Fill from model";
         private const string Menu = "Assets/HyperRTS/Fill From Model";
 
         [NoAutoStaticsCleanup]
-        private static readonly IModelFill[] Fills = TypeDiscovery.Instances<IModelFill>();
+        private static readonly ModelFill[] Fills = TypeDiscovery.Instances<ModelFill>();
 
         public static bool CanFill(Type type) => Fills.Any(fill => fill.AppliesTo(type));
 

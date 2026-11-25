@@ -89,7 +89,7 @@ namespace HyperRTS.Editor.Tests.Tools
         [Test]
         public void UnitAttributesAreFoundInNestedBlocks()
         {
-            var units = ConditionalFields.Marked<UnitAttribute>(typeof(WeaponAuthoring)).ToDictionary(found => found.Path, found => found.Attribute.Unit);
+            var units = DrawnFields.Marked<UnitAttribute>(typeof(WeaponAuthoring)).ToDictionary(found => found.Path, found => found.Attribute.Unit);
 
             Assert.AreEqual("m", units[Stat(nameof(WeaponStats.range))]);
             Assert.AreEqual("°/s", units[Stat(nameof(WeaponStats.traverseSpeed))]);

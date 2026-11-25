@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
+using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEngine;
 
@@ -73,9 +74,22 @@ namespace HyperRTS.Editor.Templates
             return new EntityChoice(prefab.name, AssetPreview.GetMiniThumbnail(prefab), name =>
             {
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-                EntityTemplate.Rename(instance, name);
+                Rename(instance, name);
                 return instance;
             });
+        }
+
+        /// <summary>
+        /// Names the object and its HUD display name, which is also its type identity; underscores read as spaces, so
+        /// <c>USA_M1A2</c> shows as "USA M1A2".
+        /// </summary>
+        internal static void Rename(GameObject go, string name)
+        {
+            go.name = name;
+            if (go.TryGetComponent(out ProducibleAuthoring producible))
+            {
+                producible.displayName = name.Replace('_', ' ');
+            }
         }
     }
 }

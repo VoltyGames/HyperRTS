@@ -1,5 +1,6 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common.Players;
@@ -50,13 +51,7 @@ namespace HyperRTS.Editor.Authoring
         {
             var match = SceneMatch.Current;
             var slots = match != null ? Mathf.Max(match.players.Count, current) : Mathf.Max(Owner.Max, current);
-            var choices = new List<int>(slots + 1);
-            for (var i = 0; i <= slots; i++)
-            {
-                choices.Add(i);
-            }
-
-            return choices;
+            return Enumerable.Range(0, slots + 1).ToList();
         }
 
         private static string Label(int owner)

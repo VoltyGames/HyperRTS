@@ -1,9 +1,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System;
-using HyperRTS.Editor.Authoring.ModelFill;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Icons;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Presentation.HUD;
@@ -23,12 +21,11 @@ namespace HyperRTS.Editor.Authoring
     [CanEditMultipleObjects]
     public class AuthoringEditor : UnityEditor.Editor
     {
-        private const BindingFlags Members = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+        internal const BindingFlags Members = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
         private const long ChangeDelayMilliseconds = 100;
 
         private IssueBadge _issues;
         private FieldIssueMarks _marks;
-        private HelpBox _buttonError;
         private IVisualElementScheduledItem _change;
 
         public override VisualElement CreateInspectorGUI()
@@ -41,8 +38,7 @@ namespace HyperRTS.Editor.Authoring
             ConditionalFields.Bind(root, serializedObject);
             UnitSuffixes.Bind(root, target.GetType());
             _marks = new FieldIssueMarks(root);
-            BuildButtons(root.Require<VisualElement>("buttons"));
-            _buttonError = root.Require<HelpBox>("button-error");
+            new InspectorButtons(targets, root.Require<HelpBox>("button-error")).Build(root.Require<VisualElement>("buttons"), target.GetType());
             BuildFooter(root.Require<VisualElement>("footer"));
 
             // Rules also read sibling components and the hierarchy, so field edits alone don't cover every change.
@@ -153,105 +149,6 @@ namespace HyperRTS.Editor.Authoring
             });
             fields.Add(group);
             return group;
-        }
-
-        private void BuildButtons(VisualElement buttons)
-        {
-            foreach (var (label, glyph, method) in Buttons(target.GetType()))
-            {
-                buttons.Add(CreateButton(label, glyph, () => Press(label, method)));
-            }
-
-            buttons.SetHidden(buttons.childCount == 0);
-        }
-
-        private static Button CreateButton(string label, string glyph, Action click)
-        {
-            var button = new Button(click);
-            button.AddToClassList("hrts-glyph-button");
-            if (glyph.Length > 0)
-            {
-                button.Add(GlyphElements.CreateGlyph(glyph));
-            }
-
-            button.Add(new Label(label));
-            return button;
-        }
-
-        /// <summary>The component's own [InspectorButton] methods, the static editor ones that take it, then its fill from model.</summary>
-        private static IEnumerable<(string Label, string Glyph, MethodInfo Method)> Buttons(Type type)
-        {
-            foreach (var method in type.GetMethods(Members))
-            {
-                var button = method.GetCustomAttribute<InspectorButtonAttribute>();
-                if (button == null)
-                {
-                    continue;
-                }
-
-                if (method.GetParameters().Length > 0)
-                {
-                    throw new InvalidOperationException($"[InspectorButton] {type.Name}.{method.Name} must take no parameters.");
-                }
-
-                yield return (button.Label, button.Glyph, method);
-            }
-
-            foreach (var method in TypeCache.GetMethodsWithAttribute<InspectorButtonAttribute>())
-            {
-                if (TakesComponent(method, type))
-                {
-                    var button = method.GetCustomAttribute<InspectorButtonAttribute>();
-                    yield return (button.Label, button.Glyph, method);
-                }
-            }
-
-            if (ModelFillCommands.CanFill(type))
-            {
-                yield return (ModelFillCommands.Label, "wand-sparkles", typeof(ModelFillCommands).GetMethod(nameof(ModelFillCommands.Fill)));
-            }
-        }
-
-        private static bool TakesComponent(MethodInfo method, Type type)
-        {
-            if (!method.IsStatic)
-            {
-                return false;
-            }
-
-            var parameters = method.GetParameters();
-            return parameters.Length == 1 && parameters[0].ParameterType.IsAssignableFrom(type);
-        }
-
-        // A method that throws InvalidOperationException names what is missing, so the inspector shows it.
-        private void Press(string label, MethodInfo method)
-        {
-            _buttonError.SetHidden(true);
-            foreach (var selected in targets)
-            {
-                var component = (Component)selected;
-                try
-                {
-                    EditorUndo.RecordHierarchy(component.gameObject, label, () => Call(method, component));
-                }
-                catch (TargetInvocationException failure) when (failure.InnerException is InvalidOperationException problem)
-                {
-                    _buttonError.text = problem.Message;
-                    _buttonError.SetHidden(false);
-                    return;
-                }
-            }
-        }
-
-        private static void Call(MethodInfo method, Component component)
-        {
-            if (method.IsStatic)
-            {
-                method.Invoke(null, new object[] { component });
-                return;
-            }
-
-            method.Invoke(component, null);
         }
 
         private void Subscribe()
