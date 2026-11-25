@@ -11,8 +11,8 @@ using UnityEditor.PackageManager;
 namespace HyperRTS.Editor.Tests
 {
     /// <summary>
-    /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, types with
-    /// statics cleanup are partial and no job turns its safety checks off.
+    /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, components
+    /// declare their Add Component menu, types with statics cleanup are partial and no job turns its safety checks off.
     /// </summary>
     public class ModuleLayoutTests
     {
@@ -46,6 +46,10 @@ namespace HyperRTS.Editor.Tests
 
         [Test]
         public void TopLevelTypesHaveSummaries() => CollectionAssert.IsEmpty(TypeSummaries.Missing(PackageRoot));
+
+        // Each component is listed under a path or hidden on purpose, never left in Unity's catch-all Scripts list.
+        [Test]
+        public void ComponentsDeclareTheirMenu() => CollectionAssert.IsEmpty(ComponentMenus.Missing("HyperRTS."));
 
         [Test]
         public void NamespacesFollowFolders()
