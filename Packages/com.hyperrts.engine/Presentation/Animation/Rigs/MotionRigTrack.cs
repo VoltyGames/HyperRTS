@@ -20,6 +20,16 @@ namespace HyperRTS.Presentation.Animation.Rigs
     }
 
     /// <summary>
+    /// Metres the tread of a track mesh has run along the belt, wrapped; the shader moves the belt's V by it. Positive
+    /// when the track's ground run moves back, which is when the hull drives forward.
+    /// </summary>
+    [MaterialProperty("_TrackTravel")]
+    public struct TrackTravel : IComponentData
+    {
+        public float Value;
+    }
+
+    /// <summary>
     /// Where a track mesh bends, in its object space: x the front z and y the back z of its stations, z the road
     /// wheels' axle height and w their radius. Without it the shader leaves the mesh alone.
     /// </summary>
@@ -61,6 +71,9 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>The smallest change in metres worth writing to the mesh again.</summary>
         public const float MinChange = 0.005f;
 
+        /// <summary>Wrap of <see cref="Travel"/>, which keeps the float precise in the shader.</summary>
+        public const float TravelPeriod = 1000f;
+
         /// <summary>The track's wheels in the rig's <see cref="TrackWheel"/>s.</summary>
         public int FirstWheel;
 
@@ -71,6 +84,32 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
         /// <summary>True when the last <see cref="Settle"/> changed the lift, so the mesh needs it again.</summary>
         public bool Moved;
+
+        /// <summary>Metres the track's side of the hull sits right of the rig's centre, negative on the left.</summary>
+        public float Side;
+
+        /// <summary>Metres the belt has run, wrapped to <see cref="TravelPeriod"/>.</summary>
+        public float Travel;
+
+        /// <summary>The <see cref="Travel"/> the mesh shows.</summary>
+        public float Shown;
+
+        /// <summary>True when the last <see cref="Scroll"/> changed <see cref="Shown"/>, so the mesh needs it again.</summary>
+        public bool Scrolled;
+
+        /// <summary>
+        /// Runs the belt with the hull's <paramref name="rolled"/> metres and <paramref name="turn"/> radians: a turn
+        /// runs the two sides opposite ways, the side in the turn's direction faster.
+        /// </summary>
+        public void Scroll(float rolled, float turn)
+        {
+            Travel = math.fmod(Travel + rolled + turn * Side, TravelPeriod);
+            Scrolled = math.abs(Travel - Shown) > MinChange;
+            if (Scrolled)
+            {
+                Shown = Travel;
+            }
+        }
 
         /// <summary>
         /// Takes the lift at each station from <paramref name="wheels"/>. True when one moved by more than

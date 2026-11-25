@@ -37,6 +37,7 @@ float4 _GrimeBand;
 float4 _TrackLift0;
 float4 _TrackLift1;
 float4 _TrackSpan;
+float _TrackTravel;
 float _CraterSink;
 float _BuildProgress;
 float _Reveal;
@@ -86,6 +87,7 @@ UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackLift0)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackLift1)
     UNITY_DOTS_INSTANCED_PROP(float4, _TrackSpan)
+    UNITY_DOTS_INSTANCED_PROP(float , _TrackTravel)
     UNITY_DOTS_INSTANCED_PROP(float , _PoseSlot)
     UNITY_DOTS_INSTANCED_PROP(float , _BuildProgress)
     UNITY_DOTS_INSTANCED_PROP(float , _Reveal)
@@ -105,6 +107,7 @@ static float4 unity_DOTS_Sampled_GrimeBand;
 static float4 unity_DOTS_Sampled_TrackLift0;
 static float4 unity_DOTS_Sampled_TrackLift1;
 static float4 unity_DOTS_Sampled_TrackSpan;
+static float  unity_DOTS_Sampled_TrackTravel;
 static float  unity_DOTS_Sampled_PoseSlot;
 static float  unity_DOTS_Sampled_BuildProgress;
 static float  unity_DOTS_Sampled_Reveal;
@@ -125,6 +128,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
     unity_DOTS_Sampled_TrackLift0           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackLift0);
     unity_DOTS_Sampled_TrackLift1           = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackLift1);
     unity_DOTS_Sampled_TrackSpan            = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float4, _TrackSpan);
+    unity_DOTS_Sampled_TrackTravel          = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _TrackTravel);
     unity_DOTS_Sampled_PoseSlot             = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _PoseSlot);
     unity_DOTS_Sampled_BuildProgress        = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _BuildProgress);
     unity_DOTS_Sampled_Reveal               = UNITY_ACCESS_DOTS_INSTANCED_PROP_WITH_DEFAULT(float , _Reveal);
@@ -147,6 +151,7 @@ void SetupDOTSLitTeamMaterialPropertyCaches()
 #define _TrackLift0             unity_DOTS_Sampled_TrackLift0
 #define _TrackLift1             unity_DOTS_Sampled_TrackLift1
 #define _TrackSpan              unity_DOTS_Sampled_TrackSpan
+#define _TrackTravel            unity_DOTS_Sampled_TrackTravel
 #define _PoseSlot               unity_DOTS_Sampled_PoseSlot
 #define _BuildProgress          unity_DOTS_Sampled_BuildProgress
 #define _Reveal                 unity_DOTS_Sampled_Reveal

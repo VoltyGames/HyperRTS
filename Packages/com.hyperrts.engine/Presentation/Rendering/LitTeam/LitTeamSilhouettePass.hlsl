@@ -41,6 +41,7 @@ SilhouetteVaryings SilhouetteVertex(SilhouetteAttributes input VAT_INDEX_INPUT B
     UNITY_TRANSFER_INSTANCE_ID(input, output);
     UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
     LIT_TEAM_DEFORM(vatIndex, input.positionOS.xyz, input.normalOS)
+    SCROLL_TRACK_UV(input.uv)
 
     VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
     output.positionCS = vertexInput.positionCS;

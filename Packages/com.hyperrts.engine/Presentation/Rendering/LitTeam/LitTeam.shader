@@ -46,6 +46,7 @@ Shader "HyperRTS/LitTeam"
         [HideInInspector] _TrackLift0("Track Lift (stations 0 to 3, m)", Vector) = (0, 0, 0, 0)
         [HideInInspector] _TrackLift1("Track Lift (stations 4 to 7, m)", Vector) = (0, 0, 0, 0)
         [HideInInspector] _TrackSpan("Track Span (front z, back z, axle y, wheel radius)", Vector) = (0, 0, 0, 0)
+        [HideInInspector] _TrackTravel("Track Travel (m)", Float) = 0
 
         [Header(Ground)]
         _CraterSink("Crater Sink (1 drops into a crater under it, 0 for a model that brings its own dent)", Range(0, 1)) = 1

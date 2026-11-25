@@ -1,4 +1,5 @@
 using HyperRTS.Presentation.Animation.Rigs;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;
@@ -47,6 +48,49 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             Assert.IsFalse(track.Settle(wheels), "under 5 mm is not written");
             wheels.Dispose();
         }
+
+        [Test]
+        public void TrackTravel_GrowsDrivingForward_ShrinksInReverse_AndStaysWhenParked()
+        {
+            RigWithTracks();
+            Update(1);
+
+            MoveTo(_position + new float3(0f, 0f, 1f));
+            Assert.AreEqual(1f, Travel(0), 1e-3f, "forward runs the belt");
+            Assert.AreEqual(1f, Travel(1), 1e-3f, "both sides alike");
+
+            Update(3);
+            Assert.AreEqual(1f, Travel(0), 1e-3f, "parked keeps its travel");
+            Assert.IsFalse(Track(0).Scrolled, "nothing to write to the mesh");
+
+            MoveTo(_position + new float3(0f, 0f, 0.6f));
+            Assert.AreEqual(0.6f, Travel(0), 1e-3f, "reverse runs it back");
+        }
+
+        [Test]
+        public void TrackTravel_PivotingRunsTheTwoSidesOppositeWays()
+        {
+            RigWithTracks();
+            Update(1);
+
+            _em.SetComponentData(_unit, LocalTransform.FromPositionRotation(_position, quaternion.RotateY(-0.2f)));
+            Update(1);
+
+            Assert.AreEqual(0.2f, Travel(1), 1e-3f, "a left turn runs the right track forward");
+            Assert.AreEqual(-0.2f, Travel(0), 1e-3f, "and the left track back");
+        }
+
+        // Track 0 on the left and track 1 on the right, 1 m from the centre.
+        private void RigWithTracks()
+        {
+            Rig(GroundWheel(0f));
+            var tracks = new[] { new MotionRigTrack { Side = -1f }, new MotionRigTrack { Side = 1f } };
+            MotionRigAuthoring.AddTracks(new EntityWriter(_em, _unit), tracks, new TrackWheel[0]);
+        }
+
+        private MotionRigTrack Track(int index) => _em.GetBuffer<MotionRigTrack>(_unit)[index];
+
+        private float Travel(int index) => Track(index).Travel;
 
         private static MotionRigPart GroundWheel(float travel) => new()
         {

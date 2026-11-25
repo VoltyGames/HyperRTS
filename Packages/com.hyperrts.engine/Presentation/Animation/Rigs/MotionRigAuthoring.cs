@@ -193,6 +193,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                     {
                         FirstWheel = first,
                         WheelCount = wheels.Count - first,
+                        Side = authoring.transform.InverseTransformPoint(track.part.position).x,
                     });
                 }
 

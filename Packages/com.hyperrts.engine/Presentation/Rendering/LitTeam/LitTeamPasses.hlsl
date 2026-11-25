@@ -5,12 +5,16 @@
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/LitTeam/LitTeamDeform.hlsl"
 
 // The forward pass reads UV1 as the lightmap UV, which animated meshes never use; other passes take it apart.
+// A track mesh's UV runs with its belt in every pass that samples a map; motion vectors write only positions.
 #if defined(UNIVERSAL_FORWARD_LIT_PASS_INCLUDED)
     #define DISPLACED_LIT_INPUTS BONE_INPUT BUILD_ORDER_INPUT
-    #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(input.staticLightmapUV, positionOS, normalOS)
-#else
+    #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(input.staticLightmapUV, positionOS, normalOS) SCROLL_TRACK_UV(input.texcoord)
+#elif defined(UNIVERSAL_OBJECT_MOTION_VECTORS_INCLUDED)
     #define DISPLACED_LIT_INPUTS VAT_INDEX_INPUT BONE_INPUT BUILD_ORDER_INPUT
     #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS)
+#else
+    #define DISPLACED_LIT_INPUTS VAT_INDEX_INPUT BONE_INPUT BUILD_ORDER_INPUT
+    #define DisplaceLit(input, positionOS, normalOS) LIT_TEAM_DEFORM(vatIndex, positionOS, normalOS) SCROLL_TRACK_UV(input.texcoord)
 #endif
 
 #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/DisplacedLitPasses.hlsl"

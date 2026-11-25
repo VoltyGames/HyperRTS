@@ -1,4 +1,4 @@
-// Track bend: the lower run lifts with the road wheels (lift at 8 stations along the track, set by MotionRigSystem);
+// Track bend and scroll: the lower run lifts with the road wheels (lift at 8 stations along the track, set by MotionRigSystem);
 // the weight fades out above the axle so the top run stays put.
 #ifndef HYPERRTS_LIT_TEAM_TRACK_INCLUDED
 #define HYPERRTS_LIT_TEAM_TRACK_INCLUDED
@@ -23,5 +23,20 @@ float3 BendTrack(float3 positionOS)
     positionOS.y += lift * (1.0 - saturate((positionOS.y - _TrackSpan.z) / _TrackSpan.w));
     return positionOS;
 }
+
+// Runs the belt: V is metres along it, increasing toward the back, so the tread moves back as the travel grows. Done
+// on the mesh UV before the base map's tiling, so the tiling scales it.
+float2 ScrollTrackUV(float2 uv)
+{
+    if (_TrackSpan.x == _TrackSpan.y)
+    {
+        return uv;
+    }
+
+    uv.y -= _TrackTravel;
+    return uv;
+}
+
+#define SCROLL_TRACK_UV(uv) uv = ScrollTrackUV(uv);
 
 #endif

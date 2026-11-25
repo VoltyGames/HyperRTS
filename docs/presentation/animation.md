@@ -123,6 +123,15 @@ moves and collides as one rigid hull.
 Road wheels (`Wheel_` parts, `followsGround`) lift to the terrain under them. Tracks bend with them through a
 `TrackMeshAuthoring` on each track part, which must sit unrotated and unscaled against the rig.
 
+The same component scrolls the tread. Each track sums the metres its side of the hull travels (`MotionRigTrack.Scroll`):
+the distance rolled, plus the turn times the track part's x in rig space, so a pivoting hull runs its two sides opposite
+ways. The sum wraps at 1000 m and reaches `LitTeam` as `_TrackTravel`, written only when it changed by 5 mm. A track
+mesh's UV channel 0 must follow this belt convention: V runs along the belt in metres, one V unit per metre of belt,
+increasing from front to back along the ground run, the way that run moves relative to the hull when the unit drives
+forward; U runs across the belt. The shader subtracts the travel from V before the base map's tiling, so the tread
+moves back as the hull goes forward, and the base, normal and mask maps scroll together. The 1000 m wrap shows as one
+jump in the tread unless the tiled V length divides it.
+
 The rig works out its pose on its own entity; each part, linked to its rig at bake (`MotionRigLink`), then poses
 itself from it, so every job writes only the entities it runs on.
 

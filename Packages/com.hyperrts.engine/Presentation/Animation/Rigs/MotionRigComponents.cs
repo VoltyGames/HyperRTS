@@ -52,6 +52,12 @@ namespace HyperRTS.Presentation.Animation.Rigs
         /// <summary>Turn per metre rolled in 1/m, positive to the left, which steered wheels follow.</summary>
         public float Curvature;
 
+        /// <summary>Metres the hull rolled along its heading last frame, negative in reverse.</summary>
+        public float Rolled;
+
+        /// <summary>Radians the hull turned last frame, positive to the left, also when it pivots in place.</summary>
+        public float Turn;
+
         /// <summary>Current nose-up pitch and right-side-up roll from the ground or the lean, radians.</summary>
         public float2 Tilt;
 
@@ -105,14 +111,16 @@ namespace HyperRTS.Presentation.Animation.Rigs
         }
 
         /// <summary>
-        /// Measures <see cref="Curvature"/> from the turn since last frame over the metres rolled; standing keeps it.
+        /// Takes <see cref="Rolled"/> and <see cref="Turn"/> since last frame, and from them <see cref="Curvature"/>;
+        /// standing keeps the curvature.
         /// </summary>
         public void MeasureCurvature(float2 heading, float rolled)
         {
+            Rolled = rolled;
+            Turn = Frames > 0 ? Planar.SignedAngle(LastHeading, heading) : 0f;
             if (Frames > 0 && math.abs(rolled) > MinRoll)
             {
-                var turn = Planar.SignedAngle(LastHeading, heading);
-                Curvature = turn / rolled;
+                Curvature = Turn / rolled;
             }
 
             LastHeading = heading;
@@ -270,7 +278,6 @@ namespace HyperRTS.Presentation.Animation.Rigs
             Amount += math.clamp(target - Amount, -deltaTime / Time, deltaTime / Time);
             Angle = HeadingByte.Wrap(Angle + Rate * Amount * deltaTime);
         }
-
     }
 
     /// <summary>
@@ -280,17 +287,5 @@ namespace HyperRTS.Presentation.Animation.Rigs
     public struct RotorSpin : IComponentData
     {
         public float Amount;
-    }
-
-    /// <summary>How a <see cref="MotionRigPart"/> moves.</summary>
-    public enum MotionPartKind : byte
-    {
-        Turret = 0,
-        Elevation = 1,
-        Recoil = 2,
-        Wheel = 3,
-        Rotor = 4,
-        SteeringWheel = 5,
-        Trailer = 6,
     }
 }

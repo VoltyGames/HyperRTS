@@ -62,7 +62,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 Sources = SystemAPI.GetComponentTypeHandle<TrackMeshSource>(true),
                 Fronts = SystemAPI.GetComponentTypeHandle<TrackLift0>(),
                 Backs = SystemAPI.GetComponentTypeHandle<TrackLift1>(),
-            }.ScheduleParallel(SystemAPI.QueryBuilder().WithAll<TrackMeshSource>().WithAllRW<TrackLift0, TrackLift1>()
+                Travels = SystemAPI.GetComponentTypeHandle<TrackTravel>(),
+            }.ScheduleParallel(SystemAPI.QueryBuilder().WithAll<TrackMeshSource>().WithAllRW<TrackLift0, TrackLift1>().WithAllRW<TrackTravel>()
                 .Build(), tracks);
             state.Dependency = JobHandle.CombineDependencies(spins, parts, meshes);
         }
@@ -190,7 +191,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         [BurstCompile]
         private partial struct TrackJob : IJobEntity
         {
-            private void Execute(DynamicBuffer<MotionRigTrack> tracks, DynamicBuffer<TrackWheel> wheels,
+            private void Execute(in MotionRig rig, DynamicBuffer<MotionRigTrack> tracks, DynamicBuffer<TrackWheel> wheels,
                 in DynamicBuffer<MotionRigPart> parts)
             {
                 for (var i = 0; i < wheels.Length; i++)
@@ -204,6 +205,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 {
                     var track = tracks[i];
                     track.Settle(wheels.AsNativeArray().GetSubArray(track.FirstWheel, track.WheelCount));
+                    track.Scroll(rig.Rolled, rig.Turn);
                     tracks[i] = track;
                 }
             }
@@ -216,6 +218,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
             [ReadOnly] public ComponentTypeHandle<TrackMeshSource> Sources;
             public ComponentTypeHandle<TrackLift0> Fronts;
             public ComponentTypeHandle<TrackLift1> Backs;
+            public ComponentTypeHandle<TrackTravel> Travels;
 
             // Takes the writable arrays only for a chunk with a moved track, so settled tracks keep their version
             // and skip the re-upload.
@@ -226,7 +229,8 @@ namespace HyperRTS.Presentation.Animation.Rigs
                 var moved = false;
                 for (var i = 0; i < chunk.Count && !moved; i++)
                 {
-                    moved = Tracks[sources[i].Rig][sources[i].Track].Moved;
+                    var track = Tracks[sources[i].Rig][sources[i].Track];
+                    moved = track.Moved || track.Scrolled;
                 }
 
                 if (!moved)
@@ -236,11 +240,13 @@ namespace HyperRTS.Presentation.Animation.Rigs
 
                 var fronts = chunk.GetNativeArray(ref Fronts);
                 var backs = chunk.GetNativeArray(ref Backs);
+                var travels = chunk.GetNativeArray(ref Travels);
                 for (var i = 0; i < chunk.Count; i++)
                 {
                     var track = Tracks[sources[i].Rig][sources[i].Track];
                     fronts[i] = new TrackLift0 { Value = track.Lift0 };
                     backs[i] = new TrackLift1 { Value = track.Lift1 };
+                    travels[i] = new TrackTravel { Value = track.Shown };
                 }
             }
         }
