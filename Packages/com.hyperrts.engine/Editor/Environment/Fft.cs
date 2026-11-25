@@ -4,7 +4,7 @@ using System.Numerics;
 namespace HyperRTS.Editor.Environment
 {
     /// <summary>Radix-2 inverse fast Fourier transforms for the editor's tiling texture generators.</summary>
-    public static class Fft
+    internal static class Fft
     {
         /// <summary>In place, unnormalised, over a size × size grid stored row by row; size is a power of two.</summary>
         public static void Inverse2D(Complex[] grid, int size)

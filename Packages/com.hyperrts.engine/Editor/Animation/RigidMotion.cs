@@ -15,14 +15,14 @@ namespace HyperRTS.Editor.Animation
     /// </summary>
     public sealed class RigidMotion : ScriptableObject
     {
-        public const string Folder = "VAT";
-        public const string Suffix = "_Motion";
+        internal const string Folder = "VAT";
+        internal const string Suffix = "_Motion";
 
         /// <summary>The FBX property naming a piece's texture column.</summary>
-        public const string ColumnProperty = "column";
+        internal const string ColumnProperty = "column";
 
         /// <summary>The FBX property naming a clip; its rows are in <c>startRow</c>, <c>frameCount</c> and <c>fps</c>.</summary>
-        public const string ClipProperty = "clip";
+        internal const string ClipProperty = "clip";
 
         [Serializable]
         public struct Piece

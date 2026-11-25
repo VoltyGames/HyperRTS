@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Common.Json
     /// Reads the public fields JsonUtility writes, not the properties that wrap them. It can also require every field
     /// of a non-nullable value type, so a nullable field is the optional one.
     /// </summary>
-    public sealed class JsonUtilityResolver : DefaultContractResolver
+    internal sealed class JsonUtilityResolver : DefaultContractResolver
     {
         private readonly bool _requireValues;
 

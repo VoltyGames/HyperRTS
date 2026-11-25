@@ -20,7 +20,7 @@ namespace HyperRTS.Editor.Animation
     [HelpURL(HyperRTSDocs.Presentation)]
     public class BoneAnimationSet : ScriptableObject, IAnimationSet
     {
-        public const string GeneratedFolder = "Generated";
+        internal const string GeneratedFolder = "Generated";
         private const int MaxFrames = 16384;
 
         [Serializable]

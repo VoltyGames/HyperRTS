@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Environment
     /// <summary>
     /// Tiling ripple slopes from a wind-wave spectrum, summed by an inverse FFT so the normals tile exactly.
     /// </summary>
-    public static class WaterSpectrum
+    internal static class WaterSpectrum
     {
         /// <summary>Unit tangent-space normals, size × size, v up as Unity samples them.</summary>
         public static Vector3[] Normals(int size, uint seed, float peakCycles, float steepness)

@@ -60,7 +60,7 @@ namespace HyperRTS.Editor.Authoring
         }
 
         /// <summary>Damage taken as front, side and rear percentages; else how many damage types it changes.</summary>
-        public static string ArmorText(ArmorAuthoring armor)
+        private static string ArmorText(ArmorAuthoring armor)
         {
             if (armor.IsDirectional)
             {
@@ -71,7 +71,7 @@ namespace HyperRTS.Editor.Authoring
         }
 
         /// <summary>The longest reach of the primary and every extra weapon.</summary>
-        public static float Range(WeaponAuthoring weapon) =>
+        private static float Range(WeaponAuthoring weapon) =>
             weapon.extraWeapons.Aggregate(weapon.stats.range, (longest, slot) => Mathf.Max(longest, slot.stats.range));
 
         /// <summary>The primary's and every extra weapon's damage per second, added up.</summary>
@@ -80,7 +80,7 @@ namespace HyperRTS.Editor.Authoring
 
         public static string CostText(GameEntityAuthoring entity) => CostText(entity.cost);
 
-        public static string CostText(IEnumerable<ResourceQuantity> cost) =>
+        private static string CostText(IEnumerable<ResourceQuantity> cost) =>
             string.Join(", ", cost.Where(quantity => quantity.type != null)
                 .Select(quantity => $"{quantity.amount} {quantity.type.displayName}"));
 

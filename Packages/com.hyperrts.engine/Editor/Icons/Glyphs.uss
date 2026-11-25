@@ -95,10 +95,6 @@
   background-image: url("Glyphs/Plus.svg");
 }
 
-.hrts-glyph--refresh-cw {
-  background-image: url("Glyphs/RefreshCw.svg");
-}
-
 .hrts-glyph--route {
   background-image: url("Glyphs/Route.svg");
 }

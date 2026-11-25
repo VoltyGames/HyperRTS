@@ -34,7 +34,7 @@ namespace HyperRTS.Editor.Authoring
         }
 
         /// <summary>For example "Hard AI · think 1s · waves of 4 · abilities".</summary>
-        public static string Title(SerializedProperty property)
+        private static string Title(SerializedProperty property)
         {
             var think = property.FindPropertyRelative(nameof(AITuning.thinkInterval)).floatValue;
             var wave = property.FindPropertyRelative(nameof(AITuning.attackWaveSize)).intValue;

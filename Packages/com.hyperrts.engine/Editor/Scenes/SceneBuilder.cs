@@ -97,13 +97,11 @@ namespace HyperRTS.Editor.Scenes
             match.mapSize = spec.MapSize;
             AddPlayers(match, spec.Players);
 
-            var bases = BasePositions(spec.MapSize, spec.Players);
             if (spec.StartingBase != null)
             {
-                PlaceBases(entities, spec.StartingBase, bases);
+                PlaceBases(entities, spec.StartingBase, BasePositions(spec.MapSize, spec.Players));
             }
 
-            spec.Furnish?.Invoke(new EntitiesScene(entities, match, bases));
             new PathGuid(path).SaveScene(entities);
             EditorSceneManager.CloseScene(entities, true);
         }

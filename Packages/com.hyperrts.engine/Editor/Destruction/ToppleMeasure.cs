@@ -48,7 +48,7 @@ namespace HyperRTS.Editor.Destruction
         }
 
         /// <summary>From the origin of <paramref name="root"/> to the top of the full-detail faces drawn with <paramref name="trunk"/>.</summary>
-        public static Vector3 Trunk(Transform root, LODGroup model, Material trunk)
+        private static Vector3 Trunk(Transform root, LODGroup model, Material trunk)
         {
             var points = new List<Vector3>();
             foreach (var renderer in model.GetLODs()[0].renderers)
@@ -85,7 +85,7 @@ namespace HyperRTS.Editor.Destruction
         }
 
         /// <summary>Degrees from +Z toward +X, from the stump at the origin to the mass of <paramref name="remains"/>.</summary>
-        public static float Lie(GameObject remains)
+        private static float Lie(GameObject remains)
         {
             var points = new List<Vector3>();
             foreach (var renderer in remains.GetComponentsInChildren<MeshRenderer>())

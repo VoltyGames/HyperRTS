@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Environment
     /// The water's tiling foam: R lace strands round bubble holes, G a flat-histogram clump field that foam thins
     /// through, B broad blobs for calm slicks and wind gusts.
     /// </summary>
-    public static class FoamLace
+    internal static class FoamLace
     {
         private const int LargeCells = 9;
         private const int SmallCells = 23;

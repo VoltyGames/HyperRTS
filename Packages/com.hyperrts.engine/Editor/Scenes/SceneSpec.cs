@@ -1,4 +1,3 @@
-using System;
 using HyperRTS.Simulation.GameEntities;
 using UnityEngine;
 
@@ -24,8 +23,5 @@ namespace HyperRTS.Editor.Scenes
 
         /// <summary>Camera and HUD rig; null uses the engine's EngineRig (a game passes its own variant).</summary>
         public GameObject Rig { get; set; }
-
-        /// <summary>Adds map content to the SubScene before it is saved and closed.</summary>
-        public Action<EntitiesScene> Furnish { get; set; }
     }
 }

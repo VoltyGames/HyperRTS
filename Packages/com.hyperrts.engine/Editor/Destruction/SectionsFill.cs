@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Destruction
     /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts, or from its model's sections for
     /// <see cref="SectionsModelFill"/>, and measures the boxes their intact models fill in the building's space.
     /// </summary>
-    public sealed class SectionsFill
+    internal sealed class SectionsFill
     {
         /// <summary>Metres between boxes that still touch, and above the lowest box that still stands on the ground.</summary>
         private const float Contact = 0.05f;

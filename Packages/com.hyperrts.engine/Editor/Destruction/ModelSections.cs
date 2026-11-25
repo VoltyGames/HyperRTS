@@ -17,10 +17,10 @@ namespace HyperRTS.Editor.Destruction
     public sealed class ModelSections : ScriptableObject
     {
         /// <summary>The intact mesh's property naming its section; the others sit beside it.</summary>
-        public const string SectionProperty = "section";
+        internal const string SectionProperty = "section";
 
         /// <summary>The holed mesh's property: the hole's centre in the model's space.</summary>
-        public const string HoleProperty = "hole";
+        internal const string HoleProperty = "hole";
 
         [Serializable]
         public class Part

@@ -192,12 +192,10 @@ SceneBuilder.Build(new SceneSpec
     Players = 2,
     StartingBase = commandCentre,
     Rig = myRigVariant,                       // null = engine EngineRig
-    Furnish = subScene => PlaceResources(subScene.Scene, subScene.Bases),
 });
 ```
 
-`Furnish` runs before the SubScene is saved, with the SubScene, its `Match` and each player's base position. The
-builder throws on a bad path, player count or size. Maps built from JSON specs: see [maps](../maps/README.md).
+The builder throws on a bad path, player count or size. Maps built from JSON specs: see [maps](../maps/README.md).
 
 ## Prefabs
 

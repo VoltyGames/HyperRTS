@@ -5,7 +5,7 @@ using Random = Unity.Mathematics.Random;
 namespace HyperRTS.Editor.Environment
 {
     /// <summary>Perlin noise, fBm and lowpassed white noise that repeat seamlessly across their tile.</summary>
-    public static class TileableNoise
+    internal static class TileableNoise
     {
         /// <summary>Octaves of periodic Perlin noise, each twice as fine and half as strong; roughly -1..1.</summary>
         public static float Fbm(Vector2 position, int period, int octaves, int seed)
