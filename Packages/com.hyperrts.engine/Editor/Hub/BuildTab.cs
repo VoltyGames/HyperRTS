@@ -1,7 +1,7 @@
 using HyperRTS.Editor.Common;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Generators
+namespace HyperRTS.Editor.Hub
 {
     /// <summary>A tab of the Build page. Subclass it (engine or game) and it appears there.</summary>
     public abstract class BuildTab

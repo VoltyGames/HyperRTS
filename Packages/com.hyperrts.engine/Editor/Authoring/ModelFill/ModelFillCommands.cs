@@ -6,7 +6,7 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring.ModelFill
 {
     /// <summary>Runs every <see cref="IModelFill"/> on a component, or on every component of the selected prefabs.</summary>
     public static class ModelFillCommands

@@ -141,7 +141,8 @@ A game adds a stage by subclassing `EffectRigStage` (found by itself): a constru
 a stage that makes what the graph or capture reads, `Applies`, `State` (`StageFiles` judges it by input and output
 times and the log), and `Run`, which writes the log and throws on failure so the rig's later stages drop.
 
-Other tool pages reuse `Stage<TSource>`, `GeneratorStage<TSource>`, `StageQueue` and `StagesView` from `Editor/Stages/`.
+Other tool pages reuse `Stage<TSource>`, `StageQueue` and `StagesView` from `Editor/Stages/`, and
+`GeneratorStage<TSource>` from `Editor/Generators/` for a stage that runs generator items.
 
 **Follow selection** selects the row of a rig or recipe picked in the Project window. The recipe inspector's
 **Preview** opens the page on the first rig that uses it. The effect plays and holds the fog clear only while the page

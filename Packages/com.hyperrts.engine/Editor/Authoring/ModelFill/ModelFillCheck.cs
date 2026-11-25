@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring.ModelFill
 {
     /// <summary>Finds a component's first value off from what its model gives, filling it and putting everything back.</summary>
     public sealed class ModelFillCheck

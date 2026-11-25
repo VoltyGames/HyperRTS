@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using HyperRTS.Editor.Authoring;
+using System;
+using HyperRTS.Editor.Authoring.ModelFill;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Simulation.Combat.Weapons;

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using HyperRTS.Simulation.Movement;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring.ModelFill
 {
     /// <summary>
     /// A wheeled Locomotion's wheelbase and rear axle from its Wheel_L01... wheels: the first steering axles from the

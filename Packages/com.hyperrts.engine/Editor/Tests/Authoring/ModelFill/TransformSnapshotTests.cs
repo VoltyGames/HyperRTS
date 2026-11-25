@@ -1,8 +1,8 @@
-using HyperRTS.Editor.Authoring;
+using HyperRTS.Editor.Authoring.ModelFill;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Tests.Authoring
+namespace HyperRTS.Editor.Tests.Authoring.ModelFill
 {
     /// <summary>A model fill check puts back what a fill moved or hid under the component, such as a section model it scaled to 0.</summary>
     public class TransformSnapshotTests

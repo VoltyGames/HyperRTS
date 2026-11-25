@@ -1,5 +1,5 @@
 using System;
-using HyperRTS.Editor.Authoring;
+using HyperRTS.Editor.Authoring.ModelFill;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Sets;

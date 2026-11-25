@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring.ModelFill
 {
     /// <summary>Sets an authoring component's values from the model under it. Derive from <see cref="ModelFill{T}"/>.</summary>
     public interface IModelFill

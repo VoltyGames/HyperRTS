@@ -1,4 +1,5 @@
 using System.Linq;
+using HyperRTS.Editor.Authoring.ModelFill;
 using HyperRTS.Editor.Templates;
 using HyperRTS.Editor.Validation;
 using HyperRTS.Presentation.Rendering.LitTeam;
@@ -12,7 +13,6 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Selection;
 using HyperRTS.Simulation.Transport;
 using HyperRTS.Simulation.Vision.Sight;
-using HyperRTS.Editor.Authoring;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;

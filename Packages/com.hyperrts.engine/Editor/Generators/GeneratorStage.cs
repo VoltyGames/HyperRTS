@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using HyperRTS.Editor.Generators;
+using HyperRTS.Editor.Stages;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Stages
+namespace HyperRTS.Editor.Generators
 {
     /// <summary>A stage that runs generator items in the Editor, taking its state and log from the generator run log.</summary>
     public abstract class GeneratorStage<TSource> : Stage<TSource> where TSource : class

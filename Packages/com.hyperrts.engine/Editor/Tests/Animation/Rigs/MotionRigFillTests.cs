@@ -1,7 +1,7 @@
-using HyperRTS.Editor.Authoring;
+using System.Linq;
+using HyperRTS.Editor.Authoring.ModelFill;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
-using System.Linq;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Destruction;

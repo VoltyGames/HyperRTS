@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring.ModelFill
 {
     /// <summary>The local position, rotation and scale of every transform under a root, to put back after a change.</summary>
     public sealed class TransformSnapshot

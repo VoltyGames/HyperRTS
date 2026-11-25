@@ -1,10 +1,9 @@
 using System.Linq;
 using HyperRTS.Editor.Common;
-using HyperRTS.Editor.Hub;
 using HyperRTS.Presentation.HUD;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Generators
+namespace HyperRTS.Editor.Hub
 {
     /// <summary>Tools ▸ Build: one tab per <see cref="BuildTab"/>, such as the generators, art commands and player builds.</summary>
     public sealed class BuildPage : HubPage

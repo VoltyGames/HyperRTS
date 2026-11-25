@@ -1,4 +1,4 @@
-using HyperRTS.Editor.Authoring;
+using HyperRTS.Editor.Authoring.ModelFill;
 using HyperRTS.Simulation.Destruction;
 
 namespace HyperRTS.Editor.Destruction

@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring.ModelFill
 {
     /// <summary>
     /// The fill from model of <typeparamref name="T"/>. Subclass it (engine or game) and the component gets a Fill from
