@@ -6,8 +6,8 @@ using NUnit.Framework;
 
 namespace HyperRTS.Editor.Tests.Tools
 {
-    /// <summary>The editor FFT and the ripple spectrum built on it.</summary>
-    public class FftTests
+    /// <summary>The editor Fourier transform and the ripple spectrum built on it.</summary>
+    public class FourierTransformTests
     {
         [Test]
         public void Inverse_OfOneWave_IsThatWave()
@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Tests.Tools
             const int size = 16;
             var values = new Complex[size];
             values[3] = Complex.One;
-            Fft.Inverse(values);
+            FourierTransform.Inverse(values);
             for (var n = 0; n < size; n++)
             {
                 var angle = 2.0 * Math.PI * 3 * n / size;
@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Tests.Tools
 
         [Test]
         public void Inverse2D_RejectsSizesThatArentPowersOfTwo() =>
-            Assert.Throws<ArgumentException>(() => Fft.Inverse2D(new Complex[36], 6));
+            Assert.Throws<ArgumentException>(() => FourierTransform.Inverse2D(new Complex[36], 6));
 
         [Test]
         public void SpectrumNormals_AreUnit_FaceUp_AndTiltEveryWay()

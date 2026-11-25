@@ -33,8 +33,8 @@ namespace HyperRTS.Editor.Environment
                 }
             }
 
-            Fft.Inverse2D(slopeU, size);
-            Fft.Inverse2D(slopeV, size);
+            FourierTransform.Inverse2D(slopeU, size);
+            FourierTransform.Inverse2D(slopeV, size);
             var scale = steepness / Rms(slopeU, slopeV);
             var normals = new Vector3[size * size];
             for (var i = 0; i < normals.Length; i++)
