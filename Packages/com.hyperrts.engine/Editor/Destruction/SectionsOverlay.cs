@@ -137,13 +137,23 @@ namespace HyperRTS.Editor.Destruction
             for (var i = 0; i < entries.Length; i++)
             {
                 var entry = entries[i];
-                Handles.color = i == _picked ? PickedColor : entry.anchored ? AnchoredColor : StandingColor;
+                Handles.color = BoxColor(i, entry);
                 Handles.DrawWireCube(entry.center, entry.halfSize * 2f);
                 Handles.Label(entry.center, _names[i]);
             }
 
             Handles.matrix = oldMatrix;
             Handles.zTest = oldTest;
+        }
+
+        private Color BoxColor(int index, SectionEntry entry)
+        {
+            if (index == _picked)
+            {
+                return PickedColor;
+            }
+
+            return entry.anchored ? AnchoredColor : StandingColor;
         }
 
         private void DrawHolders(SectionEntry[] entries, int index)

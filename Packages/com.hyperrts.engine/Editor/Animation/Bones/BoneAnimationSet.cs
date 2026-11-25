@@ -21,7 +21,6 @@ namespace HyperRTS.Editor.Animation.Bones
     public class BoneAnimationSet : ScriptableObject, IAnimationSet
     {
         internal const string GeneratedFolder = "Generated";
-        private const int MaxFrames = 16384;
 
         [Serializable]
         public class Clip
@@ -136,9 +135,9 @@ namespace HyperRTS.Editor.Animation.Bones
             Check();
             var plans = clips.Select(clip => new ClipFrames(clip, fps)).ToList();
             var frames = plans.Sum(plan => plan.Count);
-            if (frames > MaxFrames)
+            if (frames > AnimationSetBake.MaxTextureSize)
             {
-                throw new InvalidOperationException($"Bone set '{name}' needs {frames} rows, over the {MaxFrames} texture limit.");
+                throw new InvalidOperationException($"Bone set '{name}' needs {frames} rows, over the {AnimationSetBake.MaxTextureSize} texture limit.");
             }
 
             Directory.CreateDirectory(Folder);
@@ -192,12 +191,12 @@ namespace HyperRTS.Editor.Animation.Bones
         private Mesh MakeMesh(BoneRig posed, Part part)
         {
             var model = part.model != null ? part.model : rig;
-            Func<string, Mesh> build = node => posed.SkinnedMesh(model, node);
+            Func<string, Mesh> build = node => posed.Meshes.SkinnedMesh(model, node);
             if (!string.IsNullOrEmpty(part.socket))
             {
                 var socket = sockets.Find(candidate => candidate.name == part.socket)
                     ?? throw new InvalidOperationException($"Bone set '{name}' part '{part.name}' names socket '{part.socket}', which the set lacks.");
-                build = node => posed.AttachedMesh(model, node, socket.node);
+                build = node => posed.Meshes.AttachedMesh(model, node, socket.node);
             }
 
             var mesh = BoneMesh.Merge(part.nodes.Select(build).ToList());
@@ -228,12 +227,22 @@ namespace HyperRTS.Editor.Animation.Bones
             return table;
         }
 
+        private void RequirePiece(bool present, string piece)
+        {
+            if (!present)
+            {
+                throw new InvalidOperationException($"Bone set '{name}' needs {piece}.");
+            }
+        }
+
         private void Check()
         {
-            if (rig == null || string.IsNullOrEmpty(skeleton) || parts.Count == 0 || clips.Count == 0 || string.IsNullOrEmpty(upperRoot) || string.IsNullOrEmpty(rootBone))
-            {
-                throw new InvalidOperationException($"Bone set '{name}' needs a rig, a skeleton node, parts, clips, a root bone and an upper root bone.");
-            }
+            RequirePiece(rig != null, "a rig");
+            RequirePiece(!string.IsNullOrEmpty(skeleton), "a skeleton node");
+            RequirePiece(parts.Count > 0, "parts");
+            RequirePiece(clips.Count > 0, "clips");
+            RequirePiece(!string.IsNullOrEmpty(upperRoot), "an upper root bone");
+            RequirePiece(!string.IsNullOrEmpty(rootBone), "a root bone");
 
             var empty = parts.Find(part => string.IsNullOrEmpty(part.name) || part.nodes.Count == 0);
             if (empty != null)

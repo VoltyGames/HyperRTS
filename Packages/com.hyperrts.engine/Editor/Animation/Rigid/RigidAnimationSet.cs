@@ -19,9 +19,6 @@ namespace HyperRTS.Editor.Animation.Rigid
     [HelpURL(HyperRTSDocs.Presentation)]
     public class RigidAnimationSet : ScriptableObject, IAnimationSet
     {
-        private const int MaxRows = 16384;
-        private const int MaxTextureSize = 16384;
-
         [Tooltip("The model whose meshes carry each vertex's texture column in UV1.")]
         public GameObject model;
 
@@ -46,9 +43,9 @@ namespace HyperRTS.Editor.Animation.Rigid
             Check();
             var pieces = RigidMotion.Find(motion);
             var rows = pieces.RowCount;
-            if (rows > MaxRows || pieces.pieces.Count > MaxTextureSize)
+            if (rows > AnimationSetBake.MaxTextureSize || pieces.pieces.Count > AnimationSetBake.MaxTextureSize)
             {
-                throw new InvalidOperationException($"Rigid set '{name}' needs {pieces.pieces.Count} x {rows} texels, over the {MaxTextureSize} texture limit.");
+                throw new InvalidOperationException($"Rigid set '{name}' needs {pieces.pieces.Count} x {rows} texels, over the {AnimationSetBake.MaxTextureSize} texture limit.");
             }
 
             var poses = RigidPoses.Sample(motion, SingleTake(motion), pieces, rows);
@@ -104,7 +101,7 @@ namespace HyperRTS.Editor.Animation.Rigid
                 importer.filterMode = FilterMode.Point;
                 importer.wrapMode = TextureWrapMode.Clamp;
                 importer.isReadable = false;
-                importer.maxTextureSize = MaxTextureSize;
+                importer.maxTextureSize = AnimationSetBake.MaxTextureSize;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
             });
             GeneratedAssets.Mark(texture);

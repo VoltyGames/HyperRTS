@@ -28,7 +28,7 @@ namespace HyperRTS.Editor.Rendering
             var orders = new List<Vector2>();
             mesh.GetUVs(3, orders);
             var stride = mesh.GetVertexBufferStride(0);
-            var offset = Offset(mesh);
+            var offset = mesh.GetVertexAttributeOffset(BuildOrder);
             var vertices = new List<byte>(ReadVertices(mesh));
             var indices = new List<int>[mesh.subMeshCount];
             var ranges = new MeshLodRange[mesh.subMeshCount][];
@@ -44,7 +44,7 @@ namespace HyperRTS.Editor.Rendering
                 }
             }
 
-            Write(mesh, vertices, stride, indices, ranges);
+            Write(mesh, vertices, indices, ranges);
         }
 
         private static void KeepTrianglesWhole(int[] level, List<Vector2> orders, List<byte> vertices, int stride, int offset, List<int> into)
@@ -80,8 +80,6 @@ namespace HyperRTS.Editor.Rendering
             using var read = Mesh.AcquireReadOnlyMeshData(mesh);
             return read[0].GetVertexData<byte>(0).ToArray();
         }
-
-        private static int Offset(Mesh mesh) => mesh.GetVertexAttributeOffset(BuildOrder);
 
         private static bool SpansPieces(List<Vector2> orders, int[] corners)
         {
@@ -123,29 +121,13 @@ namespace HyperRTS.Editor.Rendering
             return vertices.Count / stride - 1;
         }
 
-        private static void Write(Mesh mesh, List<byte> vertices, int stride, List<int>[] indices, MeshLodRange[][] ranges)
+        private static void Write(Mesh mesh, List<byte> vertices, List<int>[] indices, MeshLodRange[][] ranges)
         {
-            var bounds = mesh.bounds;
             var levels = mesh.lodCount;
-            var count = vertices.Count / stride;
             // Sub-meshes take their new indices as one level each, then split into levels again.
             mesh.lodCount = 1;
             using var data = new NativeArray<byte>(vertices.ToArray(), Allocator.Temp);
-            mesh.SetVertexBufferParams(count, mesh.GetVertexAttributes());
-            mesh.SetVertexBufferData(data, 0, 0, data.Length, 0, MeshUpdateFlags.DontRecalculateBounds);
-            mesh.indexFormat = count > ushort.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
-            for (var sub = 0; sub < mesh.subMeshCount; sub++)
-            {
-                mesh.SetIndices(indices[sub], MeshTopology.Triangles, sub, false);
-            }
-
-            mesh.lodCount = levels;
-            for (var sub = 0; sub < mesh.subMeshCount; sub++)
-            {
-                mesh.SetLods(ranges[sub], sub, MeshUpdateFlags.DontRecalculateBounds);
-            }
-
-            mesh.bounds = bounds;
+            MeshLods.Replace(mesh, data, indices, ranges, levels);
         }
     }
 }

@@ -10,6 +10,9 @@ namespace HyperRTS.Editor.Animation
     /// <summary>What the bake commands and menu items share: baking one named set, every set or the selection.</summary>
     public static class AnimationSetBake
     {
+        /// <summary>The largest width or height the GPU texture limit allows a baked animation texture.</summary>
+        internal const int MaxTextureSize = 16384;
+
         /// <summary>Bakes the set named or at a path, or every set when the name is empty; returns each set with what it wrote.</summary>
         public static object Bake<T>(string set) where T : ScriptableObject, IAnimationSet
         {

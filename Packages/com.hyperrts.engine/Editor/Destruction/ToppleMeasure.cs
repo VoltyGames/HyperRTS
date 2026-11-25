@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
 using UnityEngine;
@@ -61,27 +62,11 @@ namespace HyperRTS.Editor.Destruction
                 throw new InvalidOperationException($"{model.name} LOD0 has no faces drawn with '{trunk.name}'.");
             }
 
-            var top = float.MinValue;
-            var bottom = float.MaxValue;
-            foreach (var point in points)
-            {
-                top = Mathf.Max(top, point.y);
-                bottom = Mathf.Min(bottom, point.y);
-            }
-
+            var top = points.Max(point => point.y);
+            var bottom = points.Min(point => point.y);
             var floor = top - (top - bottom) * TopBand;
-            var sum = Vector3.zero;
-            var count = 0;
-            foreach (var point in points)
-            {
-                if (point.y >= floor)
-                {
-                    sum += point;
-                    count++;
-                }
-            }
-
-            return sum / count;
+            var band = points.Where(point => point.y >= floor).ToList();
+            return band.Aggregate(Vector3.zero, (sum, point) => sum + point) / band.Count;
         }
 
         /// <summary>Degrees from +Z toward +X, from the stump at the origin to the mass of <paramref name="remains"/>.</summary>
@@ -98,13 +83,7 @@ namespace HyperRTS.Editor.Destruction
                 throw new InvalidOperationException($"{remains.name} has no mesh to measure its lie from.");
             }
 
-            var centre = Vector3.zero;
-            foreach (var point in points)
-            {
-                centre += point;
-            }
-
-            centre /= points.Count;
+            var centre = points.Aggregate(Vector3.zero, (sum, point) => sum + point) / points.Count;
             if (new Vector2(centre.x, centre.z).magnitude < MinReach)
             {
                 throw new InvalidOperationException(

@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Tests.Animation.Bones
             using var rig = Rig();
             var kit = Model("Kit", Quaternion.Euler(-90f, 0f, 0f));
 
-            var mesh = Track(rig.SkinnedMesh(kit, "Body"));
+            var mesh = Track(rig.Meshes.SkinnedMesh(kit, "Body"));
 
             Assert.AreEqual(0f, Vector3.Distance(HandAt, mesh.vertices[0]), 1e-4f);
             Assert.AreEqual(0f, Vector3.Distance(HandAt + Vector3.up * 0.1f, mesh.vertices[1]), 1e-4f);
@@ -37,7 +37,7 @@ namespace HyperRTS.Editor.Tests.Animation.Bones
             using var rig = Rig();
             var kit = Model("Kit", Quaternion.Euler(-90f, 0f, 0f));
 
-            var merged = Track(BoneMesh.Merge(new List<Mesh> { rig.SkinnedMesh(kit, "Body"), rig.SkinnedMesh(kit, "Body") }));
+            var merged = Track(BoneMesh.Merge(new List<Mesh> { rig.Meshes.SkinnedMesh(kit, "Body"), rig.Meshes.SkinnedMesh(kit, "Body") }));
 
             Assert.AreEqual(6, merged.vertexCount);
             Assert.AreEqual(1, merged.subMeshCount);
@@ -55,7 +55,7 @@ namespace HyperRTS.Editor.Tests.Animation.Bones
             using var rig = Rig();
             var bent = Model("Bent", Quaternion.identity, handNudge: new Vector3(0f, 0.2f, 0f));
 
-            Assert.Throws<InvalidOperationException>(() => rig.SkinnedMesh(bent, "Body"));
+            Assert.Throws<InvalidOperationException>(() => rig.Meshes.SkinnedMesh(bent, "Body"));
         }
 
         [Test]
@@ -100,7 +100,7 @@ namespace HyperRTS.Editor.Tests.Animation.Bones
             });
             weapon.AddComponent<MeshFilter>().sharedMesh = mesh;
 
-            var placed = Track(rig.AttachedMesh(weapon, "Weapon", "Grip"));
+            var placed = Track(rig.Meshes.AttachedMesh(weapon, "Weapon", "Grip"));
 
             var grip = HandAt + new Vector3(0.1f, 0f, 0f);
             Assert.AreEqual(0f, Vector3.Distance(grip, placed.vertices[0]), 1e-4f, "the origin on the grip");

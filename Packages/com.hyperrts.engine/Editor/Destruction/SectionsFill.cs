@@ -52,12 +52,12 @@ namespace HyperRTS.Editor.Destruction
         }
 
         /// <summary>
-        /// Lists the sections kept inside the building's model (see <see cref="ModelSections.Entries"/>) and takes the
+        /// Lists the sections kept inside the building's model (see <see cref="SectionEntries"/>) and takes the
         /// break clips from the clip table its pieces play.
         /// </summary>
         internal void FromModel()
         {
-            _owner.sections = FindSections().Entries(_owner, Measure).ToArray();
+            _owner.sections = new SectionEntries(FindSections(), _owner).Build(Measure).ToArray();
             _owner.clips = BreakClips();
         }
 
@@ -107,11 +107,7 @@ namespace HyperRTS.Editor.Destruction
         {
             var boxes = entries.ConvertAll(entry => Measure(entry.intact.transform));
             var middle = Measure(Root).center;
-            var ground = float.MaxValue;
-            foreach (var box in boxes)
-            {
-                ground = math.min(ground, box.min.y);
-            }
+            var ground = boxes.Select(box => box.min.y).DefaultIfEmpty(float.MaxValue).Min();
 
             for (var i = 0; i < entries.Count; i++)
             {
@@ -155,18 +151,19 @@ namespace HyperRTS.Editor.Destruction
 
         private static GameObject[] Below(List<SectionEntry> entries, List<Bounds> boxes, int index)
         {
-            var below = new List<GameObject>();
             var box = boxes[index];
             box.Expand(Contact * 2f);
-            for (var i = 0; i < entries.Count; i++)
+            bool IsBelow(int i)
             {
-                if (i != index && box.Intersects(boxes[i]) && boxes[i].center.y < boxes[index].center.y - Contact)
+                if (i == index || !box.Intersects(boxes[i]))
                 {
-                    below.Add(entries[i].intact);
+                    return false;
                 }
+
+                return boxes[i].center.y < boxes[index].center.y - Contact;
             }
 
-            return below.ToArray();
+            return Enumerable.Range(0, entries.Count).Where(IsBelow).Select(i => entries[i].intact).ToArray();
         }
 
         /// <summary>Out from the middle of the building, or up for a section over it.</summary>

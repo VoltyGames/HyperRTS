@@ -59,23 +59,30 @@ namespace HyperRTS.Editor.Rendering
 
             Append(meshes, vertices, indices, ranges);
 
-            var bounds = target.bounds;
-            target.SetVertexBufferParams(vertexCount, layout);
-            target.SetVertexBufferData(vertices, 0, 0, vertices.Length, 0, MeshUpdateFlags.DontRecalculateBounds);
+            Replace(target, vertices, indices, ranges, meshes.Length);
             vertices.Dispose();
-            target.indexFormat = vertexCount > ushort.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
-            for (var sub = 0; sub < target.subMeshCount; sub++)
+        }
+
+        /// <summary>Rewrites the mesh's vertices, each sub-mesh's indices and its <paramref name="levels"/> level ranges, keeping its bounds.</summary>
+        internal static void Replace(Mesh mesh, NativeArray<byte> vertices, List<int>[] indices, MeshLodRange[][] ranges, int levels)
+        {
+            var bounds = mesh.bounds;
+            var count = vertices.Length / mesh.GetVertexBufferStride(0);
+            mesh.SetVertexBufferParams(count, mesh.GetVertexAttributes());
+            mesh.SetVertexBufferData(vertices, 0, 0, vertices.Length, 0, MeshUpdateFlags.DontRecalculateBounds);
+            mesh.indexFormat = count > ushort.MaxValue ? IndexFormat.UInt32 : IndexFormat.UInt16;
+            for (var sub = 0; sub < mesh.subMeshCount; sub++)
             {
-                target.SetIndices(indices[sub], MeshTopology.Triangles, sub, false);
+                mesh.SetIndices(indices[sub], MeshTopology.Triangles, sub, false);
             }
 
-            target.lodCount = meshes.Length;
-            for (var sub = 0; sub < target.subMeshCount; sub++)
+            mesh.lodCount = levels;
+            for (var sub = 0; sub < mesh.subMeshCount; sub++)
             {
-                target.SetLods(ranges[sub], sub, MeshUpdateFlags.DontRecalculateBounds);
+                mesh.SetLods(ranges[sub], sub, MeshUpdateFlags.DontRecalculateBounds);
             }
 
-            target.bounds = bounds;
+            mesh.bounds = bounds;
         }
 
         private static void RequireAlike(Mesh mesh, Mesh target, VertexAttributeDescriptor[] layout)
