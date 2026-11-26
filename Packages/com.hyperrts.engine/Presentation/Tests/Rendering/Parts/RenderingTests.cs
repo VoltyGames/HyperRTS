@@ -23,6 +23,8 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
     {
         private static readonly ModelVariants Three = new() { Count = 3, Shown = -1 };
 
+        private static readonly float3 Place = new(10f, 0f, 5f);
+
         private World _world;
         private EntityManager _em;
 
@@ -42,13 +44,15 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             var building = _em.CreateEntity();
             var intact = Piece(1f, building);
             var broken = Piece(0f, building);
-            var shard = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
-            _em.AddComponentData(shard, new Parent { Value = broken });
+            var shard = Piece(1f, broken);
             _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
 
             Update<ModelCopyBakingSystem>();
 
             Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(broken).Scale);
+            var place = _em.GetComponentData<LocalToWorld>(shard);
+            Assert.AreEqual(1f, math.length(place.Value.c0.xyz), 1e-5f, "a copy draws its first frame at full size");
+            Assert.AreEqual(Place, place.Position);
             Assert.IsTrue(_em.HasComponent<Prefab>(broken) && _em.HasComponent<Prefab>(shard));
             CollectionAssert.AreEqual(new[] { broken, shard }, Group(broken));
             CollectionAssert.AreEqual(new[] { building, intact }, Group(building), "a scene building groups the rest");
@@ -226,11 +230,20 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
 
         private bool Drawn(Entity entity) => _em.IsComponentEnabled<MaterialMeshInfo>(entity);
 
-        private Entity Piece(float scale, Entity building)
+        // A model under its parent with the place the transform bake gives it, which is nowhere at scale 0.
+        private Entity Piece(float scale, Entity parent)
         {
+            if (!_em.HasComponent<LocalToWorld>(parent))
+            {
+                _em.AddComponentData(parent, new LocalToWorld { Value = float4x4.Translate(Place) });
+            }
+
             var piece = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
-            _em.AddComponentData(piece, LocalTransform.FromScale(scale));
-            _em.AddComponentData(piece, new Parent { Value = building });
+            var transform = LocalTransform.FromScale(scale);
+            var under = _em.GetComponentData<LocalToWorld>(parent).Value;
+            _em.AddComponentData(piece, transform);
+            _em.AddComponentData(piece, new LocalToWorld { Value = math.mul(under, transform.ToMatrix()) });
+            _em.AddComponentData(piece, new Parent { Value = parent });
             return piece;
         }
 

@@ -24,6 +24,12 @@ namespace HyperRTS.Simulation.Death
     /// <summary>Marks what a death left behind: a wreck, a ruin, a fallen tree, a thrown turret.</summary>
     public struct RemainsTag : IComponentData { }
 
+    /// <summary>
+    /// On fresh remains until presentation has placed their parts, which keep their baked places until the transform
+    /// systems next run, a frame after the remains are first drawn.
+    /// </summary>
+    public struct Unplaced : IComponentData, IEnableableComponent { }
+
     /// <summary>Remains falling to the ground under gravity; removed when they land.</summary>
     public struct FallingRemains : IComponentData
     {

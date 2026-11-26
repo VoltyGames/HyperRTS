@@ -40,6 +40,7 @@ namespace HyperRTS.Simulation.Death
         {
             var spawned = ecb.Instantiate(sortKey, prefab);
             ecb.Place(sortKey, spawned, Transform, StretchMatrix);
+            ecb.AddComponent<Unplaced>(sortKey, spawned);
             if (Stretched)
             {
                 ecb.AddComponent(sortKey, spawned, Stretch);

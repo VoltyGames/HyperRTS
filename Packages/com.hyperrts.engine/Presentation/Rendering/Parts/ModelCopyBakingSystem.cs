@@ -1,6 +1,7 @@
 using HyperRTS.Simulation.Destruction;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Presentation.Rendering.Parts
@@ -152,6 +153,7 @@ namespace HyperRTS.Presentation.Rendering.Parts
             {
                 transform.Scale = 1f;
                 em.SetComponentData(model, transform);
+                Place(em, model, members);
             }
 
             var group = OwnGroup(model, members);
@@ -161,6 +163,33 @@ namespace HyperRTS.Presentation.Rendering.Parts
                 : em.AddBuffer<LinkedEntityGroup>(model);
             linked.Clear();
             linked.AddRange(group.AsArray().Reinterpret<LinkedEntityGroup>());
+        }
+
+        /// <summary>Bakes where a model saved at scale 0 and its parts stand at scale 1: a copy draws its first frame there.</summary>
+        private static void Place(EntityManager em, Entity model, NativeParallelMultiHashMap<Entity, Entity> members)
+        {
+            em.SetComponentData(model, new LocalToWorld { Value = Placed(em, model, model) });
+            foreach (var member in members.GetValuesForKey(model))
+            {
+                if (em.HasComponent<LocalToWorld>(member))
+                {
+                    em.SetComponentData(member, new LocalToWorld { Value = Placed(em, member, model) });
+                }
+            }
+        }
+
+        // Up to the model's parent, whose baked place holds.
+        private static float4x4 Placed(EntityManager em, Entity entity, Entity model)
+        {
+            var local = em.GetComponentData<LocalTransform>(entity).ToMatrix();
+            if (em.HasComponent<PostTransformMatrix>(entity))
+            {
+                local = math.mul(local, em.GetComponentData<PostTransformMatrix>(entity).Value);
+            }
+
+            var parent = em.GetComponentData<Parent>(entity).Value;
+            var above = entity == model ? em.GetComponentData<LocalToWorld>(parent).Value : Placed(em, parent, model);
+            return math.mul(above, local);
         }
 
         private static NativeList<Entity> OwnGroup(Entity owner, NativeParallelMultiHashMap<Entity, Entity> members)
