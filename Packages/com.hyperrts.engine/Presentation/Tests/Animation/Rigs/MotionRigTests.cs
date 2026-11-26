@@ -183,7 +183,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
                 heights[i] = grade * (i / size.x) * 2f;
             }
 
-            SetTerrain(heights, size);
+            _kit.SetTerrain(heights, size);
             heights.Dispose();
         }
     }

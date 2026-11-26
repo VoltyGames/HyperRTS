@@ -18,6 +18,7 @@ namespace HyperRTS.Presentation.Tests
     {
         private SystemHandle _cueClear;
         private SystemHandle _registry;
+
         public PresentationWorldKit(string name) => World = new World(name);
 
         public World World { get; }

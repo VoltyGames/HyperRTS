@@ -35,11 +35,11 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _system.Update(_kit.World.Unmanaged);
 
             var slope = math.atan(0.5f);
-            Assert.AreEqual(slope, _em.GetComponentData<HullTilt>(wreck).Value.x, 1e-3f, "pitch");
-            Assert.AreEqual(0f, _em.GetComponentData<HullTilt>(wreck).Value.y, 1e-3f, "roll");
             Assert.IsFalse(_em.IsComponentEnabled<HullTilt>(wreck));
-            var nose = math.rotate(_em.GetComponentData<PostTransformMatrix>(wreck).Value, math.forward());
+            var matrix = _em.GetComponentData<PostTransformMatrix>(wreck).Value;
+            var nose = math.rotate(matrix, math.forward());
             Assert.AreEqual(math.sin(slope), nose.y, 1e-3f, "the model's forward rises with the ground");
+            Assert.AreEqual(0f, math.rotate(matrix, math.right()).y, 1e-3f, "no roll across the slope");
         }
 
         [Test]

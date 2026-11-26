@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -19,12 +18,11 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
     {
         protected const float Step = 0.1f;
 
-        private PresentationWorldKit _kit;
+        protected PresentationWorldKit _kit;
         protected World _world;
         protected EntityManager _em;
         protected SystemHandle _system;
         protected Entity _unit;
-        protected Entity _grid;
         protected float3 _position;
 
         [SetUp]
@@ -35,20 +33,16 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             _em = _kit.EntityManager;
             _system = _world.CreateSystem<MotionRigSystem>();
             _kit.AddGround();
-            _grid = _kit.Ground;
             _position = new float3(10f, 0f, 10f);
         }
 
         [TearDown]
         public void TearDown() => _kit.Dispose();
 
-        /// <summary>Lays a heightfield of 2 m samples under the nav grid.</summary>
-        protected void SetTerrain(NativeArray<float> heights, int2 size) => _kit.SetTerrain(heights, size);
-
         /// <summary>Lays a deck at <paramref name="height"/> over the cells from <paramref name="low"/> to <paramref name="high"/>.</summary>
         protected void SetDeck(int2 low, int2 high, float height)
         {
-            var grid = _em.GetComponentData<NavGrid>(_grid);
+            var grid = _em.GetComponentData<NavGrid>(_kit.Ground);
             foreach (var cell in grid.Grid.Cells(low, high))
             {
                 var index = grid.Grid.Index(cell);

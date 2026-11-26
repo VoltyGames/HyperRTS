@@ -103,7 +103,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
             var size = new int2(16, 16);
             var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
             heights[5 * size.x + 5] = height;
-            SetTerrain(heights, size);
+            _kit.SetTerrain(heights, size);
             heights.Dispose();
         }
     }

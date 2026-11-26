@@ -15,21 +15,13 @@ namespace HyperRTS.Presentation.Destruction
     [UpdateAfter(typeof(HullTiltSystem))]
     public partial struct RemainsPlacementSystem : ISystem
     {
-        private EntityQuery _fresh;
-
         public void OnCreate(ref SystemState state)
         {
-            _fresh = SystemAPI.QueryBuilder().WithAll<Unplaced>().Build();
-            state.RequireForUpdate(_fresh);
+            state.RequireForUpdate(SystemAPI.QueryBuilder().WithAll<Unplaced>().Build());
         }
 
         public void OnUpdate(ref SystemState state)
         {
-            if (_fresh.IsEmpty)
-            {
-                return;
-            }
-
             // Jobs may still write the transforms the lookups below read.
             state.CompleteDependency();
             var groups = SystemAPI.GetBufferLookup<LinkedEntityGroup>(true);

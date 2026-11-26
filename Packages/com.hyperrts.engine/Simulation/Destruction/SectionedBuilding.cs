@@ -91,6 +91,9 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>The mask with a bit for each of <paramref name="count"/> sections.</summary>
         public static ulong All(int count) => count >= 64 ? ~0ul : (1ul << count) - 1ul;
 
+        /// <summary>The mask of the building's <paramref name="count"/> sections still standing.</summary>
+        public readonly ulong Standing(int count) => All(count) & ~Broken;
+
         /// <summary>Standing sections that reach an anchor through standing supports.</summary>
         public static ulong Supported(DynamicBuffer<Section> sections)
         {

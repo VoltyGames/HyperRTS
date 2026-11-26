@@ -28,14 +28,7 @@ namespace HyperRTS.Simulation.Tests.Combat
         [Test]
         public void TankBehindAHouse_CannotFireThroughIt_AndItsRoundHitsTheHouse()
         {
-            var tank = World.SpawnUnit(1, new float3(1f, 0f, 1f));
-            World.AddWeapon(tank, new TestWeapon
-            {
-                Range = 30f,
-                Damage = 40f,
-                Cooldown = 0.5f,
-                Projectile = World.ProjectilePrefab(),
-            });
+            var tank = Tank(new float3(1f, 0f, 1f));
             var house = World.SpawnBuilding(0, new float3(11f, 0f, 1f), new float2(4f, 4f));
             var writer = World.Writer(house);
             SightBlockAuthoring.Add(writer, new SightBlock { Size = new float2(4f, 4f), Height = 6f });

@@ -5,7 +5,7 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Death
 {
-    /// <summary>The read-only lookups a destroyed piece's remains take their stretch and fall from,.</summary>
+    /// <summary>The read-only lookups a destroyed piece's remains take their stretch and fall from.</summary>
     public struct RemainsLookups
     {
         [ReadOnly] public ComponentLookup<PostTransformMatrix> Stretches;

@@ -26,16 +26,15 @@ namespace HyperRTS.Presentation.Destruction
         public void OnUpdate(ref SystemState state)
         {
             var grid = SystemAPI.GetSingleton<NavGrid>();
-            foreach (var (tilt, laid, matrix, blocker, place) in SystemAPI
-                         .Query<RefRW<HullTilt>, EnabledRefRW<HullTilt>, RefRW<PostTransformMatrix>, RefRO<Blocker>,
-                             RefRO<LocalTransform>>())
+            foreach (var (laid, matrix, blocker, place) in SystemAPI
+                         .Query<EnabledRefRW<HullTilt>, RefRW<PostTransformMatrix>, RefRO<Blocker>, RefRO<LocalTransform>>())
             {
                 var heading = new RigHeading(place.ValueRO);
                 var width = blocker.ValueRO.Radius * 2f;
                 var footprint = new float2(math.max(blocker.ValueRO.HullLength, width), width);
-                tilt.ValueRW.Value = MotionRig.GroundTilt(grid, footprint, heading.Position, heading.Forward, heading.Right);
+                var tilt = MotionRig.GroundTilt(grid, footprint, heading.Position, heading.Forward, heading.Right);
                 // A matrix already there is the tilt a ruin took over from the wreck it replaces, so it is written over.
-                matrix.ValueRW.Value = new float4x4(Turn(place.ValueRO.Rotation, heading, tilt.ValueRO.Value), float3.zero);
+                matrix.ValueRW.Value = new float4x4(Turn(place.ValueRO.Rotation, heading, tilt), float3.zero);
                 laid.ValueRW = false;
             }
         }

@@ -79,7 +79,7 @@ namespace HyperRTS.Simulation.Destruction
 
                 // Killed outright it dies as it stands; with every section broken the last hit only emptied its health.
                 var sections = Sections[entity];
-                var standing = SectionedBuilding.All(sections.Length) & ~building.Broken;
+                var standing = building.Standing(sections.Length);
                 if (standing != 0 && !Health.IsAlive(Healths, entity))
                 {
                     return;
@@ -112,7 +112,7 @@ namespace HyperRTS.Simulation.Destruction
                     Fall(entity, ref building, sections);
                 }
 
-                if ((SectionedBuilding.All(sections.Length) & ~building.Broken) == 0 && !Repairables.HasComponent(entity))
+                if (building.Standing(sections.Length) == 0 && !Repairables.HasComponent(entity))
                 {
                     Finish(entity, ref building);
                 }
@@ -135,7 +135,7 @@ namespace HyperRTS.Simulation.Destruction
             /// <summary>Keeps a building alive through hits until <see cref="SectionedBuilding.DiesAt"/>, unless a repair stood a section up again.</summary>
             private void Linger(Entity entity, ref SectionedBuilding building)
             {
-                if ((SectionedBuilding.All(Sections[entity].Length) & ~building.Broken) != 0)
+                if (building.Standing(Sections[entity].Length) != 0)
                 {
                     building.DiesAt = 0;
                     Buildings[entity] = building;
@@ -156,7 +156,7 @@ namespace HyperRTS.Simulation.Destruction
             private void Check(ref SectionedBuilding building, DynamicBuffer<Section> sections)
             {
                 building.Checked = building.Broken;
-                var standing = SectionedBuilding.All(sections.Length) & ~building.Broken;
+                var standing = building.Standing(sections.Length);
                 building.Falling = standing & ~SectionedBuilding.Supported(sections);
                 if (building.Falling == 0)
                 {

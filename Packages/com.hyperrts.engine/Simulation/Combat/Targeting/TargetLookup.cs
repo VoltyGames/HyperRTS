@@ -208,8 +208,16 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// Whether the weapon may shoot at the target from <paramref name="position"/>: lobbed fire always may, direct
         /// fire only with a line from the shooter's eye to the target's top clear of the ground and solid blocks.
         /// </summary>
-        public bool HasLineOfFire(Entity shooter, float3 position, in Weapon weapon, Entity target) =>
-            !weapon.NeedsLineOfFire || !IsObstructed(shooter, position, target);
+        public bool HasLineOfFire(Entity shooter, float3 position, in Weapon weapon, Entity target)
+        {
+            if (!weapon.NeedsLineOfFire)
+            {
+                return true;
+            }
+
+            SightLine(shooter, position, target, out var from, out var to);
+            return !_blockers.IsObstructed(from, to, Holder(shooter), target);
+        }
 
         /// <summary>
         /// Whether the weapon may fire now: direct fire waits for a clear line (<see cref="HasLineOfFire"/>), except
@@ -224,13 +232,6 @@ namespace HyperRTS.Simulation.Combat.Targeting
 
             SightLine(shooter, position, target, out var from, out var to);
             return !_blockers.RunsIntoGround(from, to);
-        }
-
-        /// <summary>Whether the ground or something solid stands between the shooter's eye and the target's top.</summary>
-        private bool IsObstructed(Entity shooter, float3 position, Entity target)
-        {
-            SightLine(shooter, position, target, out var from, out var to);
-            return _blockers.IsObstructed(from, to, Holder(shooter), target);
         }
 
         // From the shooter's eye to the target's top, the line sight and direct fire both judge.
