@@ -17,9 +17,11 @@ in step with the maps and toggles.
 white team mask, which `TeamColorSystem` paints like every mesh under the root. `TeamMarkerAuthoring` bakes nothing; it
 lets `TeamColorRule` count markers against `TeamMarkerSettings.minMarkers` on vehicles and buildings that can take an
 owner (not neutral, or capturable, or a neutral garrison), have no team strip and are no base prefab that variants
-derive from; a variant's inherited markers count. A marker hides with the damage stage it sits under and dies with its entity, since
-remains are their own prefab. A building's marker turns `_BUILD` on with UV3 at 1, or it shows before the building
-rises.
+derive from; a variant's inherited markers count. A building placed in lines needs one marker, since its segments
+repeat. A marker hides with the damage stage it sits under and dies with its entity, since remains are their own
+prefab. On a sectioned building **Fill from model** lists each marker as a part of the section it sits on, so a banner
+goes with its wall ([destruction](destruction.md#sections)). A building's marker turns `_BUILD` on with UV3 at
+1, or it shows before the building rises.
 
 **Glass.** The `_Transparent` toggle blends premultiplied, as URP Lit's Preserve Specular does: base alpha fades the
 diffuse while reflections stay whole. A transparent material writes no depth, casts no shadow and skips the
@@ -42,7 +44,8 @@ so the toggle turns `_NORMALMAP` on; the depth-normals buffer keeps the base nor
 the Meta pass's GI dirt matching. Team paint and glass stay clean. Base dirt needs mesh pivots on the ground.
 
 Ground vehicles with `GrimeAuthoring` collect grime (`GrimeSystem`), mud up to the road wheels' top and dust up to
-the hull's top, both measured by **Fill from model**. After rain (`_HyperRTSWetness`, from the
+the hull's top, both measured by **Fill from model**. Dust is a film, thickest by the wheels, that leaves the paint
+showing at its fullest and keeps off team paint. After rain (`_HyperRTSWetness`, from the
 `Atmosphere`) every LitTeam surface is wet where the sky reaches it, as the ground is: darker and glossier, metal
 not darker.
 
@@ -101,41 +104,6 @@ A client remembers enemy buildings where it last saw them as a visual copy that 
 
 Buildings fly their owner's flag. During a capture the owner's flag lowers and the capturer's rises; a building under
 construction flies none. `HyperRTS/Flag` samples the game's flag `Texture2DArray`, one layer per `PlayerSide`.
-
-## Destruction
-
-An entity shows the damage stage model for its health and bursts that stage's effect. Felled remains, such as trees, tip
-over as a rod pivoting at the stump, bounce once and settle, or lie down at once if the fall was out of sight. The
-tipping turns child models recorded in a `FallPart` buffer; the root keeps the simulation's final pose.
-
-**Model copies.** Models a root shows only now and then (every damage stage but the first, every section model but the
-intact one) bake as entity prefabs (`ModelCopyBakingSystem`), so a whole tree or building costs only the models on
-screen. `ModelCopies` copies one in under the part it was authored under while it shows and destroys it when it hides.
-A copy takes the root's hide reasons and the values painters put on its meshes (team colour, fog fade, lights, build
-progress, grime), and the root's `LinkedEntityGroup` lists it, so the root is destroyed whole.
-
-**Debris.** `DebrisAuthoring` on a ruin throws a `DebrisSet`'s pieces once when the ruin appears; on a building with
-breakable parts it throws them from each part that breaks, and an `ImpactMark` throws its `debris` sets out of its
-crater. `DebrisSystem` flies them on the client and lays them flat.
-The set's material needs GPU instancing (checked at bake).
-
-A piece at rest moves to `LastingDebris` and stays for the match, up to `LastingDebris.CapAt` per quality level; past the
-cap the oldest buries into the ground. `LastingDebrisDraws` draws it through a `BatchRendererGroup`, which reads
-matrices through the DOTS instancing path, so debris materials use a DOTS-instancing shader such as LitTeam. One
-entity per piece would be simpler, but at 20,000 pieces it cost 20% more main-thread time and about 8 ms of render
-thread.
-
-**Sections.** A building with `SectionsAuthoring` ([combat](../simulation/combat.md#sections)) gives each section models
-(`SectionModel`): intact, rigid pieces, a stub and a heap, or a broken model, and holed variants (`SectionHole`).
-Models other than the intact one are saved at scale 0, so editor views show the standing building, and bake as prefabs copied in while they
-show (see model copies above). `SectionViewSystem` shows each section by the simulation's broken mask:
-
-- **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.
-- **Breaking:** a break this client saw plays the pieces' clip once (`SectionClips`), blown in or out by the side the
-  last impact came from, and the pieces stay on its last frame (`ShownSections.Settled`), so nothing jumps.
-- **Broken:** stub and heap with no clip, for a break nobody saw or a building first seen broken.
-- **Resting debris:** pieces and heap hide while a section in `Section.Rests` is broken, and return on repair.
-- **Repair:** the intact model returns.
 
 ## Shaders
 

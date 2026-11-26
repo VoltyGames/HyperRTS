@@ -56,7 +56,8 @@ frame of one take, and an empty per clip with `clip`, `startRow`, `frameCount` a
 unreduced and keeps its pieces and clips inside it (`RigidMotion`), and gives the model beside it full-float UV1.
 **Bake** in the set's Inspector context menu or `rigid bake` samples the take into half-float EXRs (the set's
 `positions` and `rotations`, else `T_<Set>_Pos.exr` and `_Rot.exr` beside it) and writes the `VATClipTable`'s width,
-clips and bounds. Sampling the curves needs no scene; a channel without a curve keeps its node's pose.
+clips and bounds. Sampling the curves needs no scene; a channel without a curve keeps its node's pose. It fails,
+naming the column, when no vertex of the model reads one, since every piece would move as the first.
 
 `VATAnimatedAuthoring` beside the renderer bakes the start clip and bounds. There is no fade between clips.
 
@@ -145,7 +146,7 @@ Each figure has a `FigureClipSet` that picks clips from the table by name: legs 
 per `MemberAction` and deaths per posture. Every entry is required: an unset one or a missing name fails the bake and
 nothing falls back. `SquadFigureSystem` plays them; a clip with a `groundSpeed` plays at the figure's speed over that,
 so feet don't slide. The squad records each figure's clips, and every figure part (`FigurePart`, added at bake) picks
-up a change itself, so only chunks with a changed part are written. `SquadFigurePlacementSystem` turns a figure to its weapon's `WeaponPose` yaw while it fires (a
+up a change itself, so only chunks with a changed part are written. `SquadFigurePlacementSystem` stands each figure on the ground under its own feet (`NavGround.Footing`), so a squad on a slope neither sinks nor floats, and turns a figure to its weapon's `WeaponPose` yaw while it fires (a
 launcher or an extra weapon aims on its own; a hull-fixed rifle turns the squad), else to its cover heading, else to
 the squad's facing.
 

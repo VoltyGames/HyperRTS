@@ -64,7 +64,8 @@ handles Escape itself sets `FrontEndOwnsCancel` and calls `MatchView.CancelInter
 | --- | --- |
 | [HUD and overlays](hud.md) | HUD panels, command card, cursors, ground markers and health bars |
 | [Animation](animation.md) | Bone and vertex animation, machines, motion rig, squad figures |
-| [Rendering](rendering.md) | Team colour, visibility, fog of war, destruction visuals, shader conventions |
+| [Rendering](rendering.md) | Team colour, visibility, fog of war, shader conventions |
+| [Destruction](destruction.md) | Damage stages, falling trees, wrecks, debris, building sections |
 | [Environment](environment.md) | Atmosphere, fog, wind, water, field fires, ambient life |
 | [Light transport](light-transport.md) | What bounces light in Surface Cache GI, and why units and the terrain stay out |
 | [Ground](ground.md) | Trample maps, ruts and craters, stains, building decals and footprints |
