@@ -1,31 +1,42 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Cues;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
     /// After a section breaks, drops the sections no longer connected to the ground, one support level every
-    /// <see cref="SectionedBuilding.FallDelay"/>. A building whose last section broke dies once its pieces have fallen.
+    /// <see cref="SectionedBuilding.FallDelay"/>. A building whose last section broke is <see cref="Dying"/> with its
+    /// death cue played, and dies once its pieces have fallen.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
     public partial struct SectionCollapseSystem : ISystem
     {
+        private CueWriter _cues;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            _cues = new CueWriter(ref state);
             state.RequireForUpdate<SectionedBuilding>();
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
+            _cues.Update(ref state);
             new CollapseJob
             {
+                Cues = _cues,
+                Dying = SystemAPI.GetComponentLookup<Dying>(false),
                 Now = SystemAPI.Time.ElapsedTime,
                 Buildings = SystemAPI.GetComponentLookup<SectionedBuilding>(false),
                 Sections = SystemAPI.GetBufferLookup<Section>(false),
@@ -48,8 +59,10 @@ namespace HyperRTS.Simulation.Destruction
             public ComponentLookup<IntactFloors> Floors;
             [ReadOnly] public ComponentLookup<Repairable> Repairables;
             [ReadOnly] public ComponentLookup<SectionClips> Clips;
+            public ComponentLookup<Dying> Dying;
+            public CueWriter Cues;
 
-            private void Execute(Entity entity)
+            private void Execute(Entity entity, in LocalTransform transform, in Owner owner)
             {
                 var building = Buildings[entity];
                 if (building.DiesAt != 0)
@@ -73,6 +86,12 @@ namespace HyperRTS.Simulation.Destruction
                 }
 
                 Advance(entity, ref building, sections);
+                if (building.DiesAt != 0)
+                {
+                    Dying.SetComponentEnabled(entity, true);
+                    Cues.Play(entity, CueSlot.Death, transform, transform.Forward(), owner.Value);
+                }
+
                 Buildings[entity] = building;
                 if (Floors.TryGetComponent(entity, out var floors))
                 {
@@ -120,6 +139,7 @@ namespace HyperRTS.Simulation.Destruction
                 {
                     building.DiesAt = 0;
                     Buildings[entity] = building;
+                    Dying.SetComponentEnabled(entity, false);
                     return;
                 }
 

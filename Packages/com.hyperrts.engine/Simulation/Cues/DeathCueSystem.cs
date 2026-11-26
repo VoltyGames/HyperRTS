@@ -7,7 +7,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Cues
 {
-    /// <summary>Plays the death cue of everything <c>DeathSystem</c> marked <see cref="Dead"/> this frame.</summary>
+    /// <summary>
+    /// Plays the death cue of everything <c>DeathSystem</c> marked <see cref="Dead"/> this frame, but for the
+    /// <see cref="Dying"/>, whose cue played as their death began.
+    /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(LifecycleSystemGroup))]
     public partial struct DeathCueSystem : ISystem
@@ -30,6 +33,7 @@ namespace HyperRTS.Simulation.Cues
         // Single-threaded: every death appends to the one cue queue. CueWriter skips those without a death cue.
         [BurstCompile]
         [WithAll(typeof(Dead))]
+        [WithNone(typeof(Dying))]
         private partial struct DeathJob : IJobEntity
         {
             public CueWriter Cues;

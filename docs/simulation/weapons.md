@@ -102,7 +102,8 @@ What happens when health reaches zero, and what is left. Code sits in `Simulatio
 5. **Decay.** `DecayAuthoring` remains wait their lifetime, are buried and go; until then a `NavObstacle` blocks their
    cells. Remains without it stay for the match.
 6. **Cues.** `DeathCueSystem` queues the death cue of each `Dead` entity: its sound, effects, `DeathStain` and squad
-   members.
+   members. An entity that was `Dying` played it when its death began, as a building does when its last section
+   breaks, and `TargetLookup.IsAlive` is false for it from then on.
 7. **Presentation.** `DeathStainSystem` stamps the stain (rubble, ash, fuel, mud) into the ground for the match, for
    deaths seen on the ground. `CorpseDeathCues` leaves corpses only for squads whose death the player saw, matching the
    cue's source number.

@@ -24,6 +24,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
     {
         [ReadOnly] private ComponentLookup<LocalTransform> _transforms;
         [ReadOnly] private ComponentLookup<Health> _health;
+        [ReadOnly] private ComponentLookup<Dying> _dying;
         [ReadOnly] private ComponentLookup<Owner> _owners;
         [ReadOnly] private ComponentLookup<NavAgent> _agents;
         [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
@@ -44,6 +45,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
             this = default;
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _health = state.GetComponentLookup<Health>(true);
+            _dying = state.GetComponentLookup<Dying>(true);
             _owners = state.GetComponentLookup<Owner>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
             _obstacles = state.GetComponentLookup<NavObstacle>(true);
@@ -69,6 +71,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
         {
             _transforms.Update(ref state);
             _health.Update(ref state);
+            _dying.Update(ref state);
             _owners.Update(ref state);
             _agents.Update(ref state);
             _obstacles.Update(ref state);
@@ -82,8 +85,8 @@ namespace HyperRTS.Simulation.Combat.Targeting
             queries.Read(out _fog, out _sight, out _blockers);
         }
 
-        /// <summary>False once destroyed or at zero health (dying entities linger until the frame ends).</summary>
-        public bool IsAlive(Entity entity) => Health.IsAlive(_health, entity);
+        /// <summary>False once destroyed, at zero health (the dead linger until the frame ends) or <see cref="Dying"/>.</summary>
+        public bool IsAlive(Entity entity) => Health.IsAlive(_health, entity) && !_dying.HasEnabled(entity);
 
         /// <summary>Alive, hostile, not tucked inside a container and not hidden from the attacker by stealth.</summary>
         public bool IsValidTarget(Entity target, byte attackerOwner, in OwnerRelations relations)

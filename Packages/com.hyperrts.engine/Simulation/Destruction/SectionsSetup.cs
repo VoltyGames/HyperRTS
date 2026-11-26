@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Navigation.Areas;
 using System.Collections.Generic;
@@ -32,6 +33,8 @@ namespace HyperRTS.Simulation.Destruction
 
             writer.AddBuffer(factors);
             writer.Add(new SectionedBuilding { Rubble = rubble });
+            writer.Add<Dying>();
+            writer.SetEnabled<Dying>(false);
             writer.Add(new IntactFloors { Count = (byte)floors });
         }
 

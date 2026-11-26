@@ -15,6 +15,12 @@ namespace HyperRTS.Simulation.Common
     public struct Dead : IComponentData, IEnableableComponent { }
 
     /// <summary>
+    /// Alive only until its death has played out, such as a building whose last pieces are falling: nothing targets
+    /// it, and its death cue plays as this turns on.
+    /// </summary>
+    public struct Dying : IComponentData, IEnableableComponent { }
+
+    /// <summary>
     /// Scenery or remains removed without remains, effects or sounds, such as by a building site.
     /// <c>DeathSystem</c> destroys it the next lifecycle phase.
     /// </summary>
