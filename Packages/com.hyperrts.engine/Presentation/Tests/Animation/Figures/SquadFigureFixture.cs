@@ -54,6 +54,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
         {
             _kit = new PresentationWorldKit("Squad Figure Tests");
             _em = _kit.EntityManager;
+            _kit.AddGround();
             _placement = _kit.World.CreateSystem<SquadFigurePlacementSystem>();
             _parents = _kit.World.CreateSystem<ParentSystem>();
             _matrices = _kit.World.CreateSystem<LocalToWorldSystem>();

@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common.Infantry;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Cues;
 using NUnit.Framework;
+using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -29,6 +30,28 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures
             var world = math.transform(turned, local);
             Assert.AreEqual(2f, world.x, 1e-4f);
             Assert.AreEqual(-1f, world.z, 1e-4f);
+        }
+
+        [Test]
+        public void FigureOnASlope_StandsOnTheGroundUnderItsOwnFeet()
+        {
+            // Ground rising half a metre a metre along x, on 2 m samples.
+            var size = new int2(33, 33);
+            var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
+            for (var i = 0; i < heights.Length; i++)
+            {
+                heights[i] = i % size.x;
+            }
+
+            _kit.SetTerrain(heights, size);
+            MoveSquad(new float3(10f, 5f, 10f), 0f);
+            Member(1, offset: new float2(2f, 0f));
+            Member(2, offset: new float2(-2f, 0f));
+
+            Update();
+
+            Assert.AreEqual(1f, _em.GetComponentData<LocalTransform>(_figures[1]).Position.y, 1e-3f, "uphill of the squad");
+            Assert.AreEqual(-1f, _em.GetComponentData<LocalTransform>(_figures[2]).Position.y, 1e-3f, "downhill of it");
         }
 
         [Test]

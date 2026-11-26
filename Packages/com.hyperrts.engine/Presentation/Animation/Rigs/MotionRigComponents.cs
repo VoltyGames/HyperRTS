@@ -80,14 +80,19 @@ namespace HyperRTS.Presentation.Animation.Rigs
             Tilt = math.lerp(Tilt, target, Ease(deltaTime, TiltTime));
 
         /// <summary>Nose-up pitch and right-side-up roll of the ground under the footprint.</summary>
-        public readonly float2 GroundTilt(in NavGrid grid, float3 position, float3 forward, float3 right)
+        public readonly float2 GroundTilt(in NavGrid grid, float3 position, float3 forward, float3 right) =>
+            GroundTilt(grid, Footprint, position, forward, right);
+
+        /// <summary>Nose-up pitch and right-side-up roll of the ground under a <paramref name="footprint"/> (length, width).</summary>
+        public static float2 GroundTilt(in NavGrid grid, float2 footprint, float3 position, float3 forward, float3 right)
         {
-            var half = Footprint * 0.5f;
-            var front = HullGround(grid, position + forward * half.x, position);
-            var back = HullGround(grid, position - forward * half.x, position);
-            var rightSide = HullGround(grid, position + right * half.y, position);
-            var leftSide = HullGround(grid, position - right * half.y, position);
-            return new float2(math.atan2(front - back, Footprint.x), math.atan2(rightSide - leftSide, Footprint.y));
+            var half = footprint * 0.5f;
+            var center = position.xz;
+            var front = NavGround.Footing(grid, center + forward.xz * half.x, center);
+            var back = NavGround.Footing(grid, center - forward.xz * half.x, center);
+            var rightSide = NavGround.Footing(grid, center + right.xz * half.y, center);
+            var leftSide = NavGround.Footing(grid, center - right.xz * half.y, center);
+            return new float2(math.atan2(front - back, footprint.x), math.atan2(rightSide - leftSide, footprint.y));
         }
 
         /// <summary>
@@ -99,15 +104,7 @@ namespace HyperRTS.Presentation.Animation.Rigs
         {
             var body = math.rotate(bodyTilt, contact);
             var ground = position + right * body.x + forward * body.z;
-            return HullGround(grid, ground, position) - (position.y + body.y);
-        }
-
-        // Never below the deck the hull's centre stands on: the terrain under a bridge is the valley it spans.
-        private static float HullGround(in NavGrid grid, float3 point, float3 center)
-        {
-            var ground = grid.Terrain.Height(point.xz);
-            var floor = grid.TryDeckHeight(center.xz, out var standing) ? math.max(ground, standing) : ground;
-            return grid.TryDeckHeight(point.xz, out var deck) ? deck : floor;
+            return NavGround.Footing(grid, ground.xz, position.xz) - (position.y + body.y);
         }
 
         /// <summary>
