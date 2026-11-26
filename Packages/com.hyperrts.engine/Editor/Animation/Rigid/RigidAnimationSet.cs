@@ -19,8 +19,11 @@ namespace HyperRTS.Editor.Animation.Rigid
     [HelpURL(HyperRTSDocs.Presentation)]
     public class RigidAnimationSet : ScriptableObject, IAnimationSet
     {
-        [Tooltip("The model whose meshes carry each vertex's texture column in UV1.")]
+        [Tooltip("The model that holds the pieces' meshes.")]
         public GameObject model;
+
+        [Tooltip("The model's meshes that carry each vertex's texture column in UV1. Its other meshes are not measured.")]
+        public List<Mesh> pieces = new();
 
         [Tooltip("The motion model, VAT/<Model>_Motion.fbx: an empty a piece, keyed on every frame of one take.")]
         public GameObject motion;
@@ -41,25 +44,25 @@ namespace HyperRTS.Editor.Animation.Rigid
         public List<string> Bake()
         {
             Check();
-            var pieces = RigidMotion.Find(motion);
-            var rows = pieces.RowCount;
-            if (rows > AnimationSetBake.MaxTextureSize || pieces.pieces.Count > AnimationSetBake.MaxTextureSize)
+            var rigid = RigidMotion.Find(motion);
+            var rows = rigid.RowCount;
+            if (rows > AnimationSetBake.MaxTextureSize || rigid.pieces.Count > AnimationSetBake.MaxTextureSize)
             {
-                throw new InvalidOperationException($"Rigid set '{name}' needs {pieces.pieces.Count} x {rows} texels, over the {AnimationSetBake.MaxTextureSize} texture limit.");
+                throw new InvalidOperationException($"Rigid set '{name}' needs {rigid.pieces.Count} x {rows} texels, over the {AnimationSetBake.MaxTextureSize} texture limit.");
             }
 
-            var poses = RigidPoses.Sample(motion, SingleTake(motion), pieces, rows);
+            var poses = RigidPoses.Sample(motion, SingleTake(motion), rigid, rows);
             // First, since it throws on a model whose vertices miss a column: nothing is written for one.
-            var bounds = poses.Bounds(model);
+            var bounds = poses.Bounds(model, pieces);
             var positionsPath = TexturePath(positions, "Pos");
             var rotationsPath = TexturePath(rotations, "Rot");
             positions = WriteTexture(poses.Positions(), positionsPath);
             rotations = WriteTexture(poses.Rotations(), rotationsPath);
 
-            table.width = pieces.pieces.Count;
+            table.width = rigid.pieces.Count;
             table.boundsMin = bounds.min;
             table.boundsMax = bounds.max;
-            table.clips = pieces.clips.Select(clip => new NamedClip
+            table.clips = rigid.clips.Select(clip => new NamedClip
             {
                 name = clip.name, startRow = clip.startRow, frameCount = clip.frameCount, fps = clip.fps, loop = clip.loop,
             }).ToList();
@@ -74,6 +77,11 @@ namespace HyperRTS.Editor.Animation.Rigid
             if (model == null || motion == null || table == null)
             {
                 throw new InvalidOperationException($"Rigid set '{name}' needs a model, a motion model and a clip table.");
+            }
+
+            if (pieces.Count == 0)
+            {
+                throw new InvalidOperationException($"Rigid set '{name}' lists no piece meshes.");
             }
         }
 

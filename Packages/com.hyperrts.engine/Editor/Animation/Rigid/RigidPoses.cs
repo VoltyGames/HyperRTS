@@ -81,12 +81,12 @@ namespace HyperRTS.Editor.Animation.Rigid
 
         /// <summary>
         /// Where the pieces reach over every row: each piece's position padded by its farthest vertex from where it
-        /// rests, measured on the meshes of <paramref name="model"/> that carry a UV1 column. Throws when no vertex
-        /// reads some column, which leaves every piece moving as the first one.
+        /// rests, measured on the <paramref name="meshes"/> of <paramref name="model"/>, whose UV1 holds the column.
+        /// Throws when no vertex reads some column, which leaves every piece moving as the first one.
         /// </summary>
-        public Bounds Bounds(GameObject model)
+        public Bounds Bounds(GameObject model, List<Mesh> meshes)
         {
-            var reach = Reach(model);
+            var reach = Reach(model, meshes);
             var min = Vector3.positiveInfinity;
             var max = Vector3.negativeInfinity;
             for (var row = 0; row < _rows; row++)
@@ -104,7 +104,7 @@ namespace HyperRTS.Editor.Animation.Rigid
             return bounds;
         }
 
-        private float[] Reach(GameObject model)
+        private float[] Reach(GameObject model, List<Mesh> meshes)
         {
             var reach = new float[_width];
             var read = new bool[_width];
@@ -113,9 +113,14 @@ namespace HyperRTS.Editor.Animation.Rigid
             foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
             {
                 var mesh = filter.sharedMesh;
-                if (mesh == null || !mesh.HasVertexAttribute(VertexAttribute.TexCoord1))
+                if (!meshes.Contains(mesh))
                 {
                     continue;
+                }
+
+                if (!mesh.HasVertexAttribute(VertexAttribute.TexCoord1))
+                {
+                    throw new InvalidDataException($"HyperRTS: piece mesh {mesh.name} of {model.name} has no UV1.");
                 }
 
                 var toModel = model.transform.worldToLocalMatrix * filter.transform.localToWorldMatrix;
