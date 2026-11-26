@@ -13,7 +13,10 @@ using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Tests.Combat
 {
-    /// <summary>Direct fire needs a clear line: rounds hit what stands in the way, bullets close in, smoke breaks lock.</summary>
+    /// <summary>
+    /// Direct fire needs a clear line: rounds hit the block that stands in the way and wait for the ground, bullets close
+    /// in, smoke breaks lock.
+    /// </summary>
     public class LineOfFireTests : SimulationFixture
     {
         [SetUp]
@@ -63,6 +66,34 @@ namespace HyperRTS.Simulation.Tests.Combat
         }
 
         [Test]
+        public void RoundFiredOverAFold_ItsShooterSeesAcross_ReachesItsTarget()
+        {
+            // The eye, 2 m up, sees the target's top over the fold; the round leaves lower and would graze it.
+            World.CreateTerrain(point => point.x is > 9f and < 13f ? 1.3f : 0f);
+            var tank = Tank(new float3(1f, 0f, 1f));
+            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+
+            Attack(tank, enemy);
+
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 3f), "the round is not lost in the fold");
+        }
+
+        [Test]
+        public void ExplicitAttack_WithRounds_FiresNoneIntoARise_AndClosesInUntilItSeesOver()
+        {
+            World.CreateTerrain(point => point.x is > 9f and < 13f ? 4f : 0f);
+            var tank = Tank(new float3(1f, 0f, 1f));
+            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+
+            Attack(tank, enemy);
+            World.Run(0.5f);
+            Assert.AreEqual(0, Projectiles(), "no round into the rise");
+            Assert.Greater(World.GetPosition(tank).x, 1.5f, "it closes in");
+
+            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 10f), "it fires once it sees over");
+        }
+
+        [Test]
         public void Smoke_HidesATarget_BreaksAGuidedRoundsLock_ThenClears()
         {
             World.SetFog(true);
@@ -96,6 +127,13 @@ namespace HyperRTS.Simulation.Tests.Combat
             var writer = World.Writer(smoke);
             DecayAuthoring.Add(writer, "Smoke", 30f, 1f, 0.1f);
             return smoke;
+        }
+
+        private Entity Tank(float3 position)
+        {
+            var tank = World.SpawnUnit(1, position);
+            World.AddWeapon(tank, new TestWeapon { Range = 30f, Damage = 40f, Cooldown = 0.5f, Projectile = World.ProjectilePrefab() });
+            return tank;
         }
 
         private void Attack(Entity unit, Entity target) => World.Command(World.Get<Owner>(unit).Value,

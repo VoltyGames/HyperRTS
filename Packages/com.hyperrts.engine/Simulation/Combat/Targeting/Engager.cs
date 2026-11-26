@@ -58,7 +58,7 @@ namespace HyperRTS.Simulation.Combat.Targeting
                 stance.ReturnPoint = unit.Position;
             }
 
-            // Bullets close in until the line is clear.
+            // Direct fire closes in until its line is clear: bullets of everything, rounds of the ground.
             var clear = Targets.CanFireAt(unit.Entity, unit.Position, primary.Weapon, target);
             Approach(unit, target, ref attack, range.Band, clear);
         }

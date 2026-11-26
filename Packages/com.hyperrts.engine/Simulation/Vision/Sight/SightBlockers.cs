@@ -72,9 +72,40 @@ namespace HyperRTS.Simulation.Vision.Sight
 
         /// <summary>
         /// Whether the straight line from <paramref name="from"/> to <paramref name="to"/> runs into the ground or a
-        /// solid block, and where; the blocks of <paramref name="shooter"/> and <paramref name="target"/> don't count.
+        /// solid block; the blocks of <paramref name="shooter"/> and <paramref name="target"/> don't count.
         /// </summary>
-        public readonly bool TryFindObstruction(float3 from, float3 to, Entity shooter, Entity target,
+        public readonly bool IsObstructed(float3 from, float3 to, Entity shooter, Entity target) =>
+            RunsIntoGround(from, to) || TryFindBlock(from, to, shooter, target, out _, out _);
+
+        /// <summary>Whether the straight line from <paramref name="from"/> to <paramref name="to"/> dips below the bare ground.</summary>
+        public readonly bool RunsIntoGround(float3 from, float3 to)
+        {
+            var ray = new GridRay(Grid, from.xz, to.xz);
+            while (ray.MoveNext())
+            {
+                // Both ends stand on their own ground, which their cell's one height only roughs out.
+                var end = ray.Entry == 0f || ray.Exit >= 1f;
+                if (end || !Grid.Contains(ray.Cell))
+                {
+                    continue;
+                }
+
+                var ground = Cells[Grid.Index(ray.Cell)].Ground;
+                if (TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit), ground, out _))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Whether the straight line from <paramref name="from"/> to <paramref name="to"/> runs into a solid block, and
+        /// where; the blocks of <paramref name="shooter"/> and <paramref name="target"/> don't count. The bare ground
+        /// stops nothing here: a round is only fired over ground its shooter has a line across.
+        /// </summary>
+        public readonly bool TryFindBlock(float3 from, float3 to, Entity shooter, Entity target,
             out float3 contact, out Entity obstacle)
         {
             var ray = new GridRay(Grid, from.xz, to.xz);
@@ -86,17 +117,14 @@ namespace HyperRTS.Simulation.Vision.Sight
                 }
 
                 var index = Grid.Index(ray.Cell);
-                obstacle = Owner[index];
-                var own = obstacle != Entity.Null && (obstacle == shooter || obstacle == target);
-                // Shooter and target stand on their own ground, which their cell's one height only roughs out.
-                var end = ray.Entry == 0f || ray.Exit >= 1f;
                 var cell = Cells[index];
-                if (end && cell.Solid == 0)
+                obstacle = Owner[index];
+                if (cell.Solid == 0 || obstacle == shooter || obstacle == target)
                 {
                     continue;
                 }
 
-                if (!own && TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit),
+                if (TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit),
                         cell.Ground + cell.SolidHeight, out contact))
                 {
                     return true;

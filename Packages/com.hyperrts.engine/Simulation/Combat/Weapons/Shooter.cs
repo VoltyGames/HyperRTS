@@ -197,7 +197,10 @@ namespace HyperRTS.Simulation.Combat.Weapons
             AddImpact(firing, hit, origin.Hit, aim.Point);
         }
 
-        /// <summary>Turns a direct-fire round onto whatever solid stands between its launch point and the target.</summary>
+        /// <summary>
+        /// Turns a direct-fire round onto the solid block that stands between its launch point and the target. The
+        /// ground turns none: its shooter fires only with a line across it.
+        /// </summary>
         private void Obstruct(in Firing firing, in Weapon weapon, in ShotOrigin origin, ref Entity target,
             ref float3 targetPosition)
         {
@@ -207,7 +210,7 @@ namespace HyperRTS.Simulation.Combat.Weapons
             }
 
             var aim = weapon.Aim.TargetPoint(targetPosition);
-            if (_blockers.TryFindObstruction(origin.Launch, aim, firing.Housing, target, out var contact, out var obstacle))
+            if (_blockers.TryFindBlock(origin.Launch, aim, firing.Housing, target, out var contact, out var obstacle))
             {
                 target = obstacle;
                 targetPosition = contact;

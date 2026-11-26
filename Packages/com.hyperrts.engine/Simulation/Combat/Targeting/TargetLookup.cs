@@ -209,20 +209,38 @@ namespace HyperRTS.Simulation.Combat.Targeting
             !weapon.NeedsLineOfFire || !IsObstructed(shooter, position, target);
 
         /// <summary>
-        /// Whether the weapon may fire now: rounds fire into what's in the way, other direct fire waits for a clear
-        /// line (<see cref="HasLineOfFire"/>).
+        /// Whether the weapon may fire now: direct fire waits for a clear line (<see cref="HasLineOfFire"/>), except
+        /// that rounds fire into a solid block in the way and wait only for the ground.
         /// </summary>
-        public bool CanFireAt(Entity shooter, float3 position, in Weapon weapon, Entity target) =>
-            weapon.FiresRounds || HasLineOfFire(shooter, position, weapon, target);
+        public bool CanFireAt(Entity shooter, float3 position, in Weapon weapon, Entity target)
+        {
+            if (!weapon.NeedsLineOfFire)
+            {
+                return true;
+            }
 
-        /// <summary>Whether something solid stands between the shooter's eye and the target's top.</summary>
+            SightLine(shooter, position, target, out var from, out var to);
+            if (weapon.FiresRounds)
+            {
+                return !_blockers.RunsIntoGround(from, to);
+            }
+
+            return !_blockers.IsObstructed(from, to, Holder(shooter), target);
+        }
+
+        /// <summary>Whether the ground or something solid stands between the shooter's eye and the target's top.</summary>
         private bool IsObstructed(Entity shooter, float3 position, Entity target)
         {
-            var holder = Holder(shooter);
+            SightLine(shooter, position, target, out var from, out var to);
+            return _blockers.IsObstructed(from, to, Holder(shooter), target);
+        }
+
+        // From the shooter's eye to the target's top, the line sight and direct fire both judge.
+        private void SightLine(Entity shooter, float3 position, Entity target, out float3 from, out float3 to)
+        {
             _vision.TryGetComponent(shooter, out var vision);
-            var from = position + new float3(0f, vision.EyeHeight, 0f);
-            var to = Position(target) + new float3(0f, SightLines.TargetTop(Layer(target) != SightLayer.Ground), 0f);
-            return _blockers.TryFindObstruction(from, to, holder, target, out _, out _);
+            from = position + new float3(0f, vision.EyeHeight, 0f);
+            to = Position(target) + new float3(0f, SightLines.TargetTop(Layer(target) != SightLayer.Ground), 0f);
         }
 
         /// <summary>Whether the target sits between the weapon's minimum range and its <see cref="Reach"/>.</summary>

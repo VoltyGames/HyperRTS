@@ -56,9 +56,9 @@ cue, filled in order from index 1 by `mountFire` on the sound and effect authori
 `Shooter.TryFire`. A weapon with `MinRange` never picks targets inside it and backs off when ordered to attack one.
 
 **Line of fire.** Direct fire and rockets need a clear line from the shooter's eye to the target's top over the ground
-and solid sight blocks (`SightBlockers.TryFindObstruction`). Scans skip blocked targets. A weapon that hits at once
-waits for a clear line, so an ordered attack closes in until it has one. A weapon that fires rounds shoots anyway and
-hits the obstacle. A round launched through dense porous cover such as smoke loses its lock and flies to the aim point.
+and solid sight blocks (`SightBlockers`). Scans skip blocked targets; an ordered attack closes in until its line
+clears. An instant hit waits for the whole line; a round only for the ground, as it hits a solid block in its way,
+never bare ground. A round launched through dense smoke loses its lock and flies to the aim point.
 
 **Reach.** `TargetLookup.Reach` is a weapon's range against one target. A passenger firing out of a container gains
 `ContainerAuthoring.passengerRangeBonus`. Direct fire and rockets from above their target gain range per metre of
@@ -76,7 +76,7 @@ jobs, which can't carry a query.
 
 ## Destruction
 
-Building sections and toppling scenery; presentation is in [client](../presentation/rendering.md#destruction). `DamageSystem` routes hits into sections through `SectionDamage` and fells `Topple` pieces away from their `LethalHit`.
+Building sections and toppling scenery; presentation is in [client](../presentation/destruction.md). `DamageSystem` routes hits into sections through `SectionDamage` and fells `Topple` pieces away from their `LethalHit`.
 
 | Type | Role |
 | --- | --- |
