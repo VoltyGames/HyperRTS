@@ -14,7 +14,8 @@ namespace HyperRTS.Editor.Validation.Rules.Units
 {
     /// <summary>
     /// Owner colour reaches a unit or building only through a material with <c>_TeamColor</c> (HyperRTS/LitTeam), and a
-    /// vehicle or building a player can own carries enough team markers for its owner to show on the model.
+    /// vehicle or building a player can own carries enough team markers for its owner to show on the model. A building
+    /// placed in lines needs one: its segments repeat, and so would a second marker on each.
     /// </summary>
     public sealed class TeamColorRule : AuthoringRule<GameEntityAuthoring>
     {
@@ -59,9 +60,10 @@ namespace HyperRTS.Editor.Validation.Rules.Units
                 issues.Warn(marker, "This team marker has no _TeamColor material (use HyperRTS/LitTeam): it won't take its owner's colour.");
             }
 
-            if (markers.Length < minimum)
+            var needed = entity is BuildingAuthoring { placedInLines: true } ? Mathf.Min(minimum, 1) : minimum;
+            if (markers.Length < needed)
             {
-                issues.Warn(entity, $"Only {markers.Length} team markers, fewer than {minimum}: add Team Marker props " +
+                issues.Warn(entity, $"Only {markers.Length} team markers, fewer than {needed}: add Team Marker props " +
                     "(a roof panel, pennant, flag or placard) so its owner shows on the model.");
             }
         }

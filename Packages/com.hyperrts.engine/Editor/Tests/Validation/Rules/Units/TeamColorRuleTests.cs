@@ -4,6 +4,7 @@ using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Rules.Units;
 using HyperRTS.Editor.Validation.Sets;
 using HyperRTS.Presentation.Rendering.LitTeam;
+using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.GameEntities;
 using NUnit.Framework;
 using UnityEditor;
@@ -31,6 +32,17 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             RemoveMarker(prop);
             RemoveMarker(prop);
             Assert.IsEmpty(MarkerWarnings(prop), "a neutral entity nobody can capture or garrison never takes an owner");
+        }
+
+        [Test]
+        public void TeamColorRule_AsksOneMarkerOfABuildingPlacedInLines()
+        {
+            var wall = Template<BuildingAuthoring>(TemplateObjects.Building("Wall"));
+            Object.DestroyImmediate(wall.GetComponentInChildren<TeamMarkerAuthoring>().gameObject);
+            Assert.IsTrue(MarkerWarnings(wall).Any(message => message.Contains("Only 1 team markers")));
+
+            wall.placedInLines = true;
+            Assert.IsEmpty(MarkerWarnings(wall), "its segments repeat along the line, and so would a second marker");
         }
 
         // A base prefab only exists to be derived from; its variant is placed, with the base's markers and its own.
@@ -88,7 +100,7 @@ namespace HyperRTS.Editor.Tests.Validation.Rules.Units
             marker.GetComponent<MeshRenderer>().sharedMaterial = material;
         }
 
-        private static string[] MarkerWarnings(UnitAuthoring unit, PrefabSet prefabs = null)
+        private static string[] MarkerWarnings(GameEntityAuthoring unit, PrefabSet prefabs = null)
         {
             var issues = new ValidationIssues();
             TeamColorRule.CheckMarkers(unit, 2, prefabs ?? new PrefabSet(new[] { unit.gameObject }), issues);
