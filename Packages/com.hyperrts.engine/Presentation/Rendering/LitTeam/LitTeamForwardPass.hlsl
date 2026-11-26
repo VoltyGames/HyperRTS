@@ -50,7 +50,7 @@ void LitTeamPassFragment(
     float3 normalOS = normalize(TransformWorldToObjectNormal(input.normalWS.xyz));
     ApplyWeathering(positionOS, normalOS, teamMask, surfaceData);
 #endif
-    ApplyGrime(input.positionWS, surfaceData);
+    ApplyGrime(input.positionWS, teamMask, surfaceData);
     ApplyRain(input.normalWS.xyz, surfaceData);
 
     LODFadeCrossFade(input.positionCS);

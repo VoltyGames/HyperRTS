@@ -10,10 +10,15 @@
 #define RAIN_DARKENING 0.3
 #define RAIN_GLOSS 0.7
 
+// Dust is a film over the paint, thickest by the wheels: a hull at full dust still shows its camouflage.
+#define DUST_FILM_FOOT 0.55
+#define DUST_FILM_TOP 0.2
+
 float4 _HyperRTSDustColor;
 float4 _HyperRTSMudColor;
 
-void ApplyGrime(float3 positionWS, inout SurfaceData surface)
+// Team paint stays clean of dust, as it does of weathering, so a dusty hull still shows its owner.
+void ApplyGrime(float3 positionWS, half teamMask, inout SurfaceData surface)
 {
     // Clean vehicles skip the object-space transform and every noise sample.
     if (!any(_Grime))
@@ -40,7 +45,8 @@ void ApplyGrime(float3 positionWS, inout SurfaceData surface)
     float dustReach = 1.0 - smoothstep(0.0, dustTop, height);
     float dustCut = 1.0 - smoothstep(dustTop * 0.8, dustTop, height);
     half dust = saturate((_Grime.x * (0.4 + dustReach * 0.9) + (coarse - 0.5) * 0.5 - 0.25) * 4.0) * dustCut;
-    albedo = lerp(albedo, _HyperRTSDustColor.rgb, dust * 0.85);
+    dust *= 1.0 - teamMask;
+    albedo = lerp(albedo, _HyperRTSDustColor.rgb, dust * lerp(DUST_FILM_TOP, DUST_FILM_FOOT, dustReach));
     smoothness = lerp(smoothness, smoothness * 0.35, dust);
 
     float mudReach = 1.0 - smoothstep(0.5 * mudTop, mudTop, height);
