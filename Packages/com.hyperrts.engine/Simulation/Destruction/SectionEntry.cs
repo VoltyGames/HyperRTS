@@ -63,7 +63,7 @@ namespace HyperRTS.Simulation.Destruction
         [Tooltip("Sections its broken pieces and heap lie on, by their intact model; they hide while any of them is broken.")]
         public GameObject[] rests;
 
-        [Tooltip("Moving parts (a turret, a gun, a door, a radar head) that hide and show with the intact model.")]
+        [Tooltip("Moving parts (a turret, a gun, a door, a radar head) and team markers fixed to it (a banner, a roof panel) that hide and show with the intact model.")]
         public GameObject[] parts;
 
         [Tooltip("Weapon mounts that are silent while the section is broken: 0 the main weapon, 1 and up the extra weapons.")]

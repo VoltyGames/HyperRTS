@@ -26,7 +26,7 @@ namespace HyperRTS.Editor.Destruction
         /// <summary>
         /// The sections as authoring entries, each box measured by <paramref name="measure"/>. Share, deck and
         /// needs-all-supports stay from the owner's entry for the same model. Holed, pieces, stub and heap models are
-        /// set to scale 0.
+        /// set to scale 0. A section's parts are the model's moving parts on it and the team markers fixed to it.
         /// </summary>
         public List<SectionEntry> Build(Func<Transform, Bounds> measure)
         {
@@ -39,10 +39,14 @@ namespace HyperRTS.Editor.Destruction
                 all.Encapsulate(box);
             }
 
+            var markers = new SectionMarkers(_owner, _data).Find(boxes, measure);
             var found = new List<SectionEntry>(sections.Count);
             for (var i = 0; i < sections.Count; i++)
             {
-                found.Add(Entry(sections[i], intacts[i], boxes[i], all.center));
+                var entry = Entry(sections[i], intacts[i], boxes[i], all.center);
+                var index = i;
+                entry.parts = entry.parts.Concat(markers.Where(marker => marker.Section == index).Select(marker => marker.Marker)).ToArray();
+                found.Add(entry);
             }
 
             return found;
