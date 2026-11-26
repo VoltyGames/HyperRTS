@@ -75,7 +75,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             AddVehicles();
             AddFootsteps();
             AddBuildings();
-            AddBuriedRemains();
+            AddRemains();
             AddWakes();
         }
 
@@ -171,37 +171,33 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
             Stamps.AddRuts(marks, front, heading, math.dot(frontStep, heading), 2);
         }
 
-        // Stamped every frame: max blending is idempotent and holds grass down. Remains hold it down too, or grass
-        // stands up through a ruin the moment its building dies.
+        // Stamped every frame: max blending is idempotent and holds grass down.
         private void AddBuildings()
         {
-            AddFootprints(_buildings);
-            AddFootprints(_remains);
-        }
-
-        private void AddFootprints(EntityQuery standing)
-        {
-            using var footprints = standing.ToComponentDataArray<NavObstacle>(Allocator.Temp);
-            using var transforms = standing.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+            using var footprints = _buildings.ToComponentDataArray<NavObstacle>(Allocator.Temp);
+            using var transforms = _buildings.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < footprints.Length; i++)
             {
                 Stamps.AddFootprint(transforms[i].Position.xz, footprints[i].Size);
             }
         }
 
-        // The scar deepens as the remains are buried, so the plot keeps a burnt mark of what stood there.
-        private void AddBuriedRemains()
+        // Remains hold grass down like the building did, or it stands up through a ruin the moment its building dies,
+        // and their scar deepens as they are buried, so the plot keeps a burnt mark of what stood there.
+        private void AddRemains()
         {
             using var decays = _remains.ToComponentDataArray<Decay>(Allocator.Temp);
             using var footprints = _remains.ToComponentDataArray<NavObstacle>(Allocator.Temp);
             using var transforms = _remains.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
             for (var i = 0; i < decays.Length; i++)
             {
+                var position = transforms[i].Position.xz;
+                Stamps.AddFootprint(position, footprints[i].Size);
                 var forward = transforms[i].Forward.xz;
                 var buried = decays[i].DespawnProgress > 0f;
                 if (buried && math.lengthsq(forward) > 1e-4f)
                 {
-                    Stamps.AddFootprintScar(transforms[i].Position.xz, math.normalize(forward), footprints[i].Size,
+                    Stamps.AddFootprintScar(position, math.normalize(forward), footprints[i].Size,
                         decays[i].DespawnProgress);
                 }
             }
