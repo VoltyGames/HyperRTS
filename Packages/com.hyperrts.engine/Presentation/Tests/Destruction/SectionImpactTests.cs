@@ -42,6 +42,21 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
+        public void ShotLandingInsideTheBuilding_BlowsInTheWallItCameThrough()
+        {
+            var house = Building(0ul, true, out var models);
+            AddFog();
+            Update(0f);
+
+            // Flying east it crosses the west wall at x = 6 and lands a metre and a half inside.
+            Impact(new float3(7.5f, 1f, 6f), math.right());
+            SetBroken(house, 0b0010ul);
+            Update(1f);
+
+            Assert.AreEqual(1f, _em.GetComponentData<PlayingClip>(Copy(models[1].Pieces)).Value.x);
+        }
+
+        [Test]
         public void SectionBrokenByTheHitItself_IsBlownIn()
         {
             var house = Building(0ul, true, out var models);

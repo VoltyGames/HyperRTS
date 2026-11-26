@@ -24,9 +24,6 @@ namespace HyperRTS.Presentation.Destruction
     [UpdateBefore(typeof(EntitiesGraphicsSystem))]
     public partial class SectionViewSystem : SystemBase
     {
-        /// <summary>Metres around a section's box that still count as an impact on it.</summary>
-        private const float ImpactMargin = 0.5f;
-
         private enum Phase
         {
             Standing,
@@ -56,7 +53,7 @@ namespace HyperRTS.Presentation.Destruction
             CompleteDependency();
             _switch.Update(ref CheckedStateRef);
             _visibility.Begin();
-            var impacts = SeenImpacts();
+            var impacts = new SectionImpacts { Seen = SeenImpacts() };
             var now = (float)SystemAPI.Time.ElapsedTime;
             var copies = ModelCopies.Create();
             foreach (var (building, sections, models, looks, carried, shown, place, entity) in SystemAPI
@@ -75,9 +72,9 @@ namespace HyperRTS.Presentation.Destruction
             copies.Apply(EntityManager);
         }
 
-        private NativeList<float3> SeenImpacts()
+        private NativeList<CueEvent> SeenImpacts()
         {
-            var impacts = new NativeList<float3>(Allocator.Temp);
+            var impacts = new NativeList<CueEvent>(Allocator.Temp);
             if (!SystemAPI.TryGetSingletonBuffer<CueEvent>(out var cues, true))
             {
                 return impacts;
@@ -87,19 +84,19 @@ namespace HyperRTS.Presentation.Destruction
             {
                 if (cue.Slot == CueSlot.Impact && _visibility.IsSeen(cue))
                 {
-                    impacts.Add(cue.Position);
+                    impacts.Add(cue);
                 }
             }
 
             return impacts;
         }
 
-        private void Refresh(SectionViewContext at, ulong broken, NativeList<float3> impacts, ref ShownSections shown)
+        private void Refresh(SectionViewContext at, ulong broken, in SectionImpacts impacts, ref ShownSections shown)
         {
             var quiet = !shown.Seen;
             var changed = broken ^ shown.Broken;
             var touched = quiet ? SectionedBuilding.All(at.Models.Length) : changed;
-            touched |= quiet ? 0ul : Record(at, impacts, broken, shown.Broken);
+            touched |= quiet ? 0ul : impacts.Record(at, broken, shown.Broken);
             touched |= Finished(at, shown.Breaking);
             touched |= quiet ? 0ul : Unpropped(at, changed, broken);
             if (touched != 0ul)
@@ -117,40 +114,6 @@ namespace HyperRTS.Presentation.Destruction
 
             shown.Broken = broken;
             shown.Seen = true;
-        }
-
-        /// <summary>Holes each standing section a seen impact hit; one it broke only remembers the hit, which picks its clip. Returns the changed ones.</summary>
-        private static ulong Record(SectionViewContext at, NativeList<float3> impacts, ulong broken, ulong shown)
-        {
-            var changed = 0ul;
-            if (impacts.Length == 0)
-            {
-                return changed;
-            }
-
-            var toBuilding = math.inverse(at.Place.Value);
-            foreach (var impact in impacts)
-            {
-                var local = math.transform(toBuilding, impact);
-                for (var i = 0; i < at.Models.Length; i++)
-                {
-                    var bit = 1ul << i;
-                    if ((shown & bit) != 0ul || at.Sections[i].Gap(local) > ImpactMargin)
-                    {
-                        continue;
-                    }
-
-                    var look = at.Looks[i];
-                    var hole = (broken & bit) != 0ul ? look.Hole : (byte)(at.Holes.Nearest(i, local) + 1);
-                    changed |= hole != look.Hole ? bit : 0ul;
-                    look.Hole = hole;
-                    look.Impact = local;
-                    look.ImpactTime = at.Now;
-                    at.Looks[i] = look;
-                }
-            }
-
-            return changed;
         }
 
         /// <summary>Broken sections whose supports or rests changed, which gate their stub and debris.</summary>

@@ -68,9 +68,11 @@ namespace HyperRTS.Presentation.Tests.Destruction
             _kit.ClearCues();
         }
 
-        protected void Impact(float3 position) => _kit.PushCue(new CueEvent
+        protected void Impact(float3 position) => Impact(position, math.up());
+
+        protected void Impact(float3 position, float3 along) => _kit.PushCue(new CueEvent
         {
-            Slot = CueSlot.Impact, Position = position, Owner = 2, Direction = math.up(),
+            Slot = CueSlot.Impact, Position = position, Owner = 2, Direction = along,
         });
 
         // Cells 0 to 10 m are in team 1's sight, cells 10 to 20 m are not; owners 1 and 2 are enemies.

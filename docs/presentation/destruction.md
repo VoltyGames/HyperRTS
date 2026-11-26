@@ -55,11 +55,14 @@ show (see [model copies](#model-copies)). `SectionViewSystem` shows each section
 
 - **Standing:** the intact model, or the holed variant nearest the latest impact the local player saw.
 - **Breaking:** a break this client saw plays the pieces' clip once (`SectionClips`), blown in or out by the side the
-  last impact came from (the hit that broke it counts), and the pieces stay on its last frame (`ShownSections.Settled`), so nothing jumps.
+  last impact came from (the hit that broke it counts), and the pieces stay on its last frame
+  (`ShownSections.Settled`), so nothing jumps. `SectionImpacts` gives a seen impact to the first standing section on
+  the shot's line, as the simulation deals its damage, and to those its landing point touches.
 - **Broken:** stub and heap with no clip, for a break nobody saw or a building first seen broken.
 - **Stub:** what stays standing shows only while a support of the section stands. A section that falls because its
   supports went shows none from its first frame, so nothing hangs in the air.
 - **Resting debris:** pieces and heap hide while a section in `Section.Rests` is broken, and return on repair.
 - **Repair:** the intact model returns.
 - **Last section:** the simulation keeps a building whose every section is broken until its longest break clip has
-  played (`SectionedBuilding.DiesAt`), so the ruin never replaces pieces still in the air.
+  played (`SectionedBuilding.DiesAt`), so the ruin never replaces pieces still in the air. Meanwhile it is `Dying`:
+  its death cue plays as the last section breaks, so its dust is up when the ruin appears, and nothing targets it.
