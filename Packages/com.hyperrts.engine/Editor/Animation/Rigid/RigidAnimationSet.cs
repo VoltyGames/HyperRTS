@@ -49,12 +49,13 @@ namespace HyperRTS.Editor.Animation.Rigid
             }
 
             var poses = RigidPoses.Sample(motion, SingleTake(motion), pieces, rows);
+            // First, since it throws on a model whose vertices miss a column: nothing is written for one.
+            var bounds = poses.Bounds(model);
             var positionsPath = TexturePath(positions, "Pos");
             var rotationsPath = TexturePath(rotations, "Rot");
             positions = WriteTexture(poses.Positions(), positionsPath);
             rotations = WriteTexture(poses.Rotations(), rotationsPath);
 
-            var bounds = poses.Bounds(model);
             table.width = pieces.pieces.Count;
             table.boundsMin = bounds.min;
             table.boundsMax = bounds.max;

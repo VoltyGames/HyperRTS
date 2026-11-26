@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -80,7 +81,8 @@ namespace HyperRTS.Editor.Animation.Rigid
 
         /// <summary>
         /// Where the pieces reach over every row: each piece's position padded by its farthest vertex from where it
-        /// rests, measured on the meshes of <paramref name="model"/> that carry a UV1 column.
+        /// rests, measured on the meshes of <paramref name="model"/> that carry a UV1 column. Throws when no vertex
+        /// reads some column, which leaves every piece moving as the first one.
         /// </summary>
         public Bounds Bounds(GameObject model)
         {
@@ -105,6 +107,7 @@ namespace HyperRTS.Editor.Animation.Rigid
         private float[] Reach(GameObject model)
         {
             var reach = new float[_width];
+            var read = new bool[_width];
             var vertices = new List<Vector3>();
             var columns = new List<Vector2>();
             foreach (var filter in model.GetComponentsInChildren<MeshFilter>(true))
@@ -123,7 +126,14 @@ namespace HyperRTS.Editor.Animation.Rigid
                     var column = Mathf.Clamp((int)(columns[v].x * _width), 0, _width - 1);
                     var distance = Vector3.Distance(toModel.MultiplyPoint3x4(vertices[v]), _positions[0, column]);
                     reach[column] = Mathf.Max(reach[column], distance);
+                    read[column] = true;
                 }
+            }
+
+            var unread = Array.IndexOf(read, false);
+            if (unread >= 0)
+            {
+                throw new InvalidDataException($"HyperRTS: no vertex of {model.name} reads column {unread} of {_width} from UV1.");
             }
 
             return reach;
