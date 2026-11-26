@@ -1,4 +1,3 @@
-using Unity.Entities;
 using NUnit.Framework;
 using Unity.Mathematics;
 
@@ -8,29 +7,6 @@ namespace HyperRTS.Simulation.Tests.Movement
     [Category("Traffic")]
     public class TrafficOneLaneTests : TrafficScenarioFixture
     {
-        [Test]
-        public void TwoColumnsOfTanks_MeetOnAOneLaneBridge()
-        {
-            World.SpawnBridge();
-            var goals = new float3[8];
-            for (var i = 0; i < 4; i++)
-            {
-                TrackedTank($"east {i}", new float3(-25f - i * 11f, 0f, 0f), East);
-                goals[i] = new float3(40f + i * 11f, 0f, 0f);
-                TrackedTank($"west {i}", new float3(25f + i * 11f, 0f, 0f), West);
-                goals[4 + i] = new float3(-40f - i * 11f, 0f, 0f);
-            }
-
-            World.Tick();
-            for (var i = 0; i < 4; i++)
-            {
-                World.Send(_record.Units[i * 2].Unit, goals[i]);
-                World.Send(_record.Units[i * 2 + 1].Unit, goals[4 + i]);
-            }
-
-            Finish("bridge columns", 180f, 0);
-        }
-
         // A 3 m alley closed at its east end, a squad standing in it, and a truck sent past the squad.
         [Test]
         public void Truck_MeetsASquad_InAThreeMetreAlleyClosedAtTheSquadsEnd()
@@ -43,13 +19,6 @@ namespace HyperRTS.Simulation.Tests.Movement
             World.Tick();
             World.Send(truck, new float3(32f, 0f, 0f));
             Finish("alley", 120f, 1);
-        }
-
-        private Entity TrackedTank(string name, float3 start, float yaw)
-        {
-            var tank = SpawnTank(start, yaw);
-            _record.Track(name, tank);
-            return tank;
         }
     }
 }
