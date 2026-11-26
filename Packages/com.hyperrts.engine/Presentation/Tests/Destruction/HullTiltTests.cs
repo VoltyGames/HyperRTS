@@ -1,7 +1,6 @@
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Simulation.Navigation.Areas;
 using NUnit.Framework;
-using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
@@ -30,7 +29,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         [Test]
         public void WreckFacingUphill_LiesNoseUpAlongTheSlope_AndIsLaidOnce()
         {
-            RaiseGroundAlongX();
+            _kit.RaiseGroundAlongX();
             var wreck = Wreck(quaternion.RotateY(math.PI * 0.5f));
 
             _system.Update(_kit.World.Unmanaged);
@@ -57,7 +56,7 @@ namespace HyperRTS.Presentation.Tests.Destruction
         [Test]
         public void WreckTheMapLeanedAlongItsSlope_IsNotLeanedAgain()
         {
-            RaiseGroundAlongX();
+            _kit.RaiseGroundAlongX();
             var leaned = math.mul(quaternion.RotateY(math.PI * 0.5f), quaternion.RotateX(-math.atan(0.5f)));
             var wreck = Wreck(leaned);
 
@@ -65,19 +64,6 @@ namespace HyperRTS.Presentation.Tests.Destruction
 
             var up = math.rotate(_em.GetComponentData<PostTransformMatrix>(wreck).Value, math.up());
             Assert.AreEqual(1f, up.y, 1e-3f);
-        }
-
-        // Half a metre a metre along x, on 2 m samples.
-        private void RaiseGroundAlongX()
-        {
-            var size = new int2(33, 33);
-            var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
-            for (var i = 0; i < heights.Length; i++)
-            {
-                heights[i] = i % size.x;
-            }
-
-            _kit.SetTerrain(heights, size);
         }
 
         // A wreck as its prefab bakes: a blocker with the tilt and matrix the baking system adds.

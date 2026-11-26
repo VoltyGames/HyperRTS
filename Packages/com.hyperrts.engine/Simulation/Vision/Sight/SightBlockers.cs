@@ -75,30 +75,11 @@ namespace HyperRTS.Simulation.Vision.Sight
         /// solid block; the blocks of <paramref name="shooter"/> and <paramref name="target"/> don't count.
         /// </summary>
         public readonly bool IsObstructed(float3 from, float3 to, Entity shooter, Entity target) =>
-            RunsIntoGround(from, to) || TryFindBlock(from, to, shooter, target, out _, out _);
+            Walk(from, to, new LineStops { Ground = true, Blocks = true, Shooter = shooter, Target = target }, out _, out _);
 
         /// <summary>Whether the straight line from <paramref name="from"/> to <paramref name="to"/> dips below the bare ground.</summary>
-        public readonly bool RunsIntoGround(float3 from, float3 to)
-        {
-            var ray = new GridRay(Grid, from.xz, to.xz);
-            while (ray.MoveNext())
-            {
-                // Both ends stand on their own ground, which their cell's one height only roughs out.
-                var end = ray.Entry == 0f || ray.Exit >= 1f;
-                if (end || !Grid.Contains(ray.Cell))
-                {
-                    continue;
-                }
-
-                var ground = Cells[Grid.Index(ray.Cell)].Ground;
-                if (TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit), ground, out _))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
+        public readonly bool RunsIntoGround(float3 from, float3 to) =>
+            Walk(from, to, new LineStops { Ground = true }, out _, out _);
 
         /// <summary>
         /// Whether the straight line from <paramref name="from"/> to <paramref name="to"/> runs into a solid block, and
@@ -106,7 +87,11 @@ namespace HyperRTS.Simulation.Vision.Sight
         /// stops nothing here: a round is only fired over ground its shooter has a line across.
         /// </summary>
         public readonly bool TryFindBlock(float3 from, float3 to, Entity shooter, Entity target,
-            out float3 contact, out Entity obstacle)
+            out float3 contact, out Entity obstacle) =>
+            Walk(from, to, new LineStops { Blocks = true, Shooter = shooter, Target = target }, out contact, out obstacle);
+
+        // One march along the line, stopping at whatever of the ground and the blocks the stops name.
+        private readonly bool Walk(float3 from, float3 to, in LineStops stops, out float3 contact, out Entity obstacle)
         {
             var ray = new GridRay(Grid, from.xz, to.xz);
             while (ray.MoveNext())
@@ -117,15 +102,10 @@ namespace HyperRTS.Simulation.Vision.Sight
                 }
 
                 var index = Grid.Index(ray.Cell);
-                var cell = Cells[index];
-                obstacle = Owner[index];
-                if (cell.Solid == 0 || obstacle == shooter || obstacle == target)
-                {
-                    continue;
-                }
-
-                if (TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit),
-                        cell.Ground + cell.SolidHeight, out contact))
+                // Both ends stand on their own ground, which their cell's one height only roughs out.
+                var end = ray.Entry == 0f || ray.Exit >= 1f;
+                if (Top(index, end, stops, out var top, out obstacle) &&
+                    TryFindContact(math.lerp(from, to, ray.Entry), math.lerp(from, to, ray.Exit), top, out contact))
                 {
                     return true;
                 }
@@ -134,6 +114,23 @@ namespace HyperRTS.Simulation.Vision.Sight
             contact = to;
             obstacle = Entity.Null;
             return false;
+        }
+
+        // The height a cell stops the line at, and the block standing there; false when it stops nothing.
+        private readonly bool Top(int index, bool end, in LineStops stops, out float top, out Entity obstacle)
+        {
+            var cell = Cells[index];
+            obstacle = Owner[index];
+            var own = obstacle == stops.Shooter || obstacle == stops.Target;
+            if (stops.Blocks && cell.Solid != 0 && !own)
+            {
+                top = cell.Ground + cell.SolidHeight;
+                return true;
+            }
+
+            obstacle = Entity.Null;
+            top = cell.Ground;
+            return stops.Ground && !end;
         }
 
         /// <summary>Share of sight the porous cover along the line takes, such as smoke between a missile and its target.</summary>
@@ -250,6 +247,14 @@ namespace HyperRTS.Simulation.Vision.Sight
         private readonly bool Touches(in NavBox box, float2 center) =>
             box.Overlaps(new NavBox(new float3(center.x, 0f, center.y), quaternion.identity,
                 new float2(Grid.CellSize)));
+
+        private struct LineStops
+        {
+            public bool Ground;
+            public bool Blocks;
+            public Entity Shooter;
+            public Entity Target;
+        }
 
         private static void Raise(ref byte layer, float steps, bool applies)
         {

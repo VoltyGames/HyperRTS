@@ -18,13 +18,14 @@ namespace HyperRTS.Presentation.Tests
     {
         private SystemHandle _cueClear;
         private SystemHandle _registry;
-        private Entity _ground;
-
         public PresentationWorldKit(string name) => World = new World(name);
 
         public World World { get; }
 
         public EntityManager EntityManager => World.EntityManager;
+
+        /// <summary>The entity holding the nav grid <see cref="AddGround"/> lays.</summary>
+        public Entity Ground { get; private set; }
 
         public Entity AddPlayer(byte owner, float4 color = default, bool local = false, byte side = 0)
         {
@@ -68,23 +69,36 @@ namespace HyperRTS.Presentation.Tests
         /// <summary>Lays a flat nav grid of 1 m cells, 64 m a side from the origin, for what stands on the ground.</summary>
         public void AddGround()
         {
-            _ground = EntityManager.CreateEntity();
-            EntityManager.AddComponentData(_ground, NavGrid.Create(new CellGrid(float2.zero, 1f, new int2(64, 64)), default, 0f));
+            Ground = EntityManager.CreateEntity();
+            EntityManager.AddComponentData(Ground, NavGrid.Create(new CellGrid(float2.zero, 1f, new int2(64, 64)), default, 0f));
         }
 
         /// <summary>Lays a heightfield of 2 m samples from the origin under the nav grid.</summary>
         public void SetTerrain(NativeArray<float> heights, int2 size)
         {
-            var grid = EntityManager.GetComponentData<NavGrid>(_ground);
+            var grid = EntityManager.GetComponentData<NavGrid>(Ground);
             grid.Terrain = TerrainHeight.Create(heights, size, float2.zero, 2f, Allocator.Persistent);
-            EntityManager.SetComponentData(_ground, grid);
+            EntityManager.SetComponentData(Ground, grid);
+        }
+
+        /// <summary>Lays ground rising half a metre a metre along x, on 2 m samples.</summary>
+        public void RaiseGroundAlongX()
+        {
+            var size = new int2(33, 33);
+            var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
+            for (var i = 0; i < heights.Length; i++)
+            {
+                heights[i] = i % size.x;
+            }
+
+            SetTerrain(heights, size);
         }
 
         public void Dispose()
         {
-            if (_ground != Entity.Null)
+            if (Ground != Entity.Null)
             {
-                var grid = EntityManager.GetComponentData<NavGrid>(_ground);
+                var grid = EntityManager.GetComponentData<NavGrid>(Ground);
                 if (grid.Terrain.IsCreated)
                 {
                     grid.Terrain.Blob.Dispose();

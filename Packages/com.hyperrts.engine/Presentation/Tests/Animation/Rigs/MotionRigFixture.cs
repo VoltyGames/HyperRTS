@@ -3,9 +3,7 @@ using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
 using System.Linq;
 using HyperRTS.Simulation.Air;
-using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
 using Unity.Collections;
@@ -21,6 +19,7 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
     {
         protected const float Step = 0.1f;
 
+        private PresentationWorldKit _kit;
         protected World _world;
         protected EntityManager _em;
         protected SystemHandle _system;
@@ -31,35 +30,20 @@ namespace HyperRTS.Presentation.Tests.Animation.Rigs
         [SetUp]
         public void SetUp()
         {
-            _world = new World("Motion Rig Tests");
-            _em = _world.EntityManager;
+            _kit = new PresentationWorldKit("Motion Rig Tests");
+            _world = _kit.World;
+            _em = _kit.EntityManager;
             _system = _world.CreateSystem<MotionRigSystem>();
-            var cells = new CellGrid(float2.zero, 1f, new int2(32, 32));
-            _grid = _em.CreateEntity();
-            _em.AddComponentData(_grid, NavGrid.Create(cells, default, 0f));
+            _kit.AddGround();
+            _grid = _kit.Ground;
             _position = new float3(10f, 0f, 10f);
         }
 
         [TearDown]
-        public void TearDown()
-        {
-            var grid = _em.GetComponentData<NavGrid>(_grid);
-            if (grid.Terrain.IsCreated)
-            {
-                grid.Terrain.Blob.Dispose();
-            }
-
-            grid.Dispose();
-            _world.Dispose();
-        }
+        public void TearDown() => _kit.Dispose();
 
         /// <summary>Lays a heightfield of 2 m samples under the nav grid.</summary>
-        protected void SetTerrain(NativeArray<float> heights, int2 size)
-        {
-            var grid = _em.GetComponentData<NavGrid>(_grid);
-            grid.Terrain = TerrainHeight.Create(heights, size, float2.zero, 2f, Allocator.Persistent);
-            _em.SetComponentData(_grid, grid);
-        }
+        protected void SetTerrain(NativeArray<float> heights, int2 size) => _kit.SetTerrain(heights, size);
 
         /// <summary>Lays a deck at <paramref name="height"/> over the cells from <paramref name="low"/> to <paramref name="high"/>.</summary>
         protected void SetDeck(int2 low, int2 high, float height)
