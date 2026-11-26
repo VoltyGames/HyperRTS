@@ -42,6 +42,9 @@ namespace HyperRTS.Simulation.Destruction
             return fromOutside ? BlownIn : BlownOut;
         }
 
+        /// <summary>Seconds the longest clip plays: how long a building whose last section broke stays before it dies.</summary>
+        public readonly float Longest => math.max(Collapse.Seconds, math.max(BlownIn.Seconds, BlownOut.Seconds));
+
         /// <summary>Whether all three clips have frames, which pieces need to play.</summary>
         public readonly bool IsSet => BlownIn.FrameCount > 0 && BlownOut.FrameCount > 0 && Collapse.FrameCount > 0;
     }

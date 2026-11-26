@@ -113,6 +113,37 @@ namespace HyperRTS.Presentation.Tests.Destruction
         }
 
         [Test]
+        public void SectionFallingAfterItsSupport_ShowsNoStubWhileItsPiecesFall()
+        {
+            var house = Building(0ul, true, out var models);
+            Lean(house, holders: 0b1000ul, rests: 0ul);
+            Update(0f);
+
+            SetBroken(house, 0b1100ul);
+            Update(1f);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+        }
+
+        [Test]
+        public void SupportLostMidClip_HidesTheStub_AndThePiecesPlayOn()
+        {
+            var house = Building(0ul, true, out var models);
+            Lean(house, holders: 0b1000ul, rests: 0ul);
+            Update(0f);
+            SetBroken(house, 0b0100ul);
+            Update(1f);
+            var started = _em.GetComponentData<PlayingClip>(Copy(models[2].Pieces)).Value;
+
+            SetBroken(house, 0b1100ul);
+            Update(1.5f);
+
+            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+            Assert.AreEqual(started, _em.GetComponentData<PlayingClip>(Copy(models[2].Pieces)).Value, "the clip is not restarted");
+            Update(1f + Clips.Collapse.Seconds + 0.1f);
+            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+        }
+
+        [Test]
         public void Debris_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
         {
             var house = Building(0ul, true, out var models);

@@ -40,5 +40,19 @@ namespace HyperRTS.Presentation.Tests.Destruction
 
             Assert.AreEqual(startRow, _em.GetComponentData<PlayingClip>(Copy(models[1].Pieces)).Value.x);
         }
+
+        [Test]
+        public void SectionBrokenByTheHitItself_IsBlownIn()
+        {
+            var house = Building(0ul, true, out var models);
+            AddFog();
+            Update(0f);
+
+            Impact(new float3(5.2f, 1f, 6f));
+            SetBroken(house, 0b0010ul);
+            Update(1f);
+
+            Assert.AreEqual(1f, _em.GetComponentData<PlayingClip>(Copy(models[1].Pieces)).Value.x);
+        }
     }
 }

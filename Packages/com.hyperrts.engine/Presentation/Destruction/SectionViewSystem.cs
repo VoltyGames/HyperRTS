@@ -99,9 +99,9 @@ namespace HyperRTS.Presentation.Destruction
             var quiet = !shown.Seen;
             var changed = broken ^ shown.Broken;
             var touched = quiet ? SectionedBuilding.All(at.Models.Length) : changed;
-            touched |= quiet ? 0ul : Record(at, impacts, broken);
+            touched |= quiet ? 0ul : Record(at, impacts, broken, shown.Broken);
             touched |= Finished(at, shown.Breaking);
-            touched |= quiet ? 0ul : Unpropped(at, changed, broken, shown.Breaking);
+            touched |= quiet ? 0ul : Unpropped(at, changed, broken);
             if (touched != 0ul)
             {
                 var parts = new NativeList<Entity>(Allocator.Temp);
@@ -119,8 +119,8 @@ namespace HyperRTS.Presentation.Destruction
             shown.Seen = true;
         }
 
-        /// <summary>Points each standing section hit by a seen impact at its nearest hole; returns the ones that changed.</summary>
-        private static ulong Record(SectionViewContext at, NativeList<float3> impacts, ulong broken)
+        /// <summary>Holes each standing section a seen impact hit; one it broke only remembers the hit, which picks its clip. Returns the changed ones.</summary>
+        private static ulong Record(SectionViewContext at, NativeList<float3> impacts, ulong broken, ulong shown)
         {
             var changed = 0ul;
             if (impacts.Length == 0)
@@ -134,14 +134,15 @@ namespace HyperRTS.Presentation.Destruction
                 var local = math.transform(toBuilding, impact);
                 for (var i = 0; i < at.Models.Length; i++)
                 {
-                    if ((broken & (1ul << i)) != 0ul || at.Sections[i].Gap(local) > ImpactMargin)
+                    var bit = 1ul << i;
+                    if ((shown & bit) != 0ul || at.Sections[i].Gap(local) > ImpactMargin)
                     {
                         continue;
                     }
 
                     var look = at.Looks[i];
-                    var hole = (byte)(at.Holes.Nearest(i, local) + 1);
-                    changed |= hole != look.Hole ? 1ul << i : 0ul;
+                    var hole = (broken & bit) != 0ul ? look.Hole : (byte)(at.Holes.Nearest(i, local) + 1);
+                    changed |= hole != look.Hole ? bit : 0ul;
                     look.Hole = hole;
                     look.Impact = local;
                     look.ImpactTime = at.Now;
@@ -152,14 +153,14 @@ namespace HyperRTS.Presentation.Destruction
             return changed;
         }
 
-        /// <summary>Broken sections not mid-clip whose supports or rests changed, which gate their stub and debris.</summary>
-        private static ulong Unpropped(SectionViewContext at, ulong changed, ulong broken, ulong breaking)
+        /// <summary>Broken sections whose supports or rests changed, which gate their stub and debris.</summary>
+        private static ulong Unpropped(SectionViewContext at, ulong changed, ulong broken)
         {
             var touched = 0ul;
             for (var i = 0; i < at.Models.Length; i++)
             {
                 var bit = 1ul << i;
-                if ((broken & bit) != 0ul && (breaking & bit) == 0ul && ((at.Sections[i].Holders | at.Sections[i].Rests) & changed) != 0ul)
+                if ((broken & bit) != 0ul && ((at.Sections[i].Holders | at.Sections[i].Rests) & changed) != 0ul)
                 {
                     touched |= bit;
                 }
@@ -202,6 +203,11 @@ namespace HyperRTS.Presentation.Destruction
             {
                 look = SectionLook.Untouched;
             }
+            else if ((shown.Breaking & bit) != 0ul && at.Now < look.BreakEnd)
+            {
+                // Its supports or rests changed mid-clip: the pieces play on.
+                phase = Phase.Breaking;
+            }
 
             shown.Breaking = phase == Phase.Breaking ? shown.Breaking | bit : shown.Breaking & ~bit;
             var settles = phase == Phase.Breaking || (isBroken && !quiet && (shown.Settled & bit) != 0ul);
@@ -230,7 +236,8 @@ namespace HyperRTS.Presentation.Destruction
         private void Display(SectionViewContext at, NativeList<Entity> parts, int index, in SectionLook look, Phase phase, ulong broken)
         {
             var model = at.Models[index];
-            var hangs = phase is Phase.Broken or Phase.Settled && at.Sections[index].Hangs(broken);
+            // A section that fell because its supports went has none from its first frame: its stub never hangs.
+            var hangs = at.Sections[index].Hangs(broken);
             var lost = at.Sections[index].DebrisHangs(broken);
             var standing = phase == Phase.Standing;
             var hidden = !standing || look.Hole != 0;

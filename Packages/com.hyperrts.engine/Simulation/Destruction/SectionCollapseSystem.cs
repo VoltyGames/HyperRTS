@@ -8,7 +8,8 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Destruction
 {
     /// <summary>
-    /// After a section breaks, drops the sections no longer connected to the ground, one support level every <see cref="SectionedBuilding.FallDelay"/>.
+    /// After a section breaks, drops the sections no longer connected to the ground, one support level every
+    /// <see cref="SectionedBuilding.FallDelay"/>. A building whose last section broke dies once its pieces have fallen.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(CombatSystemGroup), OrderLast = true)]
@@ -31,6 +32,7 @@ namespace HyperRTS.Simulation.Destruction
                 Healths = SystemAPI.GetComponentLookup<Health>(false),
                 Floors = SystemAPI.GetComponentLookup<IntactFloors>(false),
                 Repairables = SystemAPI.GetComponentLookup<Repairable>(true),
+                Clips = SystemAPI.GetComponentLookup<SectionClips>(true),
             }.Schedule();
         }
 
@@ -45,17 +47,43 @@ namespace HyperRTS.Simulation.Destruction
             public ComponentLookup<Health> Healths;
             public ComponentLookup<IntactFloors> Floors;
             [ReadOnly] public ComponentLookup<Repairable> Repairables;
+            [ReadOnly] public ComponentLookup<SectionClips> Clips;
 
             private void Execute(Entity entity)
             {
                 var building = Buildings[entity];
+                if (building.DiesAt != 0)
+                {
+                    Linger(entity, ref building);
+                    return;
+                }
+
                 var due = building.Falling != 0 && Now >= building.NextFall;
-                if ((building.Broken == building.Checked && !due) || !Health.IsAlive(Healths, entity))
+                if (building.Broken == building.Checked && !due)
                 {
                     return;
                 }
 
+                // Killed outright it dies as it stands; with every section broken the last hit only emptied its health.
                 var sections = Sections[entity];
+                var standing = SectionedBuilding.All(sections.Length) & ~building.Broken;
+                if (standing != 0 && !Health.IsAlive(Healths, entity))
+                {
+                    return;
+                }
+
+                Advance(entity, ref building, sections);
+                Buildings[entity] = building;
+                if (Floors.TryGetComponent(entity, out var floors))
+                {
+                    floors.Fallen = building.FallenFloors(sections);
+                    Floors[entity] = floors;
+                }
+            }
+
+            /// <summary>Checks the supports after a break, else drops the level that is due, and ends a building with no section left.</summary>
+            private void Advance(Entity entity, ref SectionedBuilding building, DynamicBuffer<Section> sections)
+            {
                 if (building.Broken != building.Checked)
                 {
                     Check(ref building, sections);
@@ -65,19 +93,42 @@ namespace HyperRTS.Simulation.Destruction
                     Fall(entity, ref building, sections);
                 }
 
-                // Section shares can sum to a hair under the building's health, which would leave a heap alive.
                 if ((SectionedBuilding.All(sections.Length) & ~building.Broken) == 0 && !Repairables.HasComponent(entity))
                 {
-                    var health = Healths[entity];
-                    health.Current = 0f;
-                    Healths[entity] = health;
+                    Finish(entity, ref building);
+                }
+            }
+
+            /// <summary>
+            /// Ends a building with no section left: at once, or after its break clips when its pieces play them, so
+            /// the ruin does not replace pieces still in the air. Section shares can sum to a hair under the
+            /// building's health, so the health is set either way.
+            /// </summary>
+            private void Finish(Entity entity, ref SectionedBuilding building)
+            {
+                var falls = Clips.TryGetComponent(entity, out var clips) && clips.IsSet;
+                building.DiesAt = falls ? Now + clips.Longest : 0;
+                var health = Healths[entity];
+                health.Current = falls ? SectionedBuilding.LingeringHealth : 0f;
+                Healths[entity] = health;
+            }
+
+            /// <summary>Keeps a building alive through hits until <see cref="SectionedBuilding.DiesAt"/>, unless a repair stood a section up again.</summary>
+            private void Linger(Entity entity, ref SectionedBuilding building)
+            {
+                if ((SectionedBuilding.All(Sections[entity].Length) & ~building.Broken) != 0)
+                {
+                    building.DiesAt = 0;
+                    Buildings[entity] = building;
+                    return;
                 }
 
-                Buildings[entity] = building;
-                if (Floors.TryGetComponent(entity, out var floors))
+                var health = Healths[entity];
+                var wanted = Now >= building.DiesAt ? 0f : SectionedBuilding.LingeringHealth;
+                if (health.Current != wanted)
                 {
-                    floors.Fallen = building.FallenFloors(sections);
-                    Floors[entity] = floors;
+                    health.Current = wanted;
+                    Healths[entity] = health;
                 }
             }
 

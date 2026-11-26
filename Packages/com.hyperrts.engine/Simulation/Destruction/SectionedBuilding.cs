@@ -15,6 +15,9 @@ namespace HyperRTS.Simulation.Destruction
         /// <summary>Seconds between one support level falling and the next.</summary>
         public const float FallDelay = 0.3f;
 
+        /// <summary>The health a building keeps while its last pieces fall, so it stays until <see cref="DiesAt"/>.</summary>
+        public const float LingeringHealth = 0.01f;
+
         [GhostField] public ulong Broken;
 
         /// <summary>Standing but cut off from every anchor, waiting to fall.</summary>
@@ -31,6 +34,9 @@ namespace HyperRTS.Simulation.Destruction
 
         /// <summary>When the next level of <see cref="Falling"/> comes down; 0 while nothing falls.</summary>
         public double NextFall;
+
+        /// <summary>When a building whose every section is broken dies, once their pieces have fallen; 0 while one stands.</summary>
+        public double DiesAt;
 
         /// <summary>Breaks so far, which numbers each <see cref="Section.BreakOrder"/>.</summary>
         public int Breaks;
