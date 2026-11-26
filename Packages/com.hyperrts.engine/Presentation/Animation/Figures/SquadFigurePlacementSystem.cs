@@ -53,6 +53,8 @@ namespace HyperRTS.Presentation.Animation.Figures
             {
                 var count = math.min(figures.Length, members.Length);
                 var hasPoses = Poses.TryGetBuffer(entity, out var poses);
+                var center = Spots[entity].Position.xz;
+                var ground = NavGround.Footing(Grid, center, center);
                 for (var i = 0; i < count; i++)
                 {
                     var member = members[i];
@@ -63,7 +65,7 @@ namespace HyperRTS.Presentation.Animation.Figures
 
                     var figure = figures[i];
                     var aim = figure.Firing && hasPoses && member.Weapon < poses.Length ? poses[member.Weapon].YawRadians : 0f;
-                    Stand(entity, ref figure, member, aim);
+                    Stand(entity, ref figure, member, aim, ground);
                     figures[i] = figure;
                 }
             }
@@ -71,14 +73,14 @@ namespace HyperRTS.Presentation.Animation.Figures
             /// <summary>
             /// Eases the figure toward its member's offset and moves it there: world axes turned into its parent's
             /// frame, at its baked height above its own ground, turned to its cover or to its weapon's
-            /// <paramref name="aim"/> while firing.
+            /// <paramref name="aim"/> while firing. <paramref name="ground"/> is the footing under the squad.
             /// </summary>
-            private void Stand(Entity squad, ref SquadFigure figure, in SquadMember member, float aim)
+            private void Stand(Entity squad, ref SquadFigure figure, in SquadMember member, float aim, float ground)
             {
                 var parentToWorld = new float3x3(ParentToWorld(squad, figure.Figure));
                 var worldToParent = math.inverse(parentToWorld);
                 figure.Follow(member.Offset, DeltaTime);
-                var local = math.mul(worldToParent, new float3(figure.Offset.x, Rise(squad, figure.Offset), figure.Offset.y));
+                var local = math.mul(worldToParent, new float3(figure.Offset.x, Rise(squad, figure.Offset, ground), figure.Offset.y));
                 var spot = Spots[figure.Figure];
                 spot.Position = new float3(local.x, figure.Height + local.y, local.z);
                 var parentRotation = quaternion.LookRotationSafe(parentToWorld.c2, parentToWorld.c1);
@@ -89,10 +91,10 @@ namespace HyperRTS.Presentation.Animation.Figures
 
             // Metres the ground under the figure stands above the ground under its squad, which only the squad's own
             // height follows: on a slope the figures uphill would sink and the ones downhill float.
-            private float Rise(Entity squad, float2 offset)
+            private float Rise(Entity squad, float2 offset, float ground)
             {
                 var center = Spots[squad].Position.xz;
-                return NavGround.Footing(Grid, center + offset, center) - NavGround.Footing(Grid, center, center);
+                return NavGround.Footing(Grid, center + offset, center) - ground;
             }
 
             // The squad is top-level, so its LocalTransform is this frame's pose; its parts' LocalToWorld is last frame's.

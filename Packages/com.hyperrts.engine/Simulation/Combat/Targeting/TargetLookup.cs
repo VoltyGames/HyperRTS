@@ -217,18 +217,13 @@ namespace HyperRTS.Simulation.Combat.Targeting
         /// </summary>
         public bool CanFireAt(Entity shooter, float3 position, in Weapon weapon, Entity target)
         {
-            if (!weapon.NeedsLineOfFire)
+            if (!weapon.NeedsLineOfFire || !weapon.FiresRounds)
             {
-                return true;
+                return HasLineOfFire(shooter, position, weapon, target);
             }
 
             SightLine(shooter, position, target, out var from, out var to);
-            if (weapon.FiresRounds)
-            {
-                return !_blockers.RunsIntoGround(from, to);
-            }
-
-            return !_blockers.IsObstructed(from, to, Holder(shooter), target);
+            return !_blockers.RunsIntoGround(from, to);
         }
 
         /// <summary>Whether the ground or something solid stands between the shooter's eye and the target's top.</summary>
