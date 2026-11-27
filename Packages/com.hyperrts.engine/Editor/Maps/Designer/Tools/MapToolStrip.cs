@@ -32,7 +32,7 @@ public sealed partial class MapToolStrip : VisualElement
     public MapToolStrip()
     {
         AddToClassList("hrts-map-tools");
-        foreach (MapToolMode mode in Enum.GetValues(typeof(MapToolMode)))
+        foreach (MapToolMode mode in Enum.GetValues<MapToolMode>())
         {
             var button = new ToolbarButton(() => _toolbox?.SetMode(mode)) { tooltip = MapToolOptions.Tip(mode) };
             button.Add(GlyphElements.CreateGlyph(Glyphs[mode], PickingMode.Ignore));

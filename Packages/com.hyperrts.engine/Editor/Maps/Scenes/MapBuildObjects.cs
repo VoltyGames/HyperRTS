@@ -44,7 +44,7 @@ public sealed class MapBuildObjects
     /// <summary>Writes the record. Save the scene first, since unsaved objects have no ID yet.</summary>
     public void Save()
     {
-        var ids = InstanceIds(_made).OrderBy(id => id, StringComparer.Ordinal);
+        var ids = InstanceIds(_made).Order(StringComparer.Ordinal);
         File.WriteAllLines(_file, ids);
         AssetDatabase.ImportAsset(_file);
     }

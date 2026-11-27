@@ -194,6 +194,6 @@ namespace HyperRTS.Presentation.HUD
             .Union(EnumKeys<ProducerState>("producer", value => value.ToString()).Where(key => English.ContainsKey(key)));
 
         private static IEnumerable<string> EnumKeys<T>(string kind, Func<T, string> name) where T : struct, Enum =>
-            Enum.GetValues(typeof(T)).Cast<T>().Select(value => Key(kind, name(value)));
+            Enum.GetValues<T>().Select(value => Key(kind, name(value)));
     }
 }

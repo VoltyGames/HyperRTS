@@ -15,7 +15,7 @@ public static class ComponentMenus
             .Where(type => !type.IsAbstract && !type.IsGenericType && Owned(type.Assembly, prefix))
             .Where(type => type.GetCustomAttribute<AddComponentMenu>(false) == null)
             .Select(type => type.FullName)
-            .OrderBy(name => name)
+            .Order()
             .ToList();
 
     private static bool Owned(Assembly assembly, string prefix)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Scripting.LifecycleManagement;
@@ -52,7 +53,7 @@ public static class TemplateRegistry
     };
 
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<string, EntityTemplate> ByPath = All.ToDictionary(template => template.Path);
+    private static readonly FrozenDictionary<string, EntityTemplate> ByPath = All.ToFrozenDictionary(template => template.Path);
 
     public static EntityTemplate Get(string path) =>
         ByPath.TryGetValue(path, out var template)

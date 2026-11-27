@@ -40,7 +40,7 @@ public sealed class StagingReport
 
         foreach (var burst in frames)
         {
-            contact.AddSpread(Directory.GetFiles(burst, "*.png").Select(file => file.Replace('\\', '/')).OrderBy(file => file).ToList(), 6);
+            contact.AddSpread(Directory.GetFiles(burst, "*.png").Select(file => file.Replace('\\', '/')).Order().ToList(), 6);
         }
 
         var path = $"{folder}/sheet.png";

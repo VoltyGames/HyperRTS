@@ -64,7 +64,7 @@ public sealed class MapLibrary : IDisposable
                 .Select(AssetDatabase.GUIDToAssetPath)
                 .Where(path => AssetDatabase.GetMainAssetTypeAtPath(path) == type)
                 .Distinct()
-                .OrderBy(path => path, StringComparer.Ordinal);
+                .Order(StringComparer.Ordinal);
             foreach (var path in paths)
             {
                 library.Index(type, path);

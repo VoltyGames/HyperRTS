@@ -142,7 +142,7 @@ internal sealed class MapLookRun
 
     private List<string> PlanShots(WeatherSet weatherSet, CameraController controller)
     {
-        var keys = _weathers.Count > 0 ? _weathers : weatherSet.atmospheres.Keys.OrderBy(k => k).ToList();
+        var keys = _weathers.Count > 0 ? _weathers : weatherSet.atmospheres.Keys.Order().ToList();
         if (_cost)
         {
             keys = keys.Take(1).ToList();

@@ -111,13 +111,13 @@ public class FigureClipSet : ScriptableObject
                 fireRanges[at] = Find(table, "fire", posture, fire);
                 fireRanges[at].Loop = false;
                 fallRanges[at * FigureClips.FallKinds] = Find(table, "shotDeath", posture, shotDeath);
-                foreach (BlastSide side in Enum.GetValues(typeof(BlastSide)))
+                foreach (BlastSide side in Enum.GetValues<BlastSide>())
                 {
                     fallRanges[at * FigureClips.FallKinds + 1 + (int)side] = Find(table, $"blast{side}Death", posture, BlastDeath(side));
                 }
             }
 
-            FillActions(table, builder.Allocate(ref root.Actions, Enum.GetValues(typeof(MemberAction)).Length));
+            FillActions(table, builder.Allocate(ref root.Actions, Enum.GetValues<MemberAction>().Length));
             Ragdoll.Build(builder, ref root.Ragdoll, table);
             return builder.CreateBlobAssetReference<FigureClips>(Allocator.Persistent);
         }
@@ -129,7 +129,7 @@ public class FigureClipSet : ScriptableObject
 
     private void FillActions(BoneClipTable table, BlobBuilderArray<ClipRange> actionClips)
     {
-        foreach (MemberAction action in Enum.GetValues(typeof(MemberAction)))
+        foreach (MemberAction action in Enum.GetValues<MemberAction>())
         {
             if (action == MemberAction.None)
             {

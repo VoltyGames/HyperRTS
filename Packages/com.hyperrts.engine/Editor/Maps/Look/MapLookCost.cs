@@ -127,7 +127,7 @@ internal sealed class MapLookCost : IDisposable
 
     private static float Median(List<float> times)
     {
-        var sorted = times.OrderBy(time => time).ToList();
+        var sorted = times.Order().ToList();
         return sorted[sorted.Count / 2];
     }
 }

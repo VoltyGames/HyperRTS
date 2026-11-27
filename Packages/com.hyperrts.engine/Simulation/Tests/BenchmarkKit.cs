@@ -23,7 +23,7 @@ namespace HyperRTS.Simulation.Tests
             var group = new SampleGroup(name);
             Measure.Method(work).SampleGroup(group).ProfilerMarkers(markers).SetUp(prepare).CleanUp(finish)
                 .WarmupCount(Warmup).MeasurementCount(Runs).Run();
-            var samples = group.Samples.OrderBy(sample => sample).ToArray();
+            var samples = group.Samples.Order().ToArray();
             return (samples[(samples.Length - 1) / 2] + samples[samples.Length / 2]) / 2.0;
         }
 

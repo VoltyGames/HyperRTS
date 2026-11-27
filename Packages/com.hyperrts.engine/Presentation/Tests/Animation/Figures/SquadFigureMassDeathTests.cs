@@ -151,7 +151,7 @@ public class SquadFigureMassDeathTests : SquadFigureRagdollFixture
     // The squads not yet wiped, nearest the camera first; a squad's figures stand on its spot.
     private float[] NearestDistances() => _squads.Skip(1)
         .Select(squad => Distance(_em.GetComponentData<LocalTransform>(squad).Position))
-        .SelectMany(distance => Enumerable.Repeat(distance, 4)).OrderBy(distance => distance).ToArray();
+        .SelectMany(distance => Enumerable.Repeat(distance, 4)).Order().ToArray();
 
     // Corpses still on their fall clip; the warm-up squad's have handed over by now.
     private Entity[] NewCorpses()

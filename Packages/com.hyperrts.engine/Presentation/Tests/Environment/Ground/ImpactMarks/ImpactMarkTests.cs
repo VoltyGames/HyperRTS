@@ -110,7 +110,7 @@ public class ImpactMarkTests
         Land(new float3(3f, 0f, 0f));
         Run(3.0);
 
-        var xs = Shown().Select(p => Mathf.Round(p.transform.position.x)).OrderBy(x => x).ToArray();
+        var xs = Shown().Select(p => Mathf.Round(p.transform.position.x)).Order().ToArray();
         CollectionAssert.AreEqual(new[] { 2f, 3f }, xs);
     }
 

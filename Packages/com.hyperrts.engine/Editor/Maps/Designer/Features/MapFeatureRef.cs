@@ -1,33 +1,16 @@
-using System;
 using HyperRTS.Editor.Maps.Designer.Window;
 
 namespace HyperRTS.Editor.Maps.Designer.Features;
 
 /// <summary>One feature of a spec: its kind's list and its index in that list.</summary>
-public readonly struct MapFeatureRef : IEquatable<MapFeatureRef>
+public readonly record struct MapFeatureRef(MapFeatureKind Kind, int Index)
 {
-    public MapFeatureRef(MapFeatureKind kind, int index)
-    {
-        Kind = kind;
-        Index = index;
-    }
-
     public static MapFeatureRef None => default;
-
-    public MapFeatureKind Kind { get; }
-
-    public int Index { get; }
 
     public bool IsNone => Kind == null;
 
     /// <summary>The feature's property path on a <see cref="MapSpecDocument"/>.</summary>
     public string PropertyPath => MapSpecDocument.ElementPath(Kind.Field, Index);
-
-    public bool Equals(MapFeatureRef other) => Kind == other.Kind && Index == other.Index;
-
-    public override bool Equals(object obj) => obj is MapFeatureRef other && Equals(other);
-
-    public override int GetHashCode() => HashCode.Combine(Kind?.Field, Index);
 
     public override string ToString() => IsNone ? "none" : $"{Kind.Label} {Index + 1}";
 }

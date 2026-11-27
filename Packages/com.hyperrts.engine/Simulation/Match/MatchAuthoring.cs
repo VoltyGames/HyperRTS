@@ -243,7 +243,7 @@ public class MatchAuthoring : AuthoringBehaviour
         private void AddTunings(Entity match, MatchAuthoring authoring)
         {
             var tunings = AddBuffer<AIDifficultyTuning>(match);
-            foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
+            foreach (AIDifficulty difficulty in Enum.GetValues<AIDifficulty>())
             {
                 tunings.Add(authoring.AITuningFor(difficulty).ToTuning(difficulty));
             }

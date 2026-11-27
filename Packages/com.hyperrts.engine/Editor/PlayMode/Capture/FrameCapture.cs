@@ -79,7 +79,7 @@ public sealed class FrameCapture
             return [Folder + MovieExtension];
         }
 
-        return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();
+        return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).Order().ToArray();
     }
 
     /// <summary>Ends a recording before its frames are in, stopping the Recorder now; <see cref="Record"/> then throws.</summary>

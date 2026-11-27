@@ -5,22 +5,9 @@ using System.Linq;
 namespace HyperRTS.Editor.Effects.Graph;
 
 /// <summary>One change to a layer field: <c>field=value</c> sets it, <c>field*=factor</c> scales it.</summary>
-internal readonly struct RecipeEdit
+/// <param name="Field">The serialized path inside the layer, such as <c>size.min</c>.</param>
+internal readonly record struct RecipeEdit(string Field, string Value, bool Scales)
 {
-    public RecipeEdit(string field, string value, bool scales)
-    {
-        Field = field;
-        Value = value;
-        Scales = scales;
-    }
-
-    /// <summary>The serialized path inside the layer, such as <c>size.min</c>.</summary>
-    public string Field { get; }
-
-    public string Value { get; }
-
-    public bool Scales { get; }
-
     /// <summary>Edits joined by semicolons, since a value may hold commas; throws on an entry without a field and an equals sign.</summary>
     public static List<RecipeEdit> ParseAll(string text)
     {

@@ -84,11 +84,11 @@ public class ToolsWindowTests : TemplateFixture
     [Test]
     public void ObjectMenuListsEveryTemplate()
     {
-        var registry = TemplateRegistry.All.Select(template => template.Path).OrderBy(path => path).ToArray();
+        var registry = TemplateRegistry.All.Select(template => template.Path).Order().ToArray();
 
         // Scene setup items (rig, Match) sit at the top level; every template is in a submenu.
         var objects = MenuPaths("ObjectMenu", ObjectMenu).Where(path => path.Contains('/'));
-        CollectionAssert.AreEqual(registry, objects.OrderBy(path => path).ToArray());
+        CollectionAssert.AreEqual(registry, objects.Order().ToArray());
     }
 
     [Test]

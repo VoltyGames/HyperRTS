@@ -40,7 +40,7 @@ internal sealed class MapPlotFences(MapSettlement settlement)
         Vector2? gatePosition = null;
         if (gate != null && centers.Count > 0)
         {
-            var gap = centers.OrderBy(c => Mathf.Abs(Along(plot, c) - gateU)).First();
+            var gap = centers.MinBy(c => Mathf.Abs(Along(plot, c) - gateU));
             var clear = (MapSections.Length(gate) + MapSections.Length(fence)) * 0.5f - 0.05f;
             centers.RemoveAll(c => (c - gap).magnitude < clear);
             _placements.AddEverywhere(gate, gap, MapSections.YawAlong(gate, plot.Run), 1f, 1f);

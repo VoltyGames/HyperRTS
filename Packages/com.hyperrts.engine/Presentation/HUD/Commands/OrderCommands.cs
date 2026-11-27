@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.HUD.Commands;
 public sealed class OrderCommands(CommandKit kit) : ICommandSource
 {
     private const string ActiveClass = "hud-command--active";
-    private static readonly Stance[] Stances = (Stance[])Enum.GetValues(typeof(Stance));
+    private static readonly Stance[] Stances = Enum.GetValues<Stance>();
 
     private static readonly (CommandType Order, int Argument)[] Plain =
     [

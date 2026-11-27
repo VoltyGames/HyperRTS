@@ -39,7 +39,7 @@ public class EffectGraphBuilderTests
     [Test]
     public void EveryKind_HasItsFacing()
     {
-        foreach (EffectLayerKind kind in Enum.GetValues(typeof(EffectLayerKind)))
+        foreach (EffectLayerKind kind in Enum.GetValues<EffectLayerKind>())
         {
             Assert.IsTrue(Facing.TryGetValue(kind, out var mode), $"{kind} has no facing in this test.");
             Assert.AreEqual(mode, new EffectLayer { kind = kind }.OrientMode, kind.ToString());

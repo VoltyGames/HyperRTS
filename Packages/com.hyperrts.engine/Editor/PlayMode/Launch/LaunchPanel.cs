@@ -16,7 +16,7 @@ internal class LaunchPanel
     private static readonly string[] Modes = ["Free for all", "1v1", "2v2", "3v3", "4v4"];
     private static readonly string[] Entries = ["Straight into the map", "Through the main menu"];
     private static readonly string[] Networks = ["Offline", "Host", "Dedicated server"];
-    private static readonly AIDifficulty[] Difficulties = (AIDifficulty[])Enum.GetValues(typeof(AIDifficulty));
+    private static readonly AIDifficulty[] Difficulties = Enum.GetValues<AIDifficulty>();
 
     private readonly LaunchChoice _choice = PlayModeState.instance.launch;
     private readonly GameLauncher _game = GameLauncher.Find();

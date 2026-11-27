@@ -53,7 +53,7 @@ public static class TypeSummaries
         }
 
         return undocumented.Where(entry => !documented.Contains(entry.Key)).Select(entry => entry.Value)
-            .OrderBy(entry => entry).ToList();
+            .Order().ToList();
     }
 
     // Attributes and plain comments may sit between a summary and its declaration; an index reads only a closed
@@ -89,8 +89,6 @@ public static class TypeSummaries
     private static bool InTestFolder(string root, string path) =>
         Relative(root, path).Split('/').Contains("Tests");
 
-    // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
     private static string Relative(string root, string path) =>
-        Path.GetFullPath(path)[(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1)..]
-            .Replace(Path.DirectorySeparatorChar, '/');
+        Path.GetRelativePath(root, path).Replace(Path.DirectorySeparatorChar, '/');
 }

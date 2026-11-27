@@ -189,7 +189,7 @@ public sealed class TestWorld : IDisposable
     private void AddAITunings(Entity match)
     {
         var tunings = EntityManager.AddBuffer<AIDifficultyTuning>(match);
-        foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
+        foreach (AIDifficulty difficulty in Enum.GetValues<AIDifficulty>())
         {
             tunings.Add(new AITuning().ToTuning(difficulty));
         }

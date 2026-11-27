@@ -25,7 +25,7 @@ public class MapPlotPathTests
         Assert.Greater(houses.Count, 0);
         foreach (var house in houses)
         {
-            var gate = gates.OrderBy(g => Vector2.Distance(g.Position, house.Position)).First();
+            var gate = gates.MinBy(g => Vector2.Distance(g.Position, house.Position));
             // The house front stands 4 m from its centre; check the walk up to a metre short of it.
             var walk = Vector2.Distance(gate.Position, house.Position) - 5f;
             var toHouse = (house.Position - gate.Position).normalized;

@@ -62,7 +62,7 @@ public class ModuleLayoutTests
                 continue;
             }
 
-            var folder = RelativeTo(PackageRoot, Path.GetDirectoryName(path));
+            var folder = Path.GetRelativePath(PackageRoot, Path.GetDirectoryName(path));
             var expected = "HyperRTS." + folder.Replace(Path.DirectorySeparatorChar, '.');
             var actual = Namespace.Match(text).Groups[1].Value;
             if (actual != expected)
@@ -131,7 +131,7 @@ public class ModuleLayoutTests
         var finished = new HashSet<string>();
         var path = new List<string>();
         var cycles = new List<string>();
-        foreach (var module in uses.Keys.OrderBy(name => name))
+        foreach (var module in uses.Keys.Order())
         {
             FindCycles(module, uses, path, finished, cycles);
         }
@@ -155,7 +155,7 @@ public class ModuleLayoutTests
                 }
 
                 var type = match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value;
-                misplaced.Add($"{RelativeTo(PackageRoot, path)}: {type}");
+                misplaced.Add($"{Path.GetRelativePath(PackageRoot, path)}: {type}");
             }
         }
 
@@ -170,7 +170,7 @@ public class ModuleLayoutTests
         var whole = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
             .Where(path => StaticsCleanup.IsMatch(File.ReadAllText(path)))
             .Where(path => !PartialType.IsMatch(File.ReadAllText(path)))
-            .Select(path => RelativeTo(PackageRoot, path))
+            .Select(path => Path.GetRelativePath(PackageRoot, path))
             .ToList();
         Assert.IsEmpty(whole, "Types with [AutoStaticsCleanup] members must be partial:\n" + string.Join("\n", whole));
     }
@@ -181,7 +181,7 @@ public class ModuleLayoutTests
     {
         var bypassing = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
             .Where(path => SafetyBypass.IsMatch(File.ReadAllText(path)))
-            .Select(path => RelativeTo(PackageRoot, path))
+            .Select(path => Path.GetRelativePath(PackageRoot, path))
             .ToList();
         Assert.IsEmpty(bypassing, "Jobs turn safety checks off in:\n" + string.Join("\n", bypassing));
     }
@@ -196,7 +196,7 @@ public class ModuleLayoutTests
         var result = new Dictionary<string, List<string>>();
         foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
         {
-            var module = RelativeTo(root, path).Split(Path.DirectorySeparatorChar)[0];
+            var module = Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar)[0];
             if (module == "Tests" || module.EndsWith(".cs") || path.EndsWith("Authoring.cs"))
             {
                 continue;
@@ -216,7 +216,7 @@ public class ModuleLayoutTests
                     result[edge] = files = [];
                 }
 
-                files.Add(RelativeTo(PackageRoot, path));
+                files.Add(Path.GetRelativePath(PackageRoot, path));
             }
         }
 
@@ -259,8 +259,4 @@ public class ModuleLayoutTests
         var modules = edge.Split([" -> "], StringSplitOptions.None);
         return (modules[0], modules[1]);
     }
-
-    // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
-    private static string RelativeTo(string root, string path) =>
-        Path.GetFullPath(path)[(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1)..];
 }

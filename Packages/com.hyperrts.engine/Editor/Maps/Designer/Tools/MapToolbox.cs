@@ -15,7 +15,7 @@ public sealed class MapToolbox
 
     public MapToolbox()
     {
-        foreach (MapToolMode mode in Enum.GetValues(typeof(MapToolMode)))
+        foreach (MapToolMode mode in Enum.GetValues<MapToolMode>())
         {
             var kinds = KindsFor(mode);
             if (kinds.Count > 0)

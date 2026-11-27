@@ -141,7 +141,7 @@ internal sealed class SpawnStep : StagingStep
         }
 
         var near = names.Keys.Where(known => known.Contains(name, StringComparison.OrdinalIgnoreCase)
-            || name.Contains(known, StringComparison.OrdinalIgnoreCase)).OrderBy(known => known).Take(8);
+            || name.Contains(known, StringComparison.OrdinalIgnoreCase)).Order().Take(8);
         var hint = near.Any() ? $"near matches: {string.Join(", ", near)}" : $"{names.Count} prefabs, none alike";
         throw new InvalidOperationException($"no spawnable prefab named '{name}' ({hint})");
     }

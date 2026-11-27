@@ -4,26 +4,13 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning.War;
 
 /// <summary>An old shell crater, grassed over: a soft bowl with a low rim, in map space.</summary>
-public readonly struct MapWarCrater
+public readonly record struct MapWarCrater(Vector2 Center, float Radius, float Depth)
 {
     /// <summary>Rim height as a share of the bowl's depth; old rims have slumped.</summary>
     private const float RimShare = 0.15f;
 
     /// <summary>How far past the bowl's radius the rim spreads, as a share of the radius.</summary>
     private const float RimReach = 0.5f;
-
-    public MapWarCrater(Vector2 center, float radius, float depth)
-    {
-        Center = center;
-        Radius = radius;
-        Depth = depth;
-    }
-
-    public Vector2 Center { get; }
-
-    public float Radius { get; }
-
-    public float Depth { get; }
 
     /// <summary>Distance from the centre past which the ground is untouched.</summary>
     public float Reach => Radius * (1f + RimReach);

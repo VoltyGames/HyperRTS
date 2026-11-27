@@ -3,21 +3,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Geometry;
 
 /// <summary>The four samples of a <see cref="MapGrid"/> round a point and its fractions between them.</summary>
-public readonly struct MapBilinear
+public readonly record struct MapBilinear(int X0, int Z0, float Fx, float Fz)
 {
-    public readonly int X0;
-    public readonly int Z0;
-    public readonly float Fx;
-    public readonly float Fz;
-
-    public MapBilinear(int x0, int z0, float fx, float fz)
-    {
-        X0 = x0;
-        Z0 = z0;
-        Fx = fx;
-        Fz = fz;
-    }
-
     public int X1 => X0 + 1;
 
     public int Z1 => Z0 + 1;

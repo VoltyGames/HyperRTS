@@ -4,23 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 
 /// <summary>Where a cinematic view looks from: the map point it aims at and its lift, distance, pitch and yaw.</summary>
-internal readonly struct CameraAim
+internal readonly record struct CameraAim(float2 Look, float Lift, float Distance, float Pitch, float Yaw)
 {
-    public readonly float2 Look;
-    public readonly float Lift;
-    public readonly float Distance;
-    public readonly float Pitch;
-    public readonly float Yaw;
-
-    public CameraAim(float2 look, float lift, float distance, float pitch, float yaw)
-    {
-        Look = look;
-        Lift = lift;
-        Distance = distance;
-        Pitch = pitch;
-        Yaw = yaw;
-    }
-
     /// <summary>The aim <paramref name="share"/> of the way to <paramref name="to"/>; yaw turns the way its numbers run.</summary>
     public CameraAim Toward(CameraAim to, float share) => new(
         math.lerp(Look, to.Look, share),

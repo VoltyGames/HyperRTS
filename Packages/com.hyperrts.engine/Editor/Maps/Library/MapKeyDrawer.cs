@@ -48,7 +48,7 @@ public sealed class MapKeyDrawer : PropertyDrawer
                 .Where(parsed => parsed.Type == type)
                 .Select(parsed => parsed.Key))
             .Distinct()
-            .OrderBy(key => key, StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
             .ToList();
         if (!string.IsNullOrEmpty(current) && !keys.Contains(current))
         {
