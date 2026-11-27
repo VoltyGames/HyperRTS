@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using HyperRTS.Editor.PlayMode.Cheats;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Surfaces;
@@ -15,7 +14,6 @@ internal sealed class SpawnStep : StagingStep
 {
     private const float SearchStep = 8f;
 
-    [JsonPropertyName("as")]
     public string group;
     public string prefab;
     public int owner;
@@ -35,7 +33,7 @@ internal sealed class SpawnStep : StagingStep
 
     public override void Check()
     {
-        Need(group, "as");
+        Need(group, "group");
         Need(prefab, "prefab");
         if (owner is < 0 or > byte.MaxValue)
         {

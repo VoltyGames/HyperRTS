@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Validation.Rules.Effects;
 /// One effect field of an authoring component: a rig or a surface table, whether it must be set, and the socket
 /// it plays from, if any.
 /// </summary>
-public struct EffectReference
+public record struct EffectReference
 {
     public string Label;
     public GameObject Rig;
@@ -30,11 +30,5 @@ public struct EffectReference
         new() { Label = label, Surface = surface, IsSurface = true, Required = required };
 
     /// <summary>The reference needs <paramref name="socket"/> once it is in use.</summary>
-    public EffectReference WithSocket(string socketName, Transform socket)
-    {
-        var reference = this;
-        reference.SocketName = socketName;
-        reference.Socket = socket;
-        return reference;
-    }
+    public EffectReference WithSocket(string socketName, Transform socket) => this with { SocketName = socketName, Socket = socket };
 }

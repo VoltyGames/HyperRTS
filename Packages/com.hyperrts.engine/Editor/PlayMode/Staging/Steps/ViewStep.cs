@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.Json.Serialization;
 using HyperRTS.Input.Cameras;
 using Unity.Mathematics;
 using UnityEngine;
@@ -18,9 +17,7 @@ internal sealed class ViewStep : StagingStep
     public string on;
     public float[] at;
     public float? lift;
-    [JsonPropertyName("from")]
     public ViewAim start;
-    [JsonPropertyName("to")]
     public ViewAim end;
     public float? seconds;
     public float? fov;
@@ -35,8 +32,8 @@ internal sealed class ViewStep : StagingStep
     {
         var target = OneOf(("on", on != null), ("at", at != null));
         var look = target == "at" ? Point(at, "at") : float2.zero;
-        _from = (start ?? throw new InvalidOperationException("needs 'from'")).Aim(look, lift ?? 0f, null, "from");
-        _to = end == null ? _from : end.Aim(look, _from.Lift, _from, "to");
+        _from = (start ?? throw new InvalidOperationException("needs 'start'")).Aim(look, lift ?? 0f, null, "start");
+        _to = end == null ? _from : end.Aim(look, _from.Lift, _from, "end");
         if (end != null && (seconds ?? 0f) <= 0f)
         {
             throw new InvalidOperationException($"needs 'seconds' above 0 to move, got {seconds}");

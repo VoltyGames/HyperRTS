@@ -212,12 +212,12 @@ public sealed partial class IssueList : VisualElement
     {
         private readonly NodeKind _kind;
 
-        private Node(NodeKind kind, string rule = null, Object asset = null, ValidationIssue issue = default, string variantText = "")
+        private Node(NodeKind kind, string rule = null, Object asset = null, ValidationIssue issue = null, string variantText = "")
         {
             _kind = kind;
             Rule = rule;
             Asset = asset;
-            Issue = issue;
+            Issue = issue ?? new ValidationIssue();
             VariantText = variantText;
         }
 

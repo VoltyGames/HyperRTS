@@ -62,8 +62,7 @@ public static class StrictJson
             info.CreateObject = () => Activator.CreateInstance(type);
             foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.Instance).Where(field => !field.IsNotSerialized))
             {
-                var name = field.GetCustomAttribute<JsonPropertyNameAttribute>()?.Name ?? field.Name;
-                var property = info.CreateJsonPropertyInfo(field.FieldType, name);
+                var property = info.CreateJsonPropertyInfo(field.FieldType, field.Name);
                 property.Get = field.GetValue;
                 property.Set = field.SetValue;
                 property.IsRequired = requireValues && field.FieldType.IsValueType && Nullable.GetUnderlyingType(field.FieldType) == null;

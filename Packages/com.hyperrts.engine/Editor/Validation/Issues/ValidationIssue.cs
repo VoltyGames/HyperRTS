@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Validation.Issues;
 
 /// <summary>One setup problem, the object to fix and, when there is an obvious one, a one-click fix.</summary>
-public struct ValidationIssue
+public sealed record ValidationIssue
 {
     public MessageType Severity;
     public string Message;
@@ -19,12 +19,7 @@ public struct ValidationIssue
     /// <summary>Property path of the field at fault, such as "stats.range"; empty when no one field is.</summary>
     public string Path;
 
-    public ValidationIssue FoundBy(string rule)
-    {
-        var found = this;
-        found.Rule = rule;
-        return found;
-    }
+    public ValidationIssue FoundBy(string rule) => this with { Rule = rule };
 
     public override string ToString() => $"HyperRTS: {Message} ({(Context != null ? Context.name : "project")})";
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Text.Json.Serialization;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
@@ -17,7 +16,6 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 /// </summary>
 internal sealed class GroupStep : StagingStep
 {
-    [JsonPropertyName("as")]
     public string group;
     public float[] at;
     public float radius;
@@ -31,7 +29,7 @@ internal sealed class GroupStep : StagingStep
 
     public override void Check()
     {
-        Need(group, "as");
+        Need(group, "group");
         _point = Point(at, "at");
         if (radius <= 0f)
         {

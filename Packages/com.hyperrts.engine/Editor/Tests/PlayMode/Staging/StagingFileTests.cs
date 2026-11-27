@@ -14,8 +14,8 @@ public class StagingFileTests
             ""steps"": [
                 { ""at"": 0, ""fog"": false },
                 { ""at"": 2, ""order"": { ""units"": ""blue"", ""attack"": ""red"" } },
-                { ""at"": 0, ""spawn"": { ""as"": ""blue"", ""prefab"": ""A"", ""owner"": 1, ""count"": 2, ""at"": [1, 2], ""spacing"": 8, ""yaw"": 90 } },
-                { ""at"": 0, ""spawn"": { ""as"": ""red"", ""prefab"": ""B"", ""owner"": 2, ""count"": 1, ""at"": [5, 2], ""yaw"": 270 } },
+                { ""at"": 0, ""spawn"": { ""group"": ""blue"", ""prefab"": ""A"", ""owner"": 1, ""count"": 2, ""at"": [1, 2], ""spacing"": 8, ""yaw"": 90 } },
+                { ""at"": 0, ""spawn"": { ""group"": ""red"", ""prefab"": ""B"", ""owner"": 2, ""count"": 1, ""at"": [5, 2], ""yaw"": 270 } },
                 { ""at"": 1, ""camera"": { ""on"": ""blue"", ""height"": 15, ""follow"": true } },
                 { ""at"": 3, ""shot"": ""after"" }
             ]
@@ -77,7 +77,7 @@ public class StagingFileTests
     [Test]
     public void ParseRejectsAGroupUsedBeforeItsSpawnRuns()
     {
-        var json = Good.Replace("{ \"at\": 2, \"order\"", "{ \"at\": 0.5, \"order\"").Replace("\"at\": 0, \"spawn\": { \"as\": \"red\"", "\"at\": 1, \"spawn\": { \"as\": \"red\"");
+        var json = Good.Replace("{ \"at\": 2, \"order\"", "{ \"at\": 0.5, \"order\"").Replace("\"at\": 0, \"spawn\": { \"group\": \"red\"", "\"at\": 1, \"spawn\": { \"group\": \"red\"");
 
         Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(json, "late.json"));
     }
@@ -132,14 +132,14 @@ public class StagingFileTests
     }
 
     [Test]
-    public void ParseReadsGroupAndLetsLaterStepsUseItsLabelAndRejectsAMissingAsOrRadius()
+    public void ParseReadsGroupAndLetsLaterStepsUseItsLabelAndRejectsAMissingGroupOrRadius()
     {
         string With(string group) => WithSteps($"{{ \"at\": 0, \"group\": {group} }}, {{ \"at\": 1, \"damage\": {{ \"units\": \"barn\", \"amount\": 50 }} }}");
 
-        var file = StagingFile.Parse(With("{ \"as\": \"barn\", \"at\": [10, 20], \"radius\": 15, \"prefab\": \"Barn\" }"), "group.json");
+        var file = StagingFile.Parse(With("{ \"group\": \"barn\", \"at\": [10, 20], \"radius\": 15, \"prefab\": \"Barn\" }"), "group.json");
 
         Assert.That(file.Steps.Select(step => step.Defines), Does.Contain("barn"));
-        StringAssert.Contains("'as'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"at\": [10, 20], \"radius\": 15 }"), "as.json")).Message);
-        StringAssert.Contains("'radius'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"as\": \"barn\", \"at\": [10, 20] }"), "radius.json")).Message);
+        StringAssert.Contains("'group'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"at\": [10, 20], \"radius\": 15 }"), "group.json")).Message);
+        StringAssert.Contains("'radius'", Assert.Throws<InvalidOperationException>(() => StagingFile.Parse(With("{ \"group\": \"barn\", \"at\": [10, 20] }"), "radius.json")).Message);
     }
 }
