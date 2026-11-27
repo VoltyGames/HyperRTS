@@ -12,189 +12,188 @@ using Unity.Entities;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.HUD
+namespace HyperRTS.Presentation.HUD;
+
+/// <summary>
+/// Every string the HUD shows, by stable key. This base is the engine's English; a game subclasses it to translate
+/// and sets <see cref="Current"/> before the HUD builds.
+/// </summary>
+public partial class HUDText
 {
-    /// <summary>
-    /// Every string the HUD shows, by stable key. This base is the engine's English; a game subclasses it to translate
-    /// and sets <see cref="Current"/> before the HUD builds.
-    /// </summary>
-    public partial class HUDText
+    [NoAutoStaticsCleanup]
+    private static readonly FrozenDictionary<string, string> English = new Dictionary<string, string>()
     {
-        [NoAutoStaticsCleanup]
-        private static readonly FrozenDictionary<string, string> English = new Dictionary<string, string>()
-        {
-            ["hud.pop"] = "POP",
-            ["hud.power"] = "PWR",
-            ["hud.strategic-ready"] = "READY",
-            ["hud.rotate-hint"] = "Drag or hold {0}: rotate, {0}: +45°, {1}: snap",
-            ["hud.wall-hint"] = "{0}: start or turn a corner, {1}: finish, {2}: snap",
-            ["command.return"] = "Return",
-            ["command.unload"] = "Unload",
-            ["command.deploy"] = "Deploy",
-            ["command.pack-up"] = "Pack Up",
-            ["command.sell"] = "Sell",
-            ["command.more"] = "More",
-            ["command.back"] = "Back",
-            ["command.retreat"] = "Retreat",
-            ["command.reinforce"] = "Reinforce",
-            ["command.reverse-move"] = "Reverse",
-            ["squad.stand"] = "Standing",
-            ["squad.crouch"] = "Crouched",
-            ["squad.prone"] = "Prone",
-            ["squad.heavy-cover"] = "Heavy cover",
-            ["squad.light-cover"] = "Light cover",
-            ["squad.dead"] = "Down",
-            ["squad.steady"] = "Steady",
-            ["squad.suppressed"] = "Suppressed",
-            ["squad.pinned"] = "Pinned",
-            ["squad.retreating"] = "Retreating",
-            ["squad.reinforcing"] = "Reinforcing",
-            ["tooltip.retreat"] = "Run to the nearest friendly retreat point, firing nothing and shaking off suppression.",
-            ["tooltip.reinforce"] = "Bring back fallen soldiers one at a time near a friendly reinforce point.",
-            ["tooltip.reinforce-time"] = "Time per soldier",
-            ["tooltip.no-retreat-point"] = "No retreat point",
-            ["tooltip.no-reinforce-point"] = "No reinforce point in range",
-            ["tooltip.full-strength"] = "Already at full strength",
-            ["tooltip.cannot-afford"] = "Not enough resources",
-            ["stance.aggressive"] = "Aggressive",
-            ["stance.defensive"] = "Defensive",
-            ["stance.hold-position"] = "Hold",
-            ["stance.passive"] = "Passive",
-            ["outcome.victory"] = "VICTORY",
-            ["outcome.defeat"] = "DEFEAT",
-            ["outcome.draw"] = "DRAW",
-            ["outcome.ended"] = "MATCH OVER",
-            ["tooltip.build-time"] = "Build time",
-            ["tooltip.limit"] = "Limit",
-            ["squad.digging"] = "Digging",
-            ["squad.building"] = "Building",
-            ["tooltip.population"] = "Population",
-            ["tooltip.power"] = "Power",
-            ["tooltip.requires"] = "Requires",
-            ["tooltip.seconds"] = "s",
-            ["producer.waiting-population"] = "No population room",
-            ["producer.waiting-pad"] = "Every pad taken",
-            ["producer.offline"] = "Offline",
-            ["details.weapon"] = "Weapon",
-            ["details.weapon-line"] = "{0}, {1:0} m",
-            ["details.target-ground"] = "Ground",
-            ["details.target-naval"] = "Naval",
-            ["details.target-air"] = "Air",
-            ["details.target-projectile"] = "Projectiles",
-            ["details.armor"] = "Armor",
-            ["details.armor-sides"] = "Front, side, rear",
-            ["details.armor-sides-value"] = "{0} / {1} / {2}",
-            ["details.speed"] = "Speed",
-            ["details.speed-value"] = "{0:0.#} m/s",
-            ["details.vision"] = "Vision",
-            ["details.range-value"] = "{0:0} m",
-            ["details.passengers"] = "Passengers",
-            ["details.passengers-value"] = "{0} / {1}",
-            ["details.rank"] = "Rank",
-            ["details.rank-none"] = "None",
-        }.ToFrozenDictionary();
+        ["hud.pop"] = "POP",
+        ["hud.power"] = "PWR",
+        ["hud.strategic-ready"] = "READY",
+        ["hud.rotate-hint"] = "Drag or hold {0}: rotate, {0}: +45°, {1}: snap",
+        ["hud.wall-hint"] = "{0}: start or turn a corner, {1}: finish, {2}: snap",
+        ["command.return"] = "Return",
+        ["command.unload"] = "Unload",
+        ["command.deploy"] = "Deploy",
+        ["command.pack-up"] = "Pack Up",
+        ["command.sell"] = "Sell",
+        ["command.more"] = "More",
+        ["command.back"] = "Back",
+        ["command.retreat"] = "Retreat",
+        ["command.reinforce"] = "Reinforce",
+        ["command.reverse-move"] = "Reverse",
+        ["squad.stand"] = "Standing",
+        ["squad.crouch"] = "Crouched",
+        ["squad.prone"] = "Prone",
+        ["squad.heavy-cover"] = "Heavy cover",
+        ["squad.light-cover"] = "Light cover",
+        ["squad.dead"] = "Down",
+        ["squad.steady"] = "Steady",
+        ["squad.suppressed"] = "Suppressed",
+        ["squad.pinned"] = "Pinned",
+        ["squad.retreating"] = "Retreating",
+        ["squad.reinforcing"] = "Reinforcing",
+        ["tooltip.retreat"] = "Run to the nearest friendly retreat point, firing nothing and shaking off suppression.",
+        ["tooltip.reinforce"] = "Bring back fallen soldiers one at a time near a friendly reinforce point.",
+        ["tooltip.reinforce-time"] = "Time per soldier",
+        ["tooltip.no-retreat-point"] = "No retreat point",
+        ["tooltip.no-reinforce-point"] = "No reinforce point in range",
+        ["tooltip.full-strength"] = "Already at full strength",
+        ["tooltip.cannot-afford"] = "Not enough resources",
+        ["stance.aggressive"] = "Aggressive",
+        ["stance.defensive"] = "Defensive",
+        ["stance.hold-position"] = "Hold",
+        ["stance.passive"] = "Passive",
+        ["outcome.victory"] = "VICTORY",
+        ["outcome.defeat"] = "DEFEAT",
+        ["outcome.draw"] = "DRAW",
+        ["outcome.ended"] = "MATCH OVER",
+        ["tooltip.build-time"] = "Build time",
+        ["tooltip.limit"] = "Limit",
+        ["squad.digging"] = "Digging",
+        ["squad.building"] = "Building",
+        ["tooltip.population"] = "Population",
+        ["tooltip.power"] = "Power",
+        ["tooltip.requires"] = "Requires",
+        ["tooltip.seconds"] = "s",
+        ["producer.waiting-population"] = "No population room",
+        ["producer.waiting-pad"] = "Every pad taken",
+        ["producer.offline"] = "Offline",
+        ["details.weapon"] = "Weapon",
+        ["details.weapon-line"] = "{0}, {1:0} m",
+        ["details.target-ground"] = "Ground",
+        ["details.target-naval"] = "Naval",
+        ["details.target-air"] = "Air",
+        ["details.target-projectile"] = "Projectiles",
+        ["details.armor"] = "Armor",
+        ["details.armor-sides"] = "Front, side, rear",
+        ["details.armor-sides-value"] = "{0} / {1} / {2}",
+        ["details.speed"] = "Speed",
+        ["details.speed-value"] = "{0:0.#} m/s",
+        ["details.vision"] = "Vision",
+        ["details.range-value"] = "{0:0} m",
+        ["details.passengers"] = "Passengers",
+        ["details.passengers-value"] = "{0} / {1}",
+        ["details.rank"] = "Rank",
+        ["details.rank-none"] = "None",
+    }.ToFrozenDictionary();
 
-        [AutoStaticsCleanup]
-        public static HUDText Current { get; set; } = new();
+    [AutoStaticsCleanup]
+    public static HUDText Current { get; set; } = new();
 
-        /// <summary>
-        /// Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*, tooltip.*), its {0}, {1}... placeholders
-        /// filled from the arguments.
-        /// </summary>
-        public virtual string Get(string key, params object[] arguments) => string.Format(English[key], arguments);
+    /// <summary>
+    /// Text of a fixed HUD key (hud.*, command.*, stance.*, outcome.*, tooltip.*), its {0}, {1}... placeholders
+    /// filled from the arguments.
+    /// </summary>
+    public virtual string Get(string key, params object[] arguments) => string.Format(English[key], arguments);
 
-        /// <summary>Shown name of authored content under <paramref name="key"/> (entity.*, resource.*, ability.*, weapon.*, damage.*).</summary>
-        public virtual string Name(string key, string authored) => authored;
+    /// <summary>Shown name of authored content under <paramref name="key"/> (entity.*, resource.*, ability.*, weapon.*, damage.*).</summary>
+    public virtual string Name(string key, string authored) => authored;
 
-        /// <summary>Optional text of a content key such as entity.war-factory.description; null when there is none.</summary>
-        public virtual string Description(string key) => null;
+    /// <summary>Optional text of a content key such as entity.war-factory.description; null when there is none.</summary>
+    public virtual string Description(string key) => null;
 
-        public static string Text(string key, params object[] arguments) => Current.Get(key, arguments);
+    public static string Text(string key, params object[] arguments) => Current.Get(key, arguments);
 
-        /// <summary>A unit, building or upgrade by its <c>EntityInfo.Name</c>: entity.command-center.</summary>
-        public static string EntityName(string name) => Current.Name(Key("entity", name), name);
+    /// <summary>A unit, building or upgrade by its <c>EntityInfo.Name</c>: entity.command-center.</summary>
+    public static string EntityName(string name) => Current.Name(Key("entity", name), name);
 
-        public static string EntityName(EntityManager entityManager, Entity entity) =>
-            EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
+    public static string EntityName(EntityManager entityManager, Entity entity) =>
+        EntityName(entityManager.GetComponentData<EntityInfo>(entity).Name.ToString());
 
-        /// <summary>The tooltip line under a unit's or building's name, keyed entity.war-factory.description.</summary>
-        public static string EntityDescription(EntityManager entityManager, Entity entity)
-        {
-            var name = entityManager.GetComponentData<EntityInfo>(entity).Name.ToString();
-            return Current.Description(Key("entity", name) + ".description");
-        }
-
-        /// <summary>Whole seconds with the unit: "12 s".</summary>
-        public static string Seconds(float seconds) => $"{Mathf.CeilToInt(seconds)} {Text("tooltip.seconds")}";
-
-        /// <summary>A multiplier as a whole percent: "75%".</summary>
-        public static string Percent(float multiplier) => $"{Mathf.RoundToInt(multiplier * 100f)}%";
-
-        /// <summary>A weapon's designation as a member card shows it: weapon.m4a1 for M4A1.</summary>
-        public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Name(Key("weapon", designation), designation);
-
-        /// <summary>A damage type as armor lists it: damage.small-arms for Small Arms.</summary>
-        public static string DamageName(string displayName) => Current.Name(Key("damage", displayName), displayName);
-
-        public static string AbilityName(string name) => Current.Name(Key("ability", name), name);
-
-        /// <summary>Keyed by the asset name, which is also the type's network id: resource.supplies.</summary>
-        public static string ResourceName(ResourceType type) => Current.Name(Key("resource", type.name), type.displayName);
-
-        public static string OutcomeTitle(MatchOutcome outcome) => Text(Key("outcome", outcome.ToString()));
-
-        /// <summary>Why a producer is stalled (producer.waiting-pad), or empty while it idles or works.</summary>
-        public static string ProducerWait(ProducerState state)
-        {
-            if (state is ProducerState.Idle or ProducerState.Working)
-            {
-                return "";
-            }
-
-            return Text(Key("producer", state.ToString()));
-        }
-
-        /// <summary>
-        /// <paramref name="kind"/> and the name in lowercase kebab case: ("entity", "War Factory") gives
-        /// entity.war-factory, ("stance", "HoldPosition") gives stance.hold-position.
-        /// </summary>
-        public static string Key(string kind, string name)
-        {
-            var key = new StringBuilder(kind).Append('.');
-            var separate = false;
-            var previous = ' ';
-            foreach (var c in name)
-            {
-                if (!char.IsLetterOrDigit(c))
-                {
-                    separate = true;
-                    previous = c;
-                    continue;
-                }
-
-                var wordStart = char.IsUpper(c) && char.IsLower(previous);
-                if ((separate || wordStart) && key[^1] != '.')
-                {
-                    key.Append('-');
-                }
-
-                key.Append(char.ToLowerInvariant(c));
-                separate = false;
-                previous = c;
-            }
-
-            return key.ToString();
-        }
-
-        /// <summary>Every fixed key the HUD can ask for: its English table and the keys it builds from enum values.</summary>
-        public static IEnumerable<string> Keys => English.Keys
-            .Union(EnumKeys<Posture>("squad", value => value.ToString()))
-            .Union(EnumKeys<SuppressionLevel>("squad", value => value.ToString()))
-            .Union(EnumKeys<CoverKind>("squad", value => value + "Cover").Where(key => key != "squad.none-cover"))
-            .Union(EnumKeys<MatchOutcome>("outcome", value => value.ToString()).Where(key => key != "outcome.none"))
-            .Union(EnumKeys<ProducerState>("producer", value => value.ToString()).Where(key => English.ContainsKey(key)));
-
-        private static IEnumerable<string> EnumKeys<T>(string kind, Func<T, string> name) where T : struct, Enum =>
-            Enum.GetValues<T>().Select(value => Key(kind, name(value)));
+    /// <summary>The tooltip line under a unit's or building's name, keyed entity.war-factory.description.</summary>
+    public static string EntityDescription(EntityManager entityManager, Entity entity)
+    {
+        var name = entityManager.GetComponentData<EntityInfo>(entity).Name.ToString();
+        return Current.Description(Key("entity", name) + ".description");
     }
+
+    /// <summary>Whole seconds with the unit: "12 s".</summary>
+    public static string Seconds(float seconds) => $"{Mathf.CeilToInt(seconds)} {Text("tooltip.seconds")}";
+
+    /// <summary>A multiplier as a whole percent: "75%".</summary>
+    public static string Percent(float multiplier) => $"{Mathf.RoundToInt(multiplier * 100f)}%";
+
+    /// <summary>A weapon's designation as a member card shows it: weapon.m4a1 for M4A1.</summary>
+    public static string WeaponName(string designation) => designation.Length == 0 ? "" : Current.Name(Key("weapon", designation), designation);
+
+    /// <summary>A damage type as armor lists it: damage.small-arms for Small Arms.</summary>
+    public static string DamageName(string displayName) => Current.Name(Key("damage", displayName), displayName);
+
+    public static string AbilityName(string name) => Current.Name(Key("ability", name), name);
+
+    /// <summary>Keyed by the asset name, which is also the type's network id: resource.supplies.</summary>
+    public static string ResourceName(ResourceType type) => Current.Name(Key("resource", type.name), type.displayName);
+
+    public static string OutcomeTitle(MatchOutcome outcome) => Text(Key("outcome", outcome.ToString()));
+
+    /// <summary>Why a producer is stalled (producer.waiting-pad), or empty while it idles or works.</summary>
+    public static string ProducerWait(ProducerState state)
+    {
+        if (state is ProducerState.Idle or ProducerState.Working)
+        {
+            return "";
+        }
+
+        return Text(Key("producer", state.ToString()));
+    }
+
+    /// <summary>
+    /// <paramref name="kind"/> and the name in lowercase kebab case: ("entity", "War Factory") gives
+    /// entity.war-factory, ("stance", "HoldPosition") gives stance.hold-position.
+    /// </summary>
+    public static string Key(string kind, string name)
+    {
+        var key = new StringBuilder(kind).Append('.');
+        var separate = false;
+        var previous = ' ';
+        foreach (var c in name)
+        {
+            if (!char.IsLetterOrDigit(c))
+            {
+                separate = true;
+                previous = c;
+                continue;
+            }
+
+            var wordStart = char.IsUpper(c) && char.IsLower(previous);
+            if ((separate || wordStart) && key[^1] != '.')
+            {
+                key.Append('-');
+            }
+
+            key.Append(char.ToLowerInvariant(c));
+            separate = false;
+            previous = c;
+        }
+
+        return key.ToString();
+    }
+
+    /// <summary>Every fixed key the HUD can ask for: its English table and the keys it builds from enum values.</summary>
+    public static IEnumerable<string> Keys => English.Keys
+        .Union(EnumKeys<Posture>("squad", value => value.ToString()))
+        .Union(EnumKeys<SuppressionLevel>("squad", value => value.ToString()))
+        .Union(EnumKeys<CoverKind>("squad", value => value + "Cover").Where(key => key != "squad.none-cover"))
+        .Union(EnumKeys<MatchOutcome>("outcome", value => value.ToString()).Where(key => key != "outcome.none"))
+        .Union(EnumKeys<ProducerState>("producer", value => value.ToString()).Where(key => English.ContainsKey(key)));
+
+    private static IEnumerable<string> EnumKeys<T>(string kind, Func<T, string> name) where T : struct, Enum =>
+        Enum.GetValues<T>().Select(value => Key(kind, name(value)));
 }
