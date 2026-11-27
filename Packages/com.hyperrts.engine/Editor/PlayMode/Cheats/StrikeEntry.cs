@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.PlayMode.Cheats;
 /// A strike the game has, found from its prefab: one strike ability of a structure, or a unit with a strategic
 /// weapon. It builds the prefab and fires it for a player.
 /// </summary>
-internal readonly struct StrikeEntry
+internal sealed class StrikeEntry
 {
     public readonly Entity Prefab;
     public readonly int TypeId;

@@ -263,12 +263,6 @@ public sealed class PurchaseCommands(CommandKit kit) : ICommandSource
         }
     }
 
-    private readonly struct Option(CommandButton button, Entity prefab, List<Entity> producers)
-    {
-        public CommandButton Button { get; } = button;
-        public Entity Prefab { get; } = prefab;
-
-        /// <summary>Selected producers that offer it; none for a building a builder places.</summary>
-        public List<Entity> Producers { get; } = producers;
-    }
+    /// <param name="Producers">Selected producers that offer it; none for a building a builder places.</param>
+    private sealed record Option(CommandButton Button, Entity Prefab, List<Entity> Producers);
 }
