@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Effects.Layer;
 using UnityEditor;
 
@@ -16,7 +17,7 @@ namespace HyperRTS.Editor.Effects.Graph
         {
             Path = EffectGraphBuilder.FindRecipe(recipe);
             _recipe = AssetDatabase.LoadAssetAtPath<EffectRecipe>(Path)
-                ?? throw new ArgumentException($"HyperRTS: {Path} is no effect recipe.");
+                .OrThrow($"HyperRTS: {Path} is no effect recipe.");
             _serialized = new SerializedObject(_recipe);
         }
 

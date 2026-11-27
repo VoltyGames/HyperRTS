@@ -60,7 +60,11 @@ namespace HyperRTS.Editor.Decorations
             var thumbnail = new Rect(row.x, row.y, row.width, row.height - LabelHeight);
             GUI.DrawTexture(thumbnail, icon, ScaleMode.ScaleToFit);
             var badge = new Rect(thumbnail.xMax - BadgeSize, thumbnail.yMax - BadgeSize, BadgeSize, BadgeSize);
-            _prefabBadge ??= EditorGUIUtility.IconContent("Prefab Icon").image;
+            if (_prefabBadge == null)
+            {
+                _prefabBadge = EditorGUIUtility.IconContent("Prefab Icon").image;
+            }
+
             GUI.DrawTexture(badge, _prefabBadge, ScaleMode.ScaleToFit);
         }
 

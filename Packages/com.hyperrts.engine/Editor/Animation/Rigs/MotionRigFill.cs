@@ -89,7 +89,9 @@ namespace HyperRTS.Editor.Animation.Rigs
         {
             var raised = all.Except(parts).FirstOrDefault(part => part.name is "Barrel" or "Launcher");
             FillWeaponPivots(raised);
-            _rig.tiltRoot = _rig.IsBuilding ? null : Named(parts, "Hull").FirstOrDefault() ?? ModelRoot();
+            var hull = Named(parts, "Hull").FirstOrDefault();
+            var body = hull != null ? hull : ModelRoot();
+            _rig.tiltRoot = _rig.IsBuilding ? null : body;
             _rig.tiltFollower = TiltFollower();
             if (_rig.tiltRoot != null)
             {
@@ -212,8 +214,11 @@ namespace HyperRTS.Editor.Animation.Rigs
         }
 
         // Without a barrel slot of its own, a weapon fires from the launcher its Machine raises.
-        private Transform Barrel(int weapon, Transform raised) =>
-            _rig.elevations.FirstOrDefault(slot => slot.weapon == weapon)?.part ?? raised;
+        private Transform Barrel(int weapon, Transform raised)
+        {
+            var part = _rig.elevations.FirstOrDefault(slot => slot.weapon == weapon)?.part;
+            return part != null ? part : raised;
+        }
 
         // A weapon turns with its own turret slot, else with the turret its barrel sits on.
         private Transform Turret(int weapon, Transform barrel)

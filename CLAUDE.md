@@ -2,7 +2,8 @@
 
 HyperRTS is a reusable RTS engine on Unity DOTS, not a game: prefer generic, data-driven code. The repo is public,
 so no third-party assets go in, except editor icons under a permissive licence, each listed with its licence in
-`Packages/com.hyperrts.engine/Editor/Icons/Credits.md`.
+`Packages/com.hyperrts.engine/Editor/Icons/Credits.md`, and the Unity analyzer in `Simulation/Analyzers/` with its
+`Credits.md`.
 
 ## Layout
 
@@ -140,6 +141,9 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
 - A `NavGrid` held privately inside a helper struct that jobs carry stops those jobs with no error. Pass it from the
   job's own `[ReadOnly] public NavGrid Grid` field.
 - `Debug.Log` from a system doesn't reach the console in EditMode tests: bisect by file.
+- A destroyed or missing Unity object equals `null` only through `==`: never use `?.`, `??`, `??=`, `is null` or
+  `is { }` on one. `dev compile` fails on most of them (UNT0007, UNT0008, UNT0023, UNT0029). Editor code requires
+  an object with `OrThrow` (`ObjectChecks`).
 - C# 14 reads a bare `field` inside a property accessor as that property's backing field, so a member named
   `field` needs `this.field` there (warning CS9258).
 - Surface Cache GI re-bakes a material on the main thread whenever a `[MaterialProperty]` value changes on an entity

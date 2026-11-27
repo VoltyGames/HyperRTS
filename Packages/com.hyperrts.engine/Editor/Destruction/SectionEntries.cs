@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Destruction;
 using UnityEditor;
@@ -156,7 +157,7 @@ namespace HyperRTS.Editor.Destruction
                 found = child.gameObject;
             }
 
-            return found ?? throw new InvalidOperationException($"HyperRTS: '{_owner.name}' has no object named '{modelName}' from its model's sections.");
+            return found.OrThrow($"HyperRTS: '{_owner.name}' has no object named '{modelName}' from its model's sections.");
         }
 
         private SectionMaterial FindMaterial(string materialName)

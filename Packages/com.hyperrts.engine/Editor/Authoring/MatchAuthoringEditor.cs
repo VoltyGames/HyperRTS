@@ -70,7 +70,11 @@ namespace HyperRTS.Editor.Authoring
         {
             var match = (MatchAuthoring)target;
             var size = new Vector3(match.mapSize.x, 1f, match.mapSize.y);
-            SceneView.lastActiveSceneView?.Frame(new Bounds(match.transform.position, size), false);
+            var view = SceneView.lastActiveSceneView;
+            if (view != null)
+            {
+                view.Frame(new Bounds(match.transform.position, size), false);
+            }
         }
 
         private static int[] CountOwners(int players)

@@ -24,7 +24,11 @@ namespace HyperRTS.Simulation.Tests.Squads
 
         private Entity Squad(int funds, float pointRange = 25f)
         {
-            _supplies ??= World.CreateSupplies();
+            if (_supplies == null)
+            {
+                _supplies = World.CreateSupplies();
+            }
+
             World.AddResources(1, _supplies, funds);
             var squad = World.SpawnSquad(1, float3.zero);
             World.AddWeapon(squad, new TestWeapon { Range = 6f, Damage = 10f, Cooldown = 100f });

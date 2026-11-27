@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Animation.Bones;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -33,7 +34,7 @@ namespace HyperRTS.Editor.Animation.Bones
         public Mesh SkinnedMesh(GameObject model, string node)
         {
             var renderer = BoneRig.Find(model, node).GetComponent<SkinnedMeshRenderer>()
-                ?? throw new InvalidOperationException($"Node '{node}' of '{model.name}' has no skinned mesh.");
+                .OrThrow($"Node '{node}' of '{model.name}' has no skinned mesh.");
             var bindposes = renderer.sharedMesh.bindposes;
             var remap = new int[renderer.bones.Length];
             for (var i = 0; i < remap.Length; i++)
@@ -63,8 +64,8 @@ namespace HyperRTS.Editor.Animation.Bones
         /// </summary>
         public Mesh AttachedMesh(GameObject model, string node, string socket)
         {
-            var source = BoneRig.Find(model, node).GetComponent<MeshFilter>()?.sharedMesh
-                ?? throw new InvalidOperationException($"Node '{node}' of '{model.name}' has no mesh.");
+            var filter = BoneRig.Find(model, node).GetComponent<MeshFilter>();
+            var source = (filter != null ? filter.sharedMesh : null).OrThrow($"Node '{node}' of '{model.name}' has no mesh.");
             var bone = _boneIndex(socket);
             if (bone < _skeletonBones)
             {

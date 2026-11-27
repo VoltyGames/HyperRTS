@@ -78,10 +78,10 @@ namespace HyperRTS.Editor.Destruction
             var found = Selection.activeGameObject != null
                 ? Selection.activeGameObject.GetComponentInParent<SectionsAuthoring>()
                 : null;
-            if (found == null)
+            var stage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (found == null && stage != null)
             {
-                found = PrefabStageUtility.GetCurrentPrefabStage()?.prefabContentsRoot
-                    .GetComponent<SectionsAuthoring>();
+                found = stage.prefabContentsRoot.GetComponent<SectionsAuthoring>();
             }
 
             if (found == _building)

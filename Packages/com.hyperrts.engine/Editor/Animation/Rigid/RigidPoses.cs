@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -37,7 +38,7 @@ namespace HyperRTS.Editor.Animation.Rigid
             foreach (var piece in pieces.pieces)
             {
                 var node = motion.transform.Find(piece.node)
-                    ?? throw new InvalidOperationException($"HyperRTS: {motion.name} has no node '{piece.node}' for column {piece.column}.");
+                    .OrThrow($"HyperRTS: {motion.name} has no node '{piece.node}' for column {piece.column}.");
                 curves.TryGetValue(piece.node, out var channels);
                 var before = Quaternion.identity;
                 for (var row = 0; row < rows; row++)

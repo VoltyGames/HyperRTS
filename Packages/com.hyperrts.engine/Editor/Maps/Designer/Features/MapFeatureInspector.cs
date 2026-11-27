@@ -27,7 +27,13 @@ namespace HyperRTS.Editor.Maps.Designer.Features
             _path = this.Require<Label>("path");
             _fields = this.Require<VisualElement>("fields");
             // Raised by a field the user changed, never by the binding catching up with an undo or a reload.
-            _fields.RegisterCallback<SerializedPropertyChangeEvent>(_ => _document?.Commit());
+            _fields.RegisterCallback<SerializedPropertyChangeEvent>(_ =>
+            {
+                if (_document != null)
+                {
+                    _document.Commit();
+                }
+            });
         }
 
         public void Show(MapSpecDocument document, MapFeatureRef feature)

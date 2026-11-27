@@ -1,79 +1,59 @@
-# EditorConfig — https://editorconfig.org
-# Top-most config; stop walking up the tree here.
 root = true
 
-##########################################
-# All files
-##########################################
 [*]
 indent_style = space
 trim_trailing_whitespace = true
 insert_final_newline = true
-# LF everywhere, as Unity writes its YAML; .gitattributes enforces it in git.
+# Unity writes its YAML with LF; .gitattributes enforces it in git.
 end_of_line = lf
 
-##########################################
-# C# — UTF-8 BOM, 4-space, Allman braces
-##########################################
 [*.cs]
 indent_size = 4
 charset = utf-8-bom
 
-# using directives
 dotnet_sort_system_directives_first = true
 dotnet_separate_import_directive_groups = false
 
-# 'this.' qualification is omitted in this codebase
 dotnet_style_qualification_for_field = false
 dotnet_style_qualification_for_property = false
 dotnet_style_qualification_for_method = false
 dotnet_style_qualification_for_event = false
 
-# prefer 'var' (the codebase uses it everywhere)
 csharp_style_var_for_built_in_types = true:suggestion
 csharp_style_var_when_type_is_apparent = true:suggestion
 csharp_style_var_elsewhere = true:suggestion
 
-# Allman braces, always braced blocks
 csharp_new_line_before_open_brace = all
 csharp_new_line_before_else = true
 csharp_new_line_before_catch = true
 csharp_new_line_before_finally = true
 csharp_prefer_braces = true:suggestion
 
-# block-scoped namespaces (e.g. `namespace HyperRTS.Core.Units { ... }`)
 csharp_style_namespace_declarations = block_scoped:suggestion
 
-# explicit accessibility modifiers on members
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
 
-##########################################
-# JSON & Unity assembly definitions — two-space
-##########################################
+# Unity objects equal null once destroyed; ??, ?., ??= and null patterns skip that check.
+dotnet_diagnostic.UNT0007.severity = error
+dotnet_diagnostic.UNT0008.severity = error
+dotnet_diagnostic.UNT0023.severity = error
+dotnet_diagnostic.UNT0029.severity = error
+
 [*.{json,jsonc,json5,asmdef,asmref}]
 indent_size = 2
 charset = utf-8
 
-##########################################
-# XML and Unity UI layouts (UXML): two-space
-##########################################
 [*.{xml,uxml}]
 indent_size = 2
 charset = utf-8
 
-##########################################
-# Unity YAML assets — two-space (do not reformat structurally)
-##########################################
-[*.{yml,yaml,asset,meta,prefab,unity}]
-indent_size = 2
-
-##########################################
-# Markdown — keep trailing spaces (used for hard line breaks)
-##########################################
-[*.md]
-trim_trailing_whitespace = false
-
-# Unity style sheets (USS, TSS): two-space, formatted by Prettier as CSS (.prettierrc.json)
 [*.{uss,tss}]
 indent_size = 2
 charset = utf-8
+
+[*.{yml,yaml,asset,meta,prefab,unity}]
+indent_size = 2
+
+# Trailing spaces are hard line breaks.
+[*.md]
+trim_trailing_whitespace = false

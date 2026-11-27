@@ -40,7 +40,7 @@ namespace HyperRTS.Editor.Maps.Ground
             }
 
             return AssetDatabase.LoadAssetAtPath<Texture2DArray>(path)
-                ?? throw new InvalidOperationException($"HyperRTS: '{path}' did not import as a texture array.");
+                .OrThrow($"HyperRTS: '{path}' did not import as a texture array.");
         }
 
         private static bool IsCurrent(string path, string hash)

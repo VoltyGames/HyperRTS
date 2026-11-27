@@ -1,3 +1,4 @@
+using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.Rendering.LitTeam;
 using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
@@ -120,7 +121,7 @@ namespace HyperRTS.Editor.Templates
             model.name = "Model";
             Object.DestroyImmediate(model.GetComponent<Collider>());
             model.GetComponent<Renderer>().sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(TeamMaterial)
-                ?? throw new System.IO.FileNotFoundException($"HyperRTS: missing template material {TeamMaterial}.");
+                .OrThrow($"HyperRTS: missing template material {TeamMaterial}.");
             model.transform.SetParent(root.transform, false);
             model.transform.localPosition = new Vector3(0f, centerY, 0f);
             model.transform.localScale = size;

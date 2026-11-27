@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Effects.Layer;
 using HyperRTS.Presentation.Effects;
 using HyperRTS.Presentation.Effects.Rig;
@@ -123,7 +124,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
         private static EffectRecipe Load(string recipePath) =>
             AssetDatabase.LoadAssetAtPath<EffectRecipe>(recipePath)
-            ?? throw new ArgumentException($"HyperRTS: {recipePath} is no effect recipe.");
+            .OrThrow($"HyperRTS: {recipePath} is no effect recipe.");
 
         /// <summary>
         /// The compile errors of a built graph's compute shaders and of every output pass's default variant for

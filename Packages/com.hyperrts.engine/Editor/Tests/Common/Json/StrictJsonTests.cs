@@ -81,7 +81,6 @@ namespace HyperRTS.Editor.Tests.Common.Json
             public int Doubled => count * 2;
         }
 
-        [Serializable]
         public class WithNullable
         {
             public int required;

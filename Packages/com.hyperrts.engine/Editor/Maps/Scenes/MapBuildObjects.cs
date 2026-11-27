@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using UnityEditor;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -60,6 +61,6 @@ namespace HyperRTS.Editor.Maps.Scenes
         }
 
         private static Object Handle(GameObject root) => PrefabUtility.GetPrefabInstanceHandle(root)
-            ?? throw new ArgumentException($"HyperRTS: '{root.name}' is not a prefab instance.", nameof(root));
+            .OrThrow($"HyperRTS: '{root.name}' is not a prefab instance.");
     }
 }

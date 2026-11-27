@@ -24,6 +24,6 @@ namespace HyperRTS.Editor.Common
         public static bool IsMarked(string path) => AssetDatabase.GetLabels(Load(path)).Contains(Label);
 
         private static Object Load(string path) =>
-            AssetDatabase.LoadMainAssetAtPath(path) ?? throw new InvalidOperationException($"HyperRTS: no asset at {path}.");
+            AssetDatabase.LoadMainAssetAtPath(path).OrThrow($"HyperRTS: no asset at {path}.");
     }
 }

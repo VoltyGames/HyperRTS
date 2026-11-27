@@ -132,7 +132,11 @@ namespace HyperRTS.Editor.Maps.Library
                 throw Missing(type, key, referrer);
             }
 
-            entry.Copy ??= Copy(entry, key);
+            if (entry.Copy == null)
+            {
+                entry.Copy = Copy(entry, key);
+            }
+
             return entry.Copy;
         }
 
@@ -164,7 +168,8 @@ namespace HyperRTS.Editor.Maps.Library
             }
         }
 
-        private static MapLibraryItem Original(Entry entry) => entry.Item ?? AssetDatabase.LoadAssetAtPath<MapLibraryItem>(entry.Path);
+        private static MapLibraryItem Original(Entry entry) =>
+            entry.Item != null ? entry.Item : AssetDatabase.LoadAssetAtPath<MapLibraryItem>(entry.Path);
 
         private static MapLibraryItem Copy(Entry entry, string key)
         {

@@ -1,6 +1,7 @@
 using System;
 using System.Globalization;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Effects.Layer;
 using UnityEditor;
 using UnityEngine;
@@ -199,7 +200,7 @@ namespace HyperRTS.Editor.Effects.Graph
 
             var path = name.Contains('/') ? name : FindAsset(name);
             return AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path)
-                ?? throw new ArgumentException($"HyperRTS: no asset at '{path}' for '{Field()}'.");
+                .OrThrow($"HyperRTS: no asset at '{path}' for '{Field()}'.");
         }
 
         // PPtr<$Texture2D> names the field's type.

@@ -1,6 +1,8 @@
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Effects;
+using HyperRTS.Simulation.Cues.Surfaces;
 using Unity.Entities;
+using UnityEngine;
 
 namespace HyperRTS.Presentation.Effects.Rig
 {
@@ -29,6 +31,9 @@ namespace HyperRTS.Presentation.Effects.Rig
 
         /// <summary>Null when the type's shots throw nothing up.</summary>
         public SurfaceEffects Impacts { get; }
+
+        /// <summary>The rig the type's shots throw up on <paramref name="material"/>; null when they throw nothing up.</summary>
+        public GameObject ImpactRig(SurfaceMaterial material) => Impacts != null ? Impacts.RigFor(material) : null;
 
         /// <summary>The slot and variant's rig entry; false when the type has none.</summary>
         public bool TryGet(CueSlot slot, byte variant, out EntityEffect effect)

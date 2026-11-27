@@ -70,7 +70,7 @@ namespace HyperRTS.Presentation.Effects.Rig
         private void PlayImpact(in CueEvent impact, in PrefabRegistry registry, in TerrainHeight terrain,
             bool hasTerrain)
         {
-            var prefab = _catalog.Find(EntityManager, registry, impact.TypeId)?.Impacts?.RigFor(impact.Material);
+            var prefab = _catalog.Find(EntityManager, registry, impact.TypeId)?.ImpactRig(impact.Material);
             var rig = _pool.Get(prefab);
             if (rig == null || !_pool.InRange(rig, impact.Position))
             {

@@ -54,7 +54,7 @@ namespace HyperRTS.Editor.Animation.Rigid
         {
             var path = AssetDatabase.GetAssetPath(model);
             return AssetDatabase.LoadAllAssetsAtPath(path).OfType<RigidMotion>().FirstOrDefault()
-                ?? throw new InvalidOperationException($"HyperRTS: {path} has no piece motion; is it a VAT/<Model>{Suffix}.fbx with '{ColumnProperty}' properties?");
+                .OrThrow($"HyperRTS: {path} has no piece motion; is it a VAT/<Model>{Suffix}.fbx with '{ColumnProperty}' properties?");
         }
 
         /// <summary>Rows in the textures: up to the end of the last clip.</summary>

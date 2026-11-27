@@ -79,7 +79,11 @@ namespace HyperRTS.Editor.Tests
         public void EveryModuleIsLayered()
         {
             var root = Path.Combine(PackageRoot, "Simulation");
-            var modules = Directory.EnumerateDirectories(root).Select(Path.GetFileName).Where(name => name != "Tests")
+            // A module holds code: Analyzers holds only the analyzer every assembly gets.
+            var modules = Directory.EnumerateDirectories(root)
+                .Where(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories).Any())
+                .Select(Path.GetFileName)
+                .Where(name => name != "Tests")
                 .ToList();
 
             var tiered = Tiers.SelectMany(tier => tier).ToList();

@@ -68,7 +68,8 @@ namespace HyperRTS.Editor.Animation.Bones
         private Dictionary<string, string> HumanBoneNames()
         {
             var names = new Dictionary<string, string>();
-            var avatar = _set.rig != null ? _set.rig.GetComponentInChildren<Animator>()?.avatar : null;
+            var animator = _set.rig != null ? _set.rig.GetComponentInChildren<Animator>() : null;
+            var avatar = animator != null ? animator.avatar : null;
             if (avatar != null && avatar.isHuman)
             {
                 foreach (var human in avatar.humanDescription.human)

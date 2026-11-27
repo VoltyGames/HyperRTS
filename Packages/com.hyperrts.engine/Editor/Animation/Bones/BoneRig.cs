@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Common;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -27,7 +28,7 @@ namespace HyperRTS.Editor.Animation.Bones
             _root = Object.Instantiate(model);
             _root.hideFlags = HideFlags.HideAndDontSave;
             _body = Find(_root, skeleton).GetComponent<SkinnedMeshRenderer>()
-                ?? throw new InvalidOperationException($"Node '{skeleton}' of '{model.name}' has no skinned mesh to name the skeleton.");
+                .OrThrow($"Node '{skeleton}' of '{model.name}' has no skinned mesh to name the skeleton.");
             var rootNode = Find(_root, rootBone);
             _travel = new RootTravel(_root, rootNode);
             _bones = _body.bones;
