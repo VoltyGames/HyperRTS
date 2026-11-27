@@ -9,20 +9,23 @@ namespace HyperRTS.Simulation.Tests;
 /// <summary>The AI map hints a test world carries, which the skirmish AI needs to play.</summary>
 public static class AIHintsTestKit
 {
-    /// <summary>Makes the hints singleton from <paramref name="data"/>, replacing the world's current one.</summary>
-    public static Entity CreateHints(this TestWorld world, AIMapHintsData data)
+    extension(TestWorld world)
     {
-        world.RemoveHints();
-        var entity = world.EntityManager.CreateEntity();
-        var writer = world.Writer(entity);
-        AIMapHintsAuthoring.Add(writer, data);
-        return entity;
-    }
+        /// <summary>Makes the hints singleton from <paramref name="data"/>, replacing the world's current one.</summary>
+        public Entity CreateHints(AIMapHintsData data)
+        {
+            world.RemoveHints();
+            var entity = world.EntityManager.CreateEntity();
+            var writer = world.Writer(entity);
+            AIMapHintsAuthoring.Add(writer, data);
+            return entity;
+        }
 
-    public static void RemoveHints(this TestWorld world)
-    {
-        using var query = world.Query(typeof(AIMapHints));
-        world.EntityManager.DestroyEntity(query);
+        public void RemoveHints()
+        {
+            using var query = world.Query(typeof(AIMapHints));
+            world.EntityManager.DestroyEntity(query);
+        }
     }
 
     /// <summary>A slot per team entry (owner = index + 1) and one lane without waypoints between each pair of enemies.</summary>

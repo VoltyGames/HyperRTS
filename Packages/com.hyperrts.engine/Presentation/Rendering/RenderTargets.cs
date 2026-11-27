@@ -34,7 +34,10 @@ public static class RenderTargets
         CoreUtils.Destroy(texture);
     }
 
-    /// <summary>One triangle that covers the whole target.</summary>
-    public static void DrawFullScreen(this CommandBuffer commands, Material material, int pass) =>
-        commands.DrawProcedural(Matrix4x4.identity, material, pass, MeshTopology.Triangles, 3);
+    extension(CommandBuffer commands)
+    {
+        /// <summary>One triangle that covers the whole target.</summary>
+        public void DrawFullScreen(Material material, int pass) =>
+            commands.DrawProcedural(Matrix4x4.identity, material, pass, MeshTopology.Triangles, 3);
+    }
 }

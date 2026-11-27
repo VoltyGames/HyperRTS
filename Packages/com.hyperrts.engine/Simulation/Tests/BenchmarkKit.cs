@@ -27,19 +27,22 @@ namespace HyperRTS.Simulation.Tests
             return (samples[(samples.Length - 1) / 2] + samples[samples.Length / 2]) / 2.0;
         }
 
-        /// <summary>The pathfinder's running totals, with its jobs finished.</summary>
-        public static PathStats ReadPathStats(this TestWorld world)
+        extension(TestWorld world)
         {
-            world.EntityManager.CompleteAllTrackedJobs();
-            var handle = world.World.GetExistingSystem<PathfindingSystem>();
-            return world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle).Stats;
-        }
+            /// <summary>The pathfinder's running totals, with its jobs finished.</summary>
+            public PathStats ReadPathStats()
+            {
+                world.EntityManager.CompleteAllTrackedJobs();
+                var handle = world.World.GetExistingSystem<PathfindingSystem>();
+                return world.World.Unmanaged.GetUnsafeSystemRef<PathfindingSystem>(handle).Stats;
+            }
 
-        /// <summary>Updates one system and waits for its jobs.</summary>
-        public static void UpdateSystem<T>(this TestWorld world) where T : unmanaged, ISystem
-        {
-            world.World.GetExistingSystem<T>().Update(world.World.Unmanaged);
-            world.EntityManager.CompleteAllTrackedJobs();
+            /// <summary>Updates one system and waits for its jobs.</summary>
+            public void UpdateSystem<T>() where T : unmanaged, ISystem
+            {
+                world.World.GetExistingSystem<T>().Update(world.World.Unmanaged);
+                world.EntityManager.CompleteAllTrackedJobs();
+            }
         }
     }
 }

@@ -55,10 +55,13 @@ internal static class RuleFiresCases
     private static RuleCase Case<TRule>(string expected, Func<RuleFiresTests, object> build) =>
         new(typeof(TRule), expected, build);
 
-    private static T With<T>(this T target, Action<T> setup)
+    extension<T>(T target)
     {
-        setup(target);
-        return target;
+        private T With(Action<T> setup)
+        {
+            setup(target);
+            return target;
+        }
     }
 
     // A model with a hull mesh but no Wheel_L parts, so the grime fill has a model to read and fails on it.

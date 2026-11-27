@@ -13,17 +13,20 @@ public static class GlyphElements
     public static VisualElement CreateGlyph(string glyph, PickingMode pickingMode = PickingMode.Position) =>
         new VisualElement { pickingMode = pickingMode }.SetGlyph(glyph);
 
-    /// <summary>Draws <paramref name="glyph"/> on <paramref name="element"/>, replacing the glyph a recycled row held.</summary>
-    public static VisualElement SetGlyph(this VisualElement element, string glyph)
+    extension(VisualElement element)
     {
-        while (TryFindGlyphName(element, out var held))
+        /// <summary>Draws <paramref name="glyph"/> on <paramref name="element"/>, replacing the glyph a recycled row held.</summary>
+        public VisualElement SetGlyph(string glyph)
         {
-            element.RemoveFromClassList(held);
-        }
+            while (TryFindGlyphName(element, out var held))
+            {
+                element.RemoveFromClassList(held);
+            }
 
-        element.AddToClassList(GlyphClass);
-        element.AddToClassList(NamePrefix + glyph);
-        return element;
+            element.AddToClassList(GlyphClass);
+            element.AddToClassList(NamePrefix + glyph);
+            return element;
+        }
     }
 
     private static bool TryFindGlyphName(VisualElement element, out string found)

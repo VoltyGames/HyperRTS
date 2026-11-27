@@ -61,15 +61,18 @@ public static class TestVehicles
     public static LocalTransform At(float3 position, float yaw) =>
         LocalTransform.FromPositionRotation(position, quaternion.RotateY(yaw));
 
-    /// <summary>A vehicle standing at <paramref name="at"/>.</summary>
-    public static Entity SpawnVehicle(this TestWorld world, byte owner, LocalTransform at, float speed,
-        NavAgent agent, Locomotion locomotion)
+    extension(TestWorld world)
     {
-        var vehicle = world.SpawnUnit(owner, at.Position, new TestUnit { Speed = speed, Radius = agent.Radius });
-        world.Set(vehicle, agent);
-        world.Set(vehicle, at);
-        LocomotionAuthoring.Add(world.Writer(vehicle), locomotion);
-        return vehicle;
+        /// <summary>A vehicle standing at <paramref name="at"/>.</summary>
+        public Entity SpawnVehicle(byte owner, LocalTransform at, float speed,
+            NavAgent agent, Locomotion locomotion)
+        {
+            var vehicle = world.SpawnUnit(owner, at.Position, new TestUnit { Speed = speed, Radius = agent.Radius });
+            world.Set(vehicle, agent);
+            world.Set(vehicle, at);
+            LocomotionAuthoring.Add(world.Writer(vehicle), locomotion);
+            return vehicle;
+        }
     }
 
     public static NavAgent Hull(NavAgent agent)

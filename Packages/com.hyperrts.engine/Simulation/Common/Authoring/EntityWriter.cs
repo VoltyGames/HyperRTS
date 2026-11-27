@@ -120,8 +120,11 @@ public readonly struct EntityWriter
 /// <summary>Starts an <see cref="EntityWriter"/> on one of a baker's entities.</summary>
 public static class BakerExtensions
 {
-    public static EntityWriter Writer(this IBaker baker, TransformUsageFlags flags = TransformUsageFlags.Dynamic) =>
-        new(baker, baker.GetEntity(flags));
+    extension(IBaker baker)
+    {
+        public EntityWriter Writer(TransformUsageFlags flags = TransformUsageFlags.Dynamic) =>
+            new(baker, baker.GetEntity(flags));
 
-    public static EntityWriter Writer(this IBaker baker, Entity entity) => new(baker, entity);
+        public EntityWriter Writer(Entity entity) => new(baker, entity);
+    }
 }

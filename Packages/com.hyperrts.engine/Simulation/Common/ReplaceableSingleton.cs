@@ -14,26 +14,29 @@ public interface IReplaceableSingleton<T> : IDisposable where T : unmanaged
 /// <summary>Rebuilds an <see cref="IReplaceableSingleton{T}"/> without leaking the value it replaces.</summary>
 public static class SingletonExtensions
 {
-    /// <summary>
-    /// Creates the singleton, or waits for its jobs, lets <paramref name="next"/> inherit from the old value,
-    /// disposes that and swaps <paramref name="next"/> in; true if it replaced one. <paramref name="query"/> reads
-    /// <typeparamref name="T"/> read-write and is built in OnCreate.
-    /// </summary>
-    public static bool ReplaceSingleton<T>(this ref SystemState state, EntityQuery query, ref T next,
-        in FixedString64Bytes name)
-        where T : unmanaged, IComponentData, IReplaceableSingleton<T>
+    extension(ref SystemState state)
     {
-        if (query.IsEmptyIgnoreFilter)
+        /// <summary>
+        /// Creates the singleton, or waits for its jobs, lets <paramref name="next"/> inherit from the old value,
+        /// disposes that and swaps <paramref name="next"/> in; true if it replaced one. <paramref name="query"/> reads
+        /// <typeparamref name="T"/> read-write and is built in OnCreate.
+        /// </summary>
+        public bool ReplaceSingleton<T>(EntityQuery query, ref T next,
+            in FixedString64Bytes name)
+            where T : unmanaged, IComponentData, IReplaceableSingleton<T>
         {
-            state.EntityManager.CreateSingleton(next, name);
-            return false;
-        }
+            if (query.IsEmptyIgnoreFilter)
+            {
+                state.EntityManager.CreateSingleton(next, name);
+                return false;
+            }
 
-        state.CompleteDependency();
-        ref var current = ref query.GetSingletonRW<T>().ValueRW;
-        next.Inherit(ref current);
-        current.Dispose();
-        current = next;
-        return true;
+            state.CompleteDependency();
+            ref var current = ref query.GetSingletonRW<T>().ValueRW;
+            next.Inherit(ref current);
+            current.Dispose();
+            current = next;
+            return true;
+        }
     }
 }
