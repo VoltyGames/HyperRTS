@@ -1,4 +1,3 @@
-using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Commands;
@@ -27,14 +26,15 @@ public class FacingPreviewTests
         Assert.AreEqual(math.radians(degrees), drag.Yaw, 1e-5f);
     }
 
-    [TestCase(FacingDrag.ThresholdPixels - 1f, false)]
-    [TestCase(FacingDrag.ThresholdPixels + 1f, true)]
+    [TestCase(FacingDragState.ThresholdPixels - 1f, false)]
+    [TestCase(FacingDragState.ThresholdPixels + 1f, true)]
     public void ReleasePastTheThresholdIssuesAFacedMove(float pixels, bool faced)
     {
-        var drag = FacingDrag.Start(CommandType.Move, 0, false, new float2(100f, 100f), new float3(0f, 0f, 20f));
+        var drag = FacingDragState.Create(CommandType.Move, 0, false, new float2(100f, 100f), new float3(0f, 0f, 20f));
         drag.Pointer = new float3(8f, 0f, 20f);
 
-        var command = drag.Command(drag.State(new float2(100f + pixels, 100f)));
+        drag.Aim(new float2(100f + pixels, 100f));
+        var command = drag.Command();
 
         Assert.AreEqual(faced, command.Faced);
         Assert.AreEqual(new float3(0f, 0f, 20f), command.Position, "the units go to the press point");

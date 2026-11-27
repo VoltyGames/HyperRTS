@@ -53,7 +53,7 @@ shaders as the globals `_HyperRTSFadeCamera`, `_HyperRTSFadeFocus`, `_HyperRTSFa
 only a camera at the controller's position fades, so scene views and capture cameras do not.
 
 A command press on ground, or a pending Move or AttackMove confirmed on ground, issues on release: dragging past
-`FacingDrag.ThresholdPixels` first makes it a faced move along the drag. A press on an entity issues at once.
+`FacingDragState.ThresholdPixels` first makes it a faced move along the drag. A press on an entity issues at once.
 While the drag is held, `FacingDragState` carries it and `FacingPreview` draws a line across the formation's front
 with a chevron pointing the way and brackets round each slot, from the same `FormationSlots` the order uses; the
 drag turns it but never stretches it.

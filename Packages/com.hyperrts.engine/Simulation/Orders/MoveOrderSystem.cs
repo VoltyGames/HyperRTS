@@ -41,7 +41,7 @@ namespace HyperRTS.Simulation.Orders
             }.ScheduleParallel();
         }
 
-        /// <summary>Collects the formation groups with a unit still driving to its slot.</summary>
+        /// <summary>Collects the faced formation groups with a unit still driving to its slot.</summary>
         [BurstCompile]
         [WithAll(typeof(MoveOrderState))]
         [WithDisabled(typeof(Arrival))]
@@ -52,7 +52,12 @@ namespace HyperRTS.Simulation.Orders
 
             private void Execute(in ActiveOrder order)
             {
-                if (order.Value.Group != 0 && Traits.Has(order.Value.Type, OrderTraits.MovesToPosition))
+                if (order.Value.Group == 0 || math.all(order.Value.Facing == 0f))
+                {
+                    return;
+                }
+
+                if (Traits.Has(order.Value.Type, OrderTraits.MovesToPosition))
                 {
                     Groups.Add(order.Value.Group);
                 }

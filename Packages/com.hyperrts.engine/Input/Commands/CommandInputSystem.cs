@@ -21,7 +21,7 @@ namespace HyperRTS.Input.Commands
         private MatchInputActions _actions;
         private WorldPointer _pointer;
         private EntityQuery _selected;
-        private FacingDrag _drag;
+        private FacingDragState _drag;
 
         protected override void OnCreate()
         {
@@ -58,6 +58,7 @@ namespace HyperRTS.Input.Commands
 
             UpdateDrag(player, ref pending);
             SystemAPI.SetSingleton(pending);
+            SystemAPI.SetSingleton(_drag);
         }
 
         private void HandleHotkeys(Entity player, ref PendingCommand pending)
@@ -114,9 +115,9 @@ namespace HyperRTS.Input.Commands
             var queue = commands.Queue.IsPressed();
             var type = rightClick ? CommandType.Smart : pending.Type;
             var argument = rightClick ? 0 : pending.Argument;
-            if (target == Entity.Null && FacingDrag.CanStart(type))
+            if (target == Entity.Null && FacingDragState.CanStart(type))
             {
-                _drag = FacingDrag.Start(type, argument, queue, PointerScreen(), ground);
+                _drag = FacingDragState.Create(type, argument, queue, PointerScreen(), ground);
                 return;
             }
 
@@ -132,17 +133,17 @@ namespace HyperRTS.Input.Commands
             }
         }
 
-        /// <summary>Publishes the held drag for the preview, and on release issues its move at the press point.</summary>
+        /// <summary>Follows the held drag, and on release issues its move at the press point.</summary>
         private void UpdateDrag(Entity player, ref PendingCommand pending)
         {
-            if (_drag.Held && IsInterrupted(pending))
-            {
-                _drag = default;
-            }
-
             if (!_drag.Held)
             {
-                SystemAPI.SetSingleton(new FacingDragState());
+                return;
+            }
+
+            if (IsInterrupted(pending))
+            {
+                _drag = default;
                 return;
             }
 
@@ -152,22 +153,20 @@ namespace HyperRTS.Input.Commands
                 _drag.Pointer = ground;
             }
 
-            var state = _drag.State(screen);
+            _drag.Aim(screen);
             var button = _drag.Type == CommandType.Smart ? _actions.Commands.Command : _actions.Commands.Confirm;
             if (button.IsPressed())
             {
-                SystemAPI.SetSingleton(state);
                 return;
             }
 
-            Issue(player, _drag.Command(state));
+            Issue(player, _drag.Command());
             if (_drag.Type != CommandType.Smart && !_drag.Queue)
             {
                 pending.Type = CommandType.None;
             }
 
             _drag = default;
-            SystemAPI.SetSingleton(new FacingDragState());
         }
 
         private bool IsInterrupted(PendingCommand pending)
