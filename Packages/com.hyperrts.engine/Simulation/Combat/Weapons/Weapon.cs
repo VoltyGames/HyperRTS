@@ -163,7 +163,8 @@ public struct Weapon
         }
 
         var random = Random.CreateFromIndex(seed);
-        var offset = random.NextFloat2Direction() * Spread * math.sqrt(random.NextFloat());
+        var direction = random.NextFloat2Direction();
+        var offset = Spread * math.sqrt(random.NextFloat()) * direction;
         return aim + new float3(offset.x, 0f, offset.y);
     }
 

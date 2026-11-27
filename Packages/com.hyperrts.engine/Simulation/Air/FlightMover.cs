@@ -115,7 +115,7 @@ internal struct FlightMover
         var left = math.max(0f, leg.Remaining - NavTolerances.Arrive(frame.Driver.Radius));
         var arriving = math.max(Crawl, math.sqrt(2f * flight.Braking * left));
         var lined = math.max(SlipShare, math.dot(frame.Facing, direction));
-        return direction * math.min(speed, arriving) * lined;
+        return math.min(speed, arriving) * lined * direction;
     }
 
     // In forward flight the nose follows the course; slower it points where it means to go, or holds.

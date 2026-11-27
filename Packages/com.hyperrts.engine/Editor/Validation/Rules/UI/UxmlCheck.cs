@@ -17,8 +17,8 @@ internal sealed class UxmlCheck(UIFile file, UIProject project, HashSet<string> 
     // Unity's own classes live in its built-in sheets, which this project does not hold.
     private const string UnityClassPrefix = "unity-";
 
-    private static readonly Regex TagPattern = new(@"<(?![/?!])([\w:.]+)((?:""[^""]*""|'[^']*'|[^>""'])*)>");
-    private static readonly Regex AttributePattern = new(@"([\w:.-]+)\s*=\s*(?:""([^""]*)""|'([^']*)')");
+    private static readonly Regex TagPattern = new("""<(?![/?!])([\w:.]+)((?:"[^"]*"|'[^']*'|[^>"'])*)>""");
+    private static readonly Regex AttributePattern = new("""([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""");
     [NoAutoStaticsCleanup]
     private static readonly HashSet<string> Structural = ["UXML", "Style", "Template", "Instance", "AttributeOverrides"];
 

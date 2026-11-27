@@ -20,11 +20,12 @@ public sealed class UIProject
     /// <summary>The class names the project's C# uses, so a class only code styles or queries counts as used.</summary>
     public HashSet<string> CodeClassNames = [];
 
-    private static readonly Regex ClassName = new(
-        @"(?:AddToClassList|RemoveFromClassList|EnableInClassList|ClassListContains|ToggleInClassList)\(\s*""([^""]+)""" +
-        @"|\bclassName\s*:\s*""([^""]+)""" +
-        @"|\.(?:Q|Query)(?:<[^>]*>)?\([^)"",]*(?:""[^""]*"")?\s*,\s*""([^""]+)""" +
-        @"|\bconst\s+string\s+\w*Class(?:Name)?\s*=\s*""([^""]+)""");
+    private static readonly Regex ClassName = new("""
+          (?:AddToClassList|RemoveFromClassList|EnableInClassList|ClassListContains|ToggleInClassList)\(\s*"([^"]+)"
+        | \bclassName\s*:\s*"([^"]+)"
+        | \.(?:Q|Query)(?:<[^>]*>)?\([^)",]*(?:"[^"]*")?\s*,\s*"([^"]+)"
+        | \bconst\s+string\s+\w*Class(?:Name)?\s*=\s*"([^"]+)"
+        """, RegexOptions.IgnorePatternWhitespace);
 
     /// <summary>The class names a C# file passes to class list calls and queries, or holds in a const named for a class.</summary>
     public static IEnumerable<string> ClassNamesIn(string code) =>

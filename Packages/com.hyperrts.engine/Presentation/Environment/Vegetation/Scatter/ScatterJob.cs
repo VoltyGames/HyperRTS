@@ -5,25 +5,17 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter;
 
 /// <summary>One visible tile of one grass plant or crop field for a scatter kernel to grow (Scatter.hlsl includes the generated layout).</summary>
 [GenerateHLSL(needAccessors: false)]
-public struct ScatterJob
+public struct ScatterJob(Rect tile, int id, Vector2Int first, Vector2Int count)
 {
     /// <summary>World XZ of the tile's minimum corner.</summary>
-    public Vector2 tileMin;
+    public Vector2 tileMin = tile.min;
 
     /// <summary>Index into the renderer's plants or fields.</summary>
-    public int id;
+    public int id = id;
 
     /// <summary>The lattice spots whose plant can fall in the tile, and how many of each axis.</summary>
-    public Vector2Int first;
-    public Vector2Int count;
-
-    public ScatterJob(Rect tile, int id, Vector2Int first, Vector2Int count)
-    {
-        tileMin = tile.min;
-        this.id = id;
-        this.first = first;
-        this.count = count;
-    }
+    public Vector2Int first = first;
+    public Vector2Int count = count;
 
     /// <summary>Kernel threads the job needs: one per spot.</summary>
     public int Threads => count.x * count.y;

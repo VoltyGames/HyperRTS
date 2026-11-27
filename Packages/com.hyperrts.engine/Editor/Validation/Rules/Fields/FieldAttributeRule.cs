@@ -142,20 +142,12 @@ public sealed class FieldAttributeRule : AuthoringRule<Component>
     }
 
     // The location prefix and path prefix of the field being checked, with the owner and where issues go.
-    private readonly struct Place
+    private readonly struct Place(Component owner, string location, string path, ValidationIssues issues)
     {
-        public readonly Component Owner;
-        public readonly string Location;
-        public readonly string Path;
-        public readonly ValidationIssues Issues;
-
-        public Place(Component owner, string location, string path, ValidationIssues issues)
-        {
-            Owner = owner;
-            Location = location;
-            Path = path;
-            Issues = issues;
-        }
+        public readonly Component Owner = owner;
+        public readonly string Location = location;
+        public readonly string Path = path;
+        public readonly ValidationIssues Issues = issues;
 
         public Place Into(string location, string path) => new(Owner, location, path, Issues);
 

@@ -5,18 +5,11 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Decorations;
 
 /// <summary>What a Hierarchy row shows for one entity object: its component icon, owner colour and worst issue.</summary>
-internal readonly struct HierarchyRow
+internal readonly struct HierarchyRow(Texture icon, Color ownerColor, MessageType severity)
 {
-    public readonly Texture icon;
-    public readonly Color ownerColor;
-    public readonly MessageType severity;
-
-    public HierarchyRow(Texture icon, Color ownerColor, MessageType severity)
-    {
-        this.icon = icon;
-        this.ownerColor = ownerColor;
-        this.severity = severity;
-    }
+    public readonly Texture icon = icon;
+    public readonly Color ownerColor = ownerColor;
+    public readonly MessageType severity = severity;
 
     public bool Decorated => icon != null;
 

@@ -35,7 +35,7 @@ public sealed class DustDevil(int id, float3 position, float lifetime, float wan
         Age += deltaTime;
         var side = new float2(-downwind.y, downwind.x);
         var wander = math.sin(wanderPhase + Age * 2f * math.PI / WanderPeriod) * WanderShare;
-        var xz = Position.xz + (downwind + side * wander) * speed * deltaTime;
+        var xz = Position.xz + speed * deltaTime * (downwind + side * wander);
         Position = new float3(xz.x, terrain.Height(xz), xz.y);
     }
 }

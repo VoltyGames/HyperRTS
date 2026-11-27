@@ -11,7 +11,9 @@ internal sealed class UIFile
 {
     private static readonly Regex XmlComment = new(@"<!--.*?-->", RegexOptions.Singleline);
     private static readonly Regex CssComment = new(@"/\*.*?\*/", RegexOptions.Singleline);
-    private static readonly Regex Quoted = new(@"""[^""]*""|'[^']*'|url\([^)]*\)");
+    private static readonly Regex Quoted = new("""
+        "[^"]*"|'[^']*'|url\([^)]*\)
+        """);
     private static readonly Regex Selector = new(@"\.(-?[_a-zA-Z][\w-]*)");
 
     public readonly string Path;

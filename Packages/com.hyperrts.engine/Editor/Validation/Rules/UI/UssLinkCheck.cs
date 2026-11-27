@@ -9,7 +9,7 @@ using Match = System.Text.RegularExpressions.Match;
 internal sealed class UssLinkCheck
 {
     private static readonly Regex Link = new(
-        @"url\(\s*(?:""([^""]*)""|'([^']*)'|([^)\s]*))\s*\)|@import\s+(?:""([^""]*)""|'([^']*)')");
+        """url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|@import\s+(?:"([^"]*)"|'([^']*)')""");
 
     public void Run(UIFile file, UIProject project, ValidationIssues issues)
     {

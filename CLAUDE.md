@@ -30,9 +30,10 @@ UIElements, and a headless server never runs `Presentation/`. See [architecture]
   block namespace: Entities 7.0's generators fail under a file-scoped one.
 - Write current C# (14, on .NET 10): collection expressions, switch expressions and patterns, index and range,
   extension members in `extension(...)` blocks, and the .NET APIs over hand-rolled loops (`MinBy`, `Order`).
-- A class that only stores its constructor arguments takes a primary constructor and reads the parameters, with no
-  `_field` copies. A plain value type compared by value is a `readonly record struct`. Neither goes on components,
-  Netcode types, MonoBehaviours, ScriptableObjects or serialized types.
+- A class or struct that only stores its constructor arguments takes a primary constructor and reads the parameters,
+  with no private `_field` copies. A plain value type compared by value is a `readonly record struct`. Neither goes
+  on components, jobs and the structs they carry, Netcode types, MonoBehaviours, ScriptableObjects or serialized
+  types.
 - Runtime and Unity-shaped data use `JsonUtility`; hand-written JSON the editor reads goes through `StrictJson`
   (`System.Text.Json`).
 - Simulation modules sit in [tiers](docs/simulation/README.md#tiers): Base, Foundation, Gameplay, Orchestration. A module uses

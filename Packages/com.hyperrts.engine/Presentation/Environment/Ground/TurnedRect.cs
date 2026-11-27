@@ -4,19 +4,12 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Environment.Ground;
 
 /// <summary>A rectangle on the ground plane turned to face any way: its centre, its width axis and its half sizes.</summary>
-public readonly struct TurnedRect : IEquatable<TurnedRect>
+/// <param name="right">Unit direction of the rectangle's width.</param>
+public readonly struct TurnedRect(float2 center, float2 right, float2 size) : IEquatable<TurnedRect>
 {
-    public readonly float2 Center;
-    public readonly float2 Right;
-    public readonly float2 Half;
-
-    /// <param name="right">Unit direction of the rectangle's width.</param>
-    public TurnedRect(float2 center, float2 right, float2 size)
-    {
-        Center = center;
-        Right = right;
-        Half = size * 0.5f;
-    }
+    public readonly float2 Center = center;
+    public readonly float2 Right = right;
+    public readonly float2 Half = size * 0.5f;
 
     /// <summary>The rectangle of <paramref name="size"/> centred on <paramref name="center"/>, turned with the transform's right axis.</summary>
     public static TurnedRect Create(in float4x4 place, float2 center, float2 size)

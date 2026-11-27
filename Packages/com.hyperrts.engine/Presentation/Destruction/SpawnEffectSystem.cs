@@ -49,7 +49,7 @@ namespace HyperRTS.Presentation.Destruction
                 if (SystemAPI.HasComponent<ToppleFall>(entity))
                 {
                     var toppleFall = SystemAPI.GetComponent<ToppleFall>(entity);
-                    position += toppleFall.CanopyDirection * toppleFall.Height * CanopyShare;
+                    position += toppleFall.Height * CanopyShare * toppleFall.CanopyDirection;
                     rotation = quaternion.LookRotationSafe(toppleFall.CanopyDirection, math.up());
                 }
 

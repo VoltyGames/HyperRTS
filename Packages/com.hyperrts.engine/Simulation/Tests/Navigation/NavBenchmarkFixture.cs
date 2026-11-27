@@ -67,7 +67,8 @@ public abstract class NavBenchmarkFixture : SimulationFixture
 
             for (var i = 0; i < trees; i++)
             {
-                var offset = random.NextFloat2Direction() * math.sqrt(random.NextFloat()) * 25f;
+                var direction = random.NextFloat2Direction();
+                var offset = math.sqrt(random.NextFloat()) * 25f * direction;
                 PlantTree(center + new float3(offset.x, 0f, offset.y), random.NextInt(1, 6));
             }
 

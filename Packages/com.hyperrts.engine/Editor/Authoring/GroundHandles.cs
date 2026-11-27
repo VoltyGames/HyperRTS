@@ -23,18 +23,11 @@ public static class GroundHandles
     public const float ReachAngle = -45f;
 
     /// <summary>How a radius disc's drag dot looks and where it sits on the edge.</summary>
-    public readonly struct RadiusDot
+    public readonly struct RadiusDot(Color color, string label, float angle)
     {
-        public readonly Color Color;
-        public readonly string Label;
-        public readonly float Angle;
-
-        public RadiusDot(Color color, string label, float angle)
-        {
-            Color = color;
-            Label = label;
-            Angle = angle;
-        }
+        public readonly Color Color = color;
+        public readonly string Label = label;
+        public readonly float Angle = angle;
     }
 
     /// <summary>Ground disc with a drag dot on its edge at <paramref name="angle"/>; returns the edited radius.</summary>
@@ -74,7 +67,7 @@ public static class GroundHandles
         Handles.color = color;
         var size = HandleUtility.GetHandleSize(position) * 0.15f;
         Handles.DrawWireDisc(position, Vector3.up, size);
-        Handles.Label(position + Vector3.forward * size * 1.5f, label);
+        Handles.Label(position + size * 1.5f * Vector3.forward, label);
         var moved = Handles.Slider2D(position, Vector3.up, Vector3.right, Vector3.forward, size,
             Handles.CircleHandleCap, Vector2.zero);
         return new Vector3(moved.x, position.y, moved.z);

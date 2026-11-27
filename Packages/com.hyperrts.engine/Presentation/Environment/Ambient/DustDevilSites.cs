@@ -20,7 +20,8 @@ public static class DustDevilSites
     {
         for (var attempt = 0; attempt < Attempts; attempt++)
         {
-            site = focus + random.NextFloat2Direction() * math.sqrt(random.NextFloat()) * reach;
+            var direction = random.NextFloat2Direction();
+            site = focus + math.sqrt(random.NextFloat()) * reach * direction;
             if (Array.IndexOf(allowed, ground.At(site)) >= 0)
             {
                 return true;

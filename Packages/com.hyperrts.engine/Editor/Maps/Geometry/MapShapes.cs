@@ -129,7 +129,7 @@ public sealed class MapShapes
 
         var right = MapGeometry.Right(direction);
         var side = Vector2.Dot(point - center, right) >= 0f ? 1f : -1f;
-        spot = center + right * side * (nearest.Width * 0.5f + setback);
+        spot = center + side * (nearest.Width * 0.5f + setback) * right;
         yaw = MapGeometry.Yaw(direction);
         return true;
     }

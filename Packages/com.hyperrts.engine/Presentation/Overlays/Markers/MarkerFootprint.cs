@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Overlays.Markers;
 /// The ground marker's outline round one footprint: a rounded rectangle for vehicle hulls, a circle for round
 /// ones and corner brackets round a building's box. Half sizes are across (x) and along (y) the facing.
 /// </summary>
-public readonly struct MarkerFootprint
+public readonly struct MarkerFootprint(float2 halfSize, float cornerRadius, MarkerShape shape)
 {
     // Building brackets keep a hint of rounding so their corners don't alias.
     private const float BracketCorner = 0.25f;
@@ -16,16 +16,9 @@ public readonly struct MarkerFootprint
     // Vehicle hulls read as rounded boxes rather than pills.
     private const float HullCorner = 0.45f;
 
-    public readonly float2 HalfSize;
-    public readonly float CornerRadius;
-    public readonly MarkerShape Shape;
-
-    public MarkerFootprint(float2 halfSize, float cornerRadius, MarkerShape shape)
-    {
-        HalfSize = halfSize;
-        CornerRadius = math.min(cornerRadius, math.cmin(halfSize));
-        Shape = shape;
-    }
+    public readonly float2 HalfSize = halfSize;
+    public readonly float CornerRadius = math.min(cornerRadius, math.cmin(halfSize));
+    public readonly MarkerShape Shape = shape;
 
     /// <summary>A circle for round agents (infantry), a rounded rectangle as long as the hull for capsule ones.</summary>
     public static MarkerFootprint Agent(in NavAgent agent, float margin)

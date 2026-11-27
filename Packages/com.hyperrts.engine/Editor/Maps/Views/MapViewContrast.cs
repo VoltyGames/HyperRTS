@@ -7,27 +7,20 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Views;
 
 /// <summary>How much light and shade a map view shows: the spread of its brightness, its local contrast and its colour strength.</summary>
-public readonly struct MapViewContrast
+public readonly struct MapViewContrast(float luminanceSpread, float localContrast, float chroma)
 {
     // Local contrast compares each cell of a 4 × 4 pixel grid with the 5 × 5 cells round it, about 1 m at view height.
     private const int Cell = 4;
     private const int Radius = 2;
 
-    public MapViewContrast(float luminanceSpread, float localContrast, float chroma)
-    {
-        LuminanceSpread = luminanceSpread;
-        LocalContrast = localContrast;
-        Chroma = chroma;
-    }
-
     /// <summary>The 5th to 95th percentile of luminance (0 to 1). Low means one value everywhere.</summary>
-    public float LuminanceSpread { get; }
+    public float LuminanceSpread { get; } = luminanceSpread;
 
     /// <summary>Mean distance of each cell's luminance from its neighbourhood's (0 to 1). Low means flat ground.</summary>
-    public float LocalContrast { get; }
+    public float LocalContrast { get; } = localContrast;
 
     /// <summary>Mean CIELAB chroma C* of the pixels (sRGB, D65 white; 0 grey, about 130 the most saturated).</summary>
-    public float Chroma { get; }
+    public float Chroma { get; } = chroma;
 
     /// <summary>Measures a view PNG.</summary>
     public static MapViewContrast Load(string path)

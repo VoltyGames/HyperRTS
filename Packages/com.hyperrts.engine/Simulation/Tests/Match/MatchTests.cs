@@ -116,11 +116,8 @@ public class MatchTests
 
     private static void SetSpeed(TestWorld world, GameSpeed speed)
     {
-        using (var query = world.Query(typeof(GameSpeed)))
-        {
-            query.SetSingleton(speed);
-        }
-
+        using var query = world.Query(typeof(GameSpeed));
+        query.SetSingleton(speed);
         world.Tick();
     }
 }

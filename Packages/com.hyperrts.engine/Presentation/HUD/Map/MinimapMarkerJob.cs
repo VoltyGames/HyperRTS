@@ -60,7 +60,7 @@ public struct MinimapMarkerJob : IJob
 
         var below = ToFloat(Pixels[index]);
         var coverage = alpha + below.w * (1f - alpha);
-        var rgb = (ink.xyz * alpha + below.xyz * below.w * (1f - alpha)) / coverage;
+        var rgb = (ink.xyz * alpha + below.w * (1f - alpha) * below.xyz) / coverage;
         var packed = (int4)(new float4(rgb, coverage) * 255f + 0.5f);
         Pixels[index] = new Color32((byte)packed.x, (byte)packed.y, (byte)packed.z, (byte)packed.w);
     }

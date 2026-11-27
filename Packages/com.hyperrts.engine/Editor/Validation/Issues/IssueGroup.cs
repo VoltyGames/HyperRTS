@@ -6,16 +6,10 @@ using UnityEditor;
 namespace HyperRTS.Editor.Validation.Issues;
 
 /// <summary>One issue on a base prefab with the same issue on the variants that inherit it.</summary>
-public readonly struct IssueGroup
+public readonly struct IssueGroup(ValidationIssue issue, IReadOnlyList<ValidationIssue> variants = null)
 {
-    public readonly ValidationIssue Issue;
-    public readonly IReadOnlyList<ValidationIssue> Variants;
-
-    public IssueGroup(ValidationIssue issue, IReadOnlyList<ValidationIssue> variants = null)
-    {
-        Issue = issue;
-        Variants = variants ?? new List<ValidationIssue>();
-    }
+    public readonly ValidationIssue Issue = issue;
+    public readonly IReadOnlyList<ValidationIssue> Variants = variants ?? new List<ValidationIssue>();
 
     /// <summary>"and 2 variants"; empty when there are none.</summary>
     public string VariantText => Variants.Count == 0 ? "" : "and " + IssueBadge.CountText(Variants.Count, "variant");
