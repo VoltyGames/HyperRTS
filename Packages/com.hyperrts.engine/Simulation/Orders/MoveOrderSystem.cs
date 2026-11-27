@@ -14,8 +14,9 @@ namespace HyperRTS.Simulation.Orders
     /// <summary>
     /// Runs orders with <see cref="OrderTraits.MovesToPosition"/>: points locomotion at the goal while combat isn't
     /// engaged, and completes the order on <see cref="Arrival"/> (at the goal, against an arrived groupmate, or
-    /// stalled), once turned to its <see cref="Order.Facing"/> if it has one. A finished <see cref="OrderTraits.Loops"/>
-    /// order goes to the back of the queue.
+    /// stalled), once turned to its <see cref="Order.Facing"/> if it has one. A faced unit turns only once its whole
+    /// <see cref="Order.Group"/> has arrived, so no groupmate drives through its lane afterwards. A finished
+    /// <see cref="OrderTraits.Loops"/> order goes to the back of the queue.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -32,12 +33,33 @@ namespace HyperRTS.Simulation.Orders
         public void OnUpdate(ref SystemState state)
         {
             var traits = SystemAPI.GetSingleton<OrderTraitTable>();
+            var unarrived = new NativeHashSet<int>(16, state.WorldUpdateAllocator);
+            new UnarrivedGroupsJob { Groups = unarrived, Traits = traits }.Schedule();
             new MoveOrderJob
             {
                 Attacks = SystemAPI.GetComponentLookup<AttackTarget>(true),
+                UnarrivedGroups = unarrived,
                 Traits = traits,
                 DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
+        }
+
+        /// <summary>Collects the formation groups with a unit still driving to its slot.</summary>
+        [BurstCompile]
+        [WithAll(typeof(MoveOrderState))]
+        [WithDisabled(typeof(Arrival))]
+        private partial struct UnarrivedGroupsJob : IJobEntity
+        {
+            public NativeHashSet<int> Groups;
+            public OrderTraitTable Traits;
+
+            private void Execute(in ActiveOrder order)
+            {
+                if (order.Value.Group != 0 && Traits.Has(order.Value.Type, OrderTraits.MovesToPosition))
+                {
+                    Groups.Add(order.Value.Group);
+                }
+            }
         }
 
         [BurstCompile]
@@ -45,6 +67,7 @@ namespace HyperRTS.Simulation.Orders
         private partial struct MoveOrderJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<AttackTarget> Attacks;
+            [ReadOnly] public NativeHashSet<int> UnarrivedGroups;
             public OrderTraitTable Traits;
             public float DeltaTime;
 
@@ -68,7 +91,9 @@ namespace HyperRTS.Simulation.Orders
 
                 if (driving.ValueRO && arrived.ValueRO)
                 {
-                    if (HasTurned(order.Value.Facing, ref drive, transform, ref goal, aiming))
+                    // Turning before the group has arrived leaves a lane a groupmate would push it out of.
+                    var waiting = math.any(order.Value.Facing != 0f) && UnarrivedGroups.Contains(order.Value.Group);
+                    if (!waiting && HasTurned(order.Value.Facing, ref drive, transform, ref goal, aiming))
                     {
                         Finish(order.Value, busy, driving, moving, queue);
                     }

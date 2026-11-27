@@ -53,6 +53,6 @@ public struct QueuedOrder : IBufferElementData
 /// </summary>
 public struct MoveOrderState : IComponentData, IEnableableComponent
 {
-    /// <summary>Seconds spent since arriving turning to the order's <see cref="Order.Facing"/>.</summary>
+    /// <summary>Seconds spent turning to the order's <see cref="Order.Facing"/>.</summary>
     public float Turned;
 }

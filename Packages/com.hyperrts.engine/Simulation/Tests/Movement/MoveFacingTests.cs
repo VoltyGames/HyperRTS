@@ -1,4 +1,6 @@
+using System.Linq;
 using HyperRTS.Simulation.Orders;
+using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -38,6 +40,24 @@ public class MoveFacingTests : LocomotionFixture
 
         Assert.IsTrue(World.RunUntil(() => Finished(tank), 30f), "the order finishes");
         AssertFacing(tank, East);
+    }
+
+    [Test]
+    public void TankGroup_GivenAFacedMove_EachEndsFacingItAndFinishes()
+    {
+        var tanks = new[] { -6.6f, -2.2f, 2.2f, 6.6f }.Select(x => SpawnTank(new float3(x, 0f, 0f))).ToArray();
+        foreach (var tank in tanks)
+        {
+            World.SetEnabled<Selected>(tank, true);
+        }
+
+        Move(Entity.Null, new float3(0f, 0f, 30f), math.radians(90f));
+        World.Tick();
+
+        Assert.IsTrue(World.RunUntil(() => tanks.All(Finished), 60f), "every order finishes");
+        var off = tanks.Select(tank => math.degrees(TurnBetween(Facing(tank), East))).ToArray();
+        Assert.IsTrue(off.All(degrees => degrees <= math.degrees(MoveOrderSystem.FacingTolerance) + 0.1f),
+            $"degrees off: {string.Join(", ", off)}");
     }
 
     [Test]
