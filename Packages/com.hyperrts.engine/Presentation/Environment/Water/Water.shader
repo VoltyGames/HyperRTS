@@ -62,7 +62,6 @@ Shader "HyperRTS/Water"
         }
 
         HLSLINCLUDE
-        #pragma use_dxc
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Water/WaterInput.hlsl"
         ENDHLSL
 

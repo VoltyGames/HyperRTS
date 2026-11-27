@@ -18,7 +18,6 @@ Shader "Hidden/HyperRTS/DebugShapes"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma use_dxc
             #pragma vertex Vertex
             #pragma fragment Fragment
 

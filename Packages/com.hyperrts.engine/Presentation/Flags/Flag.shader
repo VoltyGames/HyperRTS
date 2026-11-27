@@ -28,7 +28,6 @@ Shader "HyperRTS/Flag"
 
         HLSLINCLUDE
         #pragma target 4.5
-        #pragma use_dxc
         #include "Packages/com.hyperrts.engine/Presentation/Flags/FlagCloth.hlsl"
         ENDHLSL
 

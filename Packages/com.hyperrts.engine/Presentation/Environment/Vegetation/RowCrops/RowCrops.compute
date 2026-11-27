@@ -2,7 +2,6 @@
 // picking its model variant; Count then writes the draw args, clears the counters. Matches RowCropSpots.Range.
 #pragma kernel Plant
 #pragma kernel Count
-#pragma use_dxc
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 

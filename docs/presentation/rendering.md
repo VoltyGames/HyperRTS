@@ -136,7 +136,7 @@ structured buffer the shader reads as `_Instances[SV_InstanceID]`.
 
 **Conventions.**
 
-- Every hand-written shader and compute shader compiles with DXC: `#pragma use_dxc` beside `#pragma target`. Shader Graphs
+- Every hand-written shader and compute shader compiles with DXC, which Graphics Settings turns on for D3D12. Shader Graphs
   and VFX Graphs take no pragmas, so the includes they pull in must also compile under FXC.
 - Shaders that code draws with (full-screen passes, map painting, the cloud cookie) are found by name through
   `EngineShaders`, an `IRenderPipelineResources` that URP's global settings fill in and keep in player builds: a new

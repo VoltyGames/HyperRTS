@@ -11,7 +11,6 @@ Shader "Hidden/HyperRTS/TrampleBrush"
 
         HLSLINCLUDE
         #pragma target 4.5
-        #pragma use_dxc
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Ground/Stamps/TrampleBrushStamps.hlsl"
         ENDHLSL
 

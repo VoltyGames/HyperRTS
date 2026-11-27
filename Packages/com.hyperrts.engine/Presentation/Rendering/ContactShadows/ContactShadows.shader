@@ -13,7 +13,6 @@ Shader "Hidden/HyperRTS/ContactShadows"
             Cull Off
 
             HLSLPROGRAM
-            #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
 

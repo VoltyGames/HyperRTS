@@ -84,3 +84,6 @@ Screenshots.meta
 
 # UI Builder generated schema
 UIElementsSchema/
+
+# Netcode patched for Unity 7 a22, copied from the Editor tarball, not tracked.
+/Packages/com.unity.netcode/

@@ -123,7 +123,6 @@ Shader "HyperRTS/LitTeam"
         LOD 300
 
         HLSLINCLUDE
-        #pragma use_dxc
         ENDHLSL
 
         Pass

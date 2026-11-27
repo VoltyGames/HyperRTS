@@ -108,7 +108,6 @@ Shader "HyperRTS/Road"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
             #include_with_pragmas "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/Keywords/LightingKeywords.hlsl"
@@ -127,7 +126,6 @@ Shader "HyperRTS/Road"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma use_dxc
             #pragma vertex MetaPassVertex
             #pragma fragment MetaPassFragment
             #include "Packages/com.hyperrts.engine/Presentation/Rendering/ShaderLibrary/MetaPass.hlsl"

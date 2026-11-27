@@ -23,7 +23,6 @@ Shader "HyperRTS/Bird"
 
         HLSLINCLUDE
         #pragma target 4.5
-        #pragma use_dxc
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.hyperrts.engine/Presentation/Environment/Ambient/BirdInstance.cs.hlsl"

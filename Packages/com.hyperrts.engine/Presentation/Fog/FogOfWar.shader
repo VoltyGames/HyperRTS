@@ -16,7 +16,6 @@ Shader "Hidden/HyperRTS/FogOfWar"
             Cull Off
 
             HLSLPROGRAM
-            #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
 

@@ -72,6 +72,12 @@ GraphicsSettings:
     keywordDeclarationOverrides: []
     numInternalDefines: 0
     defines: []
+    compilerSettings:
+    - graphicsAPI: 18
+      compilerToolchainOverride: 2
+      optimizationLevel: 0
+      enableDebugSymbols: 0
+    fastBuildMode: 0
   m_LightsUseLinearIntensity: 1
   m_LightsUseColorTemperature: 1
   m_LogWhenShaderIsCompiled: 0

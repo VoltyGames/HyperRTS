@@ -42,7 +42,6 @@ Shader "HyperRTS/HealthBar"
 
             HLSLPROGRAM
             #pragma target 4.5
-            #pragma use_dxc
             #pragma vertex Vert
             #pragma fragment Frag
 

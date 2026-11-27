@@ -22,7 +22,7 @@ prefabs. The simulation runs headless for tests and dedicated servers.
 
 ## Try it
 
-Open the project in **Unity 7000.0.0a20**, open `Assets/Demo/Scenes/SampleScene.unity` and press **Play**. You
+Open the project in **Unity 7000.0.0a22**, open `Assets/Demo/Scenes/SampleScene.unity` and press **Play**. You
 start in the south-west base against an AI in the north-east. Controls are in
 [getting started](docs/getting-started.md#play).
 
@@ -44,7 +44,7 @@ The [docs index](docs/README.md) covers it all. Start with [getting started](doc
 
 ## Requirements
 
-Unity 7000.0.0a20 (CoreCLR), URP 17.7, Entities 7.0, Entities Graphics, Netcode for Entities 7.2, Input System.
+Unity 7000.0.0a22 (CoreCLR), URP 17.7, Entities 7.0, Entities Graphics, Netcode for Entities 7.2, Input System.
 
 ## License
 
