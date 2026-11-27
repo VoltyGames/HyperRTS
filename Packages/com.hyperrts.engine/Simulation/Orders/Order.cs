@@ -1,58 +1,57 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Orders
+namespace HyperRTS.Simulation.Orders;
+
+/// <summary>Order kinds. Values from <see cref="GameFirst"/> up belong to games, which register their traits.</summary>
+public enum OrderType : byte
 {
-    /// <summary>Order kinds. Values from <see cref="GameFirst"/> up belong to games, which register their traits.</summary>
-    public enum OrderType : byte
-    {
-        None = 0,
-        Move = 1,
-        AttackMove = 2,
-        Attack = 3,
-        Gather = 4,
-        Build = 5,
-        Repair = 6,
-        Capture = 7,
-        Enter = 8,
-        UseAbility = 9,
+    None = 0,
+    Move = 1,
+    AttackMove = 2,
+    Attack = 3,
+    Gather = 4,
+    Build = 5,
+    Repair = 6,
+    Capture = 7,
+    Enter = 8,
+    UseAbility = 9,
 
-        /// <summary>Attack-move to Position; on arrival the leg rejoins the back of the queue, so legs loop.</summary>
-        Patrol = 10,
+    /// <summary>Attack-move to Position; on arrival the leg rejoins the back of the queue, so legs loop.</summary>
+    Patrol = 10,
 
-        /// <summary>Follow Target, a friendly unit, engaging hostiles on the way; ends when it dies.</summary>
-        Escort = 11,
+    /// <summary>Follow Target, a friendly unit, engaging hostiles on the way; ends when it dies.</summary>
+    Escort = 11,
 
-        /// <summary>Fly to the home pad (or claim one at Target, an own airfield) and dock there.</summary>
-        ReturnToBase = 12,
+    /// <summary>Fly to the home pad (or claim one at Target, an own airfield) and dock there.</summary>
+    ReturnToBase = 12,
 
-        /// <summary>Run to Position, a friendly retreat point, firing nothing; ends on arrival.</summary>
-        Retreat = 13,
+    /// <summary>Run to Position, a friendly retreat point, firing nothing; ends on arrival.</summary>
+    Retreat = 13,
 
-        /// <summary>Drive to Position in reverse, front toward where the unit came from; others move as usual.</summary>
-        ReverseMove = 14,
+    /// <summary>Drive to Position in reverse, front toward where the unit came from; others move as usual.</summary>
+    ReverseMove = 14,
 
-        /// <summary>Fire the primary weapon's salvo at Position, a ground point, moving into range and deploying first; ends once the salvo has fired.</summary>
-        FireMission = 15,
+    /// <summary>Fire the primary weapon's salvo at Position, a ground point, moving into range and deploying first; ends once the salvo has fired.</summary>
+    FireMission = 15,
 
-        /// <summary>First value a game may use for its own orders; the engine never defines one from here up.</summary>
-        GameFirst = 128,
-    }
+    /// <summary>First value a game may use for its own orders; the engine never defines one from here up.</summary>
+    GameFirst = 128,
+}
 
-    /// <summary>One unit instruction: where to go and/or which entity to act on. Its traits come from its type.</summary>
-    public struct Order
-    {
-        public OrderType Type;
-        public float3 Position;
-        public Entity Target;
+/// <summary>One unit instruction: where to go and/or which entity to act on. Its traits come from its type.</summary>
+public struct Order
+{
+    public OrderType Type;
+    public float3 Position;
+    public Entity Target;
 
-        /// <summary>Order-specific value, e.g. the ability id of <see cref="OrderType.UseAbility"/>.</summary>
-        public int Argument;
+    /// <summary>Order-specific value, e.g. the ability id of <see cref="OrderType.UseAbility"/>.</summary>
+    public int Argument;
 
-        /// <summary>Formation move it belongs to, 0 for none; the group's units arrive together.</summary>
-        public int Group;
+    /// <summary>Formation move it belongs to, 0 for none; the group's units arrive together.</summary>
+    public int Group;
 
-        /// <summary>Metres the formation's slots span, the goal area its units may arrive in by touch.</summary>
-        public float Extent;
-    }
+    /// <summary>Metres the formation's slots span, the goal area its units may arrive in by touch.</summary>
+    public float Extent;
 }

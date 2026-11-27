@@ -1,118 +1,117 @@
-using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Cues.Surfaces;
 using System;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Environment.Fire
+namespace HyperRTS.Presentation.Environment.Fire;
+
+/// <summary>
+/// Which ground burns and how, for <see cref="FieldFireSystem"/>: shells that land on dry stubble, grass or ripe
+/// crops set fires that spread with the wind and leave ash. Client visuals only; the fires harm nothing.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Scene + "Environment/Field Fires")]
+[Icon(HyperRTSIcons.FieldFireSettings)]
+[HelpURL(HyperRTSDocs.Presentation)]
+[DisallowMultipleComponent]
+public sealed class FieldFireSettings : PresentationBehaviour
 {
-    /// <summary>
-    /// Which ground burns and how, for <see cref="FieldFireSystem"/>: shells that land on dry stubble, grass or ripe
-    /// crops set fires that spread with the wind and leave ash. Client visuals only; the fires harm nothing.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Field Fires")]
-    [Icon(HyperRTSIcons.FieldFireSettings)]
-    [HelpURL(HyperRTSDocs.Presentation)]
-    [DisallowMultipleComponent]
-    public sealed class FieldFireSettings : PresentationBehaviour
+    [Tooltip("Effect rig streamed over each cluster of burning cells: low flame along the ground and smoke.")]
+    public GameObject rig;
+
+    [Tooltip("Terrain layers dry enough to burn. A cell burns where these hold over half the ground's weight.")]
+    public TerrainLayer[] dryLayers = Array.Empty<TerrainLayer>();
+
+    [Tooltip("Fires only start while the ground's wetness is below this.")]
+    [Range(0f, 1f)]
+    public float wetnessLimit = 0.3f;
+
+    [Tooltip("Smallest splash radius that lights dry ground, so only high explosive does.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float smallestBlast = 1.5f;
+
+    [Tooltip("Chance that a blast on dry ground lights it.")]
+    [Range(0f, 1f)]
+    public float igniteChance = 0.4f;
+
+    [Tooltip("Seconds one cell burns, min and max.")]
+    public Vector2 burnSeconds = new(20f, 60f);
+
+    [Tooltip("Metres one shell's fire may spread from where it started, min and max; it dies out well inside.")]
+    public Vector2 reach = new(5f, 15f);
+
+    [Tooltip("Metres round every building's footprint that never burn, so bases and pads stay clear.")]
+    [Min(0f)]
+    public float buildingClearance = 20f;
+
+    [Tooltip("Fire effects playing at once, nearest the camera first.")]
+    [Min(0)]
+    public int maxEffects = 16;
+
+    private readonly SceneSingleton<FieldFireSource> _source = new();
+
+    // Rows of the alphamap read at once, so a large terrain never copies all its weights in one go.
+    private const int AlphamapRows = 64;
+
+    /// <summary>Whether each alphamap texel is over half dry layers, row-major from the terrain's south-west corner.</summary>
+    public bool[] DryTexels(TerrainData data)
     {
-        [Tooltip("Effect rig streamed over each cluster of burning cells: low flame along the ground and smoke.")]
-        public GameObject rig;
-
-        [Tooltip("Terrain layers dry enough to burn. A cell burns where these hold over half the ground's weight.")]
-        public TerrainLayer[] dryLayers = Array.Empty<TerrainLayer>();
-
-        [Tooltip("Fires only start while the ground's wetness is below this.")]
-        [Range(0f, 1f)]
-        public float wetnessLimit = 0.3f;
-
-        [Tooltip("Smallest splash radius that lights dry ground, so only high explosive does.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float smallestBlast = 1.5f;
-
-        [Tooltip("Chance that a blast on dry ground lights it.")]
-        [Range(0f, 1f)]
-        public float igniteChance = 0.4f;
-
-        [Tooltip("Seconds one cell burns, min and max.")]
-        public Vector2 burnSeconds = new(20f, 60f);
-
-        [Tooltip("Metres one shell's fire may spread from where it started, min and max; it dies out well inside.")]
-        public Vector2 reach = new(5f, 15f);
-
-        [Tooltip("Metres round every building's footprint that never burn, so bases and pads stay clear.")]
-        [Min(0f)]
-        public float buildingClearance = 20f;
-
-        [Tooltip("Fire effects playing at once, nearest the camera first.")]
-        [Min(0)]
-        public int maxEffects = 16;
-
-        private readonly SceneSingleton<FieldFireSource> _source = new();
-
-        // Rows of the alphamap read at once, so a large terrain never copies all its weights in one go.
-        private const int AlphamapRows = 64;
-
-        /// <summary>Whether each alphamap texel is over half dry layers, row-major from the terrain's south-west corner.</summary>
-        public bool[] DryTexels(TerrainData data)
+        var resolution = data.alphamapResolution;
+        var burns = Array.ConvertAll(data.terrainLayers, layer => Array.IndexOf(dryLayers, layer) >= 0);
+        var dry = new bool[resolution * resolution];
+        for (var row = 0; row < resolution; row += AlphamapRows)
         {
-            var resolution = data.alphamapResolution;
-            var burns = Array.ConvertAll(data.terrainLayers, layer => Array.IndexOf(dryLayers, layer) >= 0);
-            var dry = new bool[resolution * resolution];
-            for (var row = 0; row < resolution; row += AlphamapRows)
+            var rows = Math.Min(AlphamapRows, resolution - row);
+            var weights = data.GetAlphamaps(0, row, resolution, rows);
+            for (var z = 0; z < rows; z++)
             {
-                var rows = Math.Min(AlphamapRows, resolution - row);
-                var weights = data.GetAlphamaps(0, row, resolution, rows);
-                for (var z = 0; z < rows; z++)
+                for (var x = 0; x < resolution; x++)
                 {
-                    for (var x = 0; x < resolution; x++)
+                    var share = 0f;
+                    for (var layer = 0; layer < burns.Length; layer++)
                     {
-                        var share = 0f;
-                        for (var layer = 0; layer < burns.Length; layer++)
-                        {
-                            share += burns[layer] ? weights[z, x, layer] : 0f;
-                        }
-
-                        dry[x + (row + z) * resolution] = share > 0.5f;
+                        share += burns[layer] ? weights[z, x, layer] : 0f;
                     }
+
+                    dry[x + (row + z) * resolution] = share > 0.5f;
                 }
             }
-
-            return dry;
         }
 
-        /// <summary>Throws naming the first field that can't be used.</summary>
-        public void Require()
+        return dry;
+    }
+
+    /// <summary>Throws naming the first field that can't be used.</summary>
+    public void Require()
+    {
+        Require(rig != null, nameof(rig), "is missing");
+        Require(dryLayers is { Length: > 0 }, nameof(dryLayers), "is empty");
+        Require(burnSeconds.x > 0f && burnSeconds.y >= burnSeconds.x, nameof(burnSeconds), "needs 0 < min <= max");
+        Require(reach.x > 0f && reach.y >= reach.x, nameof(reach), "needs 0 < min <= max");
+    }
+
+    /// <summary>
+    /// Whether an impact lights the ground it hit: a big enough blast on open ground, below the wetness limit, and
+    /// the impact's own <paramref name="seed"/> under the ignite chance.
+    /// </summary>
+    public bool Lights(in CueEvent impact, float wetness, uint seed)
+    {
+        var blast = impact.Slot == CueSlot.Impact && impact.Radius >= smallestBlast;
+        var dryGround = impact.Surface == ImpactSurface.Ground && wetness < wetnessLimit;
+        return blast && dryGround && Hashes.Fraction(seed) < igniteChance;
+    }
+
+    private void Update() => _source.Write(new FieldFireSource { Settings = this });
+
+    protected override void OnDisabled() => _source.Remove();
+
+    private void Require(bool valid, string field, string problem)
+    {
+        if (!valid)
         {
-            Require(rig != null, nameof(rig), "is missing");
-            Require(dryLayers is { Length: > 0 }, nameof(dryLayers), "is empty");
-            Require(burnSeconds.x > 0f && burnSeconds.y >= burnSeconds.x, nameof(burnSeconds), "needs 0 < min <= max");
-            Require(reach.x > 0f && reach.y >= reach.x, nameof(reach), "needs 0 < min <= max");
-        }
-
-        /// <summary>
-        /// Whether an impact lights the ground it hit: a big enough blast on open ground, below the wetness limit, and
-        /// the impact's own <paramref name="seed"/> under the ignite chance.
-        /// </summary>
-        public bool Lights(in CueEvent impact, float wetness, uint seed)
-        {
-            var blast = impact.Slot == CueSlot.Impact && impact.Radius >= smallestBlast;
-            var dryGround = impact.Surface == ImpactSurface.Ground && wetness < wetnessLimit;
-            return blast && dryGround && Hashes.Fraction(seed) < igniteChance;
-        }
-
-        private void Update() => _source.Write(new FieldFireSource { Settings = this });
-
-        protected override void OnDisabled() => _source.Remove();
-
-        private void Require(bool valid, string field, string problem)
-        {
-            if (!valid)
-            {
-                throw new InvalidOperationException($"FieldFireSettings '{name}': {field} {problem}.");
-            }
+            throw new InvalidOperationException($"FieldFireSettings '{name}': {field} {problem}.");
         }
     }
 }

@@ -10,88 +10,87 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Input.Placement
+namespace HyperRTS.Input.Placement;
+
+/// <summary>
+/// The hostile ground and naval units the local player can see, which make a placement spot invalid. Hidden ones
+/// are left to the server, so the ghost never gives them away.
+/// </summary>
+public struct SeenEnemies
 {
-    /// <summary>
-    /// The hostile ground and naval units the local player can see, which make a placement spot invalid. Hidden ones
-    /// are left to the server, so the ghost never gives them away.
-    /// </summary>
-    public struct SeenEnemies
+    private EntityQuery _units;
+    private EntityQuery _relations;
+    private EntityQuery _local;
+
+    public SeenEnemies(ref SystemState state)
     {
-        private EntityQuery _units;
-        private EntityQuery _relations;
-        private EntityQuery _local;
+        _units = new EntityQueryBuilder(Allocator.Temp).WithAll<NavAgent, Owner, LocalTransform, Health>()
+            .WithNone<Inside, FogHidden>().Build(ref state);
+        _relations = new EntityQueryBuilder(Allocator.Temp).WithAll<OwnerRelations>().Build(ref state);
+        _local = new EntityQueryBuilder(Allocator.Temp).WithAll<LocalPlayer, Player>().Build(ref state);
+    }
 
-        public SeenEnemies(ref SystemState state)
+    /// <summary>Units move every frame, so each segment's cached cell check is joined with them again.</summary>
+    public readonly void Mark(DynamicBuffer<PlacementSegment> segments)
+    {
+        using var seen = Read();
+        for (var i = 0; i < segments.Length; i++)
         {
-            _units = new EntityQueryBuilder(Allocator.Temp).WithAll<NavAgent, Owner, LocalTransform, Health>()
-                .WithNone<Inside, FogHidden>().Build(ref state);
-            _relations = new EntityQueryBuilder(Allocator.Temp).WithAll<OwnerRelations>().Build(ref state);
-            _local = new EntityQueryBuilder(Allocator.Temp).WithAll<LocalPlayer, Player>().Build(ref state);
+            var segment = segments[i];
+            segment.Valid = segment.Ground && !seen.Block(segment.Spot);
+            segments[i] = segment;
         }
+    }
 
-        /// <summary>Units move every frame, so each segment's cached cell check is joined with them again.</summary>
-        public readonly void Mark(DynamicBuffer<PlacementSegment> segments)
-        {
-            using var seen = Read();
-            for (var i = 0; i < segments.Length; i++)
-            {
-                var segment = segments[i];
-                segment.Valid = segment.Ground && !seen.Block(segment.Spot);
-                segments[i] = segment;
-            }
-        }
+    /// <summary>Whether a seen unit hostile to the local player stands on <paramref name="spot"/>.</summary>
+    public readonly bool Block(in BuildingSpot spot)
+    {
+        using var seen = Read();
+        return seen.Block(spot);
+    }
 
-        /// <summary>Whether a seen unit hostile to the local player stands on <paramref name="spot"/>.</summary>
+    private readonly Snapshot Read() => new()
+    {
+        Relations = _relations.GetSingleton<OwnerRelations>(),
+        Owner = _local.GetSingleton<Player>().Owner,
+        Agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp),
+        Owners = _units.ToComponentDataArray<Owner>(Allocator.Temp),
+        Transforms = _units.ToComponentDataArray<LocalTransform>(Allocator.Temp),
+    };
+
+    /// <summary>The seen units copied once, so a line of spots is checked against one read.</summary>
+    private struct Snapshot : System.IDisposable
+    {
+        public OwnerRelations Relations;
+        public byte Owner;
+        public NativeArray<NavAgent> Agents;
+        public NativeArray<Owner> Owners;
+        public NativeArray<LocalTransform> Transforms;
+
         public readonly bool Block(in BuildingSpot spot)
         {
-            using var seen = Read();
-            return seen.Block(spot);
-        }
-
-        private readonly Snapshot Read() => new()
-        {
-            Relations = _relations.GetSingleton<OwnerRelations>(),
-            Owner = _local.GetSingleton<Player>().Owner,
-            Agents = _units.ToComponentDataArray<NavAgent>(Allocator.Temp),
-            Owners = _units.ToComponentDataArray<Owner>(Allocator.Temp),
-            Transforms = _units.ToComponentDataArray<LocalTransform>(Allocator.Temp),
-        };
-
-        /// <summary>The seen units copied once, so a line of spots is checked against one read.</summary>
-        private struct Snapshot : System.IDisposable
-        {
-            public OwnerRelations Relations;
-            public byte Owner;
-            public NativeArray<NavAgent> Agents;
-            public NativeArray<Owner> Owners;
-            public NativeArray<LocalTransform> Transforms;
-
-            public readonly bool Block(in BuildingSpot spot)
+            for (var i = 0; i < Agents.Length; i++)
             {
-                for (var i = 0; i < Agents.Length; i++)
+                if (Agents[i].Layer == NavLayer.Air || !Relations.IsHostile(Owner, Owners[i].Value))
                 {
-                    if (Agents[i].Layer == NavLayer.Air || !Relations.IsHostile(Owner, Owners[i].Value))
-                    {
-                        continue;
-                    }
-
-                    var axis = Agents[i].SegmentAxis(Transforms[i].Rotation);
-                    if (spot.Overlaps(Transforms[i].Position.xz, axis, Agents[i].Radius))
-                    {
-                        return true;
-                    }
+                    continue;
                 }
 
-                return false;
+                var axis = Agents[i].SegmentAxis(Transforms[i].Rotation);
+                if (spot.Overlaps(Transforms[i].Position.xz, axis, Agents[i].Radius))
+                {
+                    return true;
+                }
             }
 
-            public void Dispose()
-            {
-                Agents.Dispose();
-                Owners.Dispose();
-                Transforms.Dispose();
-            }
+            return false;
+        }
+
+        public void Dispose()
+        {
+            Agents.Dispose();
+            Owners.Dispose();
+            Transforms.Dispose();
         }
     }
 }

@@ -3,73 +3,72 @@ using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Netcode;
 
-namespace HyperRTS.Network.Cues
+namespace HyperRTS.Network.Cues;
+
+/// <summary>A batch of <c>CueEvent</c>s; the client finds each sound, rig and mark through its own copy of the prefab.</summary>
+public struct CueRpc : IRpcCommand
 {
-    /// <summary>A batch of <c>CueEvent</c>s; the client finds each sound, rig and mark through its own copy of the prefab.</summary>
-    public struct CueRpc : IRpcCommand
+    /// <summary>44 events at 22 bytes keep the RPC under 1 KB on the wire.</summary>
+    public const int Capacity = 44;
+
+    [GhostFixedListCapacity(Capacity = Capacity)]
+    public FixedList4096Bytes<PackedCue> Cues;
+
+    /// <summary>
+    /// Fills up to <paramref name="maxRpcs"/> RPCs of <see cref="Capacity"/> in arrival order. Past the limit,
+    /// per-shot fire and impact cues are dropped before deaths, abilities and voices.
+    /// </summary>
+    public static void Fill(NativeArray<CueEvent> cues, int maxRpcs, NativeList<CueRpc> rpcs)
     {
-        /// <summary>44 events at 22 bytes keep the RPC under 1 KB on the wire.</summary>
-        public const int Capacity = 44;
-
-        [GhostFixedListCapacity(Capacity = Capacity)]
-        public FixedList4096Bytes<PackedCue> Cues;
-
-        /// <summary>
-        /// Fills up to <paramref name="maxRpcs"/> RPCs of <see cref="Capacity"/> in arrival order. Past the limit,
-        /// per-shot fire and impact cues are dropped before deaths, abilities and voices.
-        /// </summary>
-        public static void Fill(NativeArray<CueEvent> cues, int maxRpcs, NativeList<CueRpc> rpcs)
+        var quotas = Quotas(cues, maxRpcs * Capacity);
+        var rpc = new CueRpc();
+        foreach (var cue in cues)
         {
-            var quotas = Quotas(cues, maxRpcs * Capacity);
-            var rpc = new CueRpc();
-            foreach (var cue in cues)
+            var priority = Priority(cue.Slot);
+            if (quotas[priority] == 0)
             {
-                var priority = Priority(cue.Slot);
-                if (quotas[priority] == 0)
-                {
-                    continue;
-                }
-
-                quotas[priority]--;
-                rpc.Cues.Add(PackedCue.Pack(cue));
-                if (rpc.Cues.Length == Capacity)
-                {
-                    rpcs.Add(rpc);
-                    rpc = new CueRpc();
-                }
+                continue;
             }
 
-            if (rpc.Cues.Length > 0)
+            quotas[priority]--;
+            rpc.Cues.Add(PackedCue.Pack(cue));
+            if (rpc.Cues.Length == Capacity)
             {
                 rpcs.Add(rpc);
+                rpc = new CueRpc();
             }
         }
 
-        /// <summary>How many cues of each priority fit in <paramref name="budget"/>, most important first.</summary>
-        private static int3 Quotas(NativeArray<CueEvent> cues, int budget)
+        if (rpc.Cues.Length > 0)
         {
-            var counts = int3.zero;
-            foreach (var cue in cues)
-            {
-                counts[Priority(cue.Slot)]++;
-            }
-
-            var quotas = int3.zero;
-            for (var priority = 0; priority < 3; priority++)
-            {
-                quotas[priority] = math.min(counts[priority], budget);
-                budget -= quotas[priority];
-            }
-
-            return quotas;
+            rpcs.Add(rpc);
         }
-
-        // A battle fires and lands far more shots than anything else, and losing one of them goes unnoticed.
-        private static int Priority(CueSlot slot) => slot switch
-        {
-            CueSlot.Fire => 2,
-            CueSlot.Impact => 1,
-            _ => 0,
-        };
     }
+
+    /// <summary>How many cues of each priority fit in <paramref name="budget"/>, most important first.</summary>
+    private static int3 Quotas(NativeArray<CueEvent> cues, int budget)
+    {
+        var counts = int3.zero;
+        foreach (var cue in cues)
+        {
+            counts[Priority(cue.Slot)]++;
+        }
+
+        var quotas = int3.zero;
+        for (var priority = 0; priority < 3; priority++)
+        {
+            quotas[priority] = math.min(counts[priority], budget);
+            budget -= quotas[priority];
+        }
+
+        return quotas;
+    }
+
+    // A battle fires and lands far more shots than anything else, and losing one of them goes unnoticed.
+    private static int Priority(CueSlot slot) => slot switch
+    {
+        CueSlot.Fire => 2,
+        CueSlot.Impact => 1,
+        _ => 0,
+    };
 }

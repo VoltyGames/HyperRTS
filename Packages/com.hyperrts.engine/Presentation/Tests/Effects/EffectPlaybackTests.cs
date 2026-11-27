@@ -1,9 +1,9 @@
-using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Tests;
 using NUnit.Framework;
@@ -12,182 +12,181 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Tests.Effects
+namespace HyperRTS.Presentation.Tests.Effects;
+
+/// <summary>Effect playback around the rigs: the pool and its variants, per-entity streams and impact poses.</summary>
+public class EffectPlaybackTests
 {
-    /// <summary>Effect playback around the rigs: the pool and its variants, per-entity streams and impact poses.</summary>
-    public class EffectPlaybackTests
+    private static readonly Entity Shell = new() { Index = 1, Version = 1 };
+    private static readonly Vector3 RampNormal = new Vector3(-1f, 1f, 0f).normalized;
+
+    private EffectPool _pool;
+    private EffectRig _dust;
+    private EffectRig _sparks;
+    private TerrainHeight _ramp;
+
+    [SetUp]
+    public void SetUp()
     {
-        private static readonly Entity Shell = new() { Index = 1, Version = 1 };
-        private static readonly Vector3 RampNormal = new Vector3(-1f, 1f, 0f).normalized;
-
-        private EffectPool _pool;
-        private EffectRig _dust;
-        private EffectRig _sparks;
-        private TerrainHeight _ramp;
-
-        [SetUp]
-        public void SetUp()
-        {
-            _pool = new EffectPool();
-            _dust = EffectRigKit.Rig("Dust");
-            _sparks = EffectRigKit.Rig("Sparks");
-        }
-
-        [TearDown]
-        public void TearDown()
-        {
-            _pool.Dispose();
-            Object.DestroyImmediate(_dust.gameObject);
-            Object.DestroyImmediate(_sparks.gameObject);
-            if (_ramp.Blob.IsCreated)
-            {
-                _ramp.Blob.Dispose();
-            }
-        }
-
-        [Test]
-        public void Get_ReturnsOneLiveInstancePerPrefab()
-        {
-            var dust = _pool.Get(_dust.gameObject);
-
-            Assert.AreSame(dust, _pool.Get(_dust.gameObject));
-            Assert.AreNotSame(_dust, dust, "an instance, not the prefab");
-            Assert.AreNotSame(dust, _pool.Get(_sparks.gameObject));
-        }
-
-        [Test]
-        public void Pick_PlaysEachVariantAsItsOwnPooledRig_StablePerKey_AndBurstsReachEvery()
-        {
-            _dust.variants = new[] { _sparks.gameObject };
-            var dust = _pool.Get(_dust.gameObject);
-            var sparks = _pool.Get(_sparks.gameObject);
-
-            Assert.AreSame(dust, dust.Pick(0u));
-            Assert.AreSame(sparks, dust.Pick(1u));
-            Assert.AreSame(sparks, dust.Pick(1u), "the same key keeps its variant");
-            Assert.AreSame(dust, dust.Pick(2u));
-
-            var played = new HashSet<EffectRig>();
-            for (var i = 0; i < 64; i++)
-            {
-                played.Add(dust.Pick());
-            }
-
-            Assert.AreEqual(2, played.Count);
-        }
-
-        [Test]
-        public void Stream_FirstFrameHasNoSegment_ThenRunsFromLastFrame()
-        {
-            var streams = new EffectStreams(_pool);
-
-            var first = Frame(streams, new Vector3(2f, 0f, 0f));
-            Assert.AreEqual(first.To, first.From);
-            Assert.AreEqual(EffectStreams.Key(Shell, 0), first.Key);
-
-            var second = Frame(streams, new Vector3(3f, 0f, 0f));
-            Assert.AreEqual(new Vector3(2f, 0f, 0f), second.From);
-            Assert.AreEqual(new Vector3(3f, 0f, 0f), second.To);
-        }
-
-        [Test]
-        public void Stream_AfterASkippedFrame_StartsAfresh()
-        {
-            var streams = new EffectStreams(_pool);
-            streams.BeginFrame();
-            streams.Advance(Shell, 0, Vector3.zero);
-            streams.EndFrame();
-            streams.BeginFrame();
-            streams.EndFrame();
-
-            streams.BeginFrame();
-            var state = streams.Advance(Shell, 0, new Vector3(50f, 0f, 0f));
-
-            Assert.AreEqual(state.To, state.From, "no segment across the gap");
-        }
-
-        [Test]
-        public void SkippedStream_StopsItsGraphs_WhichTheNextStreamReuses()
-        {
-            EffectRigKit.AddGraph(_dust, EffectRigKit.TestStreamGraph);
-            var streams = new EffectStreams(_pool);
-            streams.BeginFrame();
-            var state = streams.Advance(Shell, 0, Vector3.zero);
-            state.Use(_dust);
-            state.Emit(Quaternion.identity, 0.1f, 1f);
-            var graphs = state.Graphs;
-            streams.EndFrame();
-            Assert.IsNotNull(graphs);
-
-            streams.BeginFrame();
-            streams.EndFrame();
-            _dust.Tick();
-
-            Assert.IsNull(state.Graphs, "stopped with its stream");
-            Assert.AreSame(graphs, _dust.StartStream(), "a set with no live particles serves the next stream");
-        }
-
-        [Test]
-        public void LoopFade_HoldsThenFadesOverTheEnd()
-        {
-            Assert.AreEqual(1f, LoopStrength.At(100f, 0f), "no duration streams forever");
-            Assert.AreEqual(1f, LoopStrength.At(5f, 10f));
-            Assert.AreEqual(0.5f, LoopStrength.At(9f, 10f), 1e-4f);
-            Assert.AreEqual(0f, LoopStrength.At(11f, 10f));
-        }
-
-        [Test]
-        public void Facing_UpASlope_LooksAlongIt_WithoutRoll()
-        {
-            var direction = new Vector3(1f, 1f, 0f);
-
-            var facing = EffectPose.Facing(direction);
-
-            MathAssert.Near(direction.normalized, facing * Vector3.forward);
-            Assert.AreEqual(0f, (facing * Vector3.right).y, 1e-5f, "kept upright");
-            Assert.Greater((facing * Vector3.up).y, 0f);
-            Assert.AreEqual(Quaternion.identity, EffectPose.Facing(Vector3.zero));
-        }
-
-        [TestCase(true)]
-        [TestCase(false)]
-        public void GroundImpact_SitsOnTheSlope_UpAlongItsNormalOnlyWhenAligned(bool aligned)
-        {
-            var (position, rotation) = EffectPose.Impact(Hit(ImpactSurface.Ground), Ramp(), true, aligned);
-
-            MathAssert.Near(new Vector3(5f, 5f, 5f), position);
-            MathAssert.Near(aligned ? RampNormal : Vector3.up, rotation * Vector3.up);
-        }
-
-        [Test]
-        public void OffTheGround_KeepsTheCuePosition_Unturned()
-        {
-            var air = EffectPose.Impact(Hit(ImpactSurface.Air), Ramp(), true, true);
-            var noTerrain = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, false, true);
-
-            MathAssert.Near(new Vector3(5f, 9f, 5f), air.Position);
-            MathAssert.Near(new Vector3(5f, 9f, 5f), noTerrain.Position);
-            Assert.AreEqual(Quaternion.identity, air.Rotation);
-            Assert.AreEqual(Quaternion.identity, noTerrain.Rotation);
-        }
-
-        // A 45 degree ramp rising along x: height = x.
-        private TerrainHeight Ramp()
-        {
-            using var heights = new NativeArray<float>(new[] { 0f, 10f, 0f, 10f }, Allocator.Temp);
-            _ramp = TerrainHeight.Create(heights, new int2(2, 2), float2.zero, 10f, Allocator.Persistent);
-            return _ramp;
-        }
-
-        private static StreamState Frame(EffectStreams streams, Vector3 position)
-        {
-            streams.BeginFrame();
-            var state = streams.Advance(Shell, 0, position);
-            streams.EndFrame();
-            return state;
-        }
-
-        private static CueEvent Hit(ImpactSurface surface) =>
-            new() { Slot = CueSlot.Impact, Position = new float3(5f, 9f, 5f), Surface = surface };
+        _pool = new EffectPool();
+        _dust = EffectRigKit.Rig("Dust");
+        _sparks = EffectRigKit.Rig("Sparks");
     }
+
+    [TearDown]
+    public void TearDown()
+    {
+        _pool.Dispose();
+        Object.DestroyImmediate(_dust.gameObject);
+        Object.DestroyImmediate(_sparks.gameObject);
+        if (_ramp.Blob.IsCreated)
+        {
+            _ramp.Blob.Dispose();
+        }
+    }
+
+    [Test]
+    public void Get_ReturnsOneLiveInstancePerPrefab()
+    {
+        var dust = _pool.Get(_dust.gameObject);
+
+        Assert.AreSame(dust, _pool.Get(_dust.gameObject));
+        Assert.AreNotSame(_dust, dust, "an instance, not the prefab");
+        Assert.AreNotSame(dust, _pool.Get(_sparks.gameObject));
+    }
+
+    [Test]
+    public void Pick_PlaysEachVariantAsItsOwnPooledRig_StablePerKey_AndBurstsReachEvery()
+    {
+        _dust.variants = new[] { _sparks.gameObject };
+        var dust = _pool.Get(_dust.gameObject);
+        var sparks = _pool.Get(_sparks.gameObject);
+
+        Assert.AreSame(dust, dust.Pick(0u));
+        Assert.AreSame(sparks, dust.Pick(1u));
+        Assert.AreSame(sparks, dust.Pick(1u), "the same key keeps its variant");
+        Assert.AreSame(dust, dust.Pick(2u));
+
+        var played = new HashSet<EffectRig>();
+        for (var i = 0; i < 64; i++)
+        {
+            played.Add(dust.Pick());
+        }
+
+        Assert.AreEqual(2, played.Count);
+    }
+
+    [Test]
+    public void Stream_FirstFrameHasNoSegment_ThenRunsFromLastFrame()
+    {
+        var streams = new EffectStreams(_pool);
+
+        var first = Frame(streams, new Vector3(2f, 0f, 0f));
+        Assert.AreEqual(first.To, first.From);
+        Assert.AreEqual(EffectStreams.Key(Shell, 0), first.Key);
+
+        var second = Frame(streams, new Vector3(3f, 0f, 0f));
+        Assert.AreEqual(new Vector3(2f, 0f, 0f), second.From);
+        Assert.AreEqual(new Vector3(3f, 0f, 0f), second.To);
+    }
+
+    [Test]
+    public void Stream_AfterASkippedFrame_StartsAfresh()
+    {
+        var streams = new EffectStreams(_pool);
+        streams.BeginFrame();
+        streams.Advance(Shell, 0, Vector3.zero);
+        streams.EndFrame();
+        streams.BeginFrame();
+        streams.EndFrame();
+
+        streams.BeginFrame();
+        var state = streams.Advance(Shell, 0, new Vector3(50f, 0f, 0f));
+
+        Assert.AreEqual(state.To, state.From, "no segment across the gap");
+    }
+
+    [Test]
+    public void SkippedStream_StopsItsGraphs_WhichTheNextStreamReuses()
+    {
+        EffectRigKit.AddGraph(_dust, EffectRigKit.TestStreamGraph);
+        var streams = new EffectStreams(_pool);
+        streams.BeginFrame();
+        var state = streams.Advance(Shell, 0, Vector3.zero);
+        state.Use(_dust);
+        state.Emit(Quaternion.identity, 0.1f, 1f);
+        var graphs = state.Graphs;
+        streams.EndFrame();
+        Assert.IsNotNull(graphs);
+
+        streams.BeginFrame();
+        streams.EndFrame();
+        _dust.Tick();
+
+        Assert.IsNull(state.Graphs, "stopped with its stream");
+        Assert.AreSame(graphs, _dust.StartStream(), "a set with no live particles serves the next stream");
+    }
+
+    [Test]
+    public void LoopFade_HoldsThenFadesOverTheEnd()
+    {
+        Assert.AreEqual(1f, LoopStrength.At(100f, 0f), "no duration streams forever");
+        Assert.AreEqual(1f, LoopStrength.At(5f, 10f));
+        Assert.AreEqual(0.5f, LoopStrength.At(9f, 10f), 1e-4f);
+        Assert.AreEqual(0f, LoopStrength.At(11f, 10f));
+    }
+
+    [Test]
+    public void Facing_UpASlope_LooksAlongIt_WithoutRoll()
+    {
+        var direction = new Vector3(1f, 1f, 0f);
+
+        var facing = EffectPose.Facing(direction);
+
+        MathAssert.Near(direction.normalized, facing * Vector3.forward);
+        Assert.AreEqual(0f, (facing * Vector3.right).y, 1e-5f, "kept upright");
+        Assert.Greater((facing * Vector3.up).y, 0f);
+        Assert.AreEqual(Quaternion.identity, EffectPose.Facing(Vector3.zero));
+    }
+
+    [TestCase(true)]
+    [TestCase(false)]
+    public void GroundImpact_SitsOnTheSlope_UpAlongItsNormalOnlyWhenAligned(bool aligned)
+    {
+        var (position, rotation) = EffectPose.Impact(Hit(ImpactSurface.Ground), Ramp(), true, aligned);
+
+        MathAssert.Near(new Vector3(5f, 5f, 5f), position);
+        MathAssert.Near(aligned ? RampNormal : Vector3.up, rotation * Vector3.up);
+    }
+
+    [Test]
+    public void OffTheGround_KeepsTheCuePosition_Unturned()
+    {
+        var air = EffectPose.Impact(Hit(ImpactSurface.Air), Ramp(), true, true);
+        var noTerrain = EffectPose.Impact(Hit(ImpactSurface.Ground), _ramp, false, true);
+
+        MathAssert.Near(new Vector3(5f, 9f, 5f), air.Position);
+        MathAssert.Near(new Vector3(5f, 9f, 5f), noTerrain.Position);
+        Assert.AreEqual(Quaternion.identity, air.Rotation);
+        Assert.AreEqual(Quaternion.identity, noTerrain.Rotation);
+    }
+
+    // A 45 degree ramp rising along x: height = x.
+    private TerrainHeight Ramp()
+    {
+        using var heights = new NativeArray<float>(new[] { 0f, 10f, 0f, 10f }, Allocator.Temp);
+        _ramp = TerrainHeight.Create(heights, new int2(2, 2), float2.zero, 10f, Allocator.Persistent);
+        return _ramp;
+    }
+
+    private static StreamState Frame(EffectStreams streams, Vector3 position)
+    {
+        streams.BeginFrame();
+        var state = streams.Advance(Shell, 0, position);
+        streams.EndFrame();
+        return state;
+    }
+
+    private static CueEvent Hit(ImpactSurface surface) =>
+        new() { Slot = CueSlot.Impact, Position = new float3(5f, 9f, 5f), Surface = surface };
 }

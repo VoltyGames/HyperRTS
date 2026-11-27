@@ -5,111 +5,110 @@ using Unity.Mathematics;
 using Unity.Netcode;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Combat.Deploy
+namespace HyperRTS.Simulation.Combat.Deploy;
+
+/// <summary>
+/// A unit that must deploy before its <see cref="Weapon.NeedsDeploy"/> weapons fire, and packs up again before it
+/// moves. Replicated so client machines can follow <see cref="Progress"/>.
+/// </summary>
+public struct Deployable : IComponentData
 {
-    /// <summary>
-    /// A unit that must deploy before its <see cref="Weapon.NeedsDeploy"/> weapons fire, and packs up again before it
-    /// moves. Replicated so client machines can follow <see cref="Progress"/>.
-    /// </summary>
-    public struct Deployable : IComponentData
+    public float DeployTime;
+    public float PackUpTime;
+
+    [GhostField] public DeployState State;
+
+    /// <summary>0 packed up to 1 deployed, rising while deploying and falling while packing up.</summary>
+    [GhostField(Quantization = 100)] public float Progress;
+
+    /// <summary>Anything but packed up holds the unit in place.</summary>
+    public readonly bool Immobile => State != DeployState.Packed;
+
+    /// <summary>Unit XZ direction it faced when it finished deploying, which its weapons' firing arcs are about.</summary>
+    public float2 DeployedHeading;
+
+    /// <summary>From the start of deploying until packing up begins, when the weapon's crew stands at its places.</summary>
+    public readonly bool Emplaced => State is DeployState.Deploying or DeployState.Deployed;
+
+    public readonly bool Deployed => State == DeployState.Deployed;
+
+    /// <summary>Starts deploying from where it is; true when it was packed up or packing.</summary>
+    public bool Deploy()
     {
-        public float DeployTime;
-        public float PackUpTime;
-
-        [GhostField] public DeployState State;
-
-        /// <summary>0 packed up to 1 deployed, rising while deploying and falling while packing up.</summary>
-        [GhostField(Quantization = 100)] public float Progress;
-
-        /// <summary>Anything but packed up holds the unit in place.</summary>
-        public readonly bool Immobile => State != DeployState.Packed;
-
-        /// <summary>Unit XZ direction it faced when it finished deploying, which its weapons' firing arcs are about.</summary>
-        public float2 DeployedHeading;
-
-        /// <summary>From the start of deploying until packing up begins, when the weapon's crew stands at its places.</summary>
-        public readonly bool Emplaced => State is DeployState.Deploying or DeployState.Deployed;
-
-        public readonly bool Deployed => State == DeployState.Deployed;
-
-        /// <summary>Starts deploying from where it is; true when it was packed up or packing.</summary>
-        public bool Deploy()
+        if (State is DeployState.Deploying or DeployState.Deployed)
         {
-            if (State is DeployState.Deploying or DeployState.Deployed)
-            {
-                return false;
-            }
-
-            State = DeployState.Deploying;
-            return true;
+            return false;
         }
 
-        public void PackUp()
-        {
-            if (State is DeployState.Deploying or DeployState.Deployed)
-            {
-                State = DeployState.Packing;
-            }
-        }
-
-        /// <summary>Moves toward deployed or packed up; <paramref name="facing"/> is the unit's XZ direction, kept as the heading once deployed.</summary>
-        public void Advance(float deltaTime, float2 facing)
-        {
-            if (State == DeployState.Deploying)
-            {
-                Progress = math.min(1f, Progress + deltaTime / DeployTime);
-                if (Progress >= 1f)
-                {
-                    State = DeployState.Deployed;
-                    DeployedHeading = facing;
-                }
-            }
-            else if (State == DeployState.Packing)
-            {
-                Progress = math.max(0f, Progress - deltaTime / PackUpTime);
-                State = Progress <= 0f ? DeployState.Packed : State;
-            }
-        }
-
-        /// <summary>A weapon that needs deployment holds fire until its unit is deployed.</summary>
-        public static bool Holds(in ComponentLookup<Deployable> lookup, Entity unit, bool needsDeploy)
-        {
-            if (!needsDeploy)
-            {
-                return false;
-            }
-
-            return !lookup.TryGetComponent(unit, out var deployable) || !deployable.Deployed;
-        }
-
-        /// <summary>The direction firing arcs are about: where a deployed unit deployed, else where the unit faces now.</summary>
-        public static float2 Heading(in ComponentLookup<Deployable> lookup, Entity unit, in LocalTransform place)
-        {
-            if (lookup.TryGetComponent(unit, out var deployable) && deployable.Deployed)
-            {
-                return deployable.DeployedHeading;
-            }
-
-            return Rotations.Facing(place.Rotation);
-        }
-
-        public static bool IsDeployed(in ComponentLookup<Deployable> lookup, Entity unit) =>
-            lookup.TryGetComponent(unit, out var deployable) && deployable.Deployed;
-
-        public static bool IsImmobile(in ComponentLookup<Deployable> lookup, Entity unit) =>
-            lookup.TryGetComponent(unit, out var deployable) && deployable.Immobile;
-
-        /// <summary>Whether <paramref name="unit"/> deploys and is setting up or set up, so its crew stands at their places.</summary>
-        public static bool IsEmplaced(in ComponentLookup<Deployable> lookup, Entity unit) =>
-            lookup.TryGetComponent(unit, out var deployable) && deployable.Emplaced;
+        State = DeployState.Deploying;
+        return true;
     }
 
-    /// <summary>Where a <see cref="Deployable"/> unit is between packed up and deployed.</summary>
-    public enum DeployState : byte
+    public void PackUp()
     {
-        Packed = 0,
-        Deploying = 1,
-        Deployed = 2,
-        Packing = 3,
+        if (State is DeployState.Deploying or DeployState.Deployed)
+        {
+            State = DeployState.Packing;
+        }
     }
+
+    /// <summary>Moves toward deployed or packed up; <paramref name="facing"/> is the unit's XZ direction, kept as the heading once deployed.</summary>
+    public void Advance(float deltaTime, float2 facing)
+    {
+        if (State == DeployState.Deploying)
+        {
+            Progress = math.min(1f, Progress + deltaTime / DeployTime);
+            if (Progress >= 1f)
+            {
+                State = DeployState.Deployed;
+                DeployedHeading = facing;
+            }
+        }
+        else if (State == DeployState.Packing)
+        {
+            Progress = math.max(0f, Progress - deltaTime / PackUpTime);
+            State = Progress <= 0f ? DeployState.Packed : State;
+        }
+    }
+
+    /// <summary>A weapon that needs deployment holds fire until its unit is deployed.</summary>
+    public static bool Holds(in ComponentLookup<Deployable> lookup, Entity unit, bool needsDeploy)
+    {
+        if (!needsDeploy)
+        {
+            return false;
+        }
+
+        return !lookup.TryGetComponent(unit, out var deployable) || !deployable.Deployed;
+    }
+
+    /// <summary>The direction firing arcs are about: where a deployed unit deployed, else where the unit faces now.</summary>
+    public static float2 Heading(in ComponentLookup<Deployable> lookup, Entity unit, in LocalTransform place)
+    {
+        if (lookup.TryGetComponent(unit, out var deployable) && deployable.Deployed)
+        {
+            return deployable.DeployedHeading;
+        }
+
+        return Rotations.Facing(place.Rotation);
+    }
+
+    public static bool IsDeployed(in ComponentLookup<Deployable> lookup, Entity unit) =>
+        lookup.TryGetComponent(unit, out var deployable) && deployable.Deployed;
+
+    public static bool IsImmobile(in ComponentLookup<Deployable> lookup, Entity unit) =>
+        lookup.TryGetComponent(unit, out var deployable) && deployable.Immobile;
+
+    /// <summary>Whether <paramref name="unit"/> deploys and is setting up or set up, so its crew stands at their places.</summary>
+    public static bool IsEmplaced(in ComponentLookup<Deployable> lookup, Entity unit) =>
+        lookup.TryGetComponent(unit, out var deployable) && deployable.Emplaced;
+}
+
+/// <summary>Where a <see cref="Deployable"/> unit is between packed up and deployed.</summary>
+public enum DeployState : byte
+{
+    Packed = 0,
+    Deploying = 1,
+    Deployed = 2,
+    Packing = 3,
 }

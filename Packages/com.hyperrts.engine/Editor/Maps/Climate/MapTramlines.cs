@@ -5,48 +5,47 @@ using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Vegetation.Scatter;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Climate
+namespace HyperRTS.Editor.Maps.Climate;
+
+/// <summary>
+/// Paired wheel lines along a sown surface's rows: painted on the terrain and left bare of crops and plants.
+/// </summary>
+[Serializable]
+public sealed class MapTramlines
 {
-    /// <summary>
-    /// Paired wheel lines along a sown surface's rows: painted on the terrain and left bare of crops and plants.
-    /// </summary>
-    [Serializable]
-    public sealed class MapTramlines
+    [Tooltip("Metres across the rows from one tramline to the next; 0 for none.")]
+    public float spacing;
+
+    [Tooltip("Metres between the centres of a tramline's two wheel lines.")]
+    public float gauge = 1.8f;
+
+    [Tooltip("Width of one wheel line (metres).")]
+    public float width = 0.5f;
+
+    [Tooltip("Key of the terrain layer the wheel lines paint.")]
+    [MapKey(typeof(MapClimateLayer), Optional = true)]
+    public string layer;
+
+    public bool Any => spacing > 0f;
+
+    public bool Valid => !Any || (width > 0f && gauge + width < spacing && !string.IsNullOrEmpty(layer));
+
+    /// <summary>A region's tramlines, measured from <paramref name="originAcross"/> across its rows in the sector.</summary>
+    public RowCropTramlines From(int seed, float originAcross)
     {
-        [Tooltip("Metres across the rows from one tramline to the next; 0 for none.")]
-        public float spacing;
-
-        [Tooltip("Metres between the centres of a tramline's two wheel lines.")]
-        public float gauge = 1.8f;
-
-        [Tooltip("Width of one wheel line (metres).")]
-        public float width = 0.5f;
-
-        [Tooltip("Key of the terrain layer the wheel lines paint.")]
-        [MapKey(typeof(MapClimateLayer), Optional = true)]
-        public string layer;
-
-        public bool Any => spacing > 0f;
-
-        public bool Valid => !Any || (width > 0f && gauge + width < spacing && !string.IsNullOrEmpty(layer));
-
-        /// <summary>A region's tramlines, measured from <paramref name="originAcross"/> across its rows in the sector.</summary>
-        public RowCropTramlines From(int seed, float originAcross)
+        if (!Any)
         {
-            if (!Any)
-            {
-                return default;
-            }
-
-            var hash = ScatterHash.Hash(seed, int.MinValue, int.MaxValue);
-            var phase = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.TramlineChannel));
-            return new RowCropTramlines
-            {
-                spacing = spacing,
-                gauge = gauge,
-                halfWidth = width * 0.5f,
-                offset = phase * spacing - originAcross,
-            };
+            return default;
         }
+
+        var hash = ScatterHash.Hash(seed, int.MinValue, int.MaxValue);
+        var phase = Hashes.Fraction(ScatterHash.Channel(hash, RowCropSpots.TramlineChannel));
+        return new RowCropTramlines
+        {
+            spacing = spacing,
+            gauge = gauge,
+            halfWidth = width * 0.5f,
+            offset = phase * spacing - originAcross,
+        };
     }
 }

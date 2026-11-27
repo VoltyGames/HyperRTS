@@ -1,32 +1,31 @@
-namespace HyperRTS.Simulation.Stats
+namespace HyperRTS.Simulation.Stats;
+
+/// <summary>Values a <see cref="StatModifier"/> can change. Values from <see cref="GameFirst"/> up belong to games.</summary>
+public enum Stat : byte
 {
-    /// <summary>Values a <see cref="StatModifier"/> can change. Values from <see cref="GameFirst"/> up belong to games.</summary>
-    public enum Stat : byte
-    {
-        MaxHealth = 0,
-        Damage = 1,
-        Range = 2,
+    MaxHealth = 0,
+    Damage = 1,
+    Range = 2,
 
-        /// <summary>
-        /// Shots per second: Add is extra shots per second and +100% halves the cooldown. Its recorded base is the
-        /// cooldown.
-        /// </summary>
-        FireRate = 3,
-        MoveSpeed = 4,
-        VisionRange = 5,
+    /// <summary>
+    /// Shots per second: Add is extra shots per second and +100% halves the cooldown. Its recorded base is the
+    /// cooldown.
+    /// </summary>
+    FireRate = 3,
+    MoveSpeed = 4,
+    VisionRange = 5,
 
-        /// <summary>Incoming damage multiplier (base 1); -25% takes a quarter less. Modifiers may name a damage type.</summary>
-        DamageTaken = 6,
-        BuildRate = 7,
-        ProductionSpeed = 8,
+    /// <summary>Incoming damage multiplier (base 1); -25% takes a quarter less. Modifiers may name a damage type.</summary>
+    DamageTaken = 6,
+    BuildRate = 7,
+    ProductionSpeed = 8,
 
-        /// <summary>On a player: resources its harvesters deliver, as a multiplier (base 1).</summary>
-        Income = 9,
+    /// <summary>On a player: resources its harvesters deliver, as a multiplier (base 1).</summary>
+    Income = 9,
 
-        /// <summary>
-        /// First value a game may use for its own stats, held by a field marked with <see cref="StatFieldAttribute"/>;
-        /// the engine never defines one from here up.
-        /// </summary>
-        GameFirst = 128,
-    }
+    /// <summary>
+    /// First value a game may use for its own stats, held by a field marked with <see cref="StatFieldAttribute"/>;
+    /// the engine never defines one from here up.
+    /// </summary>
+    GameFirst = 128,
 }

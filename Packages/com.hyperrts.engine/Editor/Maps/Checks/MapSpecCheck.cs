@@ -1,7 +1,7 @@
-using HyperRTS.Editor.Maps.Common;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
@@ -9,159 +9,158 @@ using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Spec;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Checks
+namespace HyperRTS.Editor.Maps.Checks;
+
+/// <summary>
+/// Checks a spec before it is refined: sane size, terrain and amounts, and every named kind known (<see
+/// cref="MapFieldCheck"/>). Where features lie is the expander's to check.
+/// </summary>
+public sealed class MapSpecCheck : MapCheck
 {
-    /// <summary>
-    /// Checks a spec before it is refined: sane size, terrain and amounts, and every named kind known (<see
-    /// cref="MapFieldCheck"/>). Where features lie is the expander's to check.
-    /// </summary>
-    public sealed class MapSpecCheck : MapCheck
+    private const float BridgeOverhang = 4f;
+    private readonly MapSpec _spec;
+    private readonly MapRules _rules;
+
+    private MapSpecCheck(MapSpec spec, MapClimate climate, MapPalette palette, MapRules rules, MapIssues issues)
+        : base(climate, palette, issues)
     {
-        private const float BridgeOverhang = 4f;
-        private readonly MapSpec _spec;
-        private readonly MapRules _rules;
+        _spec = spec;
+        _rules = rules;
+    }
 
-        private MapSpecCheck(MapSpec spec, MapClimate climate, MapPalette palette, MapRules rules, MapIssues issues)
-            : base(climate, palette, issues)
+    public static void Check(MapSpec spec, MapClimate climate, MapPalette palette, MapRules rules, MapIssues issues) =>
+        new MapSpecCheck(spec, climate, palette, rules, issues).Run();
+
+    private void Run()
+    {
+        Header();
+        MapFieldCheck.CheckSpec(_spec, Climate, Palette, Issues);
+        Require(MapKeys.Contains(_rules.modes, _spec.mode), $"The map rules have no thresholds for mode '{_spec.mode}'.");
+        Each(_spec.resources, nameof(MapSpec.resources), "Resource", (resource, name) =>
+            Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0."));
+        Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) => NotBesideRoad(prop.kind, name));
+        Each(_spec.roads, nameof(MapSpec.roads), "Road", (road, name) =>
+            Require(road.points.Count >= 2, $"{name} needs at least two points."));
+        Each(_spec.rivers, nameof(MapSpec.rivers), "River", (river, name) =>
+            river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
+        Each(_spec.ponds, nameof(MapSpec.ponds), "Pond", Pond);
+    }
+
+    private void Pond(MapPondSpec pond, string name)
+    {
+        Require(pond.points.Count >= 3, $"{name} needs at least three points for its shoreline.");
+        Require(pond.depth > 0f && pond.bankWidth > 0f, $"{name}: depth {pond.depth} and bankWidth {pond.bankWidth} must be above 0.");
+        Require(pond.shoreWidth >= 0f, $"{name}: shoreWidth {pond.shoreWidth} must not be negative.");
+        Require(pond.dam < pond.points.Count, $"{name}: dam {pond.dam} must be -1 or the index of a point; the dam runs to the next one.");
+        if (pond.dam < 0)
         {
-            _spec = spec;
-            _rules = rules;
+            return;
         }
 
-        public static void Check(MapSpec spec, MapClimate climate, MapPalette palette, MapRules rules, MapIssues issues) =>
-            new MapSpecCheck(spec, climate, palette, rules, issues).Run();
+        var tall = pond.damHeight > 0f && pond.damHeight <= MapPond.MaxDamHeight;
+        Require(pond.damWidth > 0f && tall,
+            $"{name}: damWidth {pond.damWidth} must be above 0 and damHeight {pond.damHeight} in 0 to {MapPond.MaxDamHeight} m.");
+        Require(!string.IsNullOrEmpty(pond.damSurface), $"{name} has a dam but names no damSurface.");
+    }
 
-        private void Run()
+    private void Header()
+    {
+        Require(_spec.size.x > 0f && _spec.size.z > 0f, $"Map size {_spec.size} must be positive.");
+        var terrain = _spec.terrain;
+        var rising = terrain.waterLevel < terrain.height && terrain.height < terrain.maxHeight;
+        Require(rising, "Terrain heights must rise: waterLevel < height < maxHeight.");
+        Require(Mathf.IsPowerOfTwo(terrain.resolution - 1), $"Terrain resolution {terrain.resolution} must be 2^n + 1.");
+        Weather();
+        WarAge();
+    }
+
+    private void WarAge()
+    {
+        if (Array.IndexOf(Enum.GetNames(typeof(MapWarAge)), _spec.warAge) < 0)
         {
-            Header();
-            MapFieldCheck.CheckSpec(_spec, Climate, Palette, Issues);
-            Require(MapKeys.Contains(_rules.modes, _spec.mode), $"The map rules have no thresholds for mode '{_spec.mode}'.");
-            Each(_spec.resources, nameof(MapSpec.resources), "Resource", (resource, name) =>
-                Require(resource.amount > 0, $"{name} ('{resource.kind}') needs an amount above 0."));
-            Each(_spec.props, nameof(MapSpec.props), "Prop", (prop, name) => NotBesideRoad(prop.kind, name));
-            Each(_spec.roads, nameof(MapSpec.roads), "Road", (road, name) =>
-                Require(road.points.Count >= 2, $"{name} needs at least two points."));
-            Each(_spec.rivers, nameof(MapSpec.rivers), "River", (river, name) =>
-                river.crossings.ForEach(crossing => Crossing(river, crossing, name)));
-            Each(_spec.ponds, nameof(MapSpec.ponds), "Pond", Pond);
+            Issues.Error($"The map spec's warAge '{_spec.warAge}' is not one of {string.Join(", ", Enum.GetNames(typeof(MapWarAge)))}.", Feature);
+            return;
         }
 
-        private void Pond(MapPondSpec pond, string name)
-        {
-            Require(pond.points.Count >= 3, $"{name} needs at least three points for its shoreline.");
-            Require(pond.depth > 0f && pond.bankWidth > 0f, $"{name}: depth {pond.depth} and bankWidth {pond.bankWidth} must be above 0.");
-            Require(pond.shoreWidth >= 0f, $"{name}: shoreWidth {pond.shoreWidth} must not be negative.");
-            Require(pond.dam < pond.points.Count, $"{name}: dam {pond.dam} must be -1 or the index of a point; the dam runs to the next one.");
-            if (pond.dam < 0)
-            {
-                return;
-            }
+        Require(_spec.WarAge == MapWarAge.None || Climate.war != null,
+            $"warAge '{_spec.warAge}' needs climate '{Climate.key}' to name a warKit.");
+    }
 
-            var tall = pond.damHeight > 0f && pond.damHeight <= MapPond.MaxDamHeight;
-            Require(pond.damWidth > 0f && tall,
-                $"{name}: damWidth {pond.damWidth} must be above 0 and damHeight {pond.damHeight} in 0 to {MapPond.MaxDamHeight} m.");
-            Require(!string.IsNullOrEmpty(pond.damSurface), $"{name} has a dam but names no damSurface.");
+    private void Weather()
+    {
+        if (string.IsNullOrEmpty(_spec.weather))
+        {
+            Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.key}' weathers.", Feature);
+            return;
         }
 
-        private void Header()
+        InClimate(Climate.weathers, _spec.weather, "weather", "The map spec's 'weather' key");
+    }
+
+    private void Crossing(MapRiverSpec river, MapCrossingSpec crossing, string name)
+    {
+        if (crossing.kind == MapCrossingSpec.Ford)
         {
-            Require(_spec.size.x > 0f && _spec.size.z > 0f, $"Map size {_spec.size} must be positive.");
-            var terrain = _spec.terrain;
-            var rising = terrain.waterLevel < terrain.height && terrain.height < terrain.maxHeight;
-            Require(rising, "Terrain heights must rise: waterLevel < height < maxHeight.");
-            Require(Mathf.IsPowerOfTwo(terrain.resolution - 1), $"Terrain resolution {terrain.resolution} must be 2^n + 1.");
-            Weather();
-            WarAge();
+            return;
         }
 
-        private void WarAge()
+        if (crossing.kind != MapCrossingSpec.Bridge)
         {
-            if (Array.IndexOf(Enum.GetNames(typeof(MapWarAge)), _spec.warAge) < 0)
-            {
-                Issues.Error($"The map spec's warAge '{_spec.warAge}' is not one of {string.Join(", ", Enum.GetNames(typeof(MapWarAge)))}.", Feature);
-                return;
-            }
-
-            Require(_spec.WarAge == MapWarAge.None || Climate.war != null,
-                $"warAge '{_spec.warAge}' needs climate '{Climate.key}' to name a warKit.");
+            Issues.Error(
+                $"{name}: crossing kind '{crossing.kind}' is neither '{MapCrossingSpec.Bridge}' nor '{MapCrossingSpec.Ford}'.",
+                Feature);
+            return;
         }
 
-        private void Weather()
+        if (string.IsNullOrEmpty(crossing.prop))
         {
-            if (string.IsNullOrEmpty(_spec.weather))
-            {
-                Issues.Error($"The map spec's 'weather' key is missing; name one of climate '{Climate.key}' weathers.", Feature);
-                return;
-            }
-
-            InClimate(Climate.weathers, _spec.weather, "weather", "The map spec's 'weather' key");
+            Issues.Error($"{name}: a bridge crossing needs a prop.", Feature);
+            return;
         }
 
-        private void Crossing(MapRiverSpec river, MapCrossingSpec crossing, string name)
+        // MapFieldCheck reports a prop that isn't in the palette.
+        if (!MapKeys.Contains(Palette.entries, crossing.prop))
         {
-            if (crossing.kind == MapCrossingSpec.Ford)
-            {
-                return;
-            }
-
-            if (crossing.kind != MapCrossingSpec.Bridge)
-            {
-                Issues.Error(
-                    $"{name}: crossing kind '{crossing.kind}' is neither '{MapCrossingSpec.Bridge}' nor '{MapCrossingSpec.Ford}'.",
-                    Feature);
-                return;
-            }
-
-            if (string.IsNullOrEmpty(crossing.prop))
-            {
-                Issues.Error($"{name}: a bridge crossing needs a prop.", Feature);
-                return;
-            }
-
-            // MapFieldCheck reports a prop that isn't in the palette.
-            if (!MapKeys.Contains(Palette.entries, crossing.prop))
-            {
-                return;
-            }
-
-            var entry = Palette.Entry(crossing.prop);
-            if (!entry.HasDeck)
-            {
-                Issues.Error($"{name}: bridge '{crossing.prop}' needs a prefab with a Nav Area of kind Deck on its root.",
-                    Feature);
-                return;
-            }
-
-            BridgeDeck(river, entry, name);
+            return;
         }
 
-        private void BridgeDeck(MapRiverSpec river, MapProp entry, string name)
+        var entry = Palette.Entry(crossing.prop);
+        if (!entry.HasDeck)
         {
-            var deck = MapDeck.Read(entry);
-            if (!deck.HasAbutments)
-            {
-                Issues.Error($"{name}: bridge '{entry.key}' needs abutments in its Nav Area, with a clear span above 0 and under its {deck.Size.y} m deck.",
-                    Feature);
-                return;
-            }
-
-            Require(deck.ClearSpan >= river.width + BridgeOverhang,
-                $"{name}: bridge '{entry.key}' ({deck.ClearSpan} m between its abutments) is too short for a {river.width} m river.");
+            Issues.Error($"{name}: bridge '{crossing.prop}' needs a prefab with a Nav Area of kind Deck on its root.",
+                Feature);
+            return;
         }
 
-        /// <summary>
-        /// Checks every feature of the spec array <paramref name="array"/>, named the way issues name it ("Road 2")
-        /// and reported against it.
-        /// </summary>
-        private void Each<T>(List<T> features, string array, string label, System.Action<T, string> check)
-        {
-            for (var i = 0; i < features.Count; i++)
-            {
-                Feature = new MapIssueFeature(array, i);
-                check(features[i], $"{label} {i + 1}");
-            }
+        BridgeDeck(river, entry, name);
+    }
 
-            Feature = MapIssueFeature.None;
+    private void BridgeDeck(MapRiverSpec river, MapProp entry, string name)
+    {
+        var deck = MapDeck.Read(entry);
+        if (!deck.HasAbutments)
+        {
+            Issues.Error($"{name}: bridge '{entry.key}' needs abutments in its Nav Area, with a clear span above 0 and under its {deck.Size.y} m deck.",
+                Feature);
+            return;
         }
+
+        Require(deck.ClearSpan >= river.width + BridgeOverhang,
+            $"{name}: bridge '{entry.key}' ({deck.ClearSpan} m between its abutments) is too short for a {river.width} m river.");
+    }
+
+    /// <summary>
+    /// Checks every feature of the spec array <paramref name="array"/>, named the way issues name it ("Road 2")
+    /// and reported against it.
+    /// </summary>
+    private void Each<T>(List<T> features, string array, string label, System.Action<T, string> check)
+    {
+        for (var i = 0; i < features.Count; i++)
+        {
+            Feature = new MapIssueFeature(array, i);
+            check(features[i], $"{label} {i + 1}");
+        }
+
+        Feature = MapIssueFeature.None;
     }
 }

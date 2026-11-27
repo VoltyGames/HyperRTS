@@ -10,135 +10,134 @@ using Unity.Rendering;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Tests.Rendering.LitTeam
+namespace HyperRTS.Presentation.Tests.Rendering.LitTeam;
+
+/// <summary>Team colours: tinting owned meshes and strip bands as owners and players change, and the colours the HUD reads.</summary>
+public class TeamColorTests
 {
-    /// <summary>Team colours: tinting owned meshes and strip bands as owners and players change, and the colours the HUD reads.</summary>
-    public class TeamColorTests
+    private static readonly float4 Blue = new(0f, 0f, 1f, 1f);
+    private static readonly float4 Red = new(1f, 0f, 0f, 1f);
+    private static readonly float4 Green = new(0f, 1f, 0f, 1f);
+
+    private PresentationWorldKit _kit;
+    private EntityManager _em;
+    private SystemHandle _teamColor;
+    private EntityCommandBufferSystem _commands;
+
+    [SetUp]
+    public void SetUp()
     {
-        private static readonly float4 Blue = new(0f, 0f, 1f, 1f);
-        private static readonly float4 Red = new(1f, 0f, 0f, 1f);
-        private static readonly float4 Green = new(0f, 1f, 0f, 1f);
+        _kit = new PresentationWorldKit("Team Color Tests");
+        _em = _kit.EntityManager;
+        _commands = _kit.World.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
+        _teamColor = _kit.World.CreateSystem<TeamColorSystem>();
+        _kit.AddPlayer(1, Blue, local: true);
+        _kit.AddPlayer(2, Red);
+    }
 
-        private PresentationWorldKit _kit;
-        private EntityManager _em;
-        private SystemHandle _teamColor;
-        private EntityCommandBufferSystem _commands;
+    [TearDown]
+    public void TearDown() => _kit.Dispose();
 
-        [SetUp]
-        public void SetUp()
-        {
-            _kit = new PresentationWorldKit("Team Color Tests");
-            _em = _kit.EntityManager;
-            _commands = _kit.World.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
-            _teamColor = _kit.World.CreateSystem<TeamColorSystem>();
-            _kit.AddPlayer(1, Blue, local: true);
-            _kit.AddPlayer(2, Red);
-        }
+    [Test]
+    public void OwnedMeshesAndChildren_AreTinted_NeutralLeftAlone()
+    {
+        var unit = Spawn(1, out var child);
+        var neutral = Spawn(Owner.Neutral, out _);
 
-        [TearDown]
-        public void TearDown() => _kit.Dispose();
+        Run();
 
-        [Test]
-        public void OwnedMeshesAndChildren_AreTinted_NeutralLeftAlone()
-        {
-            var unit = Spawn(1, out var child);
-            var neutral = Spawn(Owner.Neutral, out _);
+        Assert.AreEqual(Blue, Tint(unit));
+        Assert.AreEqual(Blue, Tint(child));
+        Assert.IsFalse(_em.HasComponent<TeamColor>(neutral));
+        Assert.IsFalse(_em.HasComponent<TeamStrip>(unit), "no band: the mask alone decides");
+    }
 
-            Run();
+    [Test]
+    public void GoingNeutral_DropsTheTint_AndANewOwnerTintsAgain()
+    {
+        var building = Spawn(1, out var child);
+        Run();
 
-            Assert.AreEqual(Blue, Tint(unit));
-            Assert.AreEqual(Blue, Tint(child));
-            Assert.IsFalse(_em.HasComponent<TeamColor>(neutral));
-            Assert.IsFalse(_em.HasComponent<TeamStrip>(unit), "no band: the mask alone decides");
-        }
+        SetOwner(building, Owner.Neutral);
+        Run();
+        Assert.IsFalse(_em.HasComponent<TeamColor>(building));
+        Assert.IsFalse(_em.HasComponent<TeamColor>(child), "back to its authored look");
 
-        [Test]
-        public void GoingNeutral_DropsTheTint_AndANewOwnerTintsAgain()
-        {
-            var building = Spawn(1, out var child);
-            Run();
+        SetOwner(building, 2);
+        Run();
+        Assert.AreEqual(Red, Tint(child));
+    }
 
-            SetOwner(building, Owner.Neutral);
-            Run();
-            Assert.IsFalse(_em.HasComponent<TeamColor>(building));
-            Assert.IsFalse(_em.HasComponent<TeamColor>(child), "back to its authored look");
+    [Test]
+    public void StripBand_IsCopiedFromTheRoot_AndDroppedWhenNeutral()
+    {
+        var building = Spawn(1, out var child);
+        _em.AddComponentData(building, new TeamStripBand { Bottom = 2f, Top = 2.4f });
+        Run();
+        Assert.AreEqual(new float4(2f, 2.4f, 0f, 0f), _em.GetComponentData<TeamStrip>(child).Value);
 
-            SetOwner(building, 2);
-            Run();
-            Assert.AreEqual(Red, Tint(child));
-        }
+        SetOwner(building, Owner.Neutral);
+        Run();
 
-        [Test]
-        public void StripBand_IsCopiedFromTheRoot_AndDroppedWhenNeutral()
-        {
-            var building = Spawn(1, out var child);
-            _em.AddComponentData(building, new TeamStripBand { Bottom = 2f, Top = 2.4f });
-            Run();
-            Assert.AreEqual(new float4(2f, 2.4f, 0f, 0f), _em.GetComponentData<TeamStrip>(child).Value);
+        Assert.IsFalse(_em.HasComponent<TeamStrip>(child));
+    }
 
-            SetOwner(building, Owner.Neutral);
-            Run();
+    [Test]
+    public void NewOwner_WaitsForItsPlayer()
+    {
+        var unit = Spawn(3, out _);
+        Run();
+        Assert.IsFalse(_em.HasComponent<TeamColor>(unit), "no player 3 yet");
 
-            Assert.IsFalse(_em.HasComponent<TeamStrip>(child));
-        }
+        _em.AddComponentData(_em.CreateEntity(), new Player { Owner = 3, Color = Green });
+        Run();
 
-        [Test]
-        public void NewOwner_WaitsForItsPlayer()
-        {
-            var unit = Spawn(3, out _);
-            Run();
-            Assert.IsFalse(_em.HasComponent<TeamColor>(unit), "no player 3 yet");
+        Assert.AreEqual(Green, Tint(unit));
+    }
 
-            _em.AddComponentData(_em.CreateEntity(), new Player { Owner = 3, Color = Green });
-            Run();
+    [Test]
+    public void HUDColors_ComeFromPlayers_UntilAnOverrideReplacesThem()
+    {
+        var view = new MatchView();
+        view.Refresh(_kit.World);
+        AssertColor(view, Color.red, 2);
 
-            Assert.AreEqual(Green, Tint(unit));
-        }
+        var colorOverride = new TeamColorOverride();
+        colorOverride.Colors.Add(new OwnerColor { Owner = 2, Color = Green });
+        var singleton = _em.CreateSingleton(colorOverride);
+        view.Refresh(_kit.World);
+        AssertColor(view, Color.green, 2);
+        AssertColor(view, Color.blue, 1, "owners the override doesn't list keep their colour");
 
-        [Test]
-        public void HUDColors_ComeFromPlayers_UntilAnOverrideReplacesThem()
-        {
-            var view = new MatchView();
-            view.Refresh(_kit.World);
-            AssertColor(view, Color.red, 2);
+        _em.DestroyEntity(singleton);
+        view.Refresh(_kit.World);
+        AssertColor(view, Color.red, 2);
+    }
 
-            var colorOverride = new TeamColorOverride();
-            colorOverride.Colors.Add(new OwnerColor { Owner = 2, Color = Green });
-            var singleton = _em.CreateSingleton(colorOverride);
-            view.Refresh(_kit.World);
-            AssertColor(view, Color.green, 2);
-            AssertColor(view, Color.blue, 1, "owners the override doesn't list keep their colour");
+    // Colours go through linear-to-gamma, so Color's approximate equality compares them.
+    private static void AssertColor(MatchView view, Color expected, byte owner, string message = null) =>
+        Assert.IsTrue(expected == view.GetColor(owner), message ?? $"owner {owner}: {view.GetColor(owner)}");
 
-            _em.DestroyEntity(singleton);
-            view.Refresh(_kit.World);
-            AssertColor(view, Color.red, 2);
-        }
+    // An owned root with one child mesh in its group, as baking leaves it.
+    private Entity Spawn(byte owner, out Entity child)
+    {
+        var root = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo));
+        _em.AddComponentData(root, new Owner { Value = owner });
+        _em.AddComponentData(root, new LocalToWorld { Value = float4x4.identity });
+        child = _em.CreateEntity(typeof(MaterialMeshInfo));
+        _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
+            new LinkedEntityGroup[] { root, child }, Allocator.Temp));
+        return root;
+    }
 
-        // Colours go through linear-to-gamma, so Color's approximate equality compares them.
-        private static void AssertColor(MatchView view, Color expected, byte owner, string message = null) =>
-            Assert.IsTrue(expected == view.GetColor(owner), message ?? $"owner {owner}: {view.GetColor(owner)}");
+    private void SetOwner(Entity root, byte owner) => _em.SetComponentData(root, new Owner { Value = owner });
 
-        // An owned root with one child mesh in its group, as baking leaves it.
-        private Entity Spawn(byte owner, out Entity child)
-        {
-            var root = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo));
-            _em.AddComponentData(root, new Owner { Value = owner });
-            _em.AddComponentData(root, new LocalToWorld { Value = float4x4.identity });
-            child = _em.CreateEntity(typeof(MaterialMeshInfo));
-            _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
-                new LinkedEntityGroup[] { root, child }, Allocator.Temp));
-            return root;
-        }
+    private float4 Tint(Entity entity) => _em.GetComponentData<TeamColor>(entity).Value;
 
-        private void SetOwner(Entity root, byte owner) => _em.SetComponentData(root, new Owner { Value = owner });
-
-        private float4 Tint(Entity entity) => _em.GetComponentData<TeamColor>(entity).Value;
-
-        private void Run()
-        {
-            _teamColor.Update(_kit.World.Unmanaged);
-            _commands.Update();
-            _em.CompleteAllTrackedJobs();
-        }
+    private void Run()
+    {
+        _teamColor.Update(_kit.World.Unmanaged);
+        _commands.Update();
+        _em.CompleteAllTrackedJobs();
     }
 }

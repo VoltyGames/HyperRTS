@@ -2,44 +2,43 @@ using HyperRTS.Presentation.Rendering.ContactShadows;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Tests.Rendering.ContactShadows
+namespace HyperRTS.Presentation.Tests.Rendering.ContactShadows;
+
+/// <summary>Contact shadow settings checks and the quality levels they run at.</summary>
+public class ContactShadowsFeatureTests
 {
-    /// <summary>Contact shadow settings checks and the quality levels they run at.</summary>
-    public class ContactShadowsFeatureTests
+    private ContactShadowsFeature _feature;
+
+    [SetUp]
+    public void SetUp()
     {
-        private ContactShadowsFeature _feature;
+        _feature = ScriptableObject.CreateInstance<ContactShadowsFeature>();
+    }
 
-        [SetUp]
-        public void SetUp()
-        {
-            _feature = ScriptableObject.CreateInstance<ContactShadowsFeature>();
-        }
+    [TearDown]
+    public void TearDown() => Object.DestroyImmediate(_feature);
 
-        [TearDown]
-        public void TearDown() => Object.DestroyImmediate(_feature);
+    [Test]
+    public void SettingsProblem_DefaultSettings_IsEmpty() => Assert.IsEmpty(_feature.SettingsProblem());
 
-        [Test]
-        public void SettingsProblem_DefaultSettings_IsEmpty() => Assert.IsEmpty(_feature.SettingsProblem());
-
-        [Test]
-        public void SettingsProblem_NamesTheBadSetting()
-        {
-            _feature.length = 0f;
-            StringAssert.Contains("length", _feature.SettingsProblem());
-            _feature.length = 1f;
-            _feature.steps = 0;
-            StringAssert.Contains("steps", _feature.SettingsProblem());
-            _feature.steps = 12;
-            _feature.thickness = -1f;
-            StringAssert.Contains("thickness", _feature.SettingsProblem());
-            _feature.thickness = 0.4f;
-            _feature.strength = 1.5f;
-            StringAssert.Contains("strength", _feature.SettingsProblem());
-            _feature.strength = 1f;
-            _feature.fadeEnd = _feature.fadeStart;
-            StringAssert.Contains("fade", _feature.SettingsProblem());
-            _feature.fadeStart = -1f;
-            StringAssert.Contains("fade", _feature.SettingsProblem());
-        }
+    [Test]
+    public void SettingsProblem_NamesTheBadSetting()
+    {
+        _feature.length = 0f;
+        StringAssert.Contains("length", _feature.SettingsProblem());
+        _feature.length = 1f;
+        _feature.steps = 0;
+        StringAssert.Contains("steps", _feature.SettingsProblem());
+        _feature.steps = 12;
+        _feature.thickness = -1f;
+        StringAssert.Contains("thickness", _feature.SettingsProblem());
+        _feature.thickness = 0.4f;
+        _feature.strength = 1.5f;
+        StringAssert.Contains("strength", _feature.SettingsProblem());
+        _feature.strength = 1f;
+        _feature.fadeEnd = _feature.fadeStart;
+        StringAssert.Contains("fade", _feature.SettingsProblem());
+        _feature.fadeStart = -1f;
+        StringAssert.Contains("fade", _feature.SettingsProblem());
     }
 }

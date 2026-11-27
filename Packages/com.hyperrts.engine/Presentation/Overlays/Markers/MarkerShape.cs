@@ -1,9 +1,8 @@
-namespace HyperRTS.Presentation.Overlays.Markers
+namespace HyperRTS.Presentation.Overlays.Markers;
+
+/// <summary>How a ground marker outlines its footprint.</summary>
+public enum MarkerShape : byte
 {
-    /// <summary>How a ground marker outlines its footprint.</summary>
-    public enum MarkerShape : byte
-    {
-        Outline = 0,
-        Brackets = 1,
-    }
+    Outline = 0,
+    Brackets = 1,
 }

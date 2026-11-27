@@ -1,45 +1,44 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Linq;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Animation.Rigs
+namespace HyperRTS.Presentation.Animation.Rigs;
+
+/// <summary>
+/// A track part of a <see cref="MotionRigAuthoring"/>, whose mesh gets the properties the shader bends it with.
+/// Fill from model adds it to each track.
+/// </summary>
+[AddComponentMenu("")]
+[Icon(HyperRTSIcons.TrackMeshAuthoring)]
+[HelpURL(HyperRTSDocs.Presentation)]
+[DisallowMultipleComponent]
+public class TrackMeshAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// A track part of a <see cref="MotionRigAuthoring"/>, whose mesh gets the properties the shader bends it with.
-    /// Fill from model adds it to each track.
-    /// </summary>
-    [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.TrackMeshAuthoring)]
-    [HelpURL(HyperRTSDocs.Presentation)]
-    [DisallowMultipleComponent]
-    public class TrackMeshAuthoring : AuthoringBehaviour
+    public class Baker : Baker<TrackMeshAuthoring>
     {
-        public class Baker : Baker<TrackMeshAuthoring>
+        public override void Bake(TrackMeshAuthoring authoring)
         {
-            public override void Bake(TrackMeshAuthoring authoring)
+            var rig = GetComponentInParent<MotionRigAuthoring>();
+            var track = rig == null ? null : rig.tracks.FirstOrDefault(slot => slot.part == authoring.transform);
+            if (track == null)
             {
-                var rig = GetComponentInParent<MotionRigAuthoring>();
-                var track = rig == null ? null : rig.tracks.FirstOrDefault(slot => slot.part == authoring.transform);
-                if (track == null)
-                {
-                    throw new InvalidOperationException($"Track Mesh '{authoring.name}' is not a track part in a Motion Rig.");
-                }
-
-                DependsOn(track.part);
-                foreach (var wheel in track.wheels)
-                {
-                    DependsOn(wheel);
-                }
-
-                var entity = GetEntity(TransformUsageFlags.Renderable);
-                AddComponent(entity, new TrackSpan { Value = track.Span(rig) });
-                AddComponent(entity, new TrackMeshSource { Rig = GetEntity(rig, TransformUsageFlags.Dynamic), Track = rig.tracks.IndexOf(track) });
-                AddComponent<TrackLift0>(entity);
-                AddComponent<TrackLift1>(entity);
-                AddComponent<TrackTravel>(entity);
+                throw new InvalidOperationException($"Track Mesh '{authoring.name}' is not a track part in a Motion Rig.");
             }
+
+            DependsOn(track.part);
+            foreach (var wheel in track.wheels)
+            {
+                DependsOn(wheel);
+            }
+
+            var entity = GetEntity(TransformUsageFlags.Renderable);
+            AddComponent(entity, new TrackSpan { Value = track.Span(rig) });
+            AddComponent(entity, new TrackMeshSource { Rig = GetEntity(rig, TransformUsageFlags.Dynamic), Track = rig.tracks.IndexOf(track) });
+            AddComponent<TrackLift0>(entity);
+            AddComponent<TrackLift1>(entity);
+            AddComponent<TrackTravel>(entity);
         }
     }
 }

@@ -8,254 +8,260 @@ using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
 using UnityEditor.PackageManager;
 
-namespace HyperRTS.Editor.Tests
+namespace HyperRTS.Editor.Tests;
+
+/// <summary>
+/// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, components
+/// declare their Add Component menu, types with statics cleanup are partial and no job turns its safety checks off.
+/// </summary>
+public class ModuleLayoutTests
 {
-    /// <summary>
-    /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, components
-    /// declare their Add Component menu, types with statics cleanup are partial and no job turns its safety checks off.
-    /// </summary>
-    public class ModuleLayoutTests
+    // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
+    private static readonly string[][] Tiers =
     {
-        // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
-        private static readonly string[][] Tiers =
+        new[] { "Common", "Stats" },
+        new[] { "Navigation", "Vision", "Selection", "Orders", "Cues" },
+        new[]
         {
-            new[] { "Common", "Stats" },
-            new[] { "Navigation", "Vision", "Selection", "Orders", "Cues" },
-            new[]
-            {
-                "Combat", "Destruction", "Transport", "Air", "Movement", "Resources", "Production", "Upgrades", "Buildings",
-                "Power", "Abilities", "Auras", "Veterancy", "Capture", "Match", "Status", "Airdrops", "Squads", "Death",
-                "Strikes",
-            },
-            new[] { "AI", "GameEntities", "MatchStart", "Commands", "Replays" },
-        };
+            "Combat", "Destruction", "Transport", "Air", "Movement", "Resources", "Production", "Upgrades", "Buildings",
+            "Power", "Abilities", "Auras", "Veterancy", "Capture", "Match", "Status", "Airdrops", "Squads", "Death",
+            "Strikes",
+        },
+        new[] { "AI", "GameEntities", "MatchStart", "Commands", "Replays" },
+    };
 
-        private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
-        private static readonly Regex PartialType = new(@"\bpartial (?:class|struct)\b");
-        private static readonly Regex StaticsCleanup = new(@"^\s*\[AutoStaticsCleanup\]", RegexOptions.Multiline);
-        private static readonly Regex SafetyBypass = new(@"\bNativeDisable(?:ParallelFor|ContainerSafety)Restriction\b");
-        private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
+    private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
+    private static readonly Regex PartialType = new(@"\bpartial (?:class|struct)\b");
+    private static readonly Regex StaticsCleanup = new(@"^\s*\[AutoStaticsCleanup\]", RegexOptions.Multiline);
+    private static readonly Regex SafetyBypass = new(@"\bNativeDisable(?:ParallelFor|ContainerSafety)Restriction\b");
+    private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
 
-        // Namespace-level declarations sit at a 4-space indent; nested ones (Baker, entry classes) at 8.
-        private static readonly Regex RuntimeType = new(
-            @"^ {4}(?:\w+ )*(?:struct (\w+)[^{\n]*\b(?:IComponentData|IBufferElementData|ISystem|IEnableableComponent)\b|enum (\w+))",
-            RegexOptions.Multiline);
+    // Nested types (Baker, entry classes) sit deeper than TypeSummaries.TopLevelIndent.
+    private static readonly Regex RuntimeType = new(
+        @"^( *)(?:\w+ )*(?:struct (\w+)[^{\n]*\b(?:IComponentData|IBufferElementData|ISystem|IEnableableComponent)\b|enum (\w+))",
+        RegexOptions.Multiline);
 
-        private static string PackageRoot =>
-            PackageInfo.FindForAssembly(typeof(AuthoringBehaviour).Assembly).resolvedPath;
+    private static string PackageRoot =>
+        PackageInfo.FindForAssembly(typeof(AuthoringBehaviour).Assembly).resolvedPath;
 
-        [Test]
-        public void TopLevelTypesHaveSummaries() => CollectionAssert.IsEmpty(TypeSummaries.Missing(PackageRoot));
+    [Test]
+    public void TopLevelTypesHaveSummaries() => CollectionAssert.IsEmpty(TypeSummaries.Missing(PackageRoot));
 
-        // Each component is listed under a path or hidden on purpose, never left in Unity's catch-all Scripts list.
-        [Test]
-        public void ComponentsDeclareTheirMenu() => CollectionAssert.IsEmpty(ComponentMenus.Missing("HyperRTS."));
+    // Each component is listed under a path or hidden on purpose, never left in Unity's catch-all Scripts list.
+    [Test]
+    public void ComponentsDeclareTheirMenu() => CollectionAssert.IsEmpty(ComponentMenus.Missing("HyperRTS."));
 
-        [Test]
-        public void NamespacesFollowFolders()
+    [Test]
+    public void NamespacesFollowFolders()
+    {
+        var wrong = new List<string>();
+        foreach (var path in Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories))
         {
-            var wrong = new List<string>();
-            foreach (var path in Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories))
+            var text = File.ReadAllText(path);
+            if (text.Contains("<auto-generated>"))
             {
-                var text = File.ReadAllText(path);
-                if (text.Contains("<auto-generated>"))
-                {
-                    continue;
-                }
-
-                var folder = RelativeTo(PackageRoot, Path.GetDirectoryName(path));
-                var expected = "HyperRTS." + folder.Replace(Path.DirectorySeparatorChar, '.');
-                var actual = Namespace.Match(text).Groups[1].Value;
-                if (actual != expected)
-                {
-                    wrong.Add($"{folder}/{Path.GetFileName(path)}: {actual}");
-                }
+                continue;
             }
 
-            Assert.IsEmpty(wrong, "Namespace must be HyperRTS.<folder path>:\n" + string.Join("\n", wrong));
-        }
-
-        [Test]
-        public void EveryModuleIsLayered()
-        {
-            var root = Path.Combine(PackageRoot, "Simulation");
-            // A module holds code: Analyzers holds only the analyzer every assembly gets.
-            var modules = Directory.EnumerateDirectories(root)
-                .Where(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories).Any())
-                .Select(Path.GetFileName)
-                .Where(name => name != "Tests")
-                .ToList();
-
-            var tiered = Tiers.SelectMany(tier => tier).ToList();
-            var untiered = modules.Except(tiered).ToList();
-            var unknown = tiered.Except(modules).ToList();
-            Assert.IsEmpty(untiered, "Add these modules to a tier in Tiers:\n" + string.Join("\n", untiered));
-            Assert.IsEmpty(unknown, "No such module, remove from Tiers:\n" + string.Join("\n", unknown));
-        }
-
-        [Test]
-        public void ModulesOnlyUseTheirTierOrLower()
-        {
-            var upward = new List<string>();
-            foreach (var dependency in SimulationDependencies())
+            var folder = RelativeTo(PackageRoot, Path.GetDirectoryName(path));
+            var expected = "HyperRTS." + folder.Replace(Path.DirectorySeparatorChar, '.');
+            var actual = Namespace.Match(text).Groups[1].Value;
+            if (actual != expected)
             {
-                var (module, used) = Split(dependency.Key);
-                if (TierIndex(used) > TierIndex(module))
-                {
-                    upward.Add($"{dependency.Key} ({string.Join(", ", dependency.Value)})");
-                }
+                wrong.Add($"{folder}/{Path.GetFileName(path)}: {actual}");
             }
-
-            Assert.IsEmpty(upward, "Uses of a higher tier (move the shared type lower):\n" + string.Join("\n", upward));
         }
 
-        [Test]
-        public void ModulesWithinATierHaveNoCycles()
-        {
-            var uses = new Dictionary<string, List<string>>();
-            foreach (var edge in SimulationDependencies().Keys)
-            {
-                var (module, used) = Split(edge);
-                if (TierIndex(module) != TierIndex(used))
-                {
-                    continue;
-                }
-
-                if (!uses.TryGetValue(module, out var targets))
-                {
-                    uses[module] = targets = new List<string>();
-                }
-
-                targets.Add(used);
-            }
-
-            var finished = new HashSet<string>();
-            var path = new List<string>();
-            var cycles = new List<string>();
-            foreach (var module in uses.Keys.OrderBy(name => name))
-            {
-                FindCycles(module, uses, path, finished, cycles);
-            }
-
-            Assert.IsEmpty(cycles, "Modules in one tier use each other in a cycle:\n" + string.Join("\n", cycles));
-        }
-
-        [Test]
-        public void AuthoringFilesHoldOnlyAuthoring()
-        {
-            var misplaced = new List<string>();
-            foreach (var path in Directory.EnumerateFiles(PackageRoot, "*Authoring.cs", SearchOption.AllDirectories))
-            {
-                foreach (Match match in RuntimeType.Matches(File.ReadAllText(path)))
-                {
-                    var type = match.Groups[1].Success ? match.Groups[1].Value : match.Groups[2].Value;
-                    misplaced.Add($"{RelativeTo(PackageRoot, path)}: {type}");
-                }
-            }
-
-            Assert.IsEmpty(misplaced, "Runtime types belong in their own files:\n" + string.Join("\n", misplaced));
-        }
-
-        // Unity's statics cleanup generates the other half of the type in player builds only, so the Editor compiles
-        // a type without `partial` and the player build fails.
-        [Test]
-        public void TypesWithStaticsCleanupArePartial()
-        {
-            var whole = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
-                .Where(path => StaticsCleanup.IsMatch(File.ReadAllText(path)))
-                .Where(path => !PartialType.IsMatch(File.ReadAllText(path)))
-                .Select(path => RelativeTo(PackageRoot, path))
-                .ToList();
-            Assert.IsEmpty(whole, "Types with [AutoStaticsCleanup] members must be partial:\n" + string.Join("\n", whole));
-        }
-
-        // A job that writes what the safety system can't see as its own must be restructured so it can, not exempted.
-        [Test]
-        public void JobsKeepTheirSafetyChecks()
-        {
-            var bypassing = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
-                .Where(path => SafetyBypass.IsMatch(File.ReadAllText(path)))
-                .Select(path => RelativeTo(PackageRoot, path))
-                .ToList();
-            Assert.IsEmpty(bypassing, "Jobs turn safety checks off in:\n" + string.Join("\n", bypassing));
-        }
-
-        /// <summary>
-        /// Each "Module -> Used" edge between Simulation modules (top folders) to the runtime files that create it.
-        /// Authoring files are left out: they assemble prefabs from every module's components.
-        /// </summary>
-        private static Dictionary<string, List<string>> SimulationDependencies()
-        {
-            var root = Path.Combine(PackageRoot, "Simulation");
-            var result = new Dictionary<string, List<string>>();
-            foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
-            {
-                var module = RelativeTo(root, path).Split(Path.DirectorySeparatorChar)[0];
-                if (module == "Tests" || module.EndsWith(".cs") || path.EndsWith("Authoring.cs"))
-                {
-                    continue;
-                }
-
-                foreach (Match match in SimulationUsing.Matches(File.ReadAllText(path)))
-                {
-                    var used = match.Groups[1].Value;
-                    if (used == module)
-                    {
-                        continue;
-                    }
-
-                    var edge = $"{module} -> {used}";
-                    if (!result.TryGetValue(edge, out var files))
-                    {
-                        result[edge] = files = new List<string>();
-                    }
-
-                    files.Add(RelativeTo(PackageRoot, path));
-                }
-            }
-
-            return result;
-        }
-
-        /// <summary>Depth-first walk that records each back edge as the cycle path it closes.</summary>
-        private static void FindCycles(string module, Dictionary<string, List<string>> uses, List<string> path,
-            HashSet<string> finished, List<string> cycles)
-        {
-            if (finished.Contains(module))
-            {
-                return;
-            }
-
-            var onPath = path.IndexOf(module);
-            if (onPath >= 0)
-            {
-                cycles.Add(string.Join(" -> ", path.Skip(onPath).Append(module)));
-                return;
-            }
-
-            path.Add(module);
-            if (uses.TryGetValue(module, out var targets))
-            {
-                foreach (var used in targets)
-                {
-                    FindCycles(used, uses, path, finished, cycles);
-                }
-            }
-
-            path.RemoveAt(path.Count - 1);
-            finished.Add(module);
-        }
-
-        private static int TierIndex(string module) => Array.FindIndex(Tiers, tier => tier.Contains(module));
-
-        private static (string Module, string Used) Split(string edge)
-        {
-            var modules = edge.Split(new[] { " -> " }, StringSplitOptions.None);
-            return (modules[0], modules[1]);
-        }
-
-        // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
-        private static string RelativeTo(string root, string path) =>
-            Path.GetFullPath(path).Substring(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1);
+        Assert.IsEmpty(wrong, "Namespace must be HyperRTS.<folder path>:\n" + string.Join("\n", wrong));
     }
+
+    [Test]
+    public void EveryModuleIsLayered()
+    {
+        var root = Path.Combine(PackageRoot, "Simulation");
+        // A module holds code: Analyzers holds only the analyzer every assembly gets.
+        var modules = Directory.EnumerateDirectories(root)
+            .Where(folder => Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories).Any())
+            .Select(Path.GetFileName)
+            .Where(name => name != "Tests")
+            .ToList();
+
+        var tiered = Tiers.SelectMany(tier => tier).ToList();
+        var untiered = modules.Except(tiered).ToList();
+        var unknown = tiered.Except(modules).ToList();
+        Assert.IsEmpty(untiered, "Add these modules to a tier in Tiers:\n" + string.Join("\n", untiered));
+        Assert.IsEmpty(unknown, "No such module, remove from Tiers:\n" + string.Join("\n", unknown));
+    }
+
+    [Test]
+    public void ModulesOnlyUseTheirTierOrLower()
+    {
+        var upward = new List<string>();
+        foreach (var dependency in SimulationDependencies())
+        {
+            var (module, used) = Split(dependency.Key);
+            if (TierIndex(used) > TierIndex(module))
+            {
+                upward.Add($"{dependency.Key} ({string.Join(", ", dependency.Value)})");
+            }
+        }
+
+        Assert.IsEmpty(upward, "Uses of a higher tier (move the shared type lower):\n" + string.Join("\n", upward));
+    }
+
+    [Test]
+    public void ModulesWithinATierHaveNoCycles()
+    {
+        var uses = new Dictionary<string, List<string>>();
+        foreach (var edge in SimulationDependencies().Keys)
+        {
+            var (module, used) = Split(edge);
+            if (TierIndex(module) != TierIndex(used))
+            {
+                continue;
+            }
+
+            if (!uses.TryGetValue(module, out var targets))
+            {
+                uses[module] = targets = new List<string>();
+            }
+
+            targets.Add(used);
+        }
+
+        var finished = new HashSet<string>();
+        var path = new List<string>();
+        var cycles = new List<string>();
+        foreach (var module in uses.Keys.OrderBy(name => name))
+        {
+            FindCycles(module, uses, path, finished, cycles);
+        }
+
+        Assert.IsEmpty(cycles, "Modules in one tier use each other in a cycle:\n" + string.Join("\n", cycles));
+    }
+
+    [Test]
+    public void AuthoringFilesHoldOnlyAuthoring()
+    {
+        var misplaced = new List<string>();
+        foreach (var path in Directory.EnumerateFiles(PackageRoot, "*Authoring.cs", SearchOption.AllDirectories))
+        {
+            var source = File.ReadAllText(path);
+            var indent = TypeSummaries.TopLevelIndent(source);
+            foreach (Match match in RuntimeType.Matches(source))
+            {
+                if (match.Groups[1].Length != indent)
+                {
+                    continue;
+                }
+
+                var type = match.Groups[2].Success ? match.Groups[2].Value : match.Groups[3].Value;
+                misplaced.Add($"{RelativeTo(PackageRoot, path)}: {type}");
+            }
+        }
+
+        Assert.IsEmpty(misplaced, "Runtime types belong in their own files:\n" + string.Join("\n", misplaced));
+    }
+
+    // Unity's statics cleanup generates the other half of the type in player builds only, so the Editor compiles
+    // a type without `partial` and the player build fails.
+    [Test]
+    public void TypesWithStaticsCleanupArePartial()
+    {
+        var whole = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => StaticsCleanup.IsMatch(File.ReadAllText(path)))
+            .Where(path => !PartialType.IsMatch(File.ReadAllText(path)))
+            .Select(path => RelativeTo(PackageRoot, path))
+            .ToList();
+        Assert.IsEmpty(whole, "Types with [AutoStaticsCleanup] members must be partial:\n" + string.Join("\n", whole));
+    }
+
+    // A job that writes what the safety system can't see as its own must be restructured so it can, not exempted.
+    [Test]
+    public void JobsKeepTheirSafetyChecks()
+    {
+        var bypassing = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
+            .Where(path => SafetyBypass.IsMatch(File.ReadAllText(path)))
+            .Select(path => RelativeTo(PackageRoot, path))
+            .ToList();
+        Assert.IsEmpty(bypassing, "Jobs turn safety checks off in:\n" + string.Join("\n", bypassing));
+    }
+
+    /// <summary>
+    /// Each "Module -> Used" edge between Simulation modules (top folders) to the runtime files that create it.
+    /// Authoring files are left out: they assemble prefabs from every module's components.
+    /// </summary>
+    private static Dictionary<string, List<string>> SimulationDependencies()
+    {
+        var root = Path.Combine(PackageRoot, "Simulation");
+        var result = new Dictionary<string, List<string>>();
+        foreach (var path in Directory.EnumerateFiles(root, "*.cs", SearchOption.AllDirectories))
+        {
+            var module = RelativeTo(root, path).Split(Path.DirectorySeparatorChar)[0];
+            if (module == "Tests" || module.EndsWith(".cs") || path.EndsWith("Authoring.cs"))
+            {
+                continue;
+            }
+
+            foreach (Match match in SimulationUsing.Matches(File.ReadAllText(path)))
+            {
+                var used = match.Groups[1].Value;
+                if (used == module)
+                {
+                    continue;
+                }
+
+                var edge = $"{module} -> {used}";
+                if (!result.TryGetValue(edge, out var files))
+                {
+                    result[edge] = files = new List<string>();
+                }
+
+                files.Add(RelativeTo(PackageRoot, path));
+            }
+        }
+
+        return result;
+    }
+
+    /// <summary>Depth-first walk that records each back edge as the cycle path it closes.</summary>
+    private static void FindCycles(string module, Dictionary<string, List<string>> uses, List<string> path,
+        HashSet<string> finished, List<string> cycles)
+    {
+        if (finished.Contains(module))
+        {
+            return;
+        }
+
+        var onPath = path.IndexOf(module);
+        if (onPath >= 0)
+        {
+            cycles.Add(string.Join(" -> ", path.Skip(onPath).Append(module)));
+            return;
+        }
+
+        path.Add(module);
+        if (uses.TryGetValue(module, out var targets))
+        {
+            foreach (var used in targets)
+            {
+                FindCycles(used, uses, path, finished, cycles);
+            }
+        }
+
+        path.RemoveAt(path.Count - 1);
+        finished.Add(module);
+    }
+
+    private static int TierIndex(string module) => Array.FindIndex(Tiers, tier => tier.Contains(module));
+
+    private static (string Module, string Used) Split(string edge)
+    {
+        var modules = edge.Split(new[] { " -> " }, StringSplitOptions.None);
+        return (modules[0], modules[1]);
+    }
+
+    // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
+    private static string RelativeTo(string root, string path) =>
+        Path.GetFullPath(path).Substring(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1);
 }

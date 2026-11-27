@@ -7,138 +7,137 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Vegetation;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Ground
+namespace HyperRTS.Editor.Maps.Ground;
+
+/// <summary>
+/// Paints the terrain layers from the land use, blending the two surfaces of each texel's nearest border across
+/// its band (<see cref="MapEdgeField"/>).
+/// </summary>
+public sealed class MapGroundTexturePainter
 {
-    /// <summary>
-    /// Paints the terrain layers from the land use, blending the two surfaces of each texel's nearest border across
-    /// its band (<see cref="MapEdgeField"/>).
-    /// </summary>
-    public sealed class MapGroundTexturePainter
+    private readonly MapLayout _layout;
+    private readonly MapHeights _heights;
+    private readonly MapClimate _climate;
+    private readonly MapNoise[] _mixNoise;
+    private readonly MapEdgeField _edges;
+    private readonly MapRowLines _rowLines;
+    private readonly MapFlow _flow;
+    private readonly int[] _regionLayer;
+    private readonly int[] _regionTramlineLayer;
+    private readonly MapSurfaceMix[][] _regionMixes;
+    private readonly int[][] _regionMixLayers;
+    private readonly int _slope;
+
+    private MapGroundTexturePainter(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
+        int resolution)
     {
-        private readonly MapLayout _layout;
-        private readonly MapHeights _heights;
-        private readonly MapClimate _climate;
-        private readonly MapNoise[] _mixNoise;
-        private readonly MapEdgeField _edges;
-        private readonly MapRowLines _rowLines;
-        private readonly MapFlow _flow;
-        private readonly int[] _regionLayer;
-        private readonly int[] _regionTramlineLayer;
-        private readonly MapSurfaceMix[][] _regionMixes;
-        private readonly int[][] _regionMixLayers;
-        private readonly int _slope;
-
-        private MapGroundTexturePainter(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
-            int resolution)
+        _layout = layout;
+        _heights = heights;
+        _climate = climate;
+        _edges = edges;
+        _rowLines = new MapRowLines(layout.Symmetry, edges, layout.TerrainBounds.width / resolution);
+        _flow = new MapFlow(layout.Symmetry, heights);
+        _regionLayer = new int[edges.RegionCount];
+        _regionTramlineLayer = new int[edges.RegionCount];
+        _regionMixes = new MapSurfaceMix[edges.RegionCount][];
+        _regionMixLayers = new int[edges.RegionCount][];
+        for (var i = 0; i < _regionLayer.Length; i++)
         {
-            _layout = layout;
-            _heights = heights;
-            _climate = climate;
-            _edges = edges;
-            _rowLines = new MapRowLines(layout.Symmetry, edges, layout.TerrainBounds.width / resolution);
-            _flow = new MapFlow(layout.Symmetry, heights);
-            _regionLayer = new int[edges.RegionCount];
-            _regionTramlineLayer = new int[edges.RegionCount];
-            _regionMixes = new MapSurfaceMix[edges.RegionCount][];
-            _regionMixLayers = new int[edges.RegionCount][];
-            for (var i = 0; i < _regionLayer.Length; i++)
-            {
-                var surface = edges.Surface(i);
-                _regionLayer[i] = climate.LayerIndex(surface.layer);
-                _regionTramlineLayer[i] = surface.tramlines.Any ? climate.LayerIndex(surface.tramlines.layer) : -1;
-                _regionMixes[i] = surface.mixes.ToArray();
-                _regionMixLayers[i] = surface.mixes.Select(mix => climate.LayerIndex(mix.layer)).ToArray();
-            }
-
-            // One noise per mix layer, so every surface's mixes of a layer agree where surfaces meet.
-            _mixNoise = MapNoise.CreateMany(layout, MapNoiseChannel.SurfaceMixes, climate.layers.Count);
-
-            _slope = climate.SurfaceLayer(climate.slopeSurface);
+            var surface = edges.Surface(i);
+            _regionLayer[i] = climate.LayerIndex(surface.layer);
+            _regionTramlineLayer[i] = surface.tramlines.Any ? climate.LayerIndex(surface.tramlines.layer) : -1;
+            _regionMixes[i] = surface.mixes.ToArray();
+            _regionMixLayers[i] = surface.mixes.Select(mix => climate.LayerIndex(mix.layer)).ToArray();
         }
 
-        /// <summary>Layer weights per texel, summing to 1 before they are stored as bytes.</summary>
-        public static MapTextureWeights Paint(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
-            int resolution)
-        {
-            var textureWeights = new MapTextureWeights(resolution, climate.layers.Count);
-            var painter = new MapGroundTexturePainter(layout, edges, heights, climate, resolution);
-            MapParallel.ForRows(resolution, () => new float[climate.layers.Count], (z, weights) => painter.Row(textureWeights, z, weights));
-            return textureWeights;
-        }
+        // One noise per mix layer, so every surface's mixes of a layer agree where surfaces meet.
+        _mixNoise = MapNoise.CreateMany(layout, MapNoiseChannel.SurfaceMixes, climate.layers.Count);
 
-        private void Row(MapTextureWeights textureWeights, int z, float[] weights)
+        _slope = climate.SurfaceLayer(climate.slopeSurface);
+    }
+
+    /// <summary>Layer weights per texel, summing to 1 before they are stored as bytes.</summary>
+    public static MapTextureWeights Paint(MapLayout layout, MapEdgeField edges, MapHeights heights, MapClimate climate,
+        int resolution)
+    {
+        var textureWeights = new MapTextureWeights(resolution, climate.layers.Count);
+        var painter = new MapGroundTexturePainter(layout, edges, heights, climate, resolution);
+        MapParallel.ForRows(resolution, () => new float[climate.layers.Count], (z, weights) => painter.Row(textureWeights, z, weights));
+        return textureWeights;
+    }
+
+    private void Row(MapTextureWeights textureWeights, int z, float[] weights)
+    {
+        var resolution = textureWeights.Resolution;
+        var area = _layout.TerrainBounds;
+        var texel = area.size / resolution;
+        for (var x = 0; x < resolution; x++)
         {
-            var resolution = textureWeights.Resolution;
-            var area = _layout.TerrainBounds;
-            var texel = area.size / resolution;
-            for (var x = 0; x < resolution; x++)
+            var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), texel);
+            System.Array.Clear(weights, 0, weights.Length);
+            Surfaces(weights, p);
+            var steepness = (_heights.Slope(p) - _climate.slopeStart) / (_climate.slopeFull - _climate.slopeStart);
+            Over(weights, _slope, MapGeometry.Smooth(steepness));
+            for (var l = 0; l < weights.Length; l++)
             {
-                var p = area.min + Vector2.Scale(new Vector2(x + 0.5f, z + 0.5f), texel);
-                System.Array.Clear(weights, 0, weights.Length);
-                Surfaces(weights, p);
-                var steepness = (_heights.Slope(p) - _climate.slopeStart) / (_climate.slopeFull - _climate.slopeStart);
-                Over(weights, _slope, MapGeometry.Smooth(steepness));
-                for (var l = 0; l < weights.Length; l++)
-                {
-                    textureWeights[x, z, l] = weights[l];
-                }
+                textureWeights[x, z, l] = weights[l];
             }
         }
+    }
 
-        /// <summary>Splits the texel between the two sides of its nearest border.</summary>
-        private void Surfaces(float[] weights, Vector2 p)
+    /// <summary>Splits the texel between the two sides of its nearest border.</summary>
+    private void Surfaces(float[] weights, Vector2 p)
+    {
+        var edge = _edges.Sample(p);
+        var share = edge.OwnShare;
+        var wheels = share * _rowLines.Tramline(edge.Own, p);
+        if (wheels > 0f)
         {
-            var edge = _edges.Sample(p);
-            var share = edge.OwnShare;
-            var wheels = share * _rowLines.Tramline(edge.Own, p);
-            if (wheels > 0f)
-            {
-                weights[_regionTramlineLayer[edge.Own]] += wheels;
-            }
-
-            Region(weights, edge.Own, share - wheels, edge.Point);
-            if (share < 1f)
-            {
-                Region(weights, edge.Other, 1f - share, edge.Point);
-            }
+            weights[_regionTramlineLayer[edge.Own]] += wheels;
         }
 
-        /// <summary>The region's own layer, with its surface's mixes painted over it in order.</summary>
-        private void Region(float[] weights, int region, float amount, Vector2 p)
+        Region(weights, edge.Own, share - wheels, edge.Point);
+        if (share < 1f)
         {
-            var left = amount;
-            var mixes = _regionMixes[region];
-            for (var i = 0; i < mixes.Length; i++)
-            {
-                var layer = _regionMixLayers[region][i];
-                var cover = left * Mix(layer, mixes[i], p);
-                weights[layer] += cover;
-                left -= cover;
-            }
+            Region(weights, edge.Other, 1f - share, edge.Point);
+        }
+    }
 
-            weights[_regionLayer[region]] += left;
+    /// <summary>The region's own layer, with its surface's mixes painted over it in order.</summary>
+    private void Region(float[] weights, int region, float amount, Vector2 p)
+    {
+        var left = amount;
+        var mixes = _regionMixes[region];
+        for (var i = 0; i < mixes.Length; i++)
+        {
+            var layer = _regionMixLayers[region][i];
+            var cover = left * Mix(layer, mixes[i], p);
+            weights[layer] += cover;
+            left -= cover;
         }
 
-        /// <summary>Noise blotches covering about <see cref="MapSurfaceMix.coverage"/> of the surface.</summary>
-        private float Mix(int layer, MapSurfaceMix mix, Vector2 p)
+        weights[_regionLayer[region]] += left;
+    }
+
+    /// <summary>Noise blotches covering about <see cref="MapSurfaceMix.coverage"/> of the surface.</summary>
+    private float Mix(int layer, MapSurfaceMix mix, Vector2 p)
+    {
+        var coverage = mix.alongFlow > 0f ? Mathf.Clamp01(mix.coverage + mix.alongFlow * _flow.At(p)) : mix.coverage;
+        return _mixNoise[layer].Blotches(p, mix.size, coverage);
+    }
+
+    private static void Over(float[] weights, int layer, float alpha)
+    {
+        if (alpha <= 0f)
         {
-            var coverage = mix.alongFlow > 0f ? Mathf.Clamp01(mix.coverage + mix.alongFlow * _flow.At(p)) : mix.coverage;
-            return _mixNoise[layer].Blotches(p, mix.size, coverage);
+            return;
         }
 
-        private static void Over(float[] weights, int layer, float alpha)
+        for (var i = 0; i < weights.Length; i++)
         {
-            if (alpha <= 0f)
-            {
-                return;
-            }
-
-            for (var i = 0; i < weights.Length; i++)
-            {
-                weights[i] *= 1f - alpha;
-            }
-
-            weights[layer] += alpha;
+            weights[i] *= 1f - alpha;
         }
+
+        weights[layer] += alpha;
     }
 }

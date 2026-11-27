@@ -4,78 +4,77 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Audio
+namespace HyperRTS.Presentation.Audio;
+
+/// <summary>Continuous sounds a unit or building plays while shown: engine, rotor, turret, work and hum.</summary>
+[AddComponentMenu(HyperRTSMenu.Look + "Audio/Entity Loops")]
+[Icon(HyperRTSIcons.EntityLoopsAuthoring)]
+[HelpURL(HyperRTSDocs.Audio)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
+public class EntityLoopsAuthoring : AuthoringBehaviour
 {
-    /// <summary>Continuous sounds a unit or building plays while shown: engine, rotor, turret, work and hum.</summary>
-    [AddComponentMenu(HyperRTSMenu.Look + "Audio/Entity Loops")]
-    [Icon(HyperRTSIcons.EntityLoopsAuthoring)]
-    [HelpURL(HyperRTSDocs.Audio)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class EntityLoopsAuthoring : AuthoringBehaviour
+    [Header("Engine")]
+    [Tooltip("At rest; fades out as it speeds up.")]
+    public SoundCue engineIdle;
+
+    [Tooltip("Under way; fades in and pitches up with speed.")]
+    public SoundCue engineMove;
+
+    [Tooltip("Speed at which the move loop is full and the idle loop silent.")]
+    [Unit("m/s")]
+    [Min(0.1f)]
+    public float fullSpeed = 8f;
+
+    [Tooltip("Extra pitch at full speed, as a fraction (0.15 is 15% higher).")]
+    [Range(0f, 1f)]
+    public float pitchRise = 0.15f;
+
+    [Header("Rotor")]
+    [Tooltip("Follows the motion rig's rotors; without one, full while the aircraft flies.")]
+    public SoundCue rotor;
+
+    [Header("Other")]
+    [Tooltip("While any weapon turns.")]
+    public SoundCue turretTraverse;
+
+    [Tooltip("While under construction or producing.")]
+    public SoundCue working;
+
+    [Tooltip("Always while shown, such as a generator hum.")]
+    public SoundCue ambient;
+
+    [Tooltip("While one of its machines opens or closes, such as a silo door; a clip as long as the machine's ramp never repeats.")]
+    public SoundCue machine;
+
+    public static DynamicBuffer<EntityLoopSound> Add(EntityWriter writer, float fullSpeed, float pitchRise)
     {
-        [Header("Engine")]
-        [Tooltip("At rest; fades out as it speeds up.")]
-        public SoundCue engineIdle;
+        writer.Add(new LoopSoundTuning { FullSpeed = fullSpeed, PitchRise = pitchRise });
+        return writer.AddBuffer<EntityLoopSound>();
+    }
 
-        [Tooltip("Under way; fades in and pitches up with speed.")]
-        public SoundCue engineMove;
-
-        [Tooltip("Speed at which the move loop is full and the idle loop silent.")]
-        [Unit("m/s")]
-        [Min(0.1f)]
-        public float fullSpeed = 8f;
-
-        [Tooltip("Extra pitch at full speed, as a fraction (0.15 is 15% higher).")]
-        [Range(0f, 1f)]
-        public float pitchRise = 0.15f;
-
-        [Header("Rotor")]
-        [Tooltip("Follows the motion rig's rotors; without one, full while the aircraft flies.")]
-        public SoundCue rotor;
-
-        [Header("Other")]
-        [Tooltip("While any weapon turns.")]
-        public SoundCue turretTraverse;
-
-        [Tooltip("While under construction or producing.")]
-        public SoundCue working;
-
-        [Tooltip("Always while shown, such as a generator hum.")]
-        public SoundCue ambient;
-
-        [Tooltip("While one of its machines opens or closes, such as a silo door; a clip as long as the machine's ramp never repeats.")]
-        public SoundCue machine;
-
-        public static DynamicBuffer<EntityLoopSound> Add(EntityWriter writer, float fullSpeed, float pitchRise)
+    /// <summary>Unset cues are skipped, so the slot stays silent.</summary>
+    public static void Set(DynamicBuffer<EntityLoopSound> loops, LoopSlot slot, SoundCue cue)
+    {
+        if (cue != null)
         {
-            writer.Add(new LoopSoundTuning { FullSpeed = fullSpeed, PitchRise = pitchRise });
-            return writer.AddBuffer<EntityLoopSound>();
+            loops.Add(new EntityLoopSound { Slot = slot, Cue = cue });
         }
+    }
 
-        /// <summary>Unset cues are skipped, so the slot stays silent.</summary>
-        public static void Set(DynamicBuffer<EntityLoopSound> loops, LoopSlot slot, SoundCue cue)
+    public class Baker : Baker<EntityLoopsAuthoring>
+    {
+        public override void Bake(EntityLoopsAuthoring authoring)
         {
-            if (cue != null)
-            {
-                loops.Add(new EntityLoopSound { Slot = slot, Cue = cue });
-            }
-        }
-
-        public class Baker : Baker<EntityLoopsAuthoring>
-        {
-            public override void Bake(EntityLoopsAuthoring authoring)
-            {
-                var writer = this.Writer();
-                var loops = EntityLoopsAuthoring.Add(writer, authoring.fullSpeed, authoring.pitchRise);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, authoring.engineIdle);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.EngineMove, authoring.engineMove);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, authoring.rotor);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.TurretTraverse, authoring.turretTraverse);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.Working, authoring.working);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.Ambient, authoring.ambient);
-                EntityLoopsAuthoring.Set(loops, LoopSlot.Machine, authoring.machine);
-            }
+            var writer = this.Writer();
+            var loops = EntityLoopsAuthoring.Add(writer, authoring.fullSpeed, authoring.pitchRise);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.EngineIdle, authoring.engineIdle);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.EngineMove, authoring.engineMove);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.Rotor, authoring.rotor);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.TurretTraverse, authoring.turretTraverse);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.Working, authoring.working);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.Ambient, authoring.ambient);
+            EntityLoopsAuthoring.Set(loops, LoopSlot.Machine, authoring.machine);
         }
     }
 }

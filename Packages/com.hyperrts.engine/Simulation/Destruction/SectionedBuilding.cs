@@ -4,289 +4,288 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Destruction
+namespace HyperRTS.Simulation.Destruction;
+
+/// <summary>
+/// A building made of <see cref="Section"/>s: hits land on the sections they reach, cut-off sections fall, and its health is the sum of theirs.
+/// Only <see cref="Broken"/> reaches clients.
+/// </summary>
+public struct SectionedBuilding : IComponentData
 {
-    /// <summary>
-    /// A building made of <see cref="Section"/>s: hits land on the sections they reach, cut-off sections fall, and its health is the sum of theirs.
-    /// Only <see cref="Broken"/> reaches clients.
-    /// </summary>
-    public struct SectionedBuilding : IComponentData
+    /// <summary>Seconds between one support level falling and the next.</summary>
+    public const float FallDelay = 0.3f;
+
+    /// <summary>The health a building keeps while its last pieces fall, so it stays until <see cref="DiesAt"/>.</summary>
+    public const float LingeringHealth = 0.01f;
+
+    [GhostField] public ulong Broken;
+
+    /// <summary>Standing but cut off from every anchor, waiting to fall.</summary>
+    public ulong Falling;
+
+    /// <summary>Broken by falling rather than by a hit, so their floor is lost.</summary>
+    public ulong Fell;
+
+    /// <summary>The broken mask the last settling saw, so rubble and paths follow what changed since.</summary>
+    public ulong Settled;
+
+    /// <summary>The broken mask the last collapse check saw, so supports are flooded only after a change.</summary>
+    public ulong Checked;
+
+    /// <summary>When the next level of <see cref="Falling"/> comes down; 0 while nothing falls.</summary>
+    public double NextFall;
+
+    /// <summary>When a building whose every section is broken dies, once their pieces have fallen; 0 while one stands.</summary>
+    public double DiesAt;
+
+    /// <summary>Breaks so far, which numbers each <see cref="Section.BreakOrder"/>.</summary>
+    public int Breaks;
+
+    /// <summary>Heap left at the foot of a broken ground-floor outer wall; <c>Entity.Null</c> for none.</summary>
+    public Entity Rubble;
+
+    /// <summary>Takes up to <paramref name="amount"/> from section <paramref name="index"/>, breaking it at 0.</summary>
+    public float Damage(DynamicBuffer<Section> sections, int index, float amount)
     {
-        /// <summary>Seconds between one support level falling and the next.</summary>
-        public const float FallDelay = 0.3f;
-
-        /// <summary>The health a building keeps while its last pieces fall, so it stays until <see cref="DiesAt"/>.</summary>
-        public const float LingeringHealth = 0.01f;
-
-        [GhostField] public ulong Broken;
-
-        /// <summary>Standing but cut off from every anchor, waiting to fall.</summary>
-        public ulong Falling;
-
-        /// <summary>Broken by falling rather than by a hit, so their floor is lost.</summary>
-        public ulong Fell;
-
-        /// <summary>The broken mask the last settling saw, so rubble and paths follow what changed since.</summary>
-        public ulong Settled;
-
-        /// <summary>The broken mask the last collapse check saw, so supports are flooded only after a change.</summary>
-        public ulong Checked;
-
-        /// <summary>When the next level of <see cref="Falling"/> comes down; 0 while nothing falls.</summary>
-        public double NextFall;
-
-        /// <summary>When a building whose every section is broken dies, once their pieces have fallen; 0 while one stands.</summary>
-        public double DiesAt;
-
-        /// <summary>Breaks so far, which numbers each <see cref="Section.BreakOrder"/>.</summary>
-        public int Breaks;
-
-        /// <summary>Heap left at the foot of a broken ground-floor outer wall; <c>Entity.Null</c> for none.</summary>
-        public Entity Rubble;
-
-        /// <summary>Takes up to <paramref name="amount"/> from section <paramref name="index"/>, breaking it at 0.</summary>
-        public float Damage(DynamicBuffer<Section> sections, int index, float amount)
+        var section = sections[index];
+        var dealt = math.min(section.Health, math.max(amount, 0f));
+        section.Health -= dealt;
+        if (section.Health <= 0f)
         {
-            var section = sections[index];
-            var dealt = math.min(section.Health, math.max(amount, 0f));
-            section.Health -= dealt;
-            if (section.Health <= 0f)
+            section.Health = 0f;
+            section.BreakOrder = ++Breaks;
+            Broken |= 1ul << index;
+            Falling &= ~(1ul << index);
+        }
+
+        sections[index] = section;
+        return dealt;
+    }
+
+    /// <summary>
+    /// Breaks and rebuilds sections so exactly those in <paramref name="broken"/> stand broken, as another world
+    /// decided; the settling that follows opens paths and drops rubble.
+    /// </summary>
+    public void SetBroken(DynamicBuffer<Section> sections, ulong broken)
+    {
+        if (Broken == broken)
+        {
+            return;
+        }
+
+        for (var i = 0; i < sections.Length; i++)
+        {
+            var section = sections[i];
+            var now = (broken & (1ul << i)) != 0;
+            if (now != section.IsBroken)
             {
-                section.Health = 0f;
-                section.BreakOrder = ++Breaks;
-                Broken |= 1ul << index;
-                Falling &= ~(1ul << index);
+                section.Health = now ? 0f : section.MaxHealth;
+                section.BreakOrder = now ? ++Breaks : 0;
+                sections[i] = section;
+            }
+        }
+
+        Broken = broken;
+    }
+
+    /// <summary>The mask with a bit for each of <paramref name="count"/> sections.</summary>
+    public static ulong All(int count) => count >= 64 ? ~0ul : (1ul << count) - 1ul;
+
+    /// <summary>The mask of the building's <paramref name="count"/> sections still standing.</summary>
+    public readonly ulong Standing(int count) => All(count) & ~Broken;
+
+    /// <summary>Standing sections that reach an anchor through standing supports.</summary>
+    public static ulong Supported(DynamicBuffer<Section> sections)
+    {
+        var supported = 0ul;
+        var grew = true;
+        while (grew)
+        {
+            grew = false;
+            for (var i = 0; i < sections.Length; i++)
+            {
+                var bit = 1ul << i;
+                var section = sections[i];
+                if ((supported & bit) != 0 || section.IsBroken)
+                {
+                    continue;
+                }
+
+                if (section.StandsOn(supported))
+                {
+                    supported |= bit;
+                    grew = true;
+                }
+            }
+        }
+
+        return supported;
+    }
+
+    /// <summary>Falling sections whose supports are all down, or all of them when they only hold each other up.</summary>
+    public readonly ulong DueToFall(DynamicBuffer<Section> sections)
+    {
+        var due = 0ul;
+        for (var i = 0; i < sections.Length; i++)
+        {
+            if ((Falling & (1ul << i)) != 0 && (sections[i].Holders & ~Broken) == 0)
+            {
+                due |= 1ul << i;
+            }
+        }
+
+        return due != 0 ? due : Falling;
+    }
+
+    /// <summary>Whether section <paramref name="index"/> closes its nav part: one that <see cref="Section.Closes"/>, not broken.</summary>
+    public readonly bool Blocks(DynamicBuffer<Section> sections, int index) =>
+        sections[index].Closes && (Broken & (1ul << index)) == 0;
+
+    /// <summary>Floors, a bit each, that lost a section to a fall.</summary>
+    public readonly byte FallenFloors(DynamicBuffer<Section> sections)
+    {
+        var floors = 0;
+        for (var i = 0; i < sections.Length; i++)
+        {
+            if ((Fell & (1ul << i)) != 0)
+            {
+                floors |= 1 << sections[i].Floor;
+            }
+        }
+
+        return (byte)floors;
+    }
+
+    /// <summary>The standing share of the outer walls' health, which is how much a garrison is sheltered.</summary>
+    public static float Intact(DynamicBuffer<Section> sections)
+    {
+        var health = 0f;
+        var max = 0f;
+        foreach (var section in sections)
+        {
+            if (section.Exterior)
+            {
+                health += section.Health;
+                max += section.MaxHealth;
+            }
+        }
+
+        return max > 0f ? health / max : 1f;
+    }
+
+    /// <summary>
+    /// The first standing section the line from <paramref name="origin"/> to <paramref name="position"/> enters, else
+    /// the nearest.
+    /// </summary>
+    public static int Entry(DynamicBuffer<Section> sections, float3 origin, float3 position)
+    {
+        var entry = -1;
+        var nearest = float.MaxValue;
+        for (var i = 0; i < sections.Length; i++)
+        {
+            if (!sections[i].IsBroken && sections[i].Enters(origin, position, out var along) && along < nearest)
+            {
+                nearest = along;
+                entry = i;
+            }
+        }
+
+        return entry >= 0 ? entry : Nearest(sections, position);
+    }
+
+    private static int Nearest(DynamicBuffer<Section> sections, float3 position)
+    {
+        var nearest = Closest.None;
+        for (var i = 0; i < sections.Length; i++)
+        {
+            if (!sections[i].IsBroken)
+            {
+                nearest.Consider(i, Entity.Null, sections[i].Gap(position));
+            }
+        }
+
+        return nearest.Index;
+    }
+
+    /// <summary>
+    /// Rebuilds the latest broken section first, each coming back once full, then mends the standing ones.
+    /// Returns the health restored.
+    /// </summary>
+    public float Repair(DynamicBuffer<Section> sections, float amount)
+    {
+        var restored = 0f;
+        while (amount > 0f)
+        {
+            var index = NextRepair(sections);
+            if (index < 0)
+            {
+                break;
+            }
+
+            var section = sections[index];
+            var added = math.min(section.MaxHealth - section.Health, amount);
+            section.Health += added;
+            amount -= added;
+            restored += added;
+            if (section.IsBroken && section.Health >= section.MaxHealth)
+            {
+                section.BreakOrder = 0;
+                Broken &= ~(1ul << index);
+                Fell &= ~(1ul << index);
             }
 
             sections[index] = section;
-            return dealt;
         }
 
-        /// <summary>
-        /// Breaks and rebuilds sections so exactly those in <paramref name="broken"/> stand broken, as another world
-        /// decided; the settling that follows opens paths and drops rubble.
-        /// </summary>
-        public void SetBroken(DynamicBuffer<Section> sections, ulong broken)
+        return restored;
+    }
+
+    /// <summary>The section a heal reaches next, the latest broken one that can stand else a damaged one; -1 when all are whole.</summary>
+    public static int NextRepair(DynamicBuffer<Section> sections)
+    {
+        var index = Latest(sections);
+        return index >= 0 ? index : Damaged(sections);
+    }
+
+    /// <summary>The sections' health added up, which is the building's health.</summary>
+    public static float Total(DynamicBuffer<Section> sections)
+    {
+        var total = 0f;
+        foreach (var section in sections)
         {
-            if (Broken == broken)
-            {
-                return;
-            }
-
-            for (var i = 0; i < sections.Length; i++)
-            {
-                var section = sections[i];
-                var now = (broken & (1ul << i)) != 0;
-                if (now != section.IsBroken)
-                {
-                    section.Health = now ? 0f : section.MaxHealth;
-                    section.BreakOrder = now ? ++Breaks : 0;
-                    sections[i] = section;
-                }
-            }
-
-            Broken = broken;
+            total += section.Health;
         }
 
-        /// <summary>The mask with a bit for each of <paramref name="count"/> sections.</summary>
-        public static ulong All(int count) => count >= 64 ? ~0ul : (1ul << count) - 1ul;
+        return total;
+    }
 
-        /// <summary>The mask of the building's <paramref name="count"/> sections still standing.</summary>
-        public readonly ulong Standing(int count) => All(count) & ~Broken;
-
-        /// <summary>Standing sections that reach an anchor through standing supports.</summary>
-        public static ulong Supported(DynamicBuffer<Section> sections)
+    private static int Latest(DynamicBuffer<Section> sections)
+    {
+        // One that cannot stand yet would only fall again, so supports are rebuilt before what rests on them.
+        var supported = Supported(sections);
+        var latest = -1;
+        for (var i = 0; i < sections.Length; i++)
         {
-            var supported = 0ul;
-            var grew = true;
-            while (grew)
+            var stands = sections[i].StandsOn(supported);
+            if (sections[i].IsBroken && stands && (latest < 0 || sections[i].BreakOrder > sections[latest].BreakOrder))
             {
-                grew = false;
-                for (var i = 0; i < sections.Length; i++)
-                {
-                    var bit = 1ul << i;
-                    var section = sections[i];
-                    if ((supported & bit) != 0 || section.IsBroken)
-                    {
-                        continue;
-                    }
-
-                    if (section.StandsOn(supported))
-                    {
-                        supported |= bit;
-                        grew = true;
-                    }
-                }
+                latest = i;
             }
-
-            return supported;
         }
 
-        /// <summary>Falling sections whose supports are all down, or all of them when they only hold each other up.</summary>
-        public readonly ulong DueToFall(DynamicBuffer<Section> sections)
+        return latest;
+    }
+
+    private static int Damaged(DynamicBuffer<Section> sections)
+    {
+        for (var i = 0; i < sections.Length; i++)
         {
-            var due = 0ul;
-            for (var i = 0; i < sections.Length; i++)
+            if (sections[i].Health < sections[i].MaxHealth)
             {
-                if ((Falling & (1ul << i)) != 0 && (sections[i].Holders & ~Broken) == 0)
-                {
-                    due |= 1ul << i;
-                }
+                return i;
             }
-
-            return due != 0 ? due : Falling;
         }
 
-        /// <summary>Whether section <paramref name="index"/> closes its nav part: one that <see cref="Section.Closes"/>, not broken.</summary>
-        public readonly bool Blocks(DynamicBuffer<Section> sections, int index) =>
-            sections[index].Closes && (Broken & (1ul << index)) == 0;
-
-        /// <summary>Floors, a bit each, that lost a section to a fall.</summary>
-        public readonly byte FallenFloors(DynamicBuffer<Section> sections)
-        {
-            var floors = 0;
-            for (var i = 0; i < sections.Length; i++)
-            {
-                if ((Fell & (1ul << i)) != 0)
-                {
-                    floors |= 1 << sections[i].Floor;
-                }
-            }
-
-            return (byte)floors;
-        }
-
-        /// <summary>The standing share of the outer walls' health, which is how much a garrison is sheltered.</summary>
-        public static float Intact(DynamicBuffer<Section> sections)
-        {
-            var health = 0f;
-            var max = 0f;
-            foreach (var section in sections)
-            {
-                if (section.Exterior)
-                {
-                    health += section.Health;
-                    max += section.MaxHealth;
-                }
-            }
-
-            return max > 0f ? health / max : 1f;
-        }
-
-        /// <summary>
-        /// The first standing section the line from <paramref name="origin"/> to <paramref name="position"/> enters, else
-        /// the nearest.
-        /// </summary>
-        public static int Entry(DynamicBuffer<Section> sections, float3 origin, float3 position)
-        {
-            var entry = -1;
-            var nearest = float.MaxValue;
-            for (var i = 0; i < sections.Length; i++)
-            {
-                if (!sections[i].IsBroken && sections[i].Enters(origin, position, out var along) && along < nearest)
-                {
-                    nearest = along;
-                    entry = i;
-                }
-            }
-
-            return entry >= 0 ? entry : Nearest(sections, position);
-        }
-
-        private static int Nearest(DynamicBuffer<Section> sections, float3 position)
-        {
-            var nearest = Closest.None;
-            for (var i = 0; i < sections.Length; i++)
-            {
-                if (!sections[i].IsBroken)
-                {
-                    nearest.Consider(i, Entity.Null, sections[i].Gap(position));
-                }
-            }
-
-            return nearest.Index;
-        }
-
-        /// <summary>
-        /// Rebuilds the latest broken section first, each coming back once full, then mends the standing ones.
-        /// Returns the health restored.
-        /// </summary>
-        public float Repair(DynamicBuffer<Section> sections, float amount)
-        {
-            var restored = 0f;
-            while (amount > 0f)
-            {
-                var index = NextRepair(sections);
-                if (index < 0)
-                {
-                    break;
-                }
-
-                var section = sections[index];
-                var added = math.min(section.MaxHealth - section.Health, amount);
-                section.Health += added;
-                amount -= added;
-                restored += added;
-                if (section.IsBroken && section.Health >= section.MaxHealth)
-                {
-                    section.BreakOrder = 0;
-                    Broken &= ~(1ul << index);
-                    Fell &= ~(1ul << index);
-                }
-
-                sections[index] = section;
-            }
-
-            return restored;
-        }
-
-        /// <summary>The section a heal reaches next, the latest broken one that can stand else a damaged one; -1 when all are whole.</summary>
-        public static int NextRepair(DynamicBuffer<Section> sections)
-        {
-            var index = Latest(sections);
-            return index >= 0 ? index : Damaged(sections);
-        }
-
-        /// <summary>The sections' health added up, which is the building's health.</summary>
-        public static float Total(DynamicBuffer<Section> sections)
-        {
-            var total = 0f;
-            foreach (var section in sections)
-            {
-                total += section.Health;
-            }
-
-            return total;
-        }
-
-        private static int Latest(DynamicBuffer<Section> sections)
-        {
-            // One that cannot stand yet would only fall again, so supports are rebuilt before what rests on them.
-            var supported = Supported(sections);
-            var latest = -1;
-            for (var i = 0; i < sections.Length; i++)
-            {
-                var stands = sections[i].StandsOn(supported);
-                if (sections[i].IsBroken && stands && (latest < 0 || sections[i].BreakOrder > sections[latest].BreakOrder))
-                {
-                    latest = i;
-                }
-            }
-
-            return latest;
-        }
-
-        private static int Damaged(DynamicBuffer<Section> sections)
-        {
-            for (var i = 0; i < sections.Length; i++)
-            {
-                if (sections[i].Health < sections[i].MaxHealth)
-                {
-                    return i;
-                }
-            }
-
-            return -1;
-        }
+        return -1;
     }
 }

@@ -3,39 +3,38 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Combat.Deploy
+namespace HyperRTS.Simulation.Combat.Deploy;
+
+/// <summary>
+/// A unit that deploys to fire and packs up to move, through the Deploy and Pack Up commands. Its weapons marked
+/// Needs Deploy hold fire until it is deployed, and an order to go elsewhere packs it up before it moves.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Combat/Deployable")]
+[Icon(HyperRTSIcons.DeployableAuthoring)]
+[HelpURL(HyperRTSDocs.Combat)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
+public class DeployableAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// A unit that deploys to fire and packs up to move, through the Deploy and Pack Up commands. Its weapons marked
-    /// Needs Deploy hold fire until it is deployed, and an order to go elsewhere packs it up before it moves.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Deployable")]
-    [Icon(HyperRTSIcons.DeployableAuthoring)]
-    [HelpURL(HyperRTSDocs.Combat)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class DeployableAuthoring : AuthoringBehaviour
+    [Tooltip("Seconds from the Deploy command until its weapons may fire.")]
+    [Min(0.1f)]
+    public float deployTime = 4f;
+
+    [Tooltip("Seconds from the Pack Up command, or an order to go elsewhere, until it moves.")]
+    [Min(0.1f)]
+    public float packUpTime = 3f;
+
+    public static void Add(EntityWriter writer, float deployTime, float packUpTime)
     {
-        [Tooltip("Seconds from the Deploy command until its weapons may fire.")]
-        [Min(0.1f)]
-        public float deployTime = 4f;
+        writer.Add(new Deployable { DeployTime = deployTime, PackUpTime = packUpTime });
+    }
 
-        [Tooltip("Seconds from the Pack Up command, or an order to go elsewhere, until it moves.")]
-        [Min(0.1f)]
-        public float packUpTime = 3f;
-
-        public static void Add(EntityWriter writer, float deployTime, float packUpTime)
+    public class Baker : Baker<DeployableAuthoring>
+    {
+        public override void Bake(DeployableAuthoring authoring)
         {
-            writer.Add(new Deployable { DeployTime = deployTime, PackUpTime = packUpTime });
-        }
-
-        public class Baker : Baker<DeployableAuthoring>
-        {
-            public override void Bake(DeployableAuthoring authoring)
-            {
-                var writer = this.Writer();
-                Add(writer, authoring.deployTime, authoring.packUpTime);
-            }
+            var writer = this.Writer();
+            Add(writer, authoring.deployTime, authoring.packUpTime);
         }
     }
 }

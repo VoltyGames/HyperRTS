@@ -6,202 +6,201 @@ using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Buildings.Placement
+namespace HyperRTS.Simulation.Buildings.Placement;
+
+/// <summary>
+/// Where a building stands and which way it faces: one value through the ghost, the placement command, server
+/// validation and the AI, so what the player sees is what the server checks.
+/// </summary>
+public readonly struct BuildingSpot
 {
-    /// <summary>
-    /// Where a building stands and which way it faces: one value through the ghost, the placement command, server
-    /// validation and the AI, so what the player sees is what the server checks.
-    /// </summary>
-    public readonly struct BuildingSpot
+    private const float QuarterTurn = math.PI * 0.5f;
+
+    // Degrees off a quarter turn that still count as one, so a drag along an axis lands its edges on cells.
+    private const float QuarterSnapDegrees = 0.5f;
+
+    /// <summary>Metres apart that still count as flush, so neighbours set edge to edge pass the gap rule.</summary>
+    public const float FlushTolerance = 0.1f;
+
+    // Metres of float error forgiven at the rule's far end, so a lane of exactly the gap passes.
+    private const float GapTolerance = 1e-3f;
+
+    public readonly float3 Center;
+
+    /// <summary>Radians about Y; the front (+Z) points along (sin, cos).</summary>
+    public readonly float Yaw;
+
+    /// <summary>The unturned size: X across the front, Y front to back.</summary>
+    public readonly float2 Footprint;
+
+    public readonly PlacementSurface Surface;
+
+    public BuildingSpot(float3 center, float yaw, float2 footprint, PlacementSurface surface)
     {
-        private const float QuarterTurn = math.PI * 0.5f;
+        Center = center;
+        Yaw = yaw;
+        Footprint = footprint;
+        Surface = surface;
+    }
 
-        // Degrees off a quarter turn that still count as one, so a drag along an axis lands its edges on cells.
-        private const float QuarterSnapDegrees = 0.5f;
+    public quaternion Rotation => quaternion.RotateY(Yaw);
 
-        /// <summary>Metres apart that still count as flush, so neighbours set edge to edge pass the gap rule.</summary>
-        public const float FlushTolerance = 0.1f;
+    /// <summary>The turned footprint as it stamps onto the nav grid.</summary>
+    public NavBox Box => new(Center, Rotation, Footprint);
 
-        // Metres of float error forgiven at the rule's far end, so a lane of exactly the gap passes.
-        private const float GapTolerance = 1e-3f;
-
-        public readonly float3 Center;
-
-        /// <summary>Radians about Y; the front (+Z) points along (sin, cos).</summary>
-        public readonly float Yaw;
-
-        /// <summary>The unturned size: X across the front, Y front to back.</summary>
-        public readonly float2 Footprint;
-
-        public readonly PlacementSurface Surface;
-
-        public BuildingSpot(float3 center, float yaw, float2 footprint, PlacementSurface surface)
+    /// <summary>
+    /// Near a quarter turn, the yaw becomes exact and the edges land on cell boundaries; at any other angle the
+    /// centre lands on the half-cell lattice.
+    /// </summary>
+    public BuildingSpot Snap(in MapSettings map)
+    {
+        var quarters = Yaw / QuarterTurn;
+        var nearest = math.round(quarters);
+        if (math.abs(quarters - nearest) * 90f > QuarterSnapDegrees)
         {
-            Center = center;
-            Yaw = yaw;
-            Footprint = footprint;
-            Surface = surface;
+            var step = map.NavCellSize * 0.5f;
+            var lattice = math.round((Center.xz - map.Min) / step) * step + map.Min;
+            return new BuildingSpot(new float3(lattice.x, Center.y, lattice.y), Yaw, Footprint, Surface);
         }
 
-        public quaternion Rotation => quaternion.RotateY(Yaw);
+        var exact = new BuildingSpot(Center, nearest * QuarterTurn, Footprint, Surface);
+        var cells = math.max(1f, math.round(exact.Box.Extents * 2f / map.NavCellSize));
+        var offset = math.select(float2.zero, new float2(0.5f), math.fmod(cells, 2f) > 0.5f);
+        var local = (Center.xz - map.Min) / map.NavCellSize - offset;
+        var snapped = (math.round(local) + offset) * map.NavCellSize + map.Min;
+        return new BuildingSpot(new float3(snapped.x, Center.y, snapped.y), exact.Yaw, Footprint, Surface);
+    }
 
-        /// <summary>The turned footprint as it stamps onto the nav grid.</summary>
-        public NavBox Box => new(Center, Rotation, Footprint);
+    /// <summary>Lifted onto the visible top under its centre.</summary>
+    public BuildingSpot Grounded(in NavGrid grid) =>
+        new(new float3(Center.x, grid.SurfaceHeight(Center), Center.z), Yaw, Footprint, Surface);
 
-        /// <summary>
-        /// Near a quarter turn, the yaw becomes exact and the edges land on cell boundaries; at any other angle the
-        /// centre lands on the half-cell lattice.
-        /// </summary>
-        public BuildingSpot Snap(in MapSettings map)
+    /// <summary>The same spot with <paramref name="margin"/> added on every side, as the AI keeps lanes open.</summary>
+    public BuildingSpot Grown(float margin) => new(Center, Yaw, Footprint + 2f * margin, Surface);
+
+    /// <summary>
+    /// Inside the map and over free cells of the surface only: plain land or plain water, never a deck or a
+    /// blocked cell. Open scenery such as trees doesn't count: the site clears it. Obstacle footprints are left to
+    /// <see cref="Fits"/>, which checks them exactly, so the cells read here are the grid's unbuilt ones.
+    /// </summary>
+    public bool IsValid(in MapSettings map, in NavGrid grid)
+    {
+        var box = Box;
+        var extents = new float3(box.Extents.x, 0f, box.Extents.y);
+        var inside = map.Contains(Center - extents) && map.Contains(Center + extents);
+        if (!math.isfinite(Yaw) || !inside)
         {
-            var quarters = Yaw / QuarterTurn;
-            var nearest = math.round(quarters);
-            if (math.abs(quarters - nearest) * 90f > QuarterSnapDegrees)
+            return false;
+        }
+
+        var land = false;
+        var water = false;
+        foreach (var cell in grid.CellsUnder(box))
+        {
+            if (!grid.InBox(box, cell))
             {
-                var step = map.NavCellSize * 0.5f;
-                var lattice = math.round((Center.xz - map.Min) / step) * step + map.Min;
-                return new BuildingSpot(new float3(lattice.x, Center.y, lattice.y), Yaw, Footprint, Surface);
+                continue;
             }
 
-            var exact = new BuildingSpot(Center, nearest * QuarterTurn, Footprint, Surface);
-            var cells = math.max(1f, math.round(exact.Box.Extents * 2f / map.NavCellSize));
-            var offset = math.select(float2.zero, new float2(0.5f), math.fmod(cells, 2f) > 0.5f);
-            var local = (Center.xz - map.Min) / map.NavCellSize - offset;
-            var snapped = (math.round(local) + offset) * map.NavCellSize + map.Min;
-            return new BuildingSpot(new float3(snapped.x, Center.y, snapped.y), exact.Yaw, Footprint, Surface);
-        }
-
-        /// <summary>Lifted onto the visible top under its centre.</summary>
-        public BuildingSpot Grounded(in NavGrid grid) =>
-            new(new float3(Center.x, grid.SurfaceHeight(Center), Center.z), Yaw, Footprint, Surface);
-
-        /// <summary>The same spot with <paramref name="margin"/> added on every side, as the AI keeps lanes open.</summary>
-        public BuildingSpot Grown(float margin) => new(Center, Yaw, Footprint + 2f * margin, Surface);
-
-        /// <summary>
-        /// Inside the map and over free cells of the surface only: plain land or plain water, never a deck or a
-        /// blocked cell. Open scenery such as trees doesn't count: the site clears it. Obstacle footprints are left to
-        /// <see cref="Fits"/>, which checks them exactly, so the cells read here are the grid's unbuilt ones.
-        /// </summary>
-        public bool IsValid(in MapSettings map, in NavGrid grid)
-        {
-            var box = Box;
-            var extents = new float3(box.Extents.x, 0f, box.Extents.y);
-            var inside = map.Contains(Center - extents) && map.Contains(Center + extents);
-            if (!math.isfinite(Yaw) || !inside)
+            var surface = grid.UnbuiltSurface(cell);
+            if (Forbids(surface))
             {
                 return false;
             }
 
-            var land = false;
-            var water = false;
-            foreach (var cell in grid.CellsUnder(box))
-            {
-                if (!grid.InBox(box, cell))
-                {
-                    continue;
-                }
-
-                var surface = grid.UnbuiltSurface(cell);
-                if (Forbids(surface))
-                {
-                    return false;
-                }
-
-                land |= surface == NavSurface.Land;
-                water |= surface == NavSurface.Water;
-            }
-
-            return Surface != PlacementSurface.Shoreline || (land && water);
+            land |= surface == NavSurface.Land;
+            water |= surface == NavSurface.Water;
         }
 
-        /// <summary>Whether one cell under the spot forbids it on its own, whatever the other cells hold.</summary>
-        public bool Forbids(NavSurface cell)
+        return Surface != PlacementSurface.Shoreline || (land && water);
+    }
+
+    /// <summary>Whether one cell under the spot forbids it on its own, whatever the other cells hold.</summary>
+    public bool Forbids(NavSurface cell)
+    {
+        switch (Surface)
         {
-            switch (Surface)
-            {
-                case PlacementSurface.Water:
-                    return cell != NavSurface.Water;
-                case PlacementSurface.Shoreline:
-                    return cell != NavSurface.Land && cell != NavSurface.Water;
-                default:
-                    return cell != NavSurface.Land;
-            }
+            case PlacementSurface.Water:
+                return cell != NavSurface.Water;
+            case PlacementSurface.Shoreline:
+                return cell != NavSurface.Land && cell != NavSurface.Water;
+            default:
+                return cell != NavSurface.Land;
         }
+    }
 
-        /// <summary>
-        /// Valid ground clear of every site by the map's building gap, as server and ghost check. A spot
-        /// <paramref name="inLine"/> is a piece of a line, such as a wall segment.
-        /// </summary>
-        public bool CanPlace(in MapSettings map, in NavGrid grid, NativeArray<PlacedFootprint> sites, bool inLine) =>
-            IsValid(map, grid) && Fits(sites, map.BuildingGap, inLine);
+    /// <summary>
+    /// Valid ground clear of every site by the map's building gap, as server and ghost check. A spot
+    /// <paramref name="inLine"/> is a piece of a line, such as a wall segment.
+    /// </summary>
+    public bool CanPlace(in MapSettings map, in NavGrid grid, NativeArray<PlacedFootprint> sites, bool inLine) =>
+        IsValid(map, grid) && Fits(sites, map.BuildingGap, inLine);
 
-        /// <summary>
-        /// Clear of every site: overlapping none, though touching is allowed so buildings sit flush at any angle, and
-        /// leaving no gap narrower than <paramref name="gap"/>. Line pieces keep no gap from each other: a wall is a
-        /// barrier by design, and its bends and parallel runs would otherwise fail it.
-        /// </summary>
-        public bool Fits(NativeArray<PlacedFootprint> sites, float gap, bool inLine)
+    /// <summary>
+    /// Clear of every site: overlapping none, though touching is allowed so buildings sit flush at any angle, and
+    /// leaving no gap narrower than <paramref name="gap"/>. Line pieces keep no gap from each other: a wall is a
+    /// barrier by design, and its bends and parallel runs would otherwise fail it.
+    /// </summary>
+    public bool Fits(NativeArray<PlacedFootprint> sites, float gap, bool inLine)
+    {
+        var box = Box;
+        foreach (var site in sites)
         {
-            var box = Box;
-            foreach (var site in sites)
-            {
-                var keepsGap = !(inLine && site.InLine);
-                if (box.Overlaps(site.Box) || (keepsGap && LeavesNarrowGap(box, site.Box, gap)))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        // Apart but closer than the gap: too narrow to drive through.
-        private static bool LeavesNarrowGap(in NavBox box, in NavBox other, float gap)
-        {
-            var reach = math.length(box.Half) + math.length(other.Half) + gap;
-            if (math.distancesq(box.Center, other.Center) >= reach * reach)
+            var keepsGap = !(inLine && site.InLine);
+            if (box.Overlaps(site.Box) || (keepsGap && LeavesNarrowGap(box, site.Box, gap)))
             {
                 return false;
             }
-
-            var apart = box.Gap(other);
-            return apart > FlushTolerance && apart < gap - GapTolerance;
         }
 
-        /// <summary>A unit capsule, its core segment <paramref name="axis"/> either side of its centre, reaches inside.</summary>
-        public bool Overlaps(float2 position, float2 axis, float radius) =>
-            Box.Gap(position - axis, position + axis) < radius;
+        return true;
+    }
 
-        /// <summary>
-        /// A ground or naval unit hostile to <paramref name="owner"/> stands on the spot, seen or not. Friendly units
-        /// drive off by themselves.
-        /// </summary>
-        public bool IsBlockedByEnemies(in SpatialIndex index, in OwnerRelations relations, byte owner)
+    // Apart but closer than the gap: too narrow to drive through.
+    private static bool LeavesNarrowGap(in NavBox box, in NavBox other, float gap)
+    {
+        var reach = math.length(box.Half) + math.length(other.Half) + gap;
+        if (math.distancesq(box.Center, other.Center) >= reach * reach)
         {
-            var finder = new EnemyFinder { Spot = this, Relations = relations, Owner = owner };
-            index.QueryHulls(Center, math.length(Footprint) * 0.5f, ref finder);
-            return finder.Found;
+            return false;
         }
 
-        private struct EnemyFinder : ISpatialVisitor
-        {
-            public BuildingSpot Spot;
-            public OwnerRelations Relations;
-            public byte Owner;
-            public bool Found;
+        var apart = box.Gap(other);
+        return apart > FlushTolerance && apart < gap - GapTolerance;
+    }
 
-            public void Visit(in SpatialEntry entry)
+    /// <summary>A unit capsule, its core segment <paramref name="axis"/> either side of its centre, reaches inside.</summary>
+    public bool Overlaps(float2 position, float2 axis, float radius) =>
+        Box.Gap(position - axis, position + axis) < radius;
+
+    /// <summary>
+    /// A ground or naval unit hostile to <paramref name="owner"/> stands on the spot, seen or not. Friendly units
+    /// drive off by themselves.
+    /// </summary>
+    public bool IsBlockedByEnemies(in SpatialIndex index, in OwnerRelations relations, byte owner)
+    {
+        var finder = new EnemyFinder { Spot = this, Relations = relations, Owner = owner };
+        index.QueryHulls(Center, math.length(Footprint) * 0.5f, ref finder);
+        return finder.Found;
+    }
+
+    private struct EnemyFinder : ISpatialVisitor
+    {
+        public BuildingSpot Spot;
+        public OwnerRelations Relations;
+        public byte Owner;
+        public bool Found;
+
+        public void Visit(in SpatialEntry entry)
+        {
+            if (Found || !entry.IsUnit || entry.Layer == NavLayer.Air)
             {
-                if (Found || !entry.IsUnit || entry.Layer == NavLayer.Air)
-                {
-                    return;
-                }
+                return;
+            }
 
-                if (Relations.IsHostile(Owner, entry.Owner))
-                {
-                    Found = Spot.Overlaps(entry.Position.xz, entry.SegmentAxis, entry.Radius);
-                }
+            if (Relations.IsHostile(Owner, entry.Owner))
+            {
+                Found = Spot.Overlaps(entry.Position.xz, entry.SegmentAxis, entry.Radius);
             }
         }
     }

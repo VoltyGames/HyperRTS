@@ -4,96 +4,95 @@ using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Movement
+namespace HyperRTS.Simulation.Movement;
+
+/// <summary>
+/// The stretch of path a unit is on: its next corner, the turn there, how far is left and its gear.
+/// </summary>
+public readonly struct PathLeg
 {
-    /// <summary>
-    /// The stretch of path a unit is on: its next corner, the turn there, how far is left and its gear.
-    /// </summary>
-    public readonly struct PathLeg
+    public readonly float2 Corner;
+    public readonly float2 Direction;
+    public readonly float Distance;
+
+    /// <summary>Radians the path turns at <see cref="Corner"/>; 0 at the goal.</summary>
+    public readonly float CornerTurn;
+
+    /// <summary>Path length from the unit to the goal.</summary>
+    public readonly float Remaining;
+
+    public readonly bool IsFinal;
+
+    /// <summary>Heading of the stretch after <see cref="Corner"/>; this leg's own at the goal.</summary>
+    public readonly float2 Next;
+
+    /// <summary>Driven backwards.</summary>
+    public readonly bool Reverse;
+
+    public PathLeg(float2 position, float2 corner, float2 next, float cornerTurn, float remaining, bool isFinal)
     {
-        public readonly float2 Corner;
-        public readonly float2 Direction;
-        public readonly float Distance;
+        var toCorner = corner - position;
+        Corner = corner;
+        Distance = math.length(toCorner);
+        Direction = math.normalizesafe(toCorner);
+        CornerTurn = cornerTurn;
+        Remaining = remaining;
+        IsFinal = isFinal;
+        Next = isFinal ? Direction : next;
+        Reverse = false;
+    }
 
-        /// <summary>Radians the path turns at <see cref="Corner"/>; 0 at the goal.</summary>
-        public readonly float CornerTurn;
+    private PathLeg(in PathLeg leg, bool reverse)
+    {
+        this = leg;
+        Reverse = reverse;
+    }
 
-        /// <summary>Path length from the unit to the goal.</summary>
-        public readonly float Remaining;
+    /// <summary>The same leg bent to head along <paramref name="velocity"/>, as avoidance steers it.</summary>
+    public PathLeg Toward(float2 position, float2 velocity) =>
+        new(new PathLeg(position, position + math.normalizesafe(velocity) * Distance, Next, CornerTurn, Remaining,
+            IsFinal), Reverse);
 
-        public readonly bool IsFinal;
-
-        /// <summary>Heading of the stretch after <see cref="Corner"/>; this leg's own at the goal.</summary>
-        public readonly float2 Next;
-
-        /// <summary>Driven backwards.</summary>
-        public readonly bool Reverse;
-
-        public PathLeg(float2 position, float2 corner, float2 next, float cornerTurn, float remaining, bool isFinal)
+    /// <summary>
+    /// The point <paramref name="distance"/> along the path from <paramref name="position"/>, round the corner,
+    /// and no further than the goal. A far goal is never aimed at itself: the one arc to it turns twice its
+    /// bearing.
+    /// </summary>
+    public float2 PointAhead(float2 position, float distance)
+    {
+        if (Distance >= distance)
         {
-            var toCorner = corner - position;
-            Corner = corner;
-            Distance = math.length(toCorner);
-            Direction = math.normalizesafe(toCorner);
-            CornerTurn = cornerTurn;
-            Remaining = remaining;
-            IsFinal = isFinal;
-            Next = isFinal ? Direction : next;
-            Reverse = false;
+            return position + Direction * distance;
         }
 
-        private PathLeg(in PathLeg leg, bool reverse)
+        return IsFinal ? Corner : Corner + Next * (distance - Distance);
+    }
+
+    public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);
+
+    /// <summary>
+    /// The leg to the first waypoint, or straight to the goal while the search is pending. The path's length past
+    /// that waypoint comes cached in <see cref="PathState.LengthPastCorner"/>.
+    /// </summary>
+    public static PathLeg Along(float2 position, float2 goal, DynamicBuffer<PathWaypoint> waypoints,
+        in PathState path)
+    {
+        if (waypoints.Length == 0)
         {
-            this = leg;
-            Reverse = reverse;
+            return new PathLeg(position, goal, float2.zero, 0f, math.distance(position, goal), true);
         }
 
-        /// <summary>The same leg bent to head along <paramref name="velocity"/>, as avoidance steers it.</summary>
-        public PathLeg Toward(float2 position, float2 velocity) =>
-            new(new PathLeg(position, position + math.normalizesafe(velocity) * Distance, Next, CornerTurn, Remaining,
-                IsFinal), Reverse);
+        var corner = waypoints[0].Position.xz;
+        var remaining = path.Remaining(position, waypoints);
+        var isFinal = waypoints.Length == 1;
+        var next = isFinal ? float2.zero : math.normalizesafe(waypoints[1].Position.xz - corner);
+        var turn = isFinal ? 0f : Turn(corner - position, next);
+        return new PathLeg(new PathLeg(position, corner, next, turn, remaining, isFinal), waypoints[0].Reverse);
+    }
 
-        /// <summary>
-        /// The point <paramref name="distance"/> along the path from <paramref name="position"/>, round the corner,
-        /// and no further than the goal. A far goal is never aimed at itself: the one arc to it turns twice its
-        /// bearing.
-        /// </summary>
-        public float2 PointAhead(float2 position, float distance)
-        {
-            if (Distance >= distance)
-            {
-                return position + Direction * distance;
-            }
-
-            return IsFinal ? Corner : Corner + Next * (distance - Distance);
-        }
-
-        public bool HasArrived(float radius) => IsFinal && Distance <= NavTolerances.Arrive(radius);
-
-        /// <summary>
-        /// The leg to the first waypoint, or straight to the goal while the search is pending. The path's length past
-        /// that waypoint comes cached in <see cref="PathState.LengthPastCorner"/>.
-        /// </summary>
-        public static PathLeg Along(float2 position, float2 goal, DynamicBuffer<PathWaypoint> waypoints,
-            in PathState path)
-        {
-            if (waypoints.Length == 0)
-            {
-                return new PathLeg(position, goal, float2.zero, 0f, math.distance(position, goal), true);
-            }
-
-            var corner = waypoints[0].Position.xz;
-            var remaining = path.Remaining(position, waypoints);
-            var isFinal = waypoints.Length == 1;
-            var next = isFinal ? float2.zero : math.normalizesafe(waypoints[1].Position.xz - corner);
-            var turn = isFinal ? 0f : Turn(corner - position, next);
-            return new PathLeg(new PathLeg(position, corner, next, turn, remaining, isFinal), waypoints[0].Reverse);
-        }
-
-        private static float Turn(float2 entering, float2 leaving)
-        {
-            var cos = math.dot(math.normalizesafe(entering), math.normalizesafe(leaving));
-            return math.acos(math.clamp(cos, -1f, 1f));
-        }
+    private static float Turn(float2 entering, float2 leaving)
+    {
+        var cos = math.dot(math.normalizesafe(entering), math.normalizesafe(leaving));
+        return math.acos(math.clamp(cos, -1f, 1f));
     }
 }

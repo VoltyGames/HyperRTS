@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
@@ -7,283 +8,281 @@ using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using Unity.Mathematics;
-using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.Commands
+namespace HyperRTS.Presentation.HUD.Commands;
+
+/// <summary>
+/// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have
+/// queued and whether low power slows them.
+/// </summary>
+public sealed class PurchaseCommands : ICommandSource
 {
-    /// <summary>
-    /// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have
-    /// queued and whether low power slows them.
-    /// </summary>
-    public sealed class PurchaseCommands : ICommandSource
+    private readonly List<Option> _options = new();
+    private readonly List<Entity> _producers = new();
+    private readonly HashSet<(Entity Producer, Entity Prefab)> _offers = new();
+    private readonly HashSet<Entity> _unpowered = new();
+    private readonly Dictionary<Entity, QueuedOption> _queued = new();
+
+    private readonly CommandKit _kit;
+
+    public PurchaseCommands(CommandKit kit)
     {
-        private readonly List<Option> _options = new();
-        private readonly List<Entity> _producers = new();
-        private readonly HashSet<(Entity Producer, Entity Prefab)> _offers = new();
-        private readonly HashSet<Entity> _unpowered = new();
-        private readonly Dictionary<Entity, QueuedOption> _queued = new();
+        _kit = kit;
+    }
 
-        private readonly CommandKit _kit;
+    private static QueuedOption Idle => new(0, QueuedOption.Idle);
 
-        public PurchaseCommands(CommandKit kit)
+    public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
+    {
+        _options.Clear();
+        _producers.Clear();
+        _offers.Clear();
+        var builds = new List<(Entity Prefab, int Card)>();
+        var products = new List<Entity>();
+        var entityManager = context.EntityManager;
+        foreach (var entity in owned)
         {
-            _kit = kit;
+            CollectBuilds(entityManager, entity, builds);
+            Collect<ProductionOption>(entityManager, entity, products);
         }
 
-        private static QueuedOption Idle => new(0, QueuedOption.Idle);
-
-        public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
+        foreach (var (prefab, card) in builds)
         {
-            _options.Clear();
-            _producers.Clear();
-            _offers.Clear();
-            var builds = new List<(Entity Prefab, int Card)>();
-            var products = new List<Entity>();
-            var entityManager = context.EntityManager;
-            foreach (var entity in owned)
-            {
-                CollectBuilds(entityManager, entity, builds);
-                Collect<ProductionOption>(entityManager, entity, products);
-            }
-
-            foreach (var (prefab, card) in builds)
-            {
-                Add(context, entries, card, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
-            }
-
-            foreach (var prefab in products)
-            {
-                var producers = FindProducers(entityManager, owned, prefab);
-                Add(context, entries, EntityInfo.GetTypeId(entityManager, producers[0]), prefab, producers,
-                    () => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
-            }
+            Add(context, entries, card, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
         }
 
-        public void Refresh(HUDContext context)
+        foreach (var prefab in products)
         {
-            if (_options.Count == 0 || !context.PurchasesDue)
-            {
-                return;
-            }
+            var producers = FindProducers(entityManager, owned, prefab);
+            Add(context, entries, EntityInfo.GetTypeId(entityManager, producers[0]), prefab, producers,
+                () => context.Issue(new PlayerCommand { Type = CommandType.Produce, Prefab = prefab }));
+        }
+    }
 
-            ReadProducers(context);
-            var entityManager = context.EntityManager;
-            var buyer = context.SnapshotBuyer();
-            foreach (var option in _options)
-            {
-                var button = option.Button;
-                var research = entityManager.HasComponent<Research>(option.Prefab);
-                button.ShowRefusal(context.FindRefusal(option.Prefab, buyer), research);
-                button.ShowQueue(FindQueued(option));
-                button.ShowUnpowered(HasUnpowered(option.Producers));
-                // Research is limited to one, shown as done rather than as a count.
-                if (!research && entityManager.HasComponent<BuildLimit>(option.Prefab))
-                {
-                    button.ShowLimit(buyer.Counts.Count(entityManager, option.Prefab),
-                        entityManager.GetComponentData<BuildLimit>(option.Prefab).Max);
-                }
-            }
+    public void Refresh(HUDContext context)
+    {
+        if (_options.Count == 0 || !context.PurchasesDue)
+        {
+            return;
         }
 
-        // One pass over the selected producers' queues, counting each prefab only where that producer offers it.
-        private void ReadProducers(HUDContext context)
+        ReadProducers(context);
+        var entityManager = context.EntityManager;
+        var buyer = context.SnapshotBuyer();
+        foreach (var option in _options)
         {
-            _unpowered.Clear();
-            _queued.Clear();
-            var entityManager = context.EntityManager;
-            foreach (var producer in _producers)
+            var button = option.Button;
+            var research = entityManager.HasComponent<Research>(option.Prefab);
+            button.ShowRefusal(context.FindRefusal(option.Prefab, buyer), research);
+            button.ShowQueue(FindQueued(option));
+            button.ShowUnpowered(HasUnpowered(option.Producers));
+            // Research is limited to one, shown as done rather than as a count.
+            if (!research && entityManager.HasComponent<BuildLimit>(option.Prefab))
             {
-                if (context.IsUnpowered(producer))
-                {
-                    _unpowered.Add(producer);
-                }
-
-                var queue = entityManager.GetBuffer<ProductionQueueItem>(producer, true);
-                var training = entityManager.GetComponentData<Producer>(producer);
-                for (var i = 0; i < queue.Length; i++)
-                {
-                    var prefab = queue[i].Prefab;
-                    if (!_offers.Contains((producer, prefab)))
-                    {
-                        continue;
-                    }
-
-                    var queued = _queued.TryGetValue(prefab, out var found) ? found : Idle;
-                    var progress = queued.Progress;
-                    if (i == 0)
-                    {
-                        var head = entityManager.GetComponentData<Producible>(prefab);
-                        progress = math.max(progress, training.HeadProgress(head));
-                    }
-
-                    _queued[prefab] = new QueuedOption(queued.Count + 1, progress);
-                }
+                button.ShowLimit(buyer.Counts.Count(entityManager, option.Prefab),
+                    entityManager.GetComponentData<BuildLimit>(option.Prefab).Max);
             }
         }
+    }
 
-        // A placed building has no producers, so it never shows a queue even if a factory also trains its prefab.
-        private QueuedOption FindQueued(Option option) =>
-            option.Producers.Count > 0 && _queued.TryGetValue(option.Prefab, out var queued) ? queued : Idle;
-
-        private bool HasUnpowered(List<Entity> producers)
+    // One pass over the selected producers' queues, counting each prefab only where that producer offers it.
+    private void ReadProducers(HUDContext context)
+    {
+        _unpowered.Clear();
+        _queued.Clear();
+        var entityManager = context.EntityManager;
+        foreach (var producer in _producers)
         {
-            foreach (var producer in producers)
+            if (context.IsUnpowered(producer))
             {
-                if (_unpowered.Contains(producer))
-                {
-                    return true;
-                }
+                _unpowered.Add(producer);
             }
 
-            return false;
-        }
-
-        private void Add(HUDContext context, List<CommandEntry> entries, int card, Entity prefab,
-            List<Entity> producers, System.Action invoke)
-        {
-            var entityManager = context.EntityManager;
-            var name = HUDText.EntityName(entityManager, prefab);
-            var info = entityManager.GetComponentData<EntityInfo>(prefab);
-            var spec = _kit.Catalog.FindPrefab(card, info.TypeId, name);
-            if (spec == null)
+            var queue = entityManager.GetBuffer<ProductionQueueItem>(producer, true);
+            var training = entityManager.GetComponentData<Producer>(producer);
+            for (var i = 0; i < queue.Length; i++)
             {
-                return;
-            }
-
-            var entry = _kit.Create(spec, name, info.Icon.Value, invoke);
-            if (entityManager.HasBuffer<ResourceCost>(prefab))
-            {
-                entry.Button.ShowPrice(entityManager.GetBuffer<ResourceCost>(prefab, true));
-            }
-
-            entry.Button.Description = tooltip => Describe(context, prefab, tooltip);
-            _options.Add(new Option(entry.Button, prefab, producers));
-            entries.Add(entry);
-        }
-
-        /// <summary>Name, description, cost, build time, population, power and missing prerequisites.</summary>
-        private static void Describe(HUDContext context, Entity prefab, HUDTooltip tooltip)
-        {
-            var entityManager = context.EntityManager;
-            tooltip.AddTitle(HUDText.EntityName(entityManager, prefab));
-            var description = HUDText.EntityDescription(entityManager, prefab);
-            if (description != null)
-            {
-                tooltip.AddLine(description);
-            }
-
-            if (entityManager.HasBuffer<ResourceCost>(prefab))
-            {
-                tooltip.AddCosts(entityManager.GetBuffer<ResourceCost>(prefab, true));
-            }
-
-            AddStats(entityManager, prefab, tooltip);
-
-            var missing = context.SnapshotBuyer().FindMissingPrerequisites(entityManager, prefab, context.Registry);
-            foreach (var required in missing)
-            {
-                tooltip.AddWarning($"{HUDText.Text("tooltip.requires")} {HUDText.EntityName(entityManager, required)}");
-            }
-        }
-
-        private static void AddStats(EntityManager entityManager, Entity prefab, HUDTooltip tooltip)
-        {
-            if (entityManager.HasComponent<Producible>(prefab))
-            {
-                var producible = entityManager.GetComponentData<Producible>(prefab);
-                tooltip.AddStat(HUDText.Text("tooltip.build-time"), HUDText.Seconds(producible.BuildTime));
-                if (producible.Population > 0)
-                {
-                    tooltip.AddStat(HUDText.Text("tooltip.population"), producible.Population.ToString());
-                }
-            }
-
-            if (entityManager.HasComponent<PowerSupply>(prefab))
-            {
-                var power = entityManager.GetComponentData<PowerSupply>(prefab).Amount;
-                tooltip.AddStat(HUDText.Text("tooltip.power"), power.ToString("+0;-0;0"));
-            }
-
-            if (entityManager.HasComponent<BuildLimit>(prefab) && !entityManager.HasComponent<Research>(prefab))
-            {
-                tooltip.AddStat(HUDText.Text("tooltip.limit"),
-                    entityManager.GetComponentData<BuildLimit>(prefab).Max.ToString());
-            }
-        }
-
-        private List<Entity> FindProducers(EntityManager entityManager, IReadOnlyList<Entity> owned, Entity prefab)
-        {
-            var producers = new List<Entity>();
-            foreach (var entity in owned)
-            {
-                var offers = entityManager.HasBuffer<ProductionQueueItem>(entity)
-                             && entityManager.HasBuffer<ProductionOption>(entity)
-                             && PrefabOptions.Has(entityManager.GetBuffer<ProductionOption>(entity, true),
-                                 prefab);
-                if (!offers)
+                var prefab = queue[i].Prefab;
+                if (!_offers.Contains((producer, prefab)))
                 {
                     continue;
                 }
 
-                producers.Add(entity);
-                _offers.Add((entity, prefab));
-                if (!_producers.Contains(entity))
+                var queued = _queued.TryGetValue(prefab, out var found) ? found : Idle;
+                var progress = queued.Progress;
+                if (i == 0)
                 {
-                    _producers.Add(entity);
+                    var head = entityManager.GetComponentData<Producible>(prefab);
+                    progress = math.max(progress, training.HeadProgress(head));
                 }
+
+                _queued[prefab] = new QueuedOption(queued.Count + 1, progress);
             }
-
-            return producers;
         }
+    }
 
-        // The first builder to list a prefab decides whose card it sits on, so a mixed selection shows each option once.
-        private static void CollectBuilds(EntityManager entityManager, Entity entity, List<(Entity Prefab, int Card)> builds)
+    // A placed building has no producers, so it never shows a queue even if a factory also trains its prefab.
+    private QueuedOption FindQueued(Option option) =>
+        option.Producers.Count > 0 && _queued.TryGetValue(option.Prefab, out var queued) ? queued : Idle;
+
+    private bool HasUnpowered(List<Entity> producers)
+    {
+        foreach (var producer in producers)
         {
-            if (!entityManager.HasBuffer<BuildOption>(entity))
+            if (_unpowered.Contains(producer))
             {
-                return;
-            }
-
-            foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
-            {
-                if (option.Prefab != Entity.Null && !builds.Exists(other => other.Prefab == option.Prefab))
-                {
-                    builds.Add((option.Prefab, EntityInfo.GetTypeId(entityManager, entity)));
-                }
+                return true;
             }
         }
 
-        private static void Collect<T>(EntityManager entityManager, Entity entity, List<Entity> prefabs)
-            where T : unmanaged, IBufferElementData, IPrefabOption
+        return false;
+    }
+
+    private void Add(HUDContext context, List<CommandEntry> entries, int card, Entity prefab,
+        List<Entity> producers, System.Action invoke)
+    {
+        var entityManager = context.EntityManager;
+        var name = HUDText.EntityName(entityManager, prefab);
+        var info = entityManager.GetComponentData<EntityInfo>(prefab);
+        var spec = _kit.Catalog.FindPrefab(card, info.TypeId, name);
+        if (spec == null)
         {
-            if (!entityManager.HasBuffer<T>(entity))
-            {
-                return;
-            }
-
-            foreach (var option in entityManager.GetBuffer<T>(entity, true))
-            {
-                if (option.Prefab != Entity.Null && !prefabs.Contains(option.Prefab))
-                {
-                    prefabs.Add(option.Prefab);
-                }
-            }
+            return;
         }
 
-        private readonly struct Option
+        var entry = _kit.Create(spec, name, info.Icon.Value, invoke);
+        if (entityManager.HasBuffer<ResourceCost>(prefab))
         {
-            public Option(CommandButton button, Entity prefab, List<Entity> producers)
+            entry.Button.ShowPrice(entityManager.GetBuffer<ResourceCost>(prefab, true));
+        }
+
+        entry.Button.Description = tooltip => Describe(context, prefab, tooltip);
+        _options.Add(new Option(entry.Button, prefab, producers));
+        entries.Add(entry);
+    }
+
+    /// <summary>Name, description, cost, build time, population, power and missing prerequisites.</summary>
+    private static void Describe(HUDContext context, Entity prefab, HUDTooltip tooltip)
+    {
+        var entityManager = context.EntityManager;
+        tooltip.AddTitle(HUDText.EntityName(entityManager, prefab));
+        var description = HUDText.EntityDescription(entityManager, prefab);
+        if (description != null)
+        {
+            tooltip.AddLine(description);
+        }
+
+        if (entityManager.HasBuffer<ResourceCost>(prefab))
+        {
+            tooltip.AddCosts(entityManager.GetBuffer<ResourceCost>(prefab, true));
+        }
+
+        AddStats(entityManager, prefab, tooltip);
+
+        var missing = context.SnapshotBuyer().FindMissingPrerequisites(entityManager, prefab, context.Registry);
+        foreach (var required in missing)
+        {
+            tooltip.AddWarning($"{HUDText.Text("tooltip.requires")} {HUDText.EntityName(entityManager, required)}");
+        }
+    }
+
+    private static void AddStats(EntityManager entityManager, Entity prefab, HUDTooltip tooltip)
+    {
+        if (entityManager.HasComponent<Producible>(prefab))
+        {
+            var producible = entityManager.GetComponentData<Producible>(prefab);
+            tooltip.AddStat(HUDText.Text("tooltip.build-time"), HUDText.Seconds(producible.BuildTime));
+            if (producible.Population > 0)
             {
-                Button = button;
-                Prefab = prefab;
-                Producers = producers;
+                tooltip.AddStat(HUDText.Text("tooltip.population"), producible.Population.ToString());
+            }
+        }
+
+        if (entityManager.HasComponent<PowerSupply>(prefab))
+        {
+            var power = entityManager.GetComponentData<PowerSupply>(prefab).Amount;
+            tooltip.AddStat(HUDText.Text("tooltip.power"), power.ToString("+0;-0;0"));
+        }
+
+        if (entityManager.HasComponent<BuildLimit>(prefab) && !entityManager.HasComponent<Research>(prefab))
+        {
+            tooltip.AddStat(HUDText.Text("tooltip.limit"),
+                entityManager.GetComponentData<BuildLimit>(prefab).Max.ToString());
+        }
+    }
+
+    private List<Entity> FindProducers(EntityManager entityManager, IReadOnlyList<Entity> owned, Entity prefab)
+    {
+        var producers = new List<Entity>();
+        foreach (var entity in owned)
+        {
+            var offers = entityManager.HasBuffer<ProductionQueueItem>(entity)
+                         && entityManager.HasBuffer<ProductionOption>(entity)
+                         && PrefabOptions.Has(entityManager.GetBuffer<ProductionOption>(entity, true),
+                             prefab);
+            if (!offers)
+            {
+                continue;
             }
 
-            public CommandButton Button { get; }
-            public Entity Prefab { get; }
-
-            /// <summary>Selected producers that offer it; none for a building a builder places.</summary>
-            public List<Entity> Producers { get; }
+            producers.Add(entity);
+            _offers.Add((entity, prefab));
+            if (!_producers.Contains(entity))
+            {
+                _producers.Add(entity);
+            }
         }
+
+        return producers;
+    }
+
+    // The first builder to list a prefab decides whose card it sits on, so a mixed selection shows each option once.
+    private static void CollectBuilds(EntityManager entityManager, Entity entity, List<(Entity Prefab, int Card)> builds)
+    {
+        if (!entityManager.HasBuffer<BuildOption>(entity))
+        {
+            return;
+        }
+
+        foreach (var option in entityManager.GetBuffer<BuildOption>(entity, true))
+        {
+            if (option.Prefab != Entity.Null && !builds.Exists(other => other.Prefab == option.Prefab))
+            {
+                builds.Add((option.Prefab, EntityInfo.GetTypeId(entityManager, entity)));
+            }
+        }
+    }
+
+    private static void Collect<T>(EntityManager entityManager, Entity entity, List<Entity> prefabs)
+        where T : unmanaged, IBufferElementData, IPrefabOption
+    {
+        if (!entityManager.HasBuffer<T>(entity))
+        {
+            return;
+        }
+
+        foreach (var option in entityManager.GetBuffer<T>(entity, true))
+        {
+            if (option.Prefab != Entity.Null && !prefabs.Contains(option.Prefab))
+            {
+                prefabs.Add(option.Prefab);
+            }
+        }
+    }
+
+    private readonly struct Option
+    {
+        public Option(CommandButton button, Entity prefab, List<Entity> producers)
+        {
+            Button = button;
+            Prefab = prefab;
+            Producers = producers;
+        }
+
+        public CommandButton Button { get; }
+        public Entity Prefab { get; }
+
+        /// <summary>Selected producers that offer it; none for a building a builder places.</summary>
+        public List<Entity> Producers { get; }
     }
 }

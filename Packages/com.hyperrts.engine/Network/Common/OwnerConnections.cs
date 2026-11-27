@@ -2,55 +2,54 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
 
-namespace HyperRTS.Network.Common
+namespace HyperRTS.Network.Common;
+
+/// <summary>
+/// Server singleton: this tick's in-game connections grouped by viewer owner (observers under neutral), so event
+/// senders filter and pack once per owner instead of once per connection.
+/// </summary>
+public struct OwnerConnections : IComponentData
 {
-    /// <summary>
-    /// Server singleton: this tick's in-game connections grouped by viewer owner (observers under neutral), so event
-    /// senders filter and pack once per owner instead of once per connection.
-    /// </summary>
-    public struct OwnerConnections : IComponentData
+    /// <summary>Each distinct viewer owner once.</summary>
+    public NativeList<byte> Owners;
+
+    public NativeParallelMultiHashMap<byte, Entity> Connections;
+
+    public static OwnerConnections Create(Allocator allocator) => new()
     {
-        /// <summary>Each distinct viewer owner once.</summary>
-        public NativeList<byte> Owners;
+        Owners = new NativeList<byte>(8, allocator),
+        Connections = new NativeParallelMultiHashMap<byte, Entity>(16, allocator),
+    };
 
-        public NativeParallelMultiHashMap<byte, Entity> Connections;
+    public void Dispose()
+    {
+        Owners.Dispose();
+        Connections.Dispose();
+    }
 
-        public static OwnerConnections Create(Allocator allocator) => new()
+    public void Clear()
+    {
+        Owners.Clear();
+        Connections.Clear();
+    }
+
+    public void Add(byte owner, Entity connection)
+    {
+        if (!Connections.ContainsKey(owner))
         {
-            Owners = new NativeList<byte>(8, allocator),
-            Connections = new NativeParallelMultiHashMap<byte, Entity>(16, allocator),
-        };
-
-        public void Dispose()
-        {
-            Owners.Dispose();
-            Connections.Dispose();
+            Owners.Add(owner);
         }
 
-        public void Clear()
-        {
-            Owners.Clear();
-            Connections.Clear();
-        }
+        Connections.Add(owner, connection);
+    }
 
-        public void Add(byte owner, Entity connection)
+    /// <summary>Queues every RPC to each connection viewing as <paramref name="owner"/>.</summary>
+    public readonly void Send<T>(EntityCommandBuffer ecb, byte owner, NativeList<T> rpcs)
+        where T : unmanaged, IRpcCommand
+    {
+        foreach (var connection in Connections.GetValuesForKey(owner))
         {
-            if (!Connections.ContainsKey(owner))
-            {
-                Owners.Add(owner);
-            }
-
-            Connections.Add(owner, connection);
-        }
-
-        /// <summary>Queues every RPC to each connection viewing as <paramref name="owner"/>.</summary>
-        public readonly void Send<T>(EntityCommandBuffer ecb, byte owner, NativeList<T> rpcs)
-            where T : unmanaged, IRpcCommand
-        {
-            foreach (var connection in Connections.GetValuesForKey(owner))
-            {
-                Rpc.Send(ecb, connection, rpcs);
-            }
+            Rpc.Send(ecb, connection, rpcs);
         }
     }
 }

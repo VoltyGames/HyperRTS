@@ -7,146 +7,145 @@ using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Vegetation;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Ground
+namespace HyperRTS.Editor.Maps.Ground;
+
+/// <summary>
+/// The terrain's ground tint at a map point: RGB 0.5 is neutral and A is wetness. Fields, woods, soil, noise,
+/// hollows, banks and drainage lines all shift it (strengths from <see cref="MapClimateGroundTint"/>).
+/// </summary>
+public sealed class MapGroundTint
 {
-    /// <summary>
-    /// The terrain's ground tint at a map point: RGB 0.5 is neutral and A is wetness. Fields, woods, soil, noise,
-    /// hollows, banks and drainage lines all shift it (strengths from <see cref="MapClimateGroundTint"/>).
-    /// </summary>
-    public sealed class MapGroundTint
+    // The tint map's texel, which swath edges soften over.
+    private const float Texel = 0.5f;
+
+    /// <summary>Hollows: height curvature (1/m) measured over the span, from first sign to full damp.</summary>
+    private const float HollowSpan = 8f;
+    private const float HollowStart = 0.004f;
+    private const float HollowFull = 0.014f;
+
+    private readonly MapLand _land;
+    private readonly MapShapes _shapes;
+    private readonly MapHeights _heights;
+    private readonly MapSymmetry _symmetry;
+    private readonly MapClimateGroundTint _strength;
+    private readonly MapEdgeField _edges;
+    private readonly MapFlow _flow;
+    private readonly MapNoise _broad;
+    private readonly MapNoise _detail;
+    private readonly MapNoise _patches;
+    private readonly MapNoise _moisture;
+    private readonly Vector2[] _tint;
+    private readonly Vector2[] _gradient;
+    private readonly float[] _phase;
+    private readonly MapRowLines _rowLines;
+
+    public MapGroundTint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes, MapHeights heights,
+        MapClimateGroundTint strength)
     {
-        // The tint map's texel, which swath edges soften over.
-        private const float Texel = 0.5f;
-
-        /// <summary>Hollows: height curvature (1/m) measured over the span, from first sign to full damp.</summary>
-        private const float HollowSpan = 8f;
-        private const float HollowStart = 0.004f;
-        private const float HollowFull = 0.014f;
-
-        private readonly MapLand _land;
-        private readonly MapShapes _shapes;
-        private readonly MapHeights _heights;
-        private readonly MapSymmetry _symmetry;
-        private readonly MapClimateGroundTint _strength;
-        private readonly MapEdgeField _edges;
-        private readonly MapFlow _flow;
-        private readonly MapNoise _broad;
-        private readonly MapNoise _detail;
-        private readonly MapNoise _patches;
-        private readonly MapNoise _moisture;
-        private readonly Vector2[] _tint;
-        private readonly Vector2[] _gradient;
-        private readonly float[] _phase;
-        private readonly MapRowLines _rowLines;
-
-        public MapGroundTint(MapLayout layout, MapLand land, MapEdgeField edges, MapShapes shapes, MapHeights heights,
-            MapClimateGroundTint strength)
+        (_land, _edges, _shapes, _heights, _symmetry) = (land, edges, shapes, heights, layout.Symmetry);
+        _strength = strength;
+        _flow = new MapFlow(layout.Symmetry, heights);
+        _rowLines = new MapRowLines(layout.Symmetry, edges, Texel);
+        _broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.RegionTint);
+        _detail = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.TintDetail);
+        _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SoilColour);
+        _moisture = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SoilMoisture);
+        (_tint, _gradient, _phase) = (new Vector2[land.Regions.Count], new Vector2[land.Regions.Count], new float[land.Regions.Count]);
+        for (var i = 1; i < land.Regions.Count; i++)
         {
-            (_land, _edges, _shapes, _heights, _symmetry) = (land, edges, shapes, heights, layout.Symmetry);
-            _strength = strength;
-            _flow = new MapFlow(layout.Symmetry, heights);
-            _rowLines = new MapRowLines(layout.Symmetry, edges, Texel);
-            _broad = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.RegionTint);
-            _detail = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.TintDetail);
-            _patches = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SoilColour);
-            _moisture = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.SoilMoisture);
-            (_tint, _gradient, _phase) = (new Vector2[land.Regions.Count], new Vector2[land.Regions.Count], new float[land.Regions.Count]);
-            for (var i = 1; i < land.Regions.Count; i++)
+            if (Varies(land.Regions[i].Kind))
             {
-                if (Varies(land.Regions[i].Kind))
-                {
-                    RegionTint(i, MapRandom.Stream(layout.Spec.seed, MapRandomChannel.RegionTints, land.Regions[i].Seed));
-                }
-
-            }
-        }
-
-        public Color At(Vector2 p)
-        {
-            var edge = _edges.Sample(p);
-            var share = edge.OwnShare;
-            var tint = Tint(edge.Own, p) * share;
-            if (share < 1f)
-            {
-                tint += Tint(edge.Other, p) * (1f - share);
+                RegionTint(i, MapRandom.Stream(layout.Spec.seed, MapRandomChannel.RegionTints, land.Regions[i].Seed));
             }
 
-            var light = 0.5f + tint.x + 0.035f * _broad.Sample(p, 90f) + 0.02f * _detail.Sample(p, 14f) +
-                        0.018f * _detail.Sample(p, 36f);
-            var warmth = tint.y + 0.012f * _broad.Sample(p, 24f);
-            var (soilLight, soilWarmth, soilWet) = Soil(p);
-            light += soilLight;
-            warmth += soilWarmth;
-            var hollow = Hollow(p);
-            var flow = _flow.At(p);
-            light -= hollow * _strength.hollowDarkening + flow * _strength.flowDarkening;
-            var wet = Mathf.Max(Mathf.Max(Wetness(edge.Region, p), hollow * _strength.hollowWetness), soilWet);
-            wet = Mathf.Max(wet, flow * _strength.flowWetness);
-            // Keeps the brightness.
-            var green = flow * _strength.flowGreening;
-            return new Color(light + warmth - green, light + 0.4f * green, light - warmth - green, wet);
         }
-
-        /// <summary>A region's own light and warmth shift, and the direction and phase of its gradient.</summary>
-        private void RegionTint(int region, System.Random random)
-        {
-            _tint[region] = new Vector2((random.Value() - 0.5f) * _strength.regionLight,
-                (random.Value() - 0.5f) * _strength.regionWarmth);
-            var angle = random.Value() * Mathf.PI * 2f;
-            _gradient[region] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (Mathf.PI * 2f / _strength.gradientLength);
-            _phase[region] = random.Value() * Mathf.PI * 2f;
-        }
-
-        /// <summary>The gradient wave is averaged over the symmetry copies, so every copy of a field ripens alike.</summary>
-        private Vector2 Tint(int region, Vector2 p)
-        {
-            var swath = new Vector2(_rowLines.Swath(region, p) * _edges.Surface(region).swaths.light, 0f);
-            if (_gradient[region] == Vector2.zero)
-            {
-                return _tint[region] + swath;
-            }
-
-            var wave = 0f;
-            for (var c = 0; c < _symmetry.Copies.Count; c++)
-            {
-                wave += Mathf.Sin(Vector2.Dot(_symmetry.Copies[c].Apply(p), _gradient[region]) + _phase[region]);
-            }
-
-            var swing = new Vector2(_strength.gradientLight, _strength.gradientWarmth);
-            return _tint[region] + swing * (wave / _symmetry.Copies.Count) + swath;
-        }
-
-        /// <summary>Soil colour: damp soil reads darker and cooler, so moisture and colour vary together.</summary>
-        private (float Light, float Warmth, float Wet) Soil(Vector2 p)
-        {
-            var soil = _patches.Sample(p, _strength.soilSize);
-            var damp = Mathf.Clamp01(_moisture.Sample(p, _strength.soilSize * 0.7f) * 1.6f);
-            var light = _strength.soilLight * (soil - 0.5f * damp);
-            var warmth = _strength.soilWarmth * (0.6f * soil - damp);
-            return (light, warmth, damp * _strength.soilWetness);
-        }
-
-        /// <summary>0 on flat or convex ground, 1 in a clear hollow.</summary>
-        private float Hollow(Vector2 p)
-        {
-            var across = new Vector2(HollowSpan, 0f);
-            var along = new Vector2(0f, HollowSpan);
-            var around = _heights.Height(p + across) + _heights.Height(p - across) + _heights.Height(p + along) +
-                         _heights.Height(p - along);
-            var curvature = (around - 4f * _heights.Height(p)) / (HollowSpan * HollowSpan);
-            return MapGeometry.Smooth((curvature - HollowStart) / (HollowFull - HollowStart));
-        }
-
-        private float Wetness(int region, Vector2 p)
-        {
-            var edge = _shapes.WaterEdgeDistance(p);
-            var damp = (1f - MapGeometry.Smooth(edge / _strength.dampWidth)) * _strength.dampWetness;
-            var bank = (1f - MapGeometry.Smooth(edge / _strength.bankWidth)) * _strength.bankWetness;
-            var ravine = region > 0 && _land.Regions[region].Kind == MapLandKind.Ravine;
-            return Mathf.Clamp01(Mathf.Max(Mathf.Max(damp, bank), ravine ? 0.25f : 0f));
-        }
-
-        private static bool Varies(MapLandKind kind) =>
-            kind is MapLandKind.Field or MapLandKind.Garden or MapLandKind.Wood or MapLandKind.Back;
     }
+
+    public Color At(Vector2 p)
+    {
+        var edge = _edges.Sample(p);
+        var share = edge.OwnShare;
+        var tint = Tint(edge.Own, p) * share;
+        if (share < 1f)
+        {
+            tint += Tint(edge.Other, p) * (1f - share);
+        }
+
+        var light = 0.5f + tint.x + 0.035f * _broad.Sample(p, 90f) + 0.02f * _detail.Sample(p, 14f) +
+                    0.018f * _detail.Sample(p, 36f);
+        var warmth = tint.y + 0.012f * _broad.Sample(p, 24f);
+        var (soilLight, soilWarmth, soilWet) = Soil(p);
+        light += soilLight;
+        warmth += soilWarmth;
+        var hollow = Hollow(p);
+        var flow = _flow.At(p);
+        light -= hollow * _strength.hollowDarkening + flow * _strength.flowDarkening;
+        var wet = Mathf.Max(Mathf.Max(Wetness(edge.Region, p), hollow * _strength.hollowWetness), soilWet);
+        wet = Mathf.Max(wet, flow * _strength.flowWetness);
+        // Keeps the brightness.
+        var green = flow * _strength.flowGreening;
+        return new Color(light + warmth - green, light + 0.4f * green, light - warmth - green, wet);
+    }
+
+    /// <summary>A region's own light and warmth shift, and the direction and phase of its gradient.</summary>
+    private void RegionTint(int region, System.Random random)
+    {
+        _tint[region] = new Vector2((random.Value() - 0.5f) * _strength.regionLight,
+            (random.Value() - 0.5f) * _strength.regionWarmth);
+        var angle = random.Value() * Mathf.PI * 2f;
+        _gradient[region] = new Vector2(Mathf.Cos(angle), Mathf.Sin(angle)) * (Mathf.PI * 2f / _strength.gradientLength);
+        _phase[region] = random.Value() * Mathf.PI * 2f;
+    }
+
+    /// <summary>The gradient wave is averaged over the symmetry copies, so every copy of a field ripens alike.</summary>
+    private Vector2 Tint(int region, Vector2 p)
+    {
+        var swath = new Vector2(_rowLines.Swath(region, p) * _edges.Surface(region).swaths.light, 0f);
+        if (_gradient[region] == Vector2.zero)
+        {
+            return _tint[region] + swath;
+        }
+
+        var wave = 0f;
+        for (var c = 0; c < _symmetry.Copies.Count; c++)
+        {
+            wave += Mathf.Sin(Vector2.Dot(_symmetry.Copies[c].Apply(p), _gradient[region]) + _phase[region]);
+        }
+
+        var swing = new Vector2(_strength.gradientLight, _strength.gradientWarmth);
+        return _tint[region] + swing * (wave / _symmetry.Copies.Count) + swath;
+    }
+
+    /// <summary>Soil colour: damp soil reads darker and cooler, so moisture and colour vary together.</summary>
+    private (float Light, float Warmth, float Wet) Soil(Vector2 p)
+    {
+        var soil = _patches.Sample(p, _strength.soilSize);
+        var damp = Mathf.Clamp01(_moisture.Sample(p, _strength.soilSize * 0.7f) * 1.6f);
+        var light = _strength.soilLight * (soil - 0.5f * damp);
+        var warmth = _strength.soilWarmth * (0.6f * soil - damp);
+        return (light, warmth, damp * _strength.soilWetness);
+    }
+
+    /// <summary>0 on flat or convex ground, 1 in a clear hollow.</summary>
+    private float Hollow(Vector2 p)
+    {
+        var across = new Vector2(HollowSpan, 0f);
+        var along = new Vector2(0f, HollowSpan);
+        var around = _heights.Height(p + across) + _heights.Height(p - across) + _heights.Height(p + along) +
+                     _heights.Height(p - along);
+        var curvature = (around - 4f * _heights.Height(p)) / (HollowSpan * HollowSpan);
+        return MapGeometry.Smooth((curvature - HollowStart) / (HollowFull - HollowStart));
+    }
+
+    private float Wetness(int region, Vector2 p)
+    {
+        var edge = _shapes.WaterEdgeDistance(p);
+        var damp = (1f - MapGeometry.Smooth(edge / _strength.dampWidth)) * _strength.dampWetness;
+        var bank = (1f - MapGeometry.Smooth(edge / _strength.bankWidth)) * _strength.bankWetness;
+        var ravine = region > 0 && _land.Regions[region].Kind == MapLandKind.Ravine;
+        return Mathf.Clamp01(Mathf.Max(Mathf.Max(damp, bank), ravine ? 0.25f : 0f));
+    }
+
+    private static bool Varies(MapLandKind kind) =>
+        kind is MapLandKind.Field or MapLandKind.Garden or MapLandKind.Wood or MapLandKind.Back;
 }

@@ -9,60 +9,59 @@ using Unity.Netcode;
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.PlayMode;
+
+/// <summary>The Cheats window: the match at a glance, then the player, spawning, combat, strikes and world cheats.</summary>
+public class CheatsWindow : PlayModeWindow
 {
-    /// <summary>The Cheats window: the match at a glance, then the player, spawning, combat, strikes and world cheats.</summary>
-    public class CheatsWindow : PlayModeWindow
+    private const long PollMilliseconds = 500;
+
+    private Label _match;
+
+    [MenuItem(EditorMenu.Cheats, false, EditorMenu.CheatsPriority)]
+    public static void Open() => Open<CheatsWindow>("Cheats");
+
+    protected override void Build(VisualElement root)
     {
-        private const long PollMilliseconds = 500;
+        new CheatsPanel(root.Require<VisualElement>("cheats"));
+        _match = root.Require<Label>("match");
+        ShowMatch();
+        root.schedule.Execute(ShowMatch).Every(PollMilliseconds);
+    }
 
-        private Label _match;
-
-        [MenuItem(EditorMenu.Cheats, false, EditorMenu.CheatsPriority)]
-        public static void Open() => Open<CheatsWindow>("Cheats");
-
-        protected override void Build(VisualElement root)
+    private void ShowMatch()
+    {
+        if (!EditorApplication.isPlaying)
         {
-            new CheatsPanel(root.Require<VisualElement>("cheats"));
-            _match = root.Require<Label>("match");
-            ShowMatch();
-            root.schedule.Execute(ShowMatch).Every(PollMilliseconds);
+            _match.text = "Enter Play mode to use the cheats.";
+            return;
         }
 
-        private void ShowMatch()
+        if (!PlayWorld.TryGetAuthoritative(out var manager))
         {
-            if (!EditorApplication.isPlaying)
-            {
-                _match.text = "Enter Play mode to use the cheats.";
-                return;
-            }
-
-            if (!PlayWorld.TryGetAuthoritative(out var manager))
-            {
-                _match.text = "Playing, with no match running.";
-                return;
-            }
-
-            var players = Count<Player>(manager);
-            var units = Count<UnitTag>(manager);
-            var buildings = Count<BuildingTag>(manager);
-            _match.text = $"{FindRole(manager.World)}: {players} players, {units} units, {buildings} buildings";
+            _match.text = "Playing, with no match running.";
+            return;
         }
 
-        private static string FindRole(World world)
-        {
-            if (world.IsHost())
-            {
-                return "Host";
-            }
+        var players = Count<Player>(manager);
+        var units = Count<UnitTag>(manager);
+        var buildings = Count<BuildingTag>(manager);
+        _match.text = $"{FindRole(manager.World)}: {players} players, {units} units, {buildings} buildings";
+    }
 
-            return world.IsServer() ? "Server" : "Single player";
+    private static string FindRole(World world)
+    {
+        if (world.IsHost())
+        {
+            return "Host";
         }
 
-        private static int Count<T>(EntityManager manager) where T : IComponentData
-        {
-            using var query = manager.CreateEntityQuery(typeof(T));
-            return query.CalculateEntityCount();
-        }
+        return world.IsServer() ? "Server" : "Single player";
+    }
+
+    private static int Count<T>(EntityManager manager) where T : IComponentData
+    {
+        using var query = manager.CreateEntityQuery(typeof(T));
+        return query.CalculateEntityCount();
     }
 }

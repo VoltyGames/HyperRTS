@@ -1,95 +1,94 @@
 using System;
-using NUnit.Framework;
 using HyperRTS.Presentation.Environment.Weather;
+using NUnit.Framework;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Presentation.Tests.Environment.Weather
+namespace HyperRTS.Presentation.Tests.Environment.Weather;
+
+/// <summary>Weather: the map's weather set, wet-only decal groups and the scrolling wind gust map.</summary>
+public class WeatherTests
 {
-    /// <summary>Weather: the map's weather set, wet-only decal groups and the scrolling wind gust map.</summary>
-    public class WeatherTests
+    private GameObject _weather;
+    private GameObject _overcast;
+    private WeatherSet _set;
+    private GameObject _group;
+    private GameObject _puddle;
+
+    [SetUp]
+    public void SetUp()
     {
-        private GameObject _weather;
-        private GameObject _overcast;
-        private WeatherSet _set;
-        private GameObject _group;
-        private GameObject _puddle;
+        _weather = new GameObject("Weather");
+        _overcast = new GameObject("Overcast");
+        _set = _weather.AddComponent<WeatherSet>();
+        _set.defaultKey = "Clear";
+        _set.atmospheres.Add("Clear", new GameObject("Clear"));
+        _set.atmospheres.Add("Overcast", _overcast);
+        new GameObject("Default").transform.SetParent(_weather.transform);
 
-        [SetUp]
-        public void SetUp()
+        _group = new GameObject("Wet Decals");
+        _puddle = new GameObject("Puddle 1");
+        _puddle.transform.SetParent(_group.transform, false);
+        _group.AddComponent<WetnessGroup>().threshold = 0.5f;
+    }
+
+    [TearDown]
+    public void TearDown()
+    {
+        foreach (var atmosphere in _set.atmospheres.Values)
         {
-            _weather = new GameObject("Weather");
-            _overcast = new GameObject("Overcast");
-            _set = _weather.AddComponent<WeatherSet>();
-            _set.defaultKey = "Clear";
-            _set.atmospheres.Add("Clear", new GameObject("Clear"));
-            _set.atmospheres.Add("Overcast", _overcast);
-            new GameObject("Default").transform.SetParent(_weather.transform);
-
-            _group = new GameObject("Wet Decals");
-            _puddle = new GameObject("Puddle 1");
-            _puddle.transform.SetParent(_group.transform, false);
-            _group.AddComponent<WetnessGroup>().threshold = 0.5f;
+            Object.DestroyImmediate(atmosphere);
         }
 
-        [TearDown]
-        public void TearDown()
+        Object.DestroyImmediate(_weather);
+        Object.DestroyImmediate(_group);
+    }
+
+    [Test]
+    public void AnUnknownKey_ThrowsNamingIt_AndKeepsTheWeather()
+    {
+        var error = Assert.Throws<InvalidOperationException>(() => _set.Apply("Blizzard"));
+
+        StringAssert.Contains("'Blizzard'", error.Message);
+        Assert.AreEqual(1, _weather.transform.childCount, "the default atmosphere stays");
+    }
+
+    [Test]
+    public void Wetness_ShowsChildrenFromTheThreshold_AndHidesThemAgainWhenDry()
+    {
+        var group = _group.GetComponent<WetnessGroup>();
+        group.Apply(0f);
+        Assert.IsFalse(_puddle.activeSelf, "dry ground");
+
+        group.Apply(0.4f);
+        Assert.IsFalse(_puddle.activeSelf);
+
+        group.Apply(0.8f);
+        Assert.IsTrue(_puddle.activeSelf);
+
+        group.Apply(0f);
+        Assert.IsFalse(_puddle.activeSelf);
+    }
+
+    [TestCase(0.1f, 0.2f, 0.6f, 0.8f, 0.5f, 0.5f, 0.25f, 0.4f, TestName = "Moves downwind by tiles a second")]
+    [TestCase(0.9f, 0.05f, 1f, -1f, 0.2f, 1f, 0.1f, 0.85f, TestName = "Wraps into one tile")]
+    public void Gust_Scroll(float x, float y, float windX, float windY, float speed, float seconds, float expectedX,
+        float expectedY)
+    {
+        var offset = GustField.Scroll(new Vector2(x, y), new Vector2(windX, windY), speed, seconds);
+
+        Assert.AreEqual(expectedX, offset.x, 1e-5f);
+        Assert.AreEqual(expectedY, offset.y, 1e-5f);
+    }
+
+    [Test]
+    public void GustNoise_TilesAcrossTheEdges()
+    {
+        for (var step = 0; step <= 10; step++)
         {
-            foreach (var atmosphere in _set.atmospheres.Values)
-            {
-                Object.DestroyImmediate(atmosphere);
-            }
-
-            Object.DestroyImmediate(_weather);
-            Object.DestroyImmediate(_group);
-        }
-
-        [Test]
-        public void AnUnknownKey_ThrowsNamingIt_AndKeepsTheWeather()
-        {
-            var error = Assert.Throws<InvalidOperationException>(() => _set.Apply("Blizzard"));
-
-            StringAssert.Contains("'Blizzard'", error.Message);
-            Assert.AreEqual(1, _weather.transform.childCount, "the default atmosphere stays");
-        }
-
-        [Test]
-        public void Wetness_ShowsChildrenFromTheThreshold_AndHidesThemAgainWhenDry()
-        {
-            var group = _group.GetComponent<WetnessGroup>();
-            group.Apply(0f);
-            Assert.IsFalse(_puddle.activeSelf, "dry ground");
-
-            group.Apply(0.4f);
-            Assert.IsFalse(_puddle.activeSelf);
-
-            group.Apply(0.8f);
-            Assert.IsTrue(_puddle.activeSelf);
-
-            group.Apply(0f);
-            Assert.IsFalse(_puddle.activeSelf);
-        }
-
-        [TestCase(0.1f, 0.2f, 0.6f, 0.8f, 0.5f, 0.5f, 0.25f, 0.4f, TestName = "Moves downwind by tiles a second")]
-        [TestCase(0.9f, 0.05f, 1f, -1f, 0.2f, 1f, 0.1f, 0.85f, TestName = "Wraps into one tile")]
-        public void Gust_Scroll(float x, float y, float windX, float windY, float speed, float seconds, float expectedX,
-            float expectedY)
-        {
-            var offset = GustField.Scroll(new Vector2(x, y), new Vector2(windX, windY), speed, seconds);
-
-            Assert.AreEqual(expectedX, offset.x, 1e-5f);
-            Assert.AreEqual(expectedY, offset.y, 1e-5f);
-        }
-
-        [Test]
-        public void GustNoise_TilesAcrossTheEdges()
-        {
-            for (var step = 0; step <= 10; step++)
-            {
-                var t = step / 10f;
-                Assert.AreEqual(GustField.Noise(0f, t), GustField.Noise(1f, t), 1e-5f);
-                Assert.AreEqual(GustField.Noise(t, 0f), GustField.Noise(t, 1f), 1e-5f);
-            }
+            var t = step / 10f;
+            Assert.AreEqual(GustField.Noise(0f, t), GustField.Noise(1f, t), 1e-5f);
+            Assert.AreEqual(GustField.Noise(t, 0f), GustField.Noise(t, 1f), 1e-5f);
         }
     }
 }

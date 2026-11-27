@@ -3,65 +3,64 @@ using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Report;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Build
+namespace HyperRTS.Editor.Maps.Build;
+
+/// <summary>
+/// A map's layout in seconds without touching a scene, drawn to <c>Logs/MapReports/&lt;Map&gt;.preview.png</c>
+/// with issues in <c>.preview.json</c>. Rush times and paths need the full build.
+/// </summary>
+public static class MapPreview
 {
-    /// <summary>
-    /// A map's layout in seconds without touching a scene, drawn to <c>Logs/MapReports/&lt;Map&gt;.preview.png</c>
-    /// with issues in <c>.preview.json</c>. Rush times and paths need the full build.
-    /// </summary>
-    public static class MapPreview
+    /// <summary>Previews the spec on disk and writes the preview report and image.</summary>
+    public static MapReport Run(string specPath)
     {
-        /// <summary>Previews the spec on disk and writes the preview report and image.</summary>
-        public static MapReport Run(string specPath)
+        MapPreviewResult result;
+        using (var project = MapProject.Open(specPath))
         {
-            MapPreviewResult result;
-            using (var project = MapProject.Open(specPath))
-            {
-                result = Run(project);
-            }
-
-            var report = result.Report;
-            report.WritePreview(result.Image);
-            Debug.Log($"HyperRTS: map '{report.map}' previewed with {report.errors.Count} errors and {report.warnings.Count} warnings. Report: {MapReport.JsonPath(report.map + MapReport.PreviewSuffix)}");
-            return report;
+            result = Run(project);
         }
 
-        /// <summary>Previews a project (an editor's in-memory spec) without writing anything.</summary>
-        public static MapPreviewResult Run(MapProject project)
+        var report = result.Report;
+        report.WritePreview(result.Image);
+        Debug.Log($"HyperRTS: map '{report.map}' previewed with {report.errors.Count} errors and {report.warnings.Count} warnings. Report: {MapReport.JsonPath(report.map + MapReport.PreviewSuffix)}");
+        return report;
+    }
+
+    /// <summary>Previews a project (an editor's in-memory spec) without writing anything.</summary>
+    public static MapPreviewResult Run(MapProject project)
+    {
+        var issues = new MapIssues();
+        return Finish(project, issues, MapGeneration.Plan(project, issues));
+    }
+
+    /// <summary>
+    /// <see cref="Run(MapProject)"/> with the planning on a worker thread. Call it on the main thread: the checks
+    /// before and the measuring and drawing after need Unity objects and run there.
+    /// </summary>
+    public static async Task<MapPreviewResult> RunAsync(MapProject project)
+    {
+        var issues = new MapIssues();
+        MapGeneration generation = null;
+        if (MapGeneration.Check(project, issues))
         {
-            var issues = new MapIssues();
-            return Finish(project, issues, MapGeneration.Plan(project, issues));
+            var planned = await Task.Run(() => MapGeneration.PlanChecked(project, issues));
+            generation = MapGeneration.CheckPlaced(planned, issues);
         }
 
-        /// <summary>
-        /// <see cref="Run(MapProject)"/> with the planning on a worker thread. Call it on the main thread: the checks
-        /// before and the measuring and drawing after need Unity objects and run there.
-        /// </summary>
-        public static async Task<MapPreviewResult> RunAsync(MapProject project)
-        {
-            var issues = new MapIssues();
-            MapGeneration generation = null;
-            if (MapGeneration.Check(project, issues))
-            {
-                var planned = await Task.Run(() => MapGeneration.PlanChecked(project, issues));
-                generation = MapGeneration.CheckPlaced(planned, issues);
-            }
+        return Finish(project, issues, generation);
+    }
 
-            return Finish(project, issues, generation);
+    private static MapPreviewResult Finish(MapProject project, MapIssues issues, MapGeneration generation)
+    {
+        var report = MapReport.Create(project.Spec, issues, new MapMetrics());
+        Texture2D image = null;
+        if (generation != null)
+        {
+            report.land = MapLandShares.Measure(generation);
+            report.stages.AddRange(generation.Timer.Stages);
+            image = MapReportImage.DrawLand(generation);
         }
 
-        private static MapPreviewResult Finish(MapProject project, MapIssues issues, MapGeneration generation)
-        {
-            var report = MapReport.Create(project.Spec, issues, new MapMetrics());
-            Texture2D image = null;
-            if (generation != null)
-            {
-                report.land = MapLandShares.Measure(generation);
-                report.stages.AddRange(generation.Timer.Stages);
-                image = MapReportImage.DrawLand(generation);
-            }
-
-            return new MapPreviewResult(report, image);
-        }
+        return new MapPreviewResult(report, image);
     }
 }

@@ -1,110 +1,109 @@
+using System;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Surfaces;
-using System;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Environment.Ambient
+namespace HyperRTS.Presentation.Environment.Ambient;
+
+/// <summary>
+/// The scene's ambient life: bird flocks circling over the map and dust devils drifting downwind. Client visuals
+/// only (<see cref="BirdFlockSystem"/>, <see cref="DustDevilSystem"/>); a zero count turns a feature off.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Scene + "Environment/Ambient Life")]
+[Icon(HyperRTSIcons.AmbientLife)]
+[HelpURL(HyperRTSDocs.Presentation)]
+[DisallowMultipleComponent]
+public sealed class AmbientLife : PresentationBehaviour
 {
-    /// <summary>
-    /// The scene's ambient life: bird flocks circling over the map and dust devils drifting downwind. Client visuals
-    /// only (<see cref="BirdFlockSystem"/>, <see cref="DustDevilSystem"/>); a zero count turns a feature off.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Ambient Life")]
-    [Icon(HyperRTSIcons.AmbientLife)]
-    [HelpURL(HyperRTSDocs.Presentation)]
-    [DisallowMultipleComponent]
-    public sealed class AmbientLife : PresentationBehaviour
+    [Header("Birds")]
+    [Tooltip("HyperRTS/Bird material with a 2x2 flipbook of wing poses in _BaseMap (frames left to right, top " +
+             "to bottom; seen from above, head up).")]
+    public Material birdMaterial;
+
+    [Tooltip("Flocks over the map. 0 turns birds off.")]
+    [Min(0)]
+    public int flocks = 4;
+
+    [Tooltip("Birds in one flock, min and max.")]
+    public Vector2Int birdsPerFlock = new(8, 20);
+
+    [Tooltip("Flying height above the ground in metres, min and max.")]
+    public Vector2 height = new(15f, 40f);
+
+    [Tooltip("Width of a bird quad.")]
+    [Unit("m")]
+    [Min(0.01f)]
+    public float birdSize = 0.5f;
+
+    [Tooltip("Metres from a flock within which an impact scatters it.")]
+    [Min(0f)]
+    public float scatterRadius = 60f;
+
+    [Tooltip("Seconds a scattered flock flies off before it settles over a new spot, min and max.")]
+    public Vector2 returnDelay = new(8f, 15f);
+
+    [Header("Dust devils")]
+    [Tooltip("Effect rig streamed along each dust devil's path.")]
+    public GameObject dustDevilRig;
+
+    [Tooltip("Ground materials a dust devil may form on.")]
+    public SurfaceMaterial[] dustDevilGround = { SurfaceMaterial.Soil };
+
+    [Tooltip("Seconds between spawn attempts, min and max.")]
+    public Vector2 dustDevilInterval = new(20f, 45f);
+
+    [Tooltip("Dust devils alive at once. 0 turns them off.")]
+    [Min(0)]
+    public int maxDustDevils = 2;
+
+    [Tooltip("Seconds one dust devil lasts, min and max.")]
+    public Vector2 dustDevilLifetime = new(12f, 25f);
+
+    [Tooltip("Drift speed downwind.")]
+    [Unit("m/s")]
+    [Min(0f)]
+    public float dustDevilSpeed = 3f;
+
+    private readonly SceneSingleton<AmbientLifeSource> _source = new();
+
+    public BirdSettings Birds => new()
     {
-        [Header("Birds")]
-        [Tooltip("HyperRTS/Bird material with a 2x2 flipbook of wing poses in _BaseMap (frames left to right, top " +
-                 "to bottom; seen from above, head up).")]
-        public Material birdMaterial;
+        Height = new float2(height.x, height.y),
+        ScatterRadius = scatterRadius,
+        ReturnDelay = new float2(returnDelay.x, returnDelay.y),
+    };
 
-        [Tooltip("Flocks over the map. 0 turns birds off.")]
-        [Min(0)]
-        public int flocks = 4;
+    /// <summary>Throws naming the first bird field that can't be used.</summary>
+    public void RequireBirds()
+    {
+        Require(birdMaterial != null, nameof(birdMaterial), "is missing");
+        Require(birdsPerFlock.x >= 1 && birdsPerFlock.y >= birdsPerFlock.x, nameof(birdsPerFlock), "needs 1 ≤ min ≤ max");
+        Require(IsRange(height) && height.x > 0f, nameof(height), "needs 0 < min ≤ max");
+        Require(IsRange(returnDelay), nameof(returnDelay), "needs 0 ≤ min ≤ max");
+    }
 
-        [Tooltip("Birds in one flock, min and max.")]
-        public Vector2Int birdsPerFlock = new(8, 20);
+    /// <summary>Throws naming the first dust devil field that can't be used.</summary>
+    public void RequireDustDevils()
+    {
+        Require(dustDevilRig != null, nameof(dustDevilRig), "is missing");
+        Require(dustDevilGround is { Length: > 0 }, nameof(dustDevilGround), "is empty");
+        Require(IsRange(dustDevilInterval) && dustDevilInterval.x > 0f, nameof(dustDevilInterval), "needs 0 < min ≤ max");
+        Require(IsRange(dustDevilLifetime) && dustDevilLifetime.x > 0f, nameof(dustDevilLifetime), "needs 0 < min ≤ max");
+    }
 
-        [Tooltip("Flying height above the ground in metres, min and max.")]
-        public Vector2 height = new(15f, 40f);
+    private void Update() => _source.Write(new AmbientLifeSource { Life = this });
 
-        [Tooltip("Width of a bird quad.")]
-        [Unit("m")]
-        [Min(0.01f)]
-        public float birdSize = 0.5f;
+    protected override void OnDisabled() => _source.Remove();
 
-        [Tooltip("Metres from a flock within which an impact scatters it.")]
-        [Min(0f)]
-        public float scatterRadius = 60f;
+    private static bool IsRange(Vector2 range) => range.x >= 0f && range.y >= range.x;
 
-        [Tooltip("Seconds a scattered flock flies off before it settles over a new spot, min and max.")]
-        public Vector2 returnDelay = new(8f, 15f);
-
-        [Header("Dust devils")]
-        [Tooltip("Effect rig streamed along each dust devil's path.")]
-        public GameObject dustDevilRig;
-
-        [Tooltip("Ground materials a dust devil may form on.")]
-        public SurfaceMaterial[] dustDevilGround = { SurfaceMaterial.Soil };
-
-        [Tooltip("Seconds between spawn attempts, min and max.")]
-        public Vector2 dustDevilInterval = new(20f, 45f);
-
-        [Tooltip("Dust devils alive at once. 0 turns them off.")]
-        [Min(0)]
-        public int maxDustDevils = 2;
-
-        [Tooltip("Seconds one dust devil lasts, min and max.")]
-        public Vector2 dustDevilLifetime = new(12f, 25f);
-
-        [Tooltip("Drift speed downwind.")]
-        [Unit("m/s")]
-        [Min(0f)]
-        public float dustDevilSpeed = 3f;
-
-        private readonly SceneSingleton<AmbientLifeSource> _source = new();
-
-        public BirdSettings Birds => new()
+    private void Require(bool valid, string field, string problem)
+    {
+        if (!valid)
         {
-            Height = new float2(height.x, height.y),
-            ScatterRadius = scatterRadius,
-            ReturnDelay = new float2(returnDelay.x, returnDelay.y),
-        };
-
-        /// <summary>Throws naming the first bird field that can't be used.</summary>
-        public void RequireBirds()
-        {
-            Require(birdMaterial != null, nameof(birdMaterial), "is missing");
-            Require(birdsPerFlock.x >= 1 && birdsPerFlock.y >= birdsPerFlock.x, nameof(birdsPerFlock), "needs 1 ≤ min ≤ max");
-            Require(IsRange(height) && height.x > 0f, nameof(height), "needs 0 < min ≤ max");
-            Require(IsRange(returnDelay), nameof(returnDelay), "needs 0 ≤ min ≤ max");
-        }
-
-        /// <summary>Throws naming the first dust devil field that can't be used.</summary>
-        public void RequireDustDevils()
-        {
-            Require(dustDevilRig != null, nameof(dustDevilRig), "is missing");
-            Require(dustDevilGround is { Length: > 0 }, nameof(dustDevilGround), "is empty");
-            Require(IsRange(dustDevilInterval) && dustDevilInterval.x > 0f, nameof(dustDevilInterval), "needs 0 < min ≤ max");
-            Require(IsRange(dustDevilLifetime) && dustDevilLifetime.x > 0f, nameof(dustDevilLifetime), "needs 0 < min ≤ max");
-        }
-
-        private void Update() => _source.Write(new AmbientLifeSource { Life = this });
-
-        protected override void OnDisabled() => _source.Remove();
-
-        private static bool IsRange(Vector2 range) => range.x >= 0f && range.y >= range.x;
-
-        private void Require(bool valid, string field, string problem)
-        {
-            if (!valid)
-            {
-                throw new InvalidOperationException($"AmbientLife '{name}': {field} {problem}.");
-            }
+            throw new InvalidOperationException($"AmbientLife '{name}': {field} {problem}.");
         }
     }
 }

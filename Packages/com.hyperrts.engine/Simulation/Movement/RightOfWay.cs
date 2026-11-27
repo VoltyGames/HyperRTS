@@ -1,8 +1,8 @@
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Targeting;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Movement.Crushing;
 using HyperRTS.Simulation.Navigation.Spatial;
@@ -11,232 +11,231 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Movement
+namespace HyperRTS.Simulation.Movement;
+
+/// <summary>
+/// Who moves when two units meet: who gives way, each mover's share of the avoiding, who is ahead and who is
+/// crushed. Read-only, so parallel jobs can share it.
+/// </summary>
+public struct RightOfWay
 {
-    /// <summary>
-    /// Who moves when two units meet: who gives way, each mover's share of the avoiding, who is ahead and who is
-    /// crushed. Read-only, so parallel jobs can share it.
-    /// </summary>
-    public struct RightOfWay
+    /// <summary>Metres per second a vehicle keeps to while allied foot units stand in its lane.</summary>
+    public const float WalkingPace = 1.5f;
+
+    // Heavier by half again has the right of way.
+    private const float Outweighing = 1.5f;
+
+    // Goals within 60 degrees share a heading; vehicles crossing or meeting head-on choose a stable right of way.
+    private const float SharedHeading = 0.5f;
+
+    [ReadOnly] private ComponentLookup<ActiveOrder> _orders;
+    [ReadOnly] private ComponentLookup<AttackTarget> _attacks;
+    [ReadOnly] private ComponentLookup<CombatStance> _stances;
+    [ReadOnly] private ComponentLookup<Deployable> _deployables;
+    [ReadOnly] private ComponentLookup<Crusher> _crushers;
+    [ReadOnly] private ComponentLookup<Crushable> _crushables;
+    private OwnerRelations _relations;
+
+    /// <summary>The lane ahead of a moving vehicle, which allied foot units clear.</summary>
+    public VehicleLane Lane;
+
+    public RightOfWay(ref SystemState state)
     {
-        /// <summary>Metres per second a vehicle keeps to while allied foot units stand in its lane.</summary>
-        public const float WalkingPace = 1.5f;
-
-        // Heavier by half again has the right of way.
-        private const float Outweighing = 1.5f;
-
-        // Goals within 60 degrees share a heading; vehicles crossing or meeting head-on choose a stable right of way.
-        private const float SharedHeading = 0.5f;
-
-        [ReadOnly] private ComponentLookup<ActiveOrder> _orders;
-        [ReadOnly] private ComponentLookup<AttackTarget> _attacks;
-        [ReadOnly] private ComponentLookup<CombatStance> _stances;
-        [ReadOnly] private ComponentLookup<Deployable> _deployables;
-        [ReadOnly] private ComponentLookup<Crusher> _crushers;
-        [ReadOnly] private ComponentLookup<Crushable> _crushables;
-        private OwnerRelations _relations;
-
-        /// <summary>The lane ahead of a moving vehicle, which allied foot units clear.</summary>
-        public VehicleLane Lane;
-
-        public RightOfWay(ref SystemState state)
-        {
-            _orders = state.GetComponentLookup<ActiveOrder>(true);
-            _attacks = state.GetComponentLookup<AttackTarget>(true);
-            _stances = state.GetComponentLookup<CombatStance>(true);
-            _deployables = state.GetComponentLookup<Deployable>(true);
-            _crushers = state.GetComponentLookup<Crusher>(true);
-            _crushables = state.GetComponentLookup<Crushable>(true);
-            _relations = default;
-            Lane = new VehicleLane(ref state);
-        }
-
-        public void Update(ref SystemState state, in OwnerRelations relations)
-        {
-            _orders.Update(ref state);
-            _attacks.Update(ref state);
-            _stances.Update(ref state);
-            _deployables.Update(ref state);
-            _crushers.Update(ref state);
-            _crushables.Update(ref state);
-            _relations = relations;
-            Lane.Update(ref state);
-        }
-
-        /// <summary>
-        /// Whether <paramref name="crusher"/> drives over <paramref name="victim"/> instead of round it: an enemy foot
-        /// unit its crusher is big enough for.
-        /// </summary>
-        public readonly bool Crushes(in SpatialEntry crusher, in SpatialEntry victim)
-        {
-            if (!_crushers.TryGetComponent(crusher.Entity, out var size) ||
-                !_crushables.TryGetComponent(victim.Entity, out var rating))
-            {
-                return false;
-            }
-
-            var allied = _relations.IsAllied(crusher.Owner, victim.Owner);
-            return size.Crushes(crusher.Layer, crusher.IsVehicle, rating.Crush, victim.IsVehicle, allied);
-        }
-
-        /// <summary>
-        /// Whether the pair ignore each other: a crusher takes no notice of a unit it drives over, and that unit none of a
-        /// crusher at crushing pace, so neither steers, stops or pushes the other.
-        /// </summary>
-        public readonly bool IsCrushing(in SpatialEntry unit, in SpatialEntry other)
-        {
-            if (Crushes(unit, other))
-            {
-                return true;
-            }
-
-            return Crusher.IsCrushingPace(other.Velocity) && Crushes(other, unit);
-        }
-
-        /// <summary>
-        /// Whether <paramref name="unit"/> gives way to <paramref name="mover"/> of its team. A foot unit always does
-        /// for a vehicle, and a vehicle never does for a foot unit; otherwise only a parked idle unit does, as an
-        /// order, a target, Hold Position or being deployed holds its ground.
-        /// </summary>
-        public readonly bool Yields(in SpatialEntry unit, in SpatialEntry mover)
-        {
-            if (!_relations.IsAllied(unit.Owner, mover.Owner))
-            {
-                return false;
-            }
-
-            if (unit.IsVehicle != mover.IsVehicle)
-            {
-                return mover.IsVehicle;
-            }
-
-            // A vehicle making way has no right of way of its own, or parked vehicles would scatter in a chain.
-            if (mover.IsGivingWay)
-            {
-                return false;
-            }
-
-            return !unit.IsMoving && IsIdle(unit.Entity);
-        }
-
-        /// <summary>
-        /// The mover's part of steering round <paramref name="other"/>: none when a foot unit gives way, so it isn't
-        /// steered round; all against a unit holding its ground, in same-way traffic or against a mover that
-        /// outweighs it. Allied vehicles crossing or meeting head-on choose one winner; other pairs share half each.
-        /// </summary>
-        public readonly float Share(in SpatialEntry mover, in SpatialEntry other, bool otherYields, int precedence)
-        {
-            // A vehicle giving way drives off by itself, so until it has it is steered round like any other.
-            if (otherYields && !other.IsVehicle)
-            {
-                return 0f;
-            }
-
-            if (!other.IsMoving || precedence != 0)
-            {
-                return 1f;
-            }
-
-            if (MeetingVehicles(mover, other))
-            {
-                return GoesFirst(mover, other) ? 0f : 1f;
-            }
-
-            return Outweighs(other, mover) ? 1f : 0.5f;
-        }
-
-        // A stable winner lets crossing or oncoming traffic yield before contact instead of both braking into a
-        // deadlock.
-        private readonly bool MeetingVehicles(in SpatialEntry mover, in SpatialEntry other)
-        {
-            if (!mover.IsVehicle || !other.IsVehicle)
-            {
-                return false;
-            }
-
-            if (!_relations.IsAllied(mover.Owner, other.Owner))
-            {
-                return false;
-            }
-
-            return math.dot(mover.Heading, other.Heading) < SharedHeading;
-        }
-
-        private static bool GoesFirst(in SpatialEntry mover, in SpatialEntry other)
-        {
-            if (Outweighs(mover, other))
-            {
-                return true;
-            }
-
-            if (Outweighs(other, mover))
-            {
-                return false;
-            }
-
-            return mover.Entity.Index < other.Entity.Index;
-        }
-
-        /// <summary>
-        /// The mover's part of the overlap push against <paramref name="other"/>: all of it between a foot unit and a
-        /// vehicle, which the push never moves; half against a unit that moves or gives way too; else all.
-        /// </summary>
-        public readonly float PushShare(in SpatialEntry mover, in SpatialEntry other, bool otherYields)
-        {
-            if (mover.IsVehicle != other.IsVehicle)
-            {
-                return mover.IsVehicle ? 0f : 1f;
-            }
-
-            return other.IsMoving || otherYields ? 0.5f : 1f;
-        }
-
-        /// <summary>
-        /// 1 when the mover is ahead of <paramref name="other"/> going the same way, -1 behind, 0 otherwise. Two
-        /// movers going one way at a gap too narrow for both would each wait on the other, so the one behind gives way.
-        /// </summary>
-        public readonly int Precedence(in SpatialEntry mover, in SpatialEntry other)
-        {
-            if (!mover.IsMoving || !other.IsMoving || math.dot(mover.Heading, other.Heading) < SharedHeading)
-            {
-                return 0;
-            }
-
-            var ahead = math.dot(mover.Position.xz - other.Position.xz, mover.Heading + other.Heading);
-            if (ahead != 0f)
-            {
-                return ahead > 0f ? 1 : -1;
-            }
-
-            return mover.Entity.Index < other.Entity.Index ? 1 : -1;
-        }
-
-        /// <summary>
-        /// The side of a line along <paramref name="travel"/> that <paramref name="offset"/> from it lies on; left
-        /// when on the line, as a mover keeps right.
-        /// </summary>
-        public static float2 Side(float2 travel, float2 offset)
-        {
-            var left = Planar.Left(travel);
-            return math.dot(offset, left) < 0f ? -left : left;
-        }
-
-        private readonly bool IsIdle(Entity unit)
-        {
-            if (_orders.HasEnabled(unit) || _attacks.HasEnabled(unit))
-            {
-                return false;
-            }
-
-            if (Deployable.IsImmobile(_deployables, unit))
-            {
-                return false;
-            }
-
-            return !_stances.TryGetComponent(unit, out var stance) || stance.Value != Stance.HoldPosition;
-        }
-
-        private static bool Outweighs(in SpatialEntry heavy, in SpatialEntry light) =>
-            heavy.Mass > light.Mass && heavy.Mass >= light.Mass * Outweighing;
+        _orders = state.GetComponentLookup<ActiveOrder>(true);
+        _attacks = state.GetComponentLookup<AttackTarget>(true);
+        _stances = state.GetComponentLookup<CombatStance>(true);
+        _deployables = state.GetComponentLookup<Deployable>(true);
+        _crushers = state.GetComponentLookup<Crusher>(true);
+        _crushables = state.GetComponentLookup<Crushable>(true);
+        _relations = default;
+        Lane = new VehicleLane(ref state);
     }
+
+    public void Update(ref SystemState state, in OwnerRelations relations)
+    {
+        _orders.Update(ref state);
+        _attacks.Update(ref state);
+        _stances.Update(ref state);
+        _deployables.Update(ref state);
+        _crushers.Update(ref state);
+        _crushables.Update(ref state);
+        _relations = relations;
+        Lane.Update(ref state);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="crusher"/> drives over <paramref name="victim"/> instead of round it: an enemy foot
+    /// unit its crusher is big enough for.
+    /// </summary>
+    public readonly bool Crushes(in SpatialEntry crusher, in SpatialEntry victim)
+    {
+        if (!_crushers.TryGetComponent(crusher.Entity, out var size) ||
+            !_crushables.TryGetComponent(victim.Entity, out var rating))
+        {
+            return false;
+        }
+
+        var allied = _relations.IsAllied(crusher.Owner, victim.Owner);
+        return size.Crushes(crusher.Layer, crusher.IsVehicle, rating.Crush, victim.IsVehicle, allied);
+    }
+
+    /// <summary>
+    /// Whether the pair ignore each other: a crusher takes no notice of a unit it drives over, and that unit none of a
+    /// crusher at crushing pace, so neither steers, stops or pushes the other.
+    /// </summary>
+    public readonly bool IsCrushing(in SpatialEntry unit, in SpatialEntry other)
+    {
+        if (Crushes(unit, other))
+        {
+            return true;
+        }
+
+        return Crusher.IsCrushingPace(other.Velocity) && Crushes(other, unit);
+    }
+
+    /// <summary>
+    /// Whether <paramref name="unit"/> gives way to <paramref name="mover"/> of its team. A foot unit always does
+    /// for a vehicle, and a vehicle never does for a foot unit; otherwise only a parked idle unit does, as an
+    /// order, a target, Hold Position or being deployed holds its ground.
+    /// </summary>
+    public readonly bool Yields(in SpatialEntry unit, in SpatialEntry mover)
+    {
+        if (!_relations.IsAllied(unit.Owner, mover.Owner))
+        {
+            return false;
+        }
+
+        if (unit.IsVehicle != mover.IsVehicle)
+        {
+            return mover.IsVehicle;
+        }
+
+        // A vehicle making way has no right of way of its own, or parked vehicles would scatter in a chain.
+        if (mover.IsGivingWay)
+        {
+            return false;
+        }
+
+        return !unit.IsMoving && IsIdle(unit.Entity);
+    }
+
+    /// <summary>
+    /// The mover's part of steering round <paramref name="other"/>: none when a foot unit gives way, so it isn't
+    /// steered round; all against a unit holding its ground, in same-way traffic or against a mover that
+    /// outweighs it. Allied vehicles crossing or meeting head-on choose one winner; other pairs share half each.
+    /// </summary>
+    public readonly float Share(in SpatialEntry mover, in SpatialEntry other, bool otherYields, int precedence)
+    {
+        // A vehicle giving way drives off by itself, so until it has it is steered round like any other.
+        if (otherYields && !other.IsVehicle)
+        {
+            return 0f;
+        }
+
+        if (!other.IsMoving || precedence != 0)
+        {
+            return 1f;
+        }
+
+        if (MeetingVehicles(mover, other))
+        {
+            return GoesFirst(mover, other) ? 0f : 1f;
+        }
+
+        return Outweighs(other, mover) ? 1f : 0.5f;
+    }
+
+    // A stable winner lets crossing or oncoming traffic yield before contact instead of both braking into a
+    // deadlock.
+    private readonly bool MeetingVehicles(in SpatialEntry mover, in SpatialEntry other)
+    {
+        if (!mover.IsVehicle || !other.IsVehicle)
+        {
+            return false;
+        }
+
+        if (!_relations.IsAllied(mover.Owner, other.Owner))
+        {
+            return false;
+        }
+
+        return math.dot(mover.Heading, other.Heading) < SharedHeading;
+    }
+
+    private static bool GoesFirst(in SpatialEntry mover, in SpatialEntry other)
+    {
+        if (Outweighs(mover, other))
+        {
+            return true;
+        }
+
+        if (Outweighs(other, mover))
+        {
+            return false;
+        }
+
+        return mover.Entity.Index < other.Entity.Index;
+    }
+
+    /// <summary>
+    /// The mover's part of the overlap push against <paramref name="other"/>: all of it between a foot unit and a
+    /// vehicle, which the push never moves; half against a unit that moves or gives way too; else all.
+    /// </summary>
+    public readonly float PushShare(in SpatialEntry mover, in SpatialEntry other, bool otherYields)
+    {
+        if (mover.IsVehicle != other.IsVehicle)
+        {
+            return mover.IsVehicle ? 0f : 1f;
+        }
+
+        return other.IsMoving || otherYields ? 0.5f : 1f;
+    }
+
+    /// <summary>
+    /// 1 when the mover is ahead of <paramref name="other"/> going the same way, -1 behind, 0 otherwise. Two
+    /// movers going one way at a gap too narrow for both would each wait on the other, so the one behind gives way.
+    /// </summary>
+    public readonly int Precedence(in SpatialEntry mover, in SpatialEntry other)
+    {
+        if (!mover.IsMoving || !other.IsMoving || math.dot(mover.Heading, other.Heading) < SharedHeading)
+        {
+            return 0;
+        }
+
+        var ahead = math.dot(mover.Position.xz - other.Position.xz, mover.Heading + other.Heading);
+        if (ahead != 0f)
+        {
+            return ahead > 0f ? 1 : -1;
+        }
+
+        return mover.Entity.Index < other.Entity.Index ? 1 : -1;
+    }
+
+    /// <summary>
+    /// The side of a line along <paramref name="travel"/> that <paramref name="offset"/> from it lies on; left
+    /// when on the line, as a mover keeps right.
+    /// </summary>
+    public static float2 Side(float2 travel, float2 offset)
+    {
+        var left = Planar.Left(travel);
+        return math.dot(offset, left) < 0f ? -left : left;
+    }
+
+    private readonly bool IsIdle(Entity unit)
+    {
+        if (_orders.HasEnabled(unit) || _attacks.HasEnabled(unit))
+        {
+            return false;
+        }
+
+        if (Deployable.IsImmobile(_deployables, unit))
+        {
+            return false;
+        }
+
+        return !_stances.TryGetComponent(unit, out var stance) || stance.Value != Stance.HoldPosition;
+    }
+
+    private static bool Outweighs(in SpatialEntry heavy, in SpatialEntry light) =>
+        heavy.Mass > light.Mass && heavy.Mass >= light.Mass * Outweighing;
 }

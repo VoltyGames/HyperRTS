@@ -1,53 +1,52 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Rendering.Parts
+namespace HyperRTS.Presentation.Rendering.Parts;
+
+/// <summary>Shows one of several child models, picked by position, so repeated buildings such as walls vary.</summary>
+[AddComponentMenu(HyperRTSMenu.Look + "Effects/Model Variants")]
+[Icon(HyperRTSIcons.ModelVariantsAuthoring)]
+[HelpURL(HyperRTSDocs.Presentation)]
+[DisallowMultipleComponent]
+public class ModelVariantsAuthoring : AuthoringBehaviour
 {
-    /// <summary>Shows one of several child models, picked by position, so repeated buildings such as walls vary.</summary>
-    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Model Variants")]
-    [Icon(HyperRTSIcons.ModelVariantsAuthoring)]
-    [HelpURL(HyperRTSDocs.Presentation)]
-    [DisallowMultipleComponent]
-    public class ModelVariantsAuthoring : AuthoringBehaviour
+    [Tooltip("The looks to pick from. Each lists every child that belongs to it, its damage stage models included.")]
+    public List<Variant> variants = new();
+
+    [Serializable]
+    public class Variant
     {
-        [Tooltip("The looks to pick from. Each lists every child that belongs to it, its damage stage models included.")]
-        public List<Variant> variants = new();
+        [Tooltip("Child objects shown only while this variant is picked.")]
+        public List<GameObject> models = new();
+    }
 
-        [Serializable]
-        public class Variant
+    public class Baker : Baker<ModelVariantsAuthoring>
+    {
+        public override void Bake(ModelVariantsAuthoring authoring)
         {
-            [Tooltip("Child objects shown only while this variant is picked.")]
-            public List<GameObject> models = new();
-        }
-
-        public class Baker : Baker<ModelVariantsAuthoring>
-        {
-            public override void Bake(ModelVariantsAuthoring authoring)
+            var parts = new List<ModelVariantPart>();
+            for (var i = 0; i < authoring.variants.Count; i++)
             {
-                var parts = new List<ModelVariantPart>();
-                for (var i = 0; i < authoring.variants.Count; i++)
+                foreach (var model in authoring.variants[i].models)
                 {
-                    foreach (var model in authoring.variants[i].models)
+                    if (model == null)
                     {
-                        if (model == null)
-                        {
-                            continue;
-                        }
-
-                        var visual = GetEntity(model, TransformUsageFlags.Dynamic);
-                        parts.Add(new ModelVariantPart { Visual = visual, Variant = i });
+                        continue;
                     }
-                }
 
-                var writer = this.Writer();
-                writer.AddBuffer(parts);
-                writer.Add(new ModelVariants { Count = authoring.variants.Count, Shown = -1 });
-                writer.Add<ModelVariantPicked>();
-                writer.SetEnabled<ModelVariantPicked>(false);
+                    var visual = GetEntity(model, TransformUsageFlags.Dynamic);
+                    parts.Add(new ModelVariantPart { Visual = visual, Variant = i });
+                }
             }
+
+            var writer = this.Writer();
+            writer.AddBuffer(parts);
+            writer.Add(new ModelVariants { Count = authoring.variants.Count, Shown = -1 });
+            writer.Add<ModelVariantPicked>();
+            writer.SetEnabled<ModelVariantPicked>(false);
         }
     }
 }

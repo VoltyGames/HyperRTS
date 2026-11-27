@@ -1,11 +1,10 @@
 using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 
-namespace HyperRTS.Network.Joining
+namespace HyperRTS.Network.Joining;
+
+/// <summary>Server only, on a connection entity: the player slot it controls. Observers have none.</summary>
+public struct ConnectionPlayer : IComponentData
 {
-    /// <summary>Server only, on a connection entity: the player slot it controls. Observers have none.</summary>
-    public struct ConnectionPlayer : IComponentData
-    {
-        public Entity Player;
-    }
+    public Entity Player;
 }

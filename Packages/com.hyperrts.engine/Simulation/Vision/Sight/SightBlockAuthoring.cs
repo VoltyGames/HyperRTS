@@ -4,79 +4,78 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Vision.Sight
+namespace HyperRTS.Simulation.Vision.Sight;
+
+/// <summary>
+/// Blocks sight over a box centred on this transform: solid below its height (a house, a wall, a wreck), porous
+/// below its porous top (a tree crown, smoke), and concealing still infantry if set (ruins, trenches).
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Vision/Sight Block")]
+[Icon(HyperRTSIcons.SightBlockAuthoring)]
+[HelpURL(HyperRTSDocs.Vision)]
+[DisallowMultipleComponent]
+public class SightBlockAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Blocks sight over a box centred on this transform: solid below its height (a house, a wall, a wreck), porous
-    /// below its porous top (a tree crown, smoke), and concealing still infantry if set (ruins, trenches).
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Vision/Sight Block")]
-    [Icon(HyperRTSIcons.SightBlockAuthoring)]
-    [HelpURL(HyperRTSDocs.Vision)]
-    [DisallowMultipleComponent]
-    public class SightBlockAuthoring : AuthoringBehaviour
+    [Tooltip("Blocked footprint (X by Z) centred on this transform. Fit To Model in the context menu fills it.")]
+    public Vector2 size = new(4f, 4f);
+
+    [Tooltip("Solid top above this transform: the roof or the wall's top. 0 for cover sight seeps through.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float height = 3f;
+
+    [Tooltip("Share of sight lost per metre through the porous part: 0.1 hides what lies past 10 m of it. 0 for none.")]
+    [Min(0f)]
+    public float density;
+
+    [Tooltip("Top of the porous part above this transform, such as a tree's crown.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float porousTop;
+
+    [Tooltip("Still infantry on it are concealed, as in ruins and trenches. Porous cover conceals without it.")]
+    public bool conceals;
+
+    /// <summary>Sets the size and height to the box round the active meshes, centred on this transform.</summary>
+    [InspectorButton("Fit to model", Glyph = "wand-sparkles")]
+    public void FitToModel()
     {
-        [Tooltip("Blocked footprint (X by Z) centred on this transform. Fit To Model in the context menu fills it.")]
-        public Vector2 size = new(4f, 4f);
-
-        [Tooltip("Solid top above this transform: the roof or the wall's top. 0 for cover sight seeps through.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float height = 3f;
-
-        [Tooltip("Share of sight lost per metre through the porous part: 0.1 hides what lies past 10 m of it. 0 for none.")]
-        [Min(0f)]
-        public float density;
-
-        [Tooltip("Top of the porous part above this transform, such as a tree's crown.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float porousTop;
-
-        [Tooltip("Still infantry on it are concealed, as in ruins and trenches. Porous cover conceals without it.")]
-        public bool conceals;
-
-        /// <summary>Sets the size and height to the box round the active meshes, centred on this transform.</summary>
-        [InspectorButton("Fit to model", Glyph = "wand-sparkles")]
-        public void FitToModel()
+        var reach = Vector3.zero;
+        var top = 0f;
+        foreach (var renderer in GetComponentsInChildren<MeshRenderer>())
         {
-            var reach = Vector3.zero;
-            var top = 0f;
-            foreach (var renderer in GetComponentsInChildren<MeshRenderer>())
-            {
-                var box = BoundsMath.Moved(renderer.localBounds, transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix);
-                reach = Vector3.Max(reach, new Vector3(Mathf.Max(-box.min.x, box.max.x), 0f, Mathf.Max(-box.min.z, box.max.z)));
-                top = Mathf.Max(top, box.max.y);
-            }
-
-            size = new Vector2(reach.x * 2f, reach.z * 2f);
-            height = Mathf.Max(top, 0.25f);
+            var box = BoundsMath.Moved(renderer.localBounds, transform.worldToLocalMatrix * renderer.transform.localToWorldMatrix);
+            reach = Vector3.Max(reach, new Vector3(Mathf.Max(-box.min.x, box.max.x), 0f, Mathf.Max(-box.min.z, box.max.z)));
+            top = Mathf.Max(top, box.max.y);
         }
 
-        public static void Add(EntityWriter writer, in SightBlock block) =>
-            writer.Add(block);
+        size = new Vector2(reach.x * 2f, reach.z * 2f);
+        height = Mathf.Max(top, 0.25f);
+    }
 
-        private void OnDrawGizmosSelected()
-        {
-            Gizmos.matrix = transform.localToWorldMatrix;
-            var top = Mathf.Max(height, density > 0f ? porousTop : 0f);
-            Gizmos.DrawWireCube(new Vector3(0f, top * 0.5f, 0f), new Vector3(size.x, top, size.y));
-        }
+    public static void Add(EntityWriter writer, in SightBlock block) =>
+        writer.Add(block);
 
-        public class Baker : Baker<SightBlockAuthoring>
+    private void OnDrawGizmosSelected()
+    {
+        Gizmos.matrix = transform.localToWorldMatrix;
+        var top = Mathf.Max(height, density > 0f ? porousTop : 0f);
+        Gizmos.DrawWireCube(new Vector3(0f, top * 0.5f, 0f), new Vector3(size.x, top, size.y));
+    }
+
+    public class Baker : Baker<SightBlockAuthoring>
+    {
+        public override void Bake(SightBlockAuthoring authoring)
         {
-            public override void Bake(SightBlockAuthoring authoring)
+            var writer = this.Writer();
+            Add(writer, new SightBlock
             {
-                var writer = this.Writer();
-                Add(writer, new SightBlock
-                {
-                    Size = authoring.size,
-                    Height = authoring.height,
-                    Density = authoring.density,
-                    PorousTop = authoring.porousTop,
-                    Conceals = authoring.conceals,
-                });
-            }
+                Size = authoring.size,
+                Height = authoring.height,
+                Density = authoring.density,
+                PorousTop = authoring.porousTop,
+                Conceals = authoring.conceals,
+            });
         }
     }
 }

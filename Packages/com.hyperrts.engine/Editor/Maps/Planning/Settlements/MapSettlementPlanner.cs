@@ -1,96 +1,95 @@
-using HyperRTS.Editor.Maps.Common;
 using System.Collections.Generic;
+using HyperRTS.Editor.Maps.Common;
 
-namespace HyperRTS.Editor.Maps.Planning.Settlements
+namespace HyperRTS.Editor.Maps.Planning.Settlements;
+
+/// <summary>
+/// Settlements: up to <c>count</c> plots lining the roads within the radius, each with house, yard, outbuildings,
+/// fences and street furniture. Runs after roads, banks, bases, pads and ravines and before woods, belts and
+/// farmland.
+/// </summary>
+public sealed class MapSettlementPlanner : MapLandPass
 {
-    /// <summary>
-    /// Settlements: up to <c>count</c> plots lining the roads within the radius, each with house, yard, outbuildings,
-    /// fences and street furniture. Runs after roads, banks, bases, pads and ravines and before woods, belts and
-    /// farmland.
-    /// </summary>
-    public sealed class MapSettlementPlanner : MapLandPass
+    public MapSettlementPlanner(MapPlanContext context) : base(context)
     {
-        public MapSettlementPlanner(MapPlanContext context) : base(context)
-        {
-        }
+    }
 
-        public override void Plan()
+    public override void Plan()
+    {
+        foreach (var settlement in Context.Layout.Settlements)
         {
-            foreach (var settlement in Context.Layout.Settlements)
+            if (settlement.Copy == 0 && settlement.Authored.count > 0)
             {
-                if (settlement.Copy == 0 && settlement.Authored.count > 0)
-                {
-                    Plan(new MapSettlement(Context, settlement.Authored, settlement.Index));
-                }
+                Plan(new MapSettlement(Context, settlement.Authored, settlement.Index));
             }
         }
+    }
 
-        private void Plan(MapSettlement settlement)
+    private void Plan(MapSettlement settlement)
+    {
+        var spec = settlement.Spec;
+        if (settlement.Streets.Count == 0)
         {
-            var spec = settlement.Spec;
-            if (settlement.Streets.Count == 0)
+            Context.Issues.Warn($"{settlement.Label} fit 0 of {spec.count} plots: no road within {spec.radius:0.#} m.");
+            return;
+        }
+
+        new MapStreetFurniture(settlement).Place();
+        var plots = new MapPlotFinder(settlement).Find();
+        var built = Build(settlement, plots);
+        if (built < spec.count)
+        {
+            var rejections = settlement.Rejections;
+            var why = rejections.Total > 0 ? $"rejected {rejections}" : "no plot fits along the roads";
+            Context.Issues.Warn($"{settlement.Label} fit {built} of {spec.count} plots: {why}.");
+        }
+    }
+
+    private int Build(MapSettlement settlement, List<MapPlot> plots)
+    {
+        var builder = new MapPlotBuilder(settlement, Context.Random(MapRandomChannel.Settlements, settlement.Index));
+        var regionSeeds = Context.Random(MapRandomChannel.PlotRegions, settlement.Index);
+        var built = 0;
+        foreach (var plot in plots)
+        {
+            if (built >= settlement.Spec.count)
             {
-                Context.Issues.Warn($"{settlement.Label} fit 0 of {spec.count} plots: no road within {spec.radius:0.#} m.");
-                return;
+                break;
             }
 
-            new MapStreetFurniture(settlement).Place();
-            var plots = new MapPlotFinder(settlement).Find();
-            var built = Build(settlement, plots);
-            if (built < spec.count)
+            var seed = regionSeeds.Next();
+            var problem = TryBuild(settlement, builder, plot, seed);
+            if (problem == null)
             {
-                var rejections = settlement.Rejections;
-                var why = rejections.Total > 0 ? $"rejected {rejections}" : "no plot fits along the roads";
-                Context.Issues.Warn($"{settlement.Label} fit {built} of {spec.count} plots: {why}.");
+                built++;
+            }
+            else
+            {
+                settlement.Rejections.Add(problem, plot.Center);
             }
         }
 
-        private int Build(MapSettlement settlement, List<MapPlot> plots)
+        return built;
+    }
+
+    /// <summary>Builds the plot if its land is free and its house fits; otherwise returns why not.</summary>
+    private static string TryBuild(MapSettlement settlement, MapPlotBuilder builder, MapPlot plot, int seed)
+    {
+        var blocked = settlement.Claims.Blocked(plot);
+        if (blocked != null)
         {
-            var builder = new MapPlotBuilder(settlement, Context.Random(MapRandomChannel.Settlements, settlement.Index));
-            var regionSeeds = Context.Random(MapRandomChannel.PlotRegions, settlement.Index);
-            var built = 0;
-            foreach (var plot in plots)
-            {
-                if (built >= settlement.Spec.count)
-                {
-                    break;
-                }
-
-                var seed = regionSeeds.Next();
-                var problem = TryBuild(settlement, builder, plot, seed);
-                if (problem == null)
-                {
-                    built++;
-                }
-                else
-                {
-                    settlement.Rejections.Add(problem, plot.Center);
-                }
-            }
-
-            return built;
+            return blocked;
         }
 
-        /// <summary>Builds the plot if its land is free and its house fits; otherwise returns why not.</summary>
-        private static string TryBuild(MapSettlement settlement, MapPlotBuilder builder, MapPlot plot, int seed)
+        var house = builder.Choose(plot, out var problem);
+        if (house == null)
         {
-            var blocked = settlement.Claims.Blocked(plot);
-            if (blocked != null)
-            {
-                return blocked;
-            }
-
-            var house = builder.Choose(plot, out var problem);
-            if (house == null)
-            {
-                return problem;
-            }
-
-            builder.BuildYard(plot, house);
-            settlement.Claims.Claim(plot, seed);
-            builder.Furnish(plot, house, seed);
-            return null;
+            return problem;
         }
+
+        builder.BuildYard(plot, house);
+        settlement.Claims.Claim(plot, seed);
+        builder.Furnish(plot, house, seed);
+        return null;
     }
 }

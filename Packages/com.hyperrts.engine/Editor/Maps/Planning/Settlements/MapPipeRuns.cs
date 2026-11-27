@@ -1,83 +1,82 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace HyperRTS.Editor.Maps.Planning.Settlements
+namespace HyperRTS.Editor.Maps.Planning.Settlements;
+
+/// <summary>
+/// Which street pipe sections stay: clear runs join across short gaps (driveways, roads) with an arch, and chains
+/// shorter than the kit's minimum are dropped, so no lone sections.
+/// </summary>
+public static class MapPipeRuns
 {
-    /// <summary>
-    /// Which street pipe sections stay: clear runs join across short gaps (driveways, roads) with an arch, and chains
-    /// shorter than the kit's minimum are dropped, so no lone sections.
-    /// </summary>
-    public static class MapPipeRuns
+    /// <summary>The sections to lay; gaps to arch over (first index, count) go into <paramref name="arches"/>.</summary>
+    public static bool[] SectionsToLay(IReadOnlyList<bool> clear, int minSections, int maxGapSections,
+        List<(int First, int Count)> arches)
     {
-        /// <summary>The sections to lay; gaps to arch over (first index, count) go into <paramref name="arches"/>.</summary>
-        public static bool[] SectionsToLay(IReadOnlyList<bool> clear, int minSections, int maxGapSections,
-            List<(int First, int Count)> arches)
+        var kept = new bool[clear.Count];
+        var chain = new List<(int First, int Count)>();
+        foreach (var run in Runs(clear))
         {
-            var kept = new bool[clear.Count];
-            var chain = new List<(int First, int Count)>();
-            foreach (var run in Runs(clear))
+            var end = chain.Count == 0 ? 0 : chain[^1].First + chain[^1].Count;
+            if (chain.Count > 0 && run.First - end > maxGapSections)
             {
-                var end = chain.Count == 0 ? 0 : chain[^1].First + chain[^1].Count;
-                if (chain.Count > 0 && run.First - end > maxGapSections)
-                {
-                    LayChain(chain, minSections, kept, arches);
-                    chain.Clear();
-                }
-
-                chain.Add(run);
+                LayChain(chain, minSections, kept, arches);
+                chain.Clear();
             }
 
-            LayChain(chain, minSections, kept, arches);
-            return kept;
+            chain.Add(run);
         }
 
-        /// <summary>Keeps a chain long enough, with an arch over each gap inside it.</summary>
-        private static void LayChain(List<(int First, int Count)> chain, int minSections, bool[] kept,
-            List<(int First, int Count)> arches)
-        {
-            var total = chain.Sum(run => run.Count);
-            if (total < minSections)
-            {
-                return;
-            }
-
-            for (var i = 0; i < chain.Count; i++)
-            {
-                var (first, count) = chain[i];
-                for (var j = first; j < first + count; j++)
-                {
-                    kept[j] = true;
-                }
-
-                if (i > 0)
-                {
-                    var gapStart = chain[i - 1].First + chain[i - 1].Count;
-                    arches.Add((gapStart, first - gapStart));
-                }
-            }
-        }
-
-        /// <summary>The stretches of passing sections, as first index and count.</summary>
-        private static IEnumerable<(int First, int Count)> Runs(IReadOnlyList<bool> clear)
-        {
-            var first = -1;
-            for (var i = 0; i <= clear.Count; i++)
-            {
-                var passes = i < clear.Count && clear[i];
-                if (passes && first < 0)
-                {
-                    first = i;
-                }
-
-                if (!passes && first >= 0)
-                {
-                    yield return (first, i - first);
-                    first = -1;
-                }
-            }
-        }
-
-        /// <summary>The stretch along its length that makes an arch span a gap of <paramref name="gap"/> sections end to end.</summary>
-        public static float ArchStretch(int gap, float section, float archLength) => gap * section / archLength;
+        LayChain(chain, minSections, kept, arches);
+        return kept;
     }
+
+    /// <summary>Keeps a chain long enough, with an arch over each gap inside it.</summary>
+    private static void LayChain(List<(int First, int Count)> chain, int minSections, bool[] kept,
+        List<(int First, int Count)> arches)
+    {
+        var total = chain.Sum(run => run.Count);
+        if (total < minSections)
+        {
+            return;
+        }
+
+        for (var i = 0; i < chain.Count; i++)
+        {
+            var (first, count) = chain[i];
+            for (var j = first; j < first + count; j++)
+            {
+                kept[j] = true;
+            }
+
+            if (i > 0)
+            {
+                var gapStart = chain[i - 1].First + chain[i - 1].Count;
+                arches.Add((gapStart, first - gapStart));
+            }
+        }
+    }
+
+    /// <summary>The stretches of passing sections, as first index and count.</summary>
+    private static IEnumerable<(int First, int Count)> Runs(IReadOnlyList<bool> clear)
+    {
+        var first = -1;
+        for (var i = 0; i <= clear.Count; i++)
+        {
+            var passes = i < clear.Count && clear[i];
+            if (passes && first < 0)
+            {
+                first = i;
+            }
+
+            if (!passes && first >= 0)
+            {
+                yield return (first, i - first);
+                first = -1;
+            }
+        }
+    }
+
+    /// <summary>The stretch along its length that makes an arch span a gap of <paramref name="gap"/> sections end to end.</summary>
+    public static float ArchStretch(int gap, float section, float archLength) => gap * section / archLength;
 }

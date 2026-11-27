@@ -1,77 +1,76 @@
-using HyperRTS.Presentation.Common;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Match;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Environment.Weather
+namespace HyperRTS.Presentation.Environment.Weather;
+
+/// <summary>
+/// The weathers a map offers. Its only child is the default weather's atmosphere instance, baked into the scene;
+/// when play starts, a <see cref="MatchSetup.Weather"/> naming another entry replaces that child with its prefab.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Scene + "Environment/Weather Set")]
+[Icon(HyperRTSIcons.WeatherSet)]
+[HelpURL(HyperRTSDocs.Presentation)]
+[DisallowMultipleComponent]
+public sealed class WeatherSet : PresentationBehaviour
 {
-    /// <summary>
-    /// The weathers a map offers. Its only child is the default weather's atmosphere instance, baked into the scene;
-    /// when play starts, a <see cref="MatchSetup.Weather"/> naming another entry replaces that child with its prefab.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Scene + "Environment/Weather Set")]
-    [Icon(HyperRTSIcons.WeatherSet)]
-    [HelpURL(HyperRTSDocs.Presentation)]
-    [DisallowMultipleComponent]
-    public sealed class WeatherSet : PresentationBehaviour
+    [Tooltip("Key of the weather the scene was built with; its atmosphere is this object's child.")]
+    public string defaultKey;
+
+    // Dictionaries serialize only with [SerializeField], even when public.
+    [SerializeField]
+    [Tooltip("Each weather's atmosphere prefab, by key.")]
+    public Dictionary<string, GameObject> atmospheres = new();
+
+    private readonly LiveSingleton<MatchSetup> _setup = new();
+    private string _currentKey;
+
+    // Awake, before the first frame renders, so the default weather never shows when another was picked.
+    protected override void OnAwake()
     {
-        [Tooltip("Key of the weather the scene was built with; its atmosphere is this object's child.")]
-        public string defaultKey;
+        _currentKey = defaultKey;
+        var requested = _setup.TryGetInDefaultWorld(out var setup) ? setup.Weather.ToString() : "";
+        Apply(requested);
+    }
 
-        // Dictionaries serialize only with [SerializeField], even when public.
-        [SerializeField]
-        [Tooltip("Each weather's atmosphere prefab, by key.")]
-        public Dictionary<string, GameObject> atmospheres = new();
-
-        private readonly LiveSingleton<MatchSetup> _setup = new();
-        private string _currentKey;
-
-        // Awake, before the first frame renders, so the default weather never shows when another was picked.
-        protected override void OnAwake()
+    /// <summary>Switches to <paramref name="key"/>; empty or the current key keeps the weather in effect.</summary>
+    public void Apply(string key)
+    {
+        if (string.IsNullOrEmpty(key) || key == _currentKey)
         {
-            _currentKey = defaultKey;
-            var requested = _setup.TryGetInDefaultWorld(out var setup) ? setup.Weather.ToString() : "";
-            Apply(requested);
+            return;
         }
 
-        /// <summary>Switches to <paramref name="key"/>; empty or the current key keeps the weather in effect.</summary>
-        public void Apply(string key)
-        {
-            if (string.IsNullOrEmpty(key) || key == _currentKey)
-            {
-                return;
-            }
+        var prefab = Find(key);
+        RemoveCurrent();
+        Instantiate(prefab, transform);
+        _currentKey = key;
+    }
 
-            var prefab = Find(key);
-            RemoveCurrent();
-            Instantiate(prefab, transform);
-            _currentKey = key;
+    /// <summary>The atmosphere prefab of <paramref name="key"/>; an unknown key throws naming it.</summary>
+    public GameObject Find(string key)
+    {
+        if (atmospheres.TryGetValue(key, out var atmosphere))
+        {
+            return atmosphere;
         }
 
-        /// <summary>The atmosphere prefab of <paramref name="key"/>; an unknown key throws naming it.</summary>
-        public GameObject Find(string key)
-        {
-            if (atmospheres.TryGetValue(key, out var atmosphere))
-            {
-                return atmosphere;
-            }
+        var known = string.Join(", ", atmospheres.Keys);
+        throw new InvalidOperationException(
+            $"HyperRTS: weather '{key}' is not one of this map's weathers ({known}).");
+    }
 
-            var known = string.Join(", ", atmospheres.Keys);
-            throw new InvalidOperationException(
-                $"HyperRTS: weather '{key}' is not one of this map's weathers ({known}).");
-        }
-
-        // Deactivated first so the old atmosphere's OnDisable runs before the new one's OnEnable publishes.
-        private void RemoveCurrent()
+    // Deactivated first so the old atmosphere's OnDisable runs before the new one's OnEnable publishes.
+    private void RemoveCurrent()
+    {
+        for (var i = transform.childCount - 1; i >= 0; i--)
         {
-            for (var i = transform.childCount - 1; i >= 0; i--)
-            {
-                var child = transform.GetChild(i).gameObject;
-                child.SetActive(false);
-                Destroy(child);
-            }
+            var child = transform.GetChild(i).gameObject;
+            child.SetActive(false);
+            Destroy(child);
         }
     }
 }

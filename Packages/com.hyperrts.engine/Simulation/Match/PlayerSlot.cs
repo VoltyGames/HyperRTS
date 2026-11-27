@@ -5,62 +5,61 @@ using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Match
+namespace HyperRTS.Simulation.Match;
+
+/// <summary>One player slot in <see cref="MatchAuthoring"/>; its list position + 1 is the owner number.</summary>
+[Serializable]
+public class PlayerSlot
 {
-    /// <summary>One player slot in <see cref="MatchAuthoring"/>; its list position + 1 is the owner number.</summary>
-    [Serializable]
-    public class PlayerSlot
+    /// <summary>Distinct default colours, one per player slot.</summary>
+    public static readonly Color[] Palette =
     {
-        /// <summary>Distinct default colours, one per player slot.</summary>
-        public static readonly Color[] Palette =
+        new(0.2f, 0.45f, 1f), new(0.9f, 0.2f, 0.15f), new(0.25f, 0.8f, 0.3f), new(0.95f, 0.8f, 0.2f),
+        new(0.6f, 0.3f, 0.9f), new(1f, 0.55f, 0.15f), new(0.2f, 0.8f, 0.8f), new(0.95f, 0.45f, 0.7f),
+    };
+
+    [Tooltip("Name shown in the HUD.")]
+    public string name = "Player";
+
+    [Tooltip("Players on the same team are allies.")]
+    [Range(1, OwnerRelations.MaxTeams - 1)]
+    public int team = 1;
+
+    [Tooltip("Team colour applied to owned units and buildings.")]
+    public Color color = Color.blue;
+
+    [Tooltip("Who drives this player.")]
+    public PlayerControl control = PlayerControl.LocalHuman;
+
+    [Tooltip("Stockpile at match start.")]
+    public List<ResourceQuantity> startingResources = new();
+
+    [Tooltip("AI only: tuning preset from the Match's AI settings.")]
+    public AIDifficulty difficulty = AIDifficulty.Normal;
+
+    [Tooltip("AI only: opening to build before training freely; empty trains from the start. The Match's sides " +
+             "replace it when it has any.")]
+    public AIBuildOrder buildOrder;
+
+    [Tooltip("The game's army id, which picks the start kit and AI build order from the Match's sides. A match " +
+             "setup replaces it.")]
+    public byte side;
+
+    [Tooltip("Where the side's start kit goes (world position on the ground).")]
+    public Vector3 spawnPosition;
+
+    [Tooltip("Degrees: the start kit's forward.")]
+    public float spawnYaw;
+
+    /// <summary>Adds the starting stockpile to the player's stock.</summary>
+    public void AddStartingResources(DynamicBuffer<ResourceStock> stock)
+    {
+        var pile = new Stockpile(stock);
+        foreach (var quantity in startingResources)
         {
-            new(0.2f, 0.45f, 1f), new(0.9f, 0.2f, 0.15f), new(0.25f, 0.8f, 0.3f), new(0.95f, 0.8f, 0.2f),
-            new(0.6f, 0.3f, 0.9f), new(1f, 0.55f, 0.15f), new(0.2f, 0.8f, 0.8f), new(0.95f, 0.45f, 0.7f),
-        };
-
-        [Tooltip("Name shown in the HUD.")]
-        public string name = "Player";
-
-        [Tooltip("Players on the same team are allies.")]
-        [Range(1, OwnerRelations.MaxTeams - 1)]
-        public int team = 1;
-
-        [Tooltip("Team colour applied to owned units and buildings.")]
-        public Color color = Color.blue;
-
-        [Tooltip("Who drives this player.")]
-        public PlayerControl control = PlayerControl.LocalHuman;
-
-        [Tooltip("Stockpile at match start.")]
-        public List<ResourceQuantity> startingResources = new();
-
-        [Tooltip("AI only: tuning preset from the Match's AI settings.")]
-        public AIDifficulty difficulty = AIDifficulty.Normal;
-
-        [Tooltip("AI only: opening to build before training freely; empty trains from the start. The Match's sides " +
-                 "replace it when it has any.")]
-        public AIBuildOrder buildOrder;
-
-        [Tooltip("The game's army id, which picks the start kit and AI build order from the Match's sides. A match " +
-                 "setup replaces it.")]
-        public byte side;
-
-        [Tooltip("Where the side's start kit goes (world position on the ground).")]
-        public Vector3 spawnPosition;
-
-        [Tooltip("Degrees: the start kit's forward.")]
-        public float spawnYaw;
-
-        /// <summary>Adds the starting stockpile to the player's stock.</summary>
-        public void AddStartingResources(DynamicBuffer<ResourceStock> stock)
-        {
-            var pile = new Stockpile(stock);
-            foreach (var quantity in startingResources)
+            if (quantity.type != null)
             {
-                if (quantity.type != null)
-                {
-                    pile.Add(quantity.type, quantity.amount);
-                }
+                pile.Add(quantity.type, quantity.amount);
             }
         }
     }

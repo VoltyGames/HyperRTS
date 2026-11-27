@@ -7,56 +7,55 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Maps.Library
+namespace HyperRTS.Editor.Maps.Library;
+
+/// <summary>Draws <see cref="MapKeyAttribute"/> string fields as a dropdown of the library's keys of those types.</summary>
+[CustomPropertyDrawer(typeof(MapKeyAttribute))]
+public sealed class MapKeyDrawer : PropertyDrawer
 {
-    /// <summary>Draws <see cref="MapKeyAttribute"/> string fields as a dropdown of the library's keys of those types.</summary>
-    [CustomPropertyDrawer(typeof(MapKeyAttribute))]
-    public sealed class MapKeyDrawer : PropertyDrawer
+    private const string None = "(none)";
+
+    public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
-        private const string None = "(none)";
+        var root = EditorAssets.Layout(typeof(MapKeyDrawer)).Instantiate();
+        var field = root.Require<DropdownField>("key");
+        field.label = property.displayName;
+        var types = ((MapKeyAttribute)attribute).Types;
 
-        public override VisualElement CreatePropertyGUI(SerializedProperty property)
+        void Show()
         {
-            var root = EditorAssets.Layout(typeof(MapKeyDrawer)).Instantiate();
-            var field = root.Require<DropdownField>("key");
-            field.label = property.displayName;
-            var types = ((MapKeyAttribute)attribute).Types;
-
-            void Show()
-            {
-                field.choices = Choices(types, property.stringValue);
-                field.showMixedValue = property.hasMultipleDifferentValues;
-                field.SetValueWithoutNotify(string.IsNullOrEmpty(property.stringValue) ? None : property.stringValue);
-            }
-
-            field.RegisterValueChangedCallback(change =>
-            {
-                property.stringValue = change.newValue == None ? string.Empty : change.newValue;
-                property.serializedObject.ApplyModifiedProperties();
-            });
-            root.TrackPropertyValue(property, _ => Show());
-            Show();
-            return root;
+            field.choices = Choices(types, property.stringValue);
+            field.showMixedValue = property.hasMultipleDifferentValues;
+            field.SetValueWithoutNotify(string.IsNullOrEmpty(property.stringValue) ? None : property.stringValue);
         }
 
-        // The library's keys of every type the field takes, plus the current value when no item has it, so a bad key stays visible.
-        private static List<string> Choices(Type[] types, string current)
+        field.RegisterValueChangedCallback(change =>
         {
-            var keys = types.SelectMany(type => AssetDatabase.FindAssets("t:" + type.Name)
-                    .Select(AssetDatabase.GUIDToAssetPath)
-                    .Select(MapLibrary.ParseFile)
-                    .Where(parsed => parsed.Type == type)
-                    .Select(parsed => parsed.Key))
-                .Distinct()
-                .OrderBy(key => key, StringComparer.Ordinal)
-                .ToList();
-            if (!string.IsNullOrEmpty(current) && !keys.Contains(current))
-            {
-                keys.Add(current);
-            }
+            property.stringValue = change.newValue == None ? string.Empty : change.newValue;
+            property.serializedObject.ApplyModifiedProperties();
+        });
+        root.TrackPropertyValue(property, _ => Show());
+        Show();
+        return root;
+    }
 
-            keys.Insert(0, None);
-            return keys;
+    // The library's keys of every type the field takes, plus the current value when no item has it, so a bad key stays visible.
+    private static List<string> Choices(Type[] types, string current)
+    {
+        var keys = types.SelectMany(type => AssetDatabase.FindAssets("t:" + type.Name)
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Select(MapLibrary.ParseFile)
+                .Where(parsed => parsed.Type == type)
+                .Select(parsed => parsed.Key))
+            .Distinct()
+            .OrderBy(key => key, StringComparer.Ordinal)
+            .ToList();
+        if (!string.IsNullOrEmpty(current) && !keys.Contains(current))
+        {
+            keys.Add(current);
         }
+
+        keys.Insert(0, None);
+        return keys;
     }
 }

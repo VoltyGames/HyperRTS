@@ -4,89 +4,88 @@ using HyperRTS.Simulation.Vision;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Selection
+namespace HyperRTS.Simulation.Selection;
+
+/// <summary>Decides whether a selectable entity is hit by the current <see cref="SelectionInput"/> gesture.</summary>
+public struct SelectionHitTest
 {
-    /// <summary>Decides whether a selectable entity is hit by the current <see cref="SelectionInput"/> gesture.</summary>
-    public struct SelectionHitTest
+    public SelectionInput Input;
+    public Entity Clicked;
+    public int DoubleClickType;
+    public int DoubleClickOwner;
+
+    /// <summary>Local player's owner, or -1 without a local player (then nothing counts as owned).</summary>
+    public int LocalOwner;
+
+    /// <summary>Drag boxes keep only this <see cref="SelectionMath.DragPriority"/>; -1 keeps all.</summary>
+    public int PreferredRank;
+
+    public ComponentLookup<FogHidden> Hidden;
+    public ComponentLookup<Inside> Inside;
+    public ComponentLookup<EntityInfo> Info;
+    public ComponentLookup<Owner> Owners;
+    public ComponentLookup<UnitTag> Units;
+    public ComponentLookup<BuildingTag> Buildings;
+    public ComponentLookup<ControlGroup> Groups;
+
+    public bool IsHit(Entity entity, float3 position)
     {
-        public SelectionInput Input;
-        public Entity Clicked;
-        public int DoubleClickType;
-        public int DoubleClickOwner;
-
-        /// <summary>Local player's owner, or -1 without a local player (then nothing counts as owned).</summary>
-        public int LocalOwner;
-
-        /// <summary>Drag boxes keep only this <see cref="SelectionMath.DragPriority"/>; -1 keeps all.</summary>
-        public int PreferredRank;
-
-        public ComponentLookup<FogHidden> Hidden;
-        public ComponentLookup<Inside> Inside;
-        public ComponentLookup<EntityInfo> Info;
-        public ComponentLookup<Owner> Owners;
-        public ComponentLookup<UnitTag> Units;
-        public ComponentLookup<BuildingTag> Buildings;
-        public ComponentLookup<ControlGroup> Groups;
-
-        public bool IsHit(Entity entity, float3 position)
+        if (Hidden.HasComponent(entity) || Inside.HasEnabled(entity))
         {
-            if (Hidden.HasComponent(entity) || Inside.HasEnabled(entity))
-            {
-                return false;
-            }
-
-            return MatchesGesture(entity, position);
+            return false;
         }
 
-        private bool MatchesGesture(Entity entity, float3 position)
-        {
-            switch (Input.Command)
-            {
-                case SelectionCommand.Click:
-                    return entity == Clicked;
-
-                case SelectionCommand.DragRelease:
-                    return InDragBox(position) && (PreferredRank < 0 || Rank(entity) == PreferredRank);
-
-                case SelectionCommand.DoubleClick:
-                    return IsDoubleClickedType(entity) && OnScreen(position);
-
-                case SelectionCommand.RecallGroup:
-                    return Groups.HasComponent(entity) && (Groups[entity].Mask & (1 << Input.Group)) != 0;
-
-                default:
-                    return false;
-            }
-        }
-
-        /// <summary>Same type and owner as the double-clicked entity.</summary>
-        private bool IsDoubleClickedType(Entity entity)
-        {
-            if (DoubleClickType == 0 || !Info.TryGetComponent(entity, out var info))
-            {
-                return false;
-            }
-
-            return info.TypeId == DoubleClickType && GetOwner(entity) == DoubleClickOwner;
-        }
-
-        public bool InDragBox(float3 position) =>
-            SelectionMath.WorldToScreenPoint(Input.ViewProjection, position, Input.ScreenSize, out var screen) &&
-            SelectionMath.RectContains(Input.DragMin, Input.DragMax, screen);
-
-        public int Rank(Entity entity) =>
-            SelectionMath.DragPriority(IsOwned(entity), Units.HasComponent(entity), Buildings.HasComponent(entity));
-
-        /// <summary>Control groups hold only the local player's entities (anything without a local player).</summary>
-        public bool CanJoinGroup(Entity entity) => LocalOwner < 0 || IsOwned(entity);
-
-        /// <summary>The entity's owner, or -1 when it has none.</summary>
-        public int GetOwner(Entity entity) => Owners.TryGetComponent(entity, out var owner) ? owner.Value : -1;
-
-        private bool IsOwned(Entity entity) => LocalOwner >= 0 && GetOwner(entity) == LocalOwner;
-
-        private bool OnScreen(float3 position) =>
-            SelectionMath.WorldToScreenPoint(Input.ViewProjection, position, Input.ScreenSize, out var screen) &&
-            SelectionMath.RectContains(float2.zero, Input.ScreenSize, screen);
+        return MatchesGesture(entity, position);
     }
+
+    private bool MatchesGesture(Entity entity, float3 position)
+    {
+        switch (Input.Command)
+        {
+            case SelectionCommand.Click:
+                return entity == Clicked;
+
+            case SelectionCommand.DragRelease:
+                return InDragBox(position) && (PreferredRank < 0 || Rank(entity) == PreferredRank);
+
+            case SelectionCommand.DoubleClick:
+                return IsDoubleClickedType(entity) && OnScreen(position);
+
+            case SelectionCommand.RecallGroup:
+                return Groups.HasComponent(entity) && (Groups[entity].Mask & (1 << Input.Group)) != 0;
+
+            default:
+                return false;
+        }
+    }
+
+    /// <summary>Same type and owner as the double-clicked entity.</summary>
+    private bool IsDoubleClickedType(Entity entity)
+    {
+        if (DoubleClickType == 0 || !Info.TryGetComponent(entity, out var info))
+        {
+            return false;
+        }
+
+        return info.TypeId == DoubleClickType && GetOwner(entity) == DoubleClickOwner;
+    }
+
+    public bool InDragBox(float3 position) =>
+        SelectionMath.WorldToScreenPoint(Input.ViewProjection, position, Input.ScreenSize, out var screen) &&
+        SelectionMath.RectContains(Input.DragMin, Input.DragMax, screen);
+
+    public int Rank(Entity entity) =>
+        SelectionMath.DragPriority(IsOwned(entity), Units.HasComponent(entity), Buildings.HasComponent(entity));
+
+    /// <summary>Control groups hold only the local player's entities (anything without a local player).</summary>
+    public bool CanJoinGroup(Entity entity) => LocalOwner < 0 || IsOwned(entity);
+
+    /// <summary>The entity's owner, or -1 when it has none.</summary>
+    public int GetOwner(Entity entity) => Owners.TryGetComponent(entity, out var owner) ? owner.Value : -1;
+
+    private bool IsOwned(Entity entity) => LocalOwner >= 0 && GetOwner(entity) == LocalOwner;
+
+    private bool OnScreen(float3 position) =>
+        SelectionMath.WorldToScreenPoint(Input.ViewProjection, position, Input.ScreenSize, out var screen) &&
+        SelectionMath.RectContains(float2.zero, Input.ScreenSize, screen);
 }

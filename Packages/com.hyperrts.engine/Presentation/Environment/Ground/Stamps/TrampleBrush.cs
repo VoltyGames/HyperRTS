@@ -5,202 +5,201 @@ using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Presentation.Environment.Ground.Stamps
+namespace HyperRTS.Presentation.Environment.Ground.Stamps;
+
+/// <summary>Fades the trample maps and draws a frame of stamps into them as instanced quads.</summary>
+public sealed class TrampleBrush : IDisposable
 {
-    /// <summary>Fades the trample maps and draws a frame of stamps into them as instanced quads.</summary>
-    public sealed class TrampleBrush : IDisposable
+    /// <summary>Steps an 8-bit channel fades through.</summary>
+    public const int Levels = 255;
+
+    private static readonly int StampsId = Shader.PropertyToID("_TrampleStamps");
+    private static readonly int OffsetId = Shader.PropertyToID("_TrampleStampOffset");
+    private static readonly int FadeId = Shader.PropertyToID("_TrampleFade");
+
+    private readonly Material _material;
+
+    // Looked up by the shader's pass names, so reordering its passes can't draw the wrong stamps.
+    private readonly int _trampleDirectionPass;
+    private readonly int _trampleAmountPass;
+    private readonly int _tracksPass;
+    private readonly int _scarsPass;
+    private readonly int _scarRimsPass;
+    private readonly int _fillCapPass;
+    private readonly int _fillFloorPass;
+    private readonly int _rutDeepenPass;
+    private readonly int _wakePass;
+    private readonly int _stainPass;
+    private readonly int _fadePass;
+    private readonly CommandBuffer _commands = new() { name = "HyperRTS Trample Maps" };
+    private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<TrampleStamp>(), 256);
+    private int _wakeFadedSteps;
+
+    public TrampleBrush()
     {
-        /// <summary>Steps an 8-bit channel fades through.</summary>
-        public const int Levels = 255;
+        _material = new Material(EngineShaders.Get().TrampleBrush) { hideFlags = HideFlags.DontSave };
+        _trampleDirectionPass = FindPass("TrampleDirection");
+        _trampleAmountPass = FindPass("TrampleAmount");
+        _tracksPass = FindPass("Tracks");
+        _rutDeepenPass = FindPass("RutDeepen");
+        _scarsPass = FindPass("Scars");
+        _scarRimsPass = FindPass("ScarRims");
+        _fillCapPass = FindPass("FillCap");
+        _fillFloorPass = FindPass("FillFloor");
+        _wakePass = FindPass("Wake");
+        _stainPass = FindPass("Stains");
+        _fadePass = FindPass("Fade");
+    }
 
-        private static readonly int StampsId = Shader.PropertyToID("_TrampleStamps");
-        private static readonly int OffsetId = Shader.PropertyToID("_TrampleStampOffset");
-        private static readonly int FadeId = Shader.PropertyToID("_TrampleFade");
-
-        private readonly Material _material;
-
-        // Looked up by the shader's pass names, so reordering its passes can't draw the wrong stamps.
-        private readonly int _trampleDirectionPass;
-        private readonly int _trampleAmountPass;
-        private readonly int _tracksPass;
-        private readonly int _scarsPass;
-        private readonly int _scarRimsPass;
-        private readonly int _fillCapPass;
-        private readonly int _fillFloorPass;
-        private readonly int _rutDeepenPass;
-        private readonly int _wakePass;
-        private readonly int _stainPass;
-        private readonly int _fadePass;
-        private readonly CommandBuffer _commands = new() { name = "HyperRTS Trample Maps" };
-        private readonly GrowingBuffer _buffer = new(GraphicsBuffer.Target.Structured, UnsafeUtility.SizeOf<TrampleStamp>(), 256);
-        private int _wakeFadedSteps;
-
-        public TrampleBrush()
+    private int FindPass(string name)
+    {
+        var pass = _material.FindPass(name);
+        if (pass < 0)
         {
-            _material = new Material(EngineShaders.Get().TrampleBrush) { hideFlags = HideFlags.DontSave };
-            _trampleDirectionPass = FindPass("TrampleDirection");
-            _trampleAmountPass = FindPass("TrampleAmount");
-            _tracksPass = FindPass("Tracks");
-            _rutDeepenPass = FindPass("RutDeepen");
-            _scarsPass = FindPass("Scars");
-            _scarRimsPass = FindPass("ScarRims");
-            _fillCapPass = FindPass("FillCap");
-            _fillFloorPass = FindPass("FillFloor");
-            _wakePass = FindPass("Wake");
-            _stainPass = FindPass("Stains");
-            _fadePass = FindPass("Fade");
+            throw new ArgumentException($"HyperRTS: the '{_material.shader.name}' shader has no '{name}' pass.");
         }
 
-        private int FindPass(string name)
-        {
-            var pass = _material.FindPass(name);
-            if (pass < 0)
-            {
-                throw new ArgumentException($"HyperRTS: the '{_material.shader.name}' shader has no '{name}' pass.");
-            }
+        return pass;
+    }
 
-            return pass;
-        }
+    public void Clear(TrampleSurfaces surfaces)
+    {
+        _commands.Clear();
+        AppendClear(surfaces);
+        Graphics.ExecuteCommandBuffer(_commands);
+    }
 
-        public void Clear(TrampleSurfaces surfaces)
+    public void Draw(TrampleSurfaces surfaces, int recoverySteps, int fadeSteps, int wakeSteps, TrampleStamps stamps)
+    {
+        Upload(stamps);
+        _commands.Clear();
+        if (stamps.Reset)
         {
-            _commands.Clear();
             AppendClear(surfaces);
-            Graphics.ExecuteCommandBuffer(_commands);
         }
 
-        public void Draw(TrampleSurfaces surfaces, int recoverySteps, int fadeSteps, int wakeSteps, TrampleStamps stamps)
+        _commands.SetGlobalBuffer(StampsId, _buffer.Buffer);
+        var offset = 0;
+        _commands.SetRenderTarget(surfaces.Trample);
+        Fade(new Vector4(0f, 0f, recoverySteps, 0f) / Levels);
+        DrawStamps(_trampleDirectionPass, offset, stamps.Trample.Count);
+        DrawStamps(_trampleAmountPass, offset, stamps.Trample.Count);
+        offset += stamps.Trample.Count;
+
+        // Scars (BA, and the ground level in A) never fade: they last the match.
+        _commands.SetRenderTarget(surfaces.Tracks);
+        Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / Levels);
+        // Deepening first, so a rut's first pass holds only its lone depth.
+        DrawStamps(_rutDeepenPass, offset, stamps.Tracks.Count);
+        DrawStamps(_tracksPass, offset, stamps.Tracks.Count);
+        offset += stamps.Tracks.Count;
+        DrawStamps(_scarsPass, offset, stamps.Scars.Count);
+        DrawStamps(_scarRimsPass, offset, stamps.Scars.Count);
+        offset += stamps.Scars.Count;
+        DrawFills(offset, stamps.Fills.Count);
+        offset += stamps.Fills.Count;
+        DrawStains(surfaces, offset, stamps.Stains.Count);
+        offset += stamps.Stains.Count;
+
+        DrawWakes(surfaces, wakeSteps, offset, stamps.Wakes.Count);
+        Graphics.ExecuteCommandBuffer(_commands);
+        stamps.Fills.Clear();
+    }
+
+    public void Dispose()
+    {
+        _commands.Release();
+        _buffer.Dispose();
+        CoreUtils.Destroy(_material);
+    }
+
+    // One buffer in Draw's order, so each pass draws a slice of it.
+    private void Upload(TrampleStamps stamps)
+    {
+        var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count +
+            stamps.Fills.Count + stamps.Stains.Count + stamps.Wakes.Count, 1);
+        _buffer.Reserve(needed);
+
+        var offset = 0;
+        Put(stamps.Trample, ref offset);
+        Put(stamps.Tracks, ref offset);
+        Put(stamps.Scars, ref offset);
+        Put(stamps.Fills, ref offset);
+        Put(stamps.Stains, ref offset);
+        Put(stamps.Wakes, ref offset);
+    }
+
+    private void Put(List<TrampleStamp> list, ref int offset)
+    {
+        _buffer.Buffer.SetData(list, 0, offset, list.Count);
+        offset += list.Count;
+    }
+
+    private void AppendClear(TrampleSurfaces surfaces)
+    {
+        _commands.SetRenderTarget(surfaces.Trample);
+        _commands.ClearRenderTarget(false, true, TrampleSurfaces.TrampleClear);
+        _commands.SetRenderTarget(surfaces.Tracks);
+        _commands.ClearRenderTarget(false, true, TrampleSurfaces.TracksClear);
+        _commands.SetRenderTarget(surfaces.Wake);
+        _commands.ClearRenderTarget(false, true, Color.clear);
+        _commands.SetRenderTarget(surfaces.Stains);
+        _commands.ClearRenderTarget(false, true, Color.clear);
+        _wakeFadedSteps = Levels;
+    }
+
+    // Bowls above the level are capped and rims below it raised back, so the ground is level where a building stands.
+    private void DrawFills(int offset, int count)
+    {
+        DrawStamps(_fillCapPass, offset, count);
+        DrawStamps(_fillFloorPass, offset, count);
+    }
+
+    // Stains never fade, so a frame without any leaves their map alone.
+    private void DrawStains(TrampleSurfaces surfaces, int offset, int count)
+    {
+        if (count == 0)
         {
-            Upload(stamps);
-            _commands.Clear();
-            if (stamps.Reset)
-            {
-                AppendClear(surfaces);
-            }
-
-            _commands.SetGlobalBuffer(StampsId, _buffer.Buffer);
-            var offset = 0;
-            _commands.SetRenderTarget(surfaces.Trample);
-            Fade(new Vector4(0f, 0f, recoverySteps, 0f) / Levels);
-            DrawStamps(_trampleDirectionPass, offset, stamps.Trample.Count);
-            DrawStamps(_trampleAmountPass, offset, stamps.Trample.Count);
-            offset += stamps.Trample.Count;
-
-            // Scars (BA, and the ground level in A) never fade: they last the match.
-            _commands.SetRenderTarget(surfaces.Tracks);
-            Fade(new Vector4(fadeSteps, fadeSteps, 0f, 0f) / Levels);
-            // Deepening first, so a rut's first pass holds only its lone depth.
-            DrawStamps(_rutDeepenPass, offset, stamps.Tracks.Count);
-            DrawStamps(_tracksPass, offset, stamps.Tracks.Count);
-            offset += stamps.Tracks.Count;
-            DrawStamps(_scarsPass, offset, stamps.Scars.Count);
-            DrawStamps(_scarRimsPass, offset, stamps.Scars.Count);
-            offset += stamps.Scars.Count;
-            DrawFills(offset, stamps.Fills.Count);
-            offset += stamps.Fills.Count;
-            DrawStains(surfaces, offset, stamps.Stains.Count);
-            offset += stamps.Stains.Count;
-
-            DrawWakes(surfaces, wakeSteps, offset, stamps.Wakes.Count);
-            Graphics.ExecuteCommandBuffer(_commands);
-            stamps.Fills.Clear();
+            return;
         }
 
-        public void Dispose()
+        _commands.SetRenderTarget(surfaces.Stains);
+        DrawStamps(_stainPass, offset, count);
+    }
+
+    // Calm water skips the wake map once a full fade has emptied it.
+    private void DrawWakes(TrampleSurfaces surfaces, int wakeSteps, int offset, int count)
+    {
+        if (count == 0 && _wakeFadedSteps >= Levels)
         {
-            _commands.Release();
-            _buffer.Dispose();
-            CoreUtils.Destroy(_material);
+            return;
         }
 
-        // One buffer in Draw's order, so each pass draws a slice of it.
-        private void Upload(TrampleStamps stamps)
+        _commands.SetRenderTarget(surfaces.Wake);
+        Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / Levels);
+        DrawStamps(_wakePass, offset, count);
+        _wakeFadedSteps = count > 0 ? 0 : Mathf.Min(_wakeFadedSteps + wakeSteps, Levels);
+    }
+
+    private void Fade(Vector4 amount)
+    {
+        if (amount == Vector4.zero)
         {
-            var needed = Mathf.Max(stamps.Trample.Count + stamps.Tracks.Count + stamps.Scars.Count +
-                stamps.Fills.Count + stamps.Stains.Count + stamps.Wakes.Count, 1);
-            _buffer.Reserve(needed);
-
-            var offset = 0;
-            Put(stamps.Trample, ref offset);
-            Put(stamps.Tracks, ref offset);
-            Put(stamps.Scars, ref offset);
-            Put(stamps.Fills, ref offset);
-            Put(stamps.Stains, ref offset);
-            Put(stamps.Wakes, ref offset);
+            return;
         }
 
-        private void Put(List<TrampleStamp> list, ref int offset)
+        _commands.SetGlobalVector(FadeId, amount);
+        _commands.DrawFullScreen(_material, _fadePass);
+    }
+
+    private void DrawStamps(int pass, int offset, int count)
+    {
+        if (count == 0)
         {
-            _buffer.Buffer.SetData(list, 0, offset, list.Count);
-            offset += list.Count;
+            return;
         }
 
-        private void AppendClear(TrampleSurfaces surfaces)
-        {
-            _commands.SetRenderTarget(surfaces.Trample);
-            _commands.ClearRenderTarget(false, true, TrampleSurfaces.TrampleClear);
-            _commands.SetRenderTarget(surfaces.Tracks);
-            _commands.ClearRenderTarget(false, true, TrampleSurfaces.TracksClear);
-            _commands.SetRenderTarget(surfaces.Wake);
-            _commands.ClearRenderTarget(false, true, Color.clear);
-            _commands.SetRenderTarget(surfaces.Stains);
-            _commands.ClearRenderTarget(false, true, Color.clear);
-            _wakeFadedSteps = Levels;
-        }
-
-        // Bowls above the level are capped and rims below it raised back, so the ground is level where a building stands.
-        private void DrawFills(int offset, int count)
-        {
-            DrawStamps(_fillCapPass, offset, count);
-            DrawStamps(_fillFloorPass, offset, count);
-        }
-
-        // Stains never fade, so a frame without any leaves their map alone.
-        private void DrawStains(TrampleSurfaces surfaces, int offset, int count)
-        {
-            if (count == 0)
-            {
-                return;
-            }
-
-            _commands.SetRenderTarget(surfaces.Stains);
-            DrawStamps(_stainPass, offset, count);
-        }
-
-        // Calm water skips the wake map once a full fade has emptied it.
-        private void DrawWakes(TrampleSurfaces surfaces, int wakeSteps, int offset, int count)
-        {
-            if (count == 0 && _wakeFadedSteps >= Levels)
-            {
-                return;
-            }
-
-            _commands.SetRenderTarget(surfaces.Wake);
-            Fade(new Vector4(wakeSteps, 0f, 0f, 0f) / Levels);
-            DrawStamps(_wakePass, offset, count);
-            _wakeFadedSteps = count > 0 ? 0 : Mathf.Min(_wakeFadedSteps + wakeSteps, Levels);
-        }
-
-        private void Fade(Vector4 amount)
-        {
-            if (amount == Vector4.zero)
-            {
-                return;
-            }
-
-            _commands.SetGlobalVector(FadeId, amount);
-            _commands.DrawFullScreen(_material, _fadePass);
-        }
-
-        private void DrawStamps(int pass, int offset, int count)
-        {
-            if (count == 0)
-            {
-                return;
-            }
-
-            _commands.SetGlobalInt(OffsetId, offset);
-            _commands.DrawProcedural(Matrix4x4.identity, _material, pass, MeshTopology.Triangles, 6, count);
-        }
+        _commands.SetGlobalInt(OffsetId, offset);
+        _commands.DrawProcedural(Matrix4x4.identity, _material, pass, MeshTopology.Triangles, 6, count);
     }
 }

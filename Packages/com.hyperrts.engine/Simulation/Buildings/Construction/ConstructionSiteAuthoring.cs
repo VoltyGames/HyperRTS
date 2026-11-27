@@ -1,59 +1,58 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Buildings.Construction
+namespace HyperRTS.Simulation.Buildings.Construction;
+
+/// <summary>
+/// Dresses a building as a construction site while it is built (fencing, crane, pallets, work lights), streams a
+/// work rig from the site's <c>Work_01</c> onward empties while construction moves, and plays a rig on completion.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Construction Site")]
+[Icon(HyperRTSIcons.ConstructionSiteAuthoring)]
+[HelpURL(HyperRTSDocs.Buildings)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
+public class ConstructionSiteAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Dresses a building as a construction site while it is built (fencing, crane, pallets, work lights), streams a
-    /// work rig from the site's <c>Work_01</c> onward empties while construction moves, and plays a rig on completion.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Construction Site")]
-    [Icon(HyperRTSIcons.ConstructionSiteAuthoring)]
-    [HelpURL(HyperRTSDocs.Buildings)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    public class ConstructionSiteAuthoring : AuthoringBehaviour
+    public const string WorkPrefix = "Work_";
+
+    [Tooltip("Child holding the site dressing, shown only while under construction; none for no dressing.")]
+    public GameObject site;
+
+    [Tooltip("Looping rig streamed at the site's Work_ empties while construction is moving (dust, welding sparks).")]
+    public GameObject workRig;
+
+    [Tooltip("Rig played once at the building when its construction completes.")]
+    public GameObject completeEffect;
+
+    public class Baker : Baker<ConstructionSiteAuthoring>
     {
-        public const string WorkPrefix = "Work_";
-
-        [Tooltip("Child holding the site dressing, shown only while under construction; none for no dressing.")]
-        public GameObject site;
-
-        [Tooltip("Looping rig streamed at the site's Work_ empties while construction is moving (dust, welding sparks).")]
-        public GameObject workRig;
-
-        [Tooltip("Rig played once at the building when its construction completes.")]
-        public GameObject completeEffect;
-
-        public class Baker : Baker<ConstructionSiteAuthoring>
+        public override void Bake(ConstructionSiteAuthoring authoring)
         {
-            public override void Bake(ConstructionSiteAuthoring authoring)
+            var writer = this.Writer();
+            writer.Add(new ConstructionSite
             {
-                var writer = this.Writer();
-                writer.Add(new ConstructionSite
-                {
-                    Visual = authoring.site == null ? Entity.Null : GetEntity(authoring.site, TransformUsageFlags.Dynamic),
-                    WorkRig = authoring.workRig,
-                    CompleteEffect = authoring.completeEffect,
-                });
-                writer.Add(new ConstructionWatch());
-                var points = writer.AddBuffer<ConstructionWorkPoint>();
-                if (authoring.site == null || authoring.workRig == null)
-                {
-                    return;
-                }
+                Visual = authoring.site == null ? Entity.Null : GetEntity(authoring.site, TransformUsageFlags.Dynamic),
+                WorkRig = authoring.workRig,
+                CompleteEffect = authoring.completeEffect,
+            });
+            writer.Add(new ConstructionWatch());
+            var points = writer.AddBuffer<ConstructionWorkPoint>();
+            if (authoring.site == null || authoring.workRig == null)
+            {
+                return;
+            }
 
-                var transforms = new List<Transform>();
-                GetComponentsInChildren(authoring.site, transforms);
-                foreach (var point in transforms)
+            var transforms = new List<Transform>();
+            GetComponentsInChildren(authoring.site, transforms);
+            foreach (var point in transforms)
+            {
+                if (point.name.StartsWith(WorkPrefix, StringComparison.Ordinal))
                 {
-                    if (point.name.StartsWith(WorkPrefix, StringComparison.Ordinal))
-                    {
-                        points.Add(new ConstructionWorkPoint { Socket = AuthoringBehaviour.Socket(this, authoring.transform, point) });
-                    }
+                    points.Add(new ConstructionWorkPoint { Socket = AuthoringBehaviour.Socket(this, authoring.transform, point) });
                 }
             }
         }

@@ -7,119 +7,118 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement
+namespace HyperRTS.Editor.PlayMode.DebugLayers.Movement;
+
+/// <summary>
+/// Each unit's remaining waypoints, rear axles and attack target lines; its status totals
+/// the pathfinder's work.
+/// </summary>
+public sealed class PathsLayer : DebugLayer
 {
-    /// <summary>
-    /// Each unit's remaining waypoints, rear axles and attack target lines; its status totals
-    /// the pathfinder's work.
-    /// </summary>
-    public sealed class PathsLayer : DebugLayer
+    private const float AxleSize = 0.25f;
+    private static readonly Color32 Waypoint = new(0, 255, 255, 255);
+    private static readonly Color32 Axle = new(255, 140, 0, 255);
+    private static readonly Color32 Target = new(255, 40, 40, 255);
+
+    public override string Label => "Paths";
+
+    public override string Tooltip =>
+        "Cyan waypoints, dashed when reversing, and orange rear axles; red dashes to attack " +
+        "targets.";
+
+    public override string Group => "Movement";
+
+    public override string Glyph => "route";
+
+    public override void Draw(EntityManager entityManager, DebugShapes shapes)
     {
-        private const float AxleSize = 0.25f;
-        private static readonly Color32 Waypoint = new(0, 255, 255, 255);
-        private static readonly Color32 Axle = new(255, 140, 0, 255);
-        private static readonly Color32 Target = new(255, 40, 40, 255);
+        DrawPaths(entityManager, shapes);
+        DrawRearAxles(entityManager, shapes);
+        DrawAttackTargets(entityManager, shapes);
+    }
 
-        public override string Label => "Paths";
-
-        public override string Tooltip =>
-            "Cyan waypoints, dashed when reversing, and orange rear axles; red dashes to attack " +
-            "targets.";
-
-        public override string Group => "Movement";
-
-        public override string Glyph => "route";
-
-        public override void Draw(EntityManager entityManager, DebugShapes shapes)
+    // The totals cover every unit: the pathfinder keeps no count per unit.
+    public override string Status(EntityManager entityManager)
+    {
+        if (!TryGetPathfinding(entityManager, out var pathfinding))
         {
-            DrawPaths(entityManager, shapes);
-            DrawRearAxles(entityManager, shapes);
-            DrawAttackTargets(entityManager, shapes);
+            return null;
         }
 
-        // The totals cover every unit: the pathfinder keeps no count per unit.
-        public override string Status(EntityManager entityManager)
-        {
-            if (!TryGetPathfinding(entityManager, out var pathfinding))
-            {
-                return null;
-            }
+        var stats = pathfinding.Stats;
+        var causes = stats.SearchesByCause;
+        return $"Searches {stats.Searches}: {causes.x} orders, {causes.y} chases, {causes.z} grid changes, " +
+            $"{causes.w} replans. Traces {stats.Traces}, retraces {stats.Retraces}, fields {stats.Fields}, " +
+            $"expansions {stats.Expansions}.";
+    }
 
-            var stats = pathfinding.Stats;
-            var causes = stats.SearchesByCause;
-            return $"Searches {stats.Searches}: {causes.x} orders, {causes.y} chases, {causes.z} grid changes, " +
-                $"{causes.w} replans. Traces {stats.Traces}, retraces {stats.Retraces}, fields {stats.Fields}, " +
-                $"expansions {stats.Expansions}.";
+    internal static bool TryGetPathfinding(EntityManager entityManager, out PathfindingSystem pathfinding)
+    {
+        var world = entityManager.World.Unmanaged;
+        var handle = world.GetExistingUnmanagedSystem<PathfindingSystem>();
+        pathfinding = default;
+        if (handle == SystemHandle.Null)
+        {
+            return false;
         }
 
-        internal static bool TryGetPathfinding(EntityManager entityManager, out PathfindingSystem pathfinding)
-        {
-            var world = entityManager.World.Unmanaged;
-            var handle = world.GetExistingUnmanagedSystem<PathfindingSystem>();
-            pathfinding = default;
-            if (handle == SystemHandle.Null)
-            {
-                return false;
-            }
+        pathfinding = world.GetUnsafeSystemRef<PathfindingSystem>(handle);
+        return true;
+    }
 
-            pathfinding = world.GetUnsafeSystemRef<PathfindingSystem>(handle);
-            return true;
-        }
-
-        private static void DrawPaths(EntityManager entityManager, DebugShapes shapes)
+    private static void DrawPaths(EntityManager entityManager, DebugShapes shapes)
+    {
+        using var query = entityManager.CreateEntityQuery(typeof(PathWaypoint), typeof(LocalTransform));
+        using var entities = query.ToEntityArray(Allocator.Temp);
+        foreach (var entity in entities)
         {
-            using var query = entityManager.CreateEntityQuery(typeof(PathWaypoint), typeof(LocalTransform));
-            using var entities = query.ToEntityArray(Allocator.Temp);
-            foreach (var entity in entities)
+            var path = entityManager.GetBuffer<PathWaypoint>(entity, true);
+            var from = entityManager.GetComponentData<LocalTransform>(entity).Position;
+            for (var i = 0; i < path.Length; i++)
             {
-                var path = entityManager.GetBuffer<PathWaypoint>(entity, true);
-                var from = entityManager.GetComponentData<LocalTransform>(entity).Position;
-                for (var i = 0; i < path.Length; i++)
+                var waypoint = path[i];
+                if (waypoint.Reverse)
                 {
-                    var waypoint = path[i];
-                    if (waypoint.Reverse)
-                    {
-                        shapes.DashedLine(from, waypoint.Position, Waypoint);
-                    }
-                    else
-                    {
-                        shapes.Line(from, waypoint.Position, Waypoint);
-                    }
-
-                    from = waypoint.Position;
+                    shapes.DashedLine(from, waypoint.Position, Waypoint);
                 }
+                else
+                {
+                    shapes.Line(from, waypoint.Position, Waypoint);
+                }
+
+                from = waypoint.Position;
             }
         }
+    }
 
-        private static void DrawRearAxles(EntityManager entityManager, DebugShapes shapes)
+    private static void DrawRearAxles(EntityManager entityManager, DebugShapes shapes)
+    {
+        using var query = entityManager.CreateEntityQuery(typeof(NavAgent), typeof(LocalTransform));
+        using var entities = query.ToEntityArray(Allocator.Temp);
+        foreach (var entity in entities)
         {
-            using var query = entityManager.CreateEntityQuery(typeof(NavAgent), typeof(LocalTransform));
-            using var entities = query.ToEntityArray(Allocator.Temp);
-            foreach (var entity in entities)
+            var chassis = entityManager.GetComponentData<NavAgent>(entity).Chassis;
+            if (chassis.IsWheeled)
             {
-                var chassis = entityManager.GetComponentData<NavAgent>(entity).Chassis;
-                if (chassis.IsWheeled)
-                {
-                    var transform = entityManager.GetComponentData<LocalTransform>(entity);
-                    var facing = math.normalizesafe(transform.Forward().xz);
-                    var rear = chassis.Pose(transform.Position.xz, facing).Position;
-                    shapes.Circle(new float3(rear.x, transform.Position.y, rear.y), AxleSize, Axle);
-                }
+                var transform = entityManager.GetComponentData<LocalTransform>(entity);
+                var facing = math.normalizesafe(transform.Forward().xz);
+                var rear = chassis.Pose(transform.Position.xz, facing).Position;
+                shapes.Circle(new float3(rear.x, transform.Position.y, rear.y), AxleSize, Axle);
             }
         }
+    }
 
-        private static void DrawAttackTargets(EntityManager entityManager, DebugShapes shapes)
+    private static void DrawAttackTargets(EntityManager entityManager, DebugShapes shapes)
+    {
+        using var query = entityManager.CreateEntityQuery(typeof(AttackTarget), typeof(LocalTransform));
+        using var entities = query.ToEntityArray(Allocator.Temp);
+        foreach (var entity in entities)
         {
-            using var query = entityManager.CreateEntityQuery(typeof(AttackTarget), typeof(LocalTransform));
-            using var entities = query.ToEntityArray(Allocator.Temp);
-            foreach (var entity in entities)
+            var target = entityManager.GetComponentData<AttackTarget>(entity).Value;
+            if (entityManager.Exists(target) && entityManager.HasComponent<LocalTransform>(target))
             {
-                var target = entityManager.GetComponentData<AttackTarget>(entity).Value;
-                if (entityManager.Exists(target) && entityManager.HasComponent<LocalTransform>(target))
-                {
-                    shapes.DashedLine(entityManager.GetComponentData<LocalTransform>(entity).Position,
-                        entityManager.GetComponentData<LocalTransform>(target).Position, Target);
-                }
+                shapes.DashedLine(entityManager.GetComponentData<LocalTransform>(entity).Position,
+                    entityManager.GetComponentData<LocalTransform>(target).Position, Target);
             }
         }
     }

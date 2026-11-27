@@ -1,50 +1,49 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Air
+namespace HyperRTS.Simulation.Air;
+
+/// <summary>
+/// Landing pads on a building, one aircraft each. Aircraft built here take a free pad of their kind (production
+/// waits while none is free); others claim one with a Return to Base order. Aircraft dock, landed, on their pad.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Airfield")]
+[Icon(HyperRTSIcons.AirfieldAuthoring)]
+[HelpURL(HyperRTSDocs.Air)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
+public class AirfieldAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Landing pads on a building, one aircraft each. Aircraft built here take a free pad of their kind (production
-    /// waits while none is free); others claim one with a Return to Base order. Aircraft dock, landed, on their pad.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Airfield")]
-    [Icon(HyperRTSIcons.AirfieldAuthoring)]
-    [HelpURL(HyperRTSDocs.Air)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    public class AirfieldAuthoring : AuthoringBehaviour
+    [Tooltip("Pads relative to the building; each holds one aircraft of its kind.")]
+    public Pad[] pads =
     {
-        [Tooltip("Pads relative to the building; each holds one aircraft of its kind.")]
-        public Pad[] pads =
-        {
-            new() { offset = new Vector3(-3f, 0f, 3f) }, new() { offset = new Vector3(3f, 0f, 3f) },
-            new() { offset = new Vector3(-3f, 0f, -3f) }, new() { offset = new Vector3(3f, 0f, -3f) },
-        };
+        new() { offset = new Vector3(-3f, 0f, 3f) }, new() { offset = new Vector3(3f, 0f, 3f) },
+        new() { offset = new Vector3(-3f, 0f, -3f) }, new() { offset = new Vector3(3f, 0f, -3f) },
+    };
 
-        /// <summary>One landing pad: where it is and which aircraft it takes.</summary>
-        [Serializable]
-        public struct Pad
-        {
-            [Tooltip("Position relative to the building.")]
-            public Vector3 offset;
+    /// <summary>One landing pad: where it is and which aircraft it takes.</summary>
+    [Serializable]
+    public struct Pad
+    {
+        [Tooltip("Position relative to the building.")]
+        public Vector3 offset;
 
-            [Tooltip("Helipad for helicopters, Shelter for jets, Any for both.")]
-            public PadKind kind;
-        }
+        [Tooltip("Helipad for helicopters, Shelter for jets, Any for both.")]
+        public PadKind kind;
+    }
 
-        public class Baker : Baker<AirfieldAuthoring>
+    public class Baker : Baker<AirfieldAuthoring>
+    {
+        public override void Bake(AirfieldAuthoring authoring)
         {
-            public override void Bake(AirfieldAuthoring authoring)
+            var writer = this.Writer();
+            var pads = AirSetup.AddAirfield(writer);
+            foreach (var pad in authoring.pads)
             {
-                var writer = this.Writer();
-                var pads = AirSetup.AddAirfield(writer);
-                foreach (var pad in authoring.pads)
-                {
-                    pads.Add(new LandingPad { Offset = pad.offset, Kind = pad.kind });
-                }
+                pads.Add(new LandingPad { Offset = pad.offset, Kind = pad.kind });
             }
         }
     }

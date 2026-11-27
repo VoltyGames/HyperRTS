@@ -1,299 +1,298 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Fields;
-using HyperRTS.Simulation.Navigation.Sectors;
 using HyperRTS.Simulation.Navigation.Heights;
+using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Grid
+namespace HyperRTS.Simulation.Navigation.Grid;
+
+/// <summary>
+/// Singleton surface grid over the map: each cell holds <see cref="NavSurface"/> flags, and an agent may enter
+/// cells sharing a flag with its <see cref="NavLayer"/>. Also answers how high each layer stands.
+/// </summary>
+public struct NavGrid : IComponentData, IReplaceableSingleton<NavGrid>
 {
+    public NativeArray<byte> Cells;
+
     /// <summary>
-    /// Singleton surface grid over the map: each cell holds <see cref="NavSurface"/> flags, and an agent may enter
-    /// cells sharing a flag with its <see cref="NavLayer"/>. Also answers how high each layer stands.
+    /// Each cell's surface before obstacle footprints close it: ground, areas and blockers. Placement reads it and
+    /// checks footprints exactly, so neighbours set flush don't trip on the cells both of them touch.
     /// </summary>
-    public struct NavGrid : IComponentData, IReplaceableSingleton<NavGrid>
+    public NativeArray<byte> Unbuilt;
+
+    /// <summary>
+    /// Smallest <see cref="NavAgent.SceneryCrushLimit"/> that drives through each cell's scenery; 0 for none.
+    /// </summary>
+    public NativeArray<byte> Scenery;
+
+    /// <summary>The movement classes of the match's units, carried over when the grid is rebuilt.</summary>
+    public MovementClasses Classes;
+
+    /// <summary>Distance to walls per field key; built only in worlds that move units (see <see cref="NavFieldSystem"/>).</summary>
+    public NavField Field;
+
+    /// <summary>Which cells connect, per movement class, for <see cref="IsReachable"/> and path corridors.</summary>
+    public NavSectors Sectors;
+
+    public NavChanges Changes;
+
+    /// <summary>Surface height of <see cref="NavSurface.Deck"/> cells; other entries are unused.</summary>
+    public NativeArray<float> DeckHeights;
+
+    public TerrainHeight Terrain;
+
+    /// <summary>Height ships ride at; terrain below it is water.</summary>
+    public float WaterLevel;
+
+    public CellGrid Grid;
+
+    /// <summary>
+    /// Bumped whenever cells close or open, so paths near the <see cref="Changes"/> revalidate; scenery changes
+    /// alone don't bump it.
+    /// </summary>
+    public int Version;
+
+    public readonly bool IsCreated => Cells.IsCreated;
+
+    /// <summary>A blank grid with no movement classes yet; the caller fills the cells and disposes it.</summary>
+    public static NavGrid Create(in CellGrid grid, in TerrainHeight terrain, float waterLevel)
     {
-        public NativeArray<byte> Cells;
-
-        /// <summary>
-        /// Each cell's surface before obstacle footprints close it: ground, areas and blockers. Placement reads it and
-        /// checks footprints exactly, so neighbours set flush don't trip on the cells both of them touch.
-        /// </summary>
-        public NativeArray<byte> Unbuilt;
-
-        /// <summary>
-        /// Smallest <see cref="NavAgent.SceneryCrushLimit"/> that drives through each cell's scenery; 0 for none.
-        /// </summary>
-        public NativeArray<byte> Scenery;
-
-        /// <summary>The movement classes of the match's units, carried over when the grid is rebuilt.</summary>
-        public MovementClasses Classes;
-
-        /// <summary>Distance to walls per field key; built only in worlds that move units (see <see cref="NavFieldSystem"/>).</summary>
-        public NavField Field;
-
-        /// <summary>Which cells connect, per movement class, for <see cref="IsReachable"/> and path corridors.</summary>
-        public NavSectors Sectors;
-
-        public NavChanges Changes;
-
-        /// <summary>Surface height of <see cref="NavSurface.Deck"/> cells; other entries are unused.</summary>
-        public NativeArray<float> DeckHeights;
-
-        public TerrainHeight Terrain;
-
-        /// <summary>Height ships ride at; terrain below it is water.</summary>
-        public float WaterLevel;
-
-        public CellGrid Grid;
-
-        /// <summary>
-        /// Bumped whenever cells close or open, so paths near the <see cref="Changes"/> revalidate; scenery changes
-        /// alone don't bump it.
-        /// </summary>
-        public int Version;
-
-        public readonly bool IsCreated => Cells.IsCreated;
-
-        /// <summary>A blank grid with no movement classes yet; the caller fills the cells and disposes it.</summary>
-        public static NavGrid Create(in CellGrid grid, in TerrainHeight terrain, float waterLevel)
+        var count = grid.Count;
+        var field = NavField.Create(grid, 0, Allocator.Persistent);
+        return new NavGrid
         {
-            var count = grid.Count;
-            var field = NavField.Create(grid, 0, Allocator.Persistent);
-            return new NavGrid
+            Cells = new NativeArray<byte>(count, Allocator.Persistent),
+            Unbuilt = new NativeArray<byte>(count, Allocator.Persistent),
+            Scenery = new NativeArray<byte>(count, Allocator.Persistent),
+            Classes = MovementClasses.Create(Allocator.Persistent),
+            Field = field,
+            Sectors = NavSectors.Create(0, field.Layout, Allocator.Persistent),
+            DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
+            Changes = NavChanges.Create(count, Allocator.Persistent),
+            Terrain = terrain,
+            WaterLevel = waterLevel,
+            Grid = grid,
+        };
+    }
+
+    public void Dispose()
+    {
+        Cells.Dispose();
+        Unbuilt.Dispose();
+        Scenery.Dispose();
+        Classes.Dispose();
+        Field.Dispose();
+        Sectors.Dispose();
+        DeckHeights.Dispose();
+        Changes.Dispose();
+    }
+
+    // Keeps the version, so paths revalidate, and swaps the classes so the old grid frees the new one's empty ones.
+    public void Inherit(ref NavGrid previous)
+    {
+        Version = previous.Version;
+        (Classes, previous.Classes) = (previous.Classes, Classes);
+        FitAccess();
+    }
+
+    /// <summary>The distance from segment ab to the cell's square.</summary>
+    public readonly float CellGap(int2 cell, float2 a, float2 b)
+    {
+        var low = Grid.Corner(cell);
+        return Planar.SegmentRectDistance(a, b, low, low + Grid.CellSize);
+    }
+
+    public readonly NavSurface Surface(int2 cell) =>
+        Grid.Contains(cell) ? (NavSurface)Cells[Grid.Index(cell)] : NavSurface.Blocked;
+
+    /// <summary>The cell's surface with no obstacle footprint on it, see <see cref="Unbuilt"/>.</summary>
+    public readonly NavSurface UnbuiltSurface(int2 cell) =>
+        Grid.Contains(cell) ? (NavSurface)Unbuilt[Grid.Index(cell)] : NavSurface.Blocked;
+
+    public readonly bool IsWalkable(int2 cell, NavLayer layer = NavLayer.Ground) =>
+        IsOpen(cell, NavLayers.Surfaces(layer));
+
+    public readonly bool IsWalkable(float3 position, NavLayer layer = NavLayer.Ground) =>
+        IsWalkable(Grid.Cell(position), layer);
+
+    /// <summary>The visible top: a deck, else the water surface over submerged ground, else the ground.</summary>
+    public readonly float SurfaceHeight(float3 position)
+    {
+        if (TryDeckHeight(position.xz, out var deck))
+        {
+            return deck;
+        }
+
+        var ground = Terrain.Height(position.xz);
+        var flooded = (Surface(Grid.Clamp(Grid.Cell(position))) & NavSurface.Water) != 0;
+        return flooded ? math.max(ground, WaterLevel) : ground;
+    }
+
+    /// <summary>The height of the deck over a point, when one carries its cell.</summary>
+    public readonly bool TryDeckHeight(float2 point, out float height)
+    {
+        var index = Grid.Index(Grid.Clamp(Grid.Cell(point)));
+        height = DeckHeights[index];
+        return ((NavSurface)Cells[index] & NavSurface.Deck) != 0;
+    }
+
+    /// <summary>Where an agent of a layer stands: ships float at the water level, even under a deck.</summary>
+    public readonly float HeightFor(float3 position, NavLayer layer) =>
+        layer == NavLayer.Naval ? WaterLevel : SurfaceHeight(position);
+
+    /// <summary>The cells under an XZ box, clamped to the grid; empty when it is off the map.</summary>
+    public readonly CellRange CellsUnder(float3 center, float2 size)
+    {
+        var half = new float3(size.x * 0.5f, 0f, size.y * 0.5f);
+        return Grid.Cells(Grid.Cell(center - half), Grid.Cell(center + half - 0.001f));
+    }
+
+    /// <summary>The cells under a turned box's world-axis bounds; test each with <see cref="InBox"/>.</summary>
+    public readonly CellRange CellsUnder(in NavBox box) =>
+        CellsUnder(new float3(box.Center.x, 0f, box.Center.y), box.Extents * 2f);
+
+    /// <summary>Whether a cell under the box's bounds is covered: any overlap with the turned box counts.</summary>
+    public readonly bool InBox(in NavBox box, int2 cell) =>
+        box.IsAxisAligned || box.Contains(Grid.Center(cell), Grid.CellSize * 0.5f);
+
+    /// <summary>
+    /// Whether an agent could path between two points, scenery aside: they share a region. A closed start or end
+    /// counts from the nearest open cell; aircraft reach everywhere, and a unit with an unregistered class reaches
+    /// nothing.
+    /// </summary>
+    public readonly bool IsReachable(in NavAgent agent, float3 from, float3 to)
+    {
+        if (agent.Layer == NavLayer.Air)
+        {
+            return true;
+        }
+
+        if (!agent.TryAccess(this, out var access))
+        {
+            return false;
+        }
+
+        if (!access.TryFindStart(Grid.Cell(from), from, to, out var start))
+        {
+            return false;
+        }
+
+        return access.Region(start) == access.NearestRegion(to);
+    }
+
+    /// <summary>
+    /// The surface the ground alone gives a cell: water when flooded below the water level, blocked when steeper
+    /// than <paramref name="maxGradient"/> (<see cref="NavGround.MaxGradient"/>), else land.
+    /// </summary>
+    public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient)
+    {
+        var center = Grid.Center(Grid.Cell(index));
+        if (flood && Terrain.Height(center) < WaterLevel)
+        {
+            return NavSurface.Water;
+        }
+
+        var cellSize = Grid.CellSize;
+        var half = cellSize * 0.5f;
+        var dx = Terrain.Height(center + new float2(half, 0f)) - Terrain.Height(center - new float2(half, 0f));
+        var dz = Terrain.Height(center + new float2(0f, half)) - Terrain.Height(center - new float2(0f, half));
+        return math.length(new float2(dx, dz)) > maxGradient * cellSize ? NavSurface.Blocked : NavSurface.Land;
+    }
+
+    /// <summary>
+    /// Lays a nav area over the cells under its box, as obstacles do with <see cref="NavAreaKind.Blocked"/>. Decks
+    /// go after the other areas, so they span water, and record their height.
+    /// </summary>
+    public void StampArea(in NavBox box, NavAreaKind kind, float height)
+    {
+        var deck = kind == NavAreaKind.Deck;
+        foreach (var cell in CellsUnder(box))
+        {
+            // A deck carries only the cells whose centre is well on it, or a hull would hang over its edge.
+            var covered = deck ? box.Contains(Grid.Center(cell), -0.01f) : InBox(box, cell);
+            if (!covered)
             {
-                Cells = new NativeArray<byte>(count, Allocator.Persistent),
-                Unbuilt = new NativeArray<byte>(count, Allocator.Persistent),
-                Scenery = new NativeArray<byte>(count, Allocator.Persistent),
-                Classes = MovementClasses.Create(Allocator.Persistent),
-                Field = field,
-                Sectors = NavSectors.Create(0, field.Layout, Allocator.Persistent),
-                DeckHeights = new NativeArray<float>(count, Allocator.Persistent),
-                Changes = NavChanges.Create(count, Allocator.Persistent),
-                Terrain = terrain,
-                WaterLevel = waterLevel,
-                Grid = grid,
-            };
-        }
-
-        public void Dispose()
-        {
-            Cells.Dispose();
-            Unbuilt.Dispose();
-            Scenery.Dispose();
-            Classes.Dispose();
-            Field.Dispose();
-            Sectors.Dispose();
-            DeckHeights.Dispose();
-            Changes.Dispose();
-        }
-
-        // Keeps the version, so paths revalidate, and swaps the classes so the old grid frees the new one's empty ones.
-        public void Inherit(ref NavGrid previous)
-        {
-            Version = previous.Version;
-            (Classes, previous.Classes) = (previous.Classes, Classes);
-            FitAccess();
-        }
-
-        /// <summary>The distance from segment ab to the cell's square.</summary>
-        public readonly float CellGap(int2 cell, float2 a, float2 b)
-        {
-            var low = Grid.Corner(cell);
-            return Planar.SegmentRectDistance(a, b, low, low + Grid.CellSize);
-        }
-
-        public readonly NavSurface Surface(int2 cell) =>
-            Grid.Contains(cell) ? (NavSurface)Cells[Grid.Index(cell)] : NavSurface.Blocked;
-
-        /// <summary>The cell's surface with no obstacle footprint on it, see <see cref="Unbuilt"/>.</summary>
-        public readonly NavSurface UnbuiltSurface(int2 cell) =>
-            Grid.Contains(cell) ? (NavSurface)Unbuilt[Grid.Index(cell)] : NavSurface.Blocked;
-
-        public readonly bool IsWalkable(int2 cell, NavLayer layer = NavLayer.Ground) =>
-            IsOpen(cell, NavLayers.Surfaces(layer));
-
-        public readonly bool IsWalkable(float3 position, NavLayer layer = NavLayer.Ground) =>
-            IsWalkable(Grid.Cell(position), layer);
-
-        /// <summary>The visible top: a deck, else the water surface over submerged ground, else the ground.</summary>
-        public readonly float SurfaceHeight(float3 position)
-        {
-            if (TryDeckHeight(position.xz, out var deck))
-            {
-                return deck;
+                continue;
             }
 
-            var ground = Terrain.Height(position.xz);
-            var flooded = (Surface(Grid.Clamp(Grid.Cell(position))) & NavSurface.Water) != 0;
-            return flooded ? math.max(ground, WaterLevel) : ground;
-        }
-
-        /// <summary>The height of the deck over a point, when one carries its cell.</summary>
-        public readonly bool TryDeckHeight(float2 point, out float height)
-        {
-            var index = Grid.Index(Grid.Clamp(Grid.Cell(point)));
-            height = DeckHeights[index];
-            return ((NavSurface)Cells[index] & NavSurface.Deck) != 0;
-        }
-
-        /// <summary>Where an agent of a layer stands: ships float at the water level, even under a deck.</summary>
-        public readonly float HeightFor(float3 position, NavLayer layer) =>
-            layer == NavLayer.Naval ? WaterLevel : SurfaceHeight(position);
-
-        /// <summary>The cells under an XZ box, clamped to the grid; empty when it is off the map.</summary>
-        public readonly CellRange CellsUnder(float3 center, float2 size)
-        {
-            var half = new float3(size.x * 0.5f, 0f, size.y * 0.5f);
-            return Grid.Cells(Grid.Cell(center - half), Grid.Cell(center + half - 0.001f));
-        }
-
-        /// <summary>The cells under a turned box's world-axis bounds; test each with <see cref="InBox"/>.</summary>
-        public readonly CellRange CellsUnder(in NavBox box) =>
-            CellsUnder(new float3(box.Center.x, 0f, box.Center.y), box.Extents * 2f);
-
-        /// <summary>Whether a cell under the box's bounds is covered: any overlap with the turned box counts.</summary>
-        public readonly bool InBox(in NavBox box, int2 cell) =>
-            box.IsAxisAligned || box.Contains(Grid.Center(cell), Grid.CellSize * 0.5f);
-
-        /// <summary>
-        /// Whether an agent could path between two points, scenery aside: they share a region. A closed start or end
-        /// counts from the nearest open cell; aircraft reach everywhere, and a unit with an unregistered class reaches
-        /// nothing.
-        /// </summary>
-        public readonly bool IsReachable(in NavAgent agent, float3 from, float3 to)
-        {
-            if (agent.Layer == NavLayer.Air)
+            var index = Grid.Index(cell);
+            Cells[index] = (byte)NavGround.Stamp(kind, (NavSurface)Cells[index]);
+            if (deck)
             {
-                return true;
+                DeckHeights[index] = height;
             }
-
-            if (!agent.TryAccess(this, out var access))
-            {
-                return false;
-            }
-
-            if (!access.TryFindStart(Grid.Cell(from), from, to, out var start))
-            {
-                return false;
-            }
-
-            return access.Region(start) == access.NearestRegion(to);
         }
+    }
 
-        /// <summary>
-        /// The surface the ground alone gives a cell: water when flooded below the water level, blocked when steeper
-        /// than <paramref name="maxGradient"/> (<see cref="NavGround.MaxGradient"/>), else land.
-        /// </summary>
-        public readonly NavSurface GroundSurface(int index, bool flood, float maxGradient)
+    /// <summary>Raises the scenery rating of the cells under a turned box to at least <paramref name="rating"/>.</summary>
+    public void StampScenery(in NavBox box, byte rating)
+    {
+        foreach (var cell in CellsUnder(box))
         {
-            var center = Grid.Center(Grid.Cell(index));
-            if (flood && Terrain.Height(center) < WaterLevel)
+            if (InBox(box, cell))
             {
-                return NavSurface.Water;
-            }
-
-            var cellSize = Grid.CellSize;
-            var half = cellSize * 0.5f;
-            var dx = Terrain.Height(center + new float2(half, 0f)) - Terrain.Height(center - new float2(half, 0f));
-            var dz = Terrain.Height(center + new float2(0f, half)) - Terrain.Height(center - new float2(0f, half));
-            return math.length(new float2(dx, dz)) > maxGradient * cellSize ? NavSurface.Blocked : NavSurface.Land;
-        }
-
-        /// <summary>
-        /// Lays a nav area over the cells under its box, as obstacles do with <see cref="NavAreaKind.Blocked"/>. Decks
-        /// go after the other areas, so they span water, and record their height.
-        /// </summary>
-        public void StampArea(in NavBox box, NavAreaKind kind, float height)
-        {
-            var deck = kind == NavAreaKind.Deck;
-            foreach (var cell in CellsUnder(box))
-            {
-                // A deck carries only the cells whose centre is well on it, or a hull would hang over its edge.
-                var covered = deck ? box.Contains(Grid.Center(cell), -0.01f) : InBox(box, cell);
-                if (!covered)
-                {
-                    continue;
-                }
-
                 var index = Grid.Index(cell);
-                Cells[index] = (byte)NavGround.Stamp(kind, (NavSurface)Cells[index]);
-                if (deck)
-                {
-                    DeckHeights[index] = height;
-                }
+                Scenery[index] = (byte)math.max((int)Scenery[index], rating);
             }
         }
+    }
 
-        /// <summary>Raises the scenery rating of the cells under a turned box to at least <paramref name="rating"/>.</summary>
-        public void StampScenery(in NavBox box, byte rating)
+    /// <summary>Records the box this version changed (<see cref="Changes"/>) and marks the field sectors round each changed cell.</summary>
+    public void RecordChanges()
+    {
+        Changes.Record(this);
+        // Cell by cell, so wrecks far apart in one restamp don't rebuild every sector of the box between them.
+        Field.MarkChanges(Cells, Changes.Previous);
+    }
+
+    /// <summary>
+    /// Sizes the field and sector graph to the registered classes after a registration; returns the first field
+    /// slot that is new, so needs a full build. A new class relabels every sector.
+    /// </summary>
+    public int FitAccess()
+    {
+        var built = Field.SlotCount;
+        if (Classes.Keys.Length > built)
         {
-            foreach (var cell in CellsUnder(box))
-            {
-                if (InBox(box, cell))
-                {
-                    var index = Grid.Index(cell);
-                    Scenery[index] = (byte)math.max((int)Scenery[index], rating);
-                }
-            }
+            Field.Grow(Classes.Keys.Length, Allocator.Persistent);
         }
 
-        /// <summary>Records the box this version changed (<see cref="Changes"/>) and marks the field sectors round each changed cell.</summary>
-        public void RecordChanges()
+        if (Sectors.ClassCount != Classes.Classes.Length)
         {
-            Changes.Record(this);
-            // Cell by cell, so wrecks far apart in one restamp don't rebuild every sector of the box between them.
-            Field.MarkChanges(Cells, Changes.Previous);
+            Sectors.Dispose();
+            Sectors = NavSectors.Create(Classes.Classes.Length, Field.Layout, Allocator.Persistent);
         }
 
-        /// <summary>
-        /// Sizes the field and sector graph to the registered classes after a registration; returns the first field
-        /// slot that is new, so needs a full build. A new class relabels every sector.
-        /// </summary>
-        public int FitAccess()
+        return built;
+    }
+
+    /// <summary>Builds the whole field and sector graph for the registered classes at once, as editor tools need.</summary>
+    public void BuildAccess()
+    {
+        FitAccess();
+        var transform = new DistanceTransform(Field.WindowSide, Allocator.Temp);
+        for (var slot = 0; slot < Classes.Keys.Length; slot++)
         {
-            var built = Field.SlotCount;
-            if (Classes.Keys.Length > built)
-            {
-                Field.Grow(Classes.Keys.Length, Allocator.Persistent);
-            }
-
-            if (Sectors.ClassCount != Classes.Classes.Length)
-            {
-                Sectors.Dispose();
-                Sectors = NavSectors.Create(Classes.Classes.Length, Field.Layout, Allocator.Persistent);
-            }
-
-            return built;
-        }
-
-        /// <summary>Builds the whole field and sector graph for the registered classes at once, as editor tools need.</summary>
-        public void BuildAccess()
-        {
-            FitAccess();
-            var transform = new DistanceTransform(Field.WindowSide, Allocator.Temp);
-            for (var slot = 0; slot < Classes.Keys.Length; slot++)
-            {
-                for (var sector = 0; sector < Field.DirtySectors.Length; sector++)
-                {
-                    Field.Rebuild(Cells, Scenery, Classes.Keys[slot], slot, sector, ref transform);
-                }
-            }
-
-            transform.Dispose();
-            Sectors.Build(Field, Classes);
             for (var sector = 0; sector < Field.DirtySectors.Length; sector++)
             {
-                Field.DirtySectors[sector] = false;
+                Field.Rebuild(Cells, Scenery, Classes.Keys[slot], slot, sector, ref transform);
             }
         }
 
-        internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>
-            Grid.Contains(cell) && ((NavSurface)Cells[Grid.Index(cell)] & surfaces) != 0;
+        transform.Dispose();
+        Sectors.Build(Field, Classes);
+        for (var sector = 0; sector < Field.DirtySectors.Length; sector++)
+        {
+            Field.DirtySectors[sector] = false;
+        }
     }
+
+    internal readonly bool IsOpen(int2 cell, NavSurface surfaces) =>
+        Grid.Contains(cell) && ((NavSurface)Cells[Grid.Index(cell)] & surfaces) != 0;
 }

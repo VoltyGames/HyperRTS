@@ -4,81 +4,80 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering.ContactShadows
+namespace HyperRTS.Presentation.Rendering.ContactShadows;
+
+/// <summary>
+/// Copies URP's screen-space shadow texture with the contact trace applied and registers the copy under the same
+/// global, so the opaques that follow read it.
+/// </summary>
+public sealed class ContactShadowsPass : ScriptableRenderPass
 {
-    /// <summary>
-    /// Copies URP's screen-space shadow texture with the contact trace applied and registers the copy under the same
-    /// global, so the opaques that follow read it.
-    /// </summary>
-    public sealed class ContactShadowsPass : ScriptableRenderPass
+    private static readonly int ScreenShadowsId = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
+    private static readonly int ProjectionId = Shader.PropertyToID("_ContactShadowProjection");
+    private static readonly int InverseProjectionId = Shader.PropertyToID("_ContactShadowInverseProjection");
+    private static readonly int SunId = Shader.PropertyToID("_ContactShadowSun");
+    private static readonly int TraceId = Shader.PropertyToID("_ContactShadowTrace");
+    private static readonly int ScreenId = Shader.PropertyToID("_ContactShadowScreen");
+    private static readonly int FadeId = Shader.PropertyToID("_ContactShadowFade");
+
+    private readonly Material _material;
+    private ContactShadowsFeature _settings;
+    private Vector3 _sunForward;
+    private float _sunShadowStrength;
+
+    private sealed class PassData
     {
-        private static readonly int ScreenShadowsId = Shader.PropertyToID("_ScreenSpaceShadowmapTexture");
-        private static readonly int ProjectionId = Shader.PropertyToID("_ContactShadowProjection");
-        private static readonly int InverseProjectionId = Shader.PropertyToID("_ContactShadowInverseProjection");
-        private static readonly int SunId = Shader.PropertyToID("_ContactShadowSun");
-        private static readonly int TraceId = Shader.PropertyToID("_ContactShadowTrace");
-        private static readonly int ScreenId = Shader.PropertyToID("_ContactShadowScreen");
-        private static readonly int FadeId = Shader.PropertyToID("_ContactShadowFade");
+        public Material Material;
+    }
 
-        private readonly Material _material;
-        private ContactShadowsFeature _settings;
-        private Vector3 _sunForward;
-        private float _sunShadowStrength;
+    public ContactShadowsPass(Material material)
+    {
+        _material = material;
+        profilingSampler = new ProfilingSampler("Contact Shadows");
+    }
 
-        private sealed class PassData
-        {
-            public Material Material;
-        }
+    // Right after URP's Screen Space Shadows pass, which forward renderers place at AfterRenderingPrePasses + 1.
+    public void Setup(ContactShadowsFeature settings, in VisibleLight sun)
+    {
+        _settings = settings;
+        _sunForward = sun.localToWorldMatrix.GetColumn(2);
+        _sunShadowStrength = sun.light.shadowStrength;
+        renderPassEvent = RenderPassEvent.AfterRenderingPrePasses + 2;
+        ConfigureInput(ScriptableRenderPassInput.Depth);
+    }
 
-        public ContactShadowsPass(Material material)
-        {
-            _material = material;
-            profilingSampler = new ProfilingSampler("Contact Shadows");
-        }
+    public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
+    {
+        var cameraData = frameData.Get<UniversalCameraData>();
+        var resources = frameData.Get<UniversalResourceData>();
+        var desc = cameraData.cameraTargetDescriptor;
+        desc.depthStencilFormat = GraphicsFormat.None;
+        desc.msaaSamples = 1;
+        desc.graphicsFormat = GraphicsFormat.R8_UNorm;
+        var shadows = UniversalRenderer.CreateRenderGraphTexture(renderGraph, desc, "_ContactShadowedScreenShadows", false);
+        Publish(cameraData, desc);
 
-        // Right after URP's Screen Space Shadows pass, which forward renderers place at AfterRenderingPrePasses + 1.
-        public void Setup(ContactShadowsFeature settings, in VisibleLight sun)
-        {
-            _settings = settings;
-            _sunForward = sun.localToWorldMatrix.GetColumn(2);
-            _sunShadowStrength = sun.light.shadowStrength;
-            renderPassEvent = RenderPassEvent.AfterRenderingPrePasses + 2;
-            ConfigureInput(ScriptableRenderPassInput.Depth);
-        }
+        using var builder = renderGraph.AddRasterRenderPass<PassData>("Contact Shadows", out var data, profilingSampler);
+        data.Material = _material;
+        builder.UseGlobalTexture(ScreenShadowsId);
+        builder.UseTexture(resources.cameraDepthTexture);
+        builder.SetRenderAttachment(shadows, 0, AccessFlags.WriteAll);
+        builder.SetGlobalTextureAfterPass(shadows, ScreenShadowsId);
+        builder.SetRenderFunc(static (PassData pass, RasterGraphContext context) =>
+            Blitter.BlitTexture(context.cmd, Vector2.one, pass.Material, 0));
+    }
 
-        public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
-        {
-            var cameraData = frameData.Get<UniversalCameraData>();
-            var resources = frameData.Get<UniversalResourceData>();
-            var desc = cameraData.cameraTargetDescriptor;
-            desc.depthStencilFormat = GraphicsFormat.None;
-            desc.msaaSamples = 1;
-            desc.graphicsFormat = GraphicsFormat.R8_UNorm;
-            var shadows = UniversalRenderer.CreateRenderGraphTexture(renderGraph, desc, "_ContactShadowedScreenShadows", false);
-            Publish(cameraData, desc);
-
-            using var builder = renderGraph.AddRasterRenderPass<PassData>("Contact Shadows", out var data, profilingSampler);
-            data.Material = _material;
-            builder.UseGlobalTexture(ScreenShadowsId);
-            builder.UseTexture(resources.cameraDepthTexture);
-            builder.SetRenderAttachment(shadows, 0, AccessFlags.WriteAll);
-            builder.SetGlobalTextureAfterPass(shadows, ScreenShadowsId);
-            builder.SetRenderFunc(static (PassData pass, RasterGraphContext context) =>
-                Blitter.BlitTexture(context.cmd, Vector2.one, pass.Material, 0));
-        }
-
-        // The projection is the unflipped one, since the depth and shadow textures are both intermediate textures.
-        private void Publish(UniversalCameraData cameraData, RenderTextureDescriptor desc)
-        {
-            var projection = GL.GetGPUProjectionMatrix(cameraData.GetProjectionMatrix(), false);
-            var sun = cameraData.GetViewMatrix().MultiplyVector(-_sunForward).normalized;
-            _material.SetMatrix(ProjectionId, projection);
-            _material.SetMatrix(InverseProjectionId, projection.inverse);
-            _material.SetVector(SunId, sun);
-            _material.SetVector(TraceId, new Vector4(_settings.length, _settings.steps, _settings.thickness,
-                _settings.strength * _sunShadowStrength));
-            _material.SetVector(ScreenId, new Vector4(desc.width, desc.height, 1f / desc.width, 1f / desc.height));
-            _material.SetVector(FadeId, new Vector4(_settings.fadeStart, 1f / (_settings.fadeEnd - _settings.fadeStart)));
-        }
+    // The projection is the unflipped one, since the depth and shadow textures are both intermediate textures.
+    private void Publish(UniversalCameraData cameraData, RenderTextureDescriptor desc)
+    {
+        var projection = GL.GetGPUProjectionMatrix(cameraData.GetProjectionMatrix(), false);
+        var sun = cameraData.GetViewMatrix().MultiplyVector(-_sunForward).normalized;
+        _material.SetMatrix(ProjectionId, projection);
+        _material.SetMatrix(InverseProjectionId, projection.inverse);
+        _material.SetVector(SunId, sun);
+        _material.SetVector(TraceId, new Vector4(_settings.length, _settings.steps, _settings.thickness,
+            _settings.strength * _sunShadowStrength));
+        _material.SetVector(ScreenId, new Vector4(desc.width, desc.height, 1f / desc.width, 1f / desc.height));
+        _material.SetVector(FadeId, new Vector4(_settings.fadeStart, 1f / (_settings.fadeEnd - _settings.fadeStart)));
     }
 }

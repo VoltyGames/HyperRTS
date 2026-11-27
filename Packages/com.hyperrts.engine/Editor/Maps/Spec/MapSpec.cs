@@ -4,55 +4,54 @@ using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Library;
 
-namespace HyperRTS.Editor.Maps.Spec
+namespace HyperRTS.Editor.Maps.Spec;
+
+/// <summary>
+/// A map as authored: one symmetry sector of features that <see cref="MapSymmetry"/> copies to fill the map.
+/// Read from <c>&lt;Map&gt;.map.json</c> with JsonUtility; the format is in docs/maps/README.md, under Spec format.
+/// </summary>
+[Serializable]
+public sealed class MapSpec
 {
-    /// <summary>
-    /// A map as authored: one symmetry sector of features that <see cref="MapSymmetry"/> copies to fill the map.
-    /// Read from <c>&lt;Map&gt;.map.json</c> with JsonUtility; the format is in docs/maps/README.md, under Spec format.
-    /// </summary>
-    [Serializable]
-    public sealed class MapSpec
-    {
-        public string name;
-        public string displayName;
-        public string mode;
-        public string mapType;
-        [MapKey(typeof(MapClimate))]
-        public string climate;
+    public string name;
+    public string displayName;
+    public string mode;
+    public string mapType;
+    [MapKey(typeof(MapClimate))]
+    public string climate;
 
-        /// <summary>The climate weather the scene is built with; a match may pick another the climate offers.</summary>
-        public string weather;
+    /// <summary>The climate weather the scene is built with; a match may pick another the climate offers.</summary>
+    public string weather;
 
-        /// <summary>How scarred the land is before the battle, a <see cref="MapWarAge"/> name.</summary>
-        public string warAge = nameof(MapWarAge.None);
-        public MapPoint size;
-        public string symmetry;
-        public int seed;
-        public MapTerrainSpec terrain = new();
-        public string status;
+    /// <summary>How scarred the land is before the battle, a <see cref="MapWarAge"/> name.</summary>
+    public string warAge = nameof(MapWarAge.None);
+    public MapPoint size;
+    public string symmetry;
+    public int seed;
+    public MapTerrainSpec terrain = new();
+    public string status;
 
-        /// <summary>Whether players may pick the map. An unlisted one, a test or showroom ground, plays only from its scene.</summary>
-        public bool listed = true;
-        public List<string> notes = new();
-        public List<MapSpawnSpec> spawns = new();
-        public List<MapResourceSpec> resources = new();
-        public List<MapPropSpec> props = new();
-        public List<MapRiverSpec> rivers = new();
-        public List<MapPondSpec> ponds = new();
-        public List<MapRavineSpec> ravines = new();
-        public List<MapHillSpec> hills = new();
-        public List<MapRoadSpec> roads = new();
-        public List<MapSettlementSpec> settlements = new();
-        public List<MapWoodSpec> woods = new();
-        public List<MapBeltSpec> belts = new();
-        public List<MapFarmlandSpec> farmland = new();
-        public List<MapAreaSpec> areas = new();
-        public List<MapRowSpec> rows = new();
-        public List<MapScatterSpec> scatters = new();
+    /// <summary>Whether players may pick the map. An unlisted one, a test or showroom ground, plays only from its scene.</summary>
+    public bool listed = true;
+    public List<string> notes = new();
+    public List<MapSpawnSpec> spawns = new();
+    public List<MapResourceSpec> resources = new();
+    public List<MapPropSpec> props = new();
+    public List<MapRiverSpec> rivers = new();
+    public List<MapPondSpec> ponds = new();
+    public List<MapRavineSpec> ravines = new();
+    public List<MapHillSpec> hills = new();
+    public List<MapRoadSpec> roads = new();
+    public List<MapSettlementSpec> settlements = new();
+    public List<MapWoodSpec> woods = new();
+    public List<MapBeltSpec> belts = new();
+    public List<MapFarmlandSpec> farmland = new();
+    public List<MapAreaSpec> areas = new();
+    public List<MapRowSpec> rows = new();
+    public List<MapScatterSpec> scatters = new();
 
-        /// <summary>Points the Play-mode look captures frame (<c>map look</c>); they change nothing on the map.</summary>
-        public List<MapLookSpec> looks = new();
+    /// <summary>Points the Play-mode look captures frame (<c>map look</c>); they change nothing on the map.</summary>
+    public List<MapLookSpec> looks = new();
 
-        public MapWarAge WarAge => Enum.Parse<MapWarAge>(warAge);
-    }
+    public MapWarAge WarAge => Enum.Parse<MapWarAge>(warAge);
 }

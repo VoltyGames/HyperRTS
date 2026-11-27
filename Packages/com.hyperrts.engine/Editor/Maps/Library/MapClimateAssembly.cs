@@ -5,125 +5,124 @@ using HyperRTS.Editor.Maps.Ground;
 using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Palette;
 
-namespace HyperRTS.Editor.Maps.Library
+namespace HyperRTS.Editor.Maps.Library;
+
+/// <summary>Builds a climate from its library asset in a fixed walk order, so layer, tree and plant indices only change with the data.</summary>
+internal sealed class MapClimateAssembly
 {
-    /// <summary>Builds a climate from its library asset in a fixed walk order, so layer, tree and plant indices only change with the data.</summary>
-    internal sealed class MapClimateAssembly
+    private readonly MapLibrary _library;
+    private readonly MapClimate _climate;
+
+    private MapClimateAssembly(MapLibrary library, MapClimate climate)
     {
-        private readonly MapLibrary _library;
-        private readonly MapClimate _climate;
-
-        private MapClimateAssembly(MapLibrary library, MapClimate climate)
-        {
-            _library = library;
-            _climate = climate;
-        }
-
-        public static MapClimate Assemble(MapLibrary library, string key, string referrer)
-        {
-            var climate = library.Get<MapClimate>(key, referrer);
-            var file = library.FilePath<MapClimate>(key);
-            climate.surfaces = All<MapClimateSurface>(library, climate.surfaceKeys, file);
-            climate.roadClasses = All<MapRoadClass>(library, climate.roadClassKeys, file);
-            climate.farmlandKits = All<MapFarmlandKit>(library, climate.farmlandKitKeys, file);
-            climate.beltKits = All<MapBeltKit>(library, climate.beltKitKeys, file);
-            climate.woodlandKits = All<MapWoodlandKit>(library, climate.woodlandKitKeys, file);
-            climate.war = string.IsNullOrEmpty(climate.warKit) ? null : library.Get<MapWarKit>(climate.warKit, file);
-            climate.layers = new List<MapClimateLayer>();
-            climate.trees = new List<MapClimateTree>();
-            climate.plants = new List<MapClimatePlant>();
-            climate.rowCrops = new List<MapClimateRowCrop>();
-            climate.decals = new List<MapClimateDecal>();
-            new MapClimateAssembly(library, climate).Collect(file);
-            if (climate.layers.Count > MapTerrainTextures.MaxLayers)
-            {
-                throw new InvalidOperationException(
-                    $"HyperRTS: climate '{file}' uses {climate.layers.Count} terrain layers; the terrain shader blends at most {MapTerrainTextures.MaxLayers}.");
-            }
-
-            return climate;
-        }
-
-        private static List<T> All<T>(MapLibrary library, List<string> keys, string referrer)
-            where T : MapLibraryItem =>
-            keys.ConvertAll(key => library.Get<T>(key, referrer));
-
-        private void Collect(string climateFile)
-        {
-            _climate.surfaces.ForEach(Surface);
-            _climate.beltKits.ForEach(BeltKit);
-            _climate.woodlandKits.ForEach(WoodlandKit);
-            if (_climate.war != null)
-            {
-                WarKit(_climate.war);
-            }
-
-            Plant(_climate.reedPlant, climateFile);
-            foreach (var key in _library.Keys<MapSettlementKit>())
-            {
-                var kit = _library.Get<MapSettlementKit>(key, null);
-                Tree(kit.orchardTree, File<MapSettlementKit>(key));
-                Add(_climate.decals, kit.doorDecal, File<MapSettlementKit>(key));
-            }
-
-            foreach (var key in _library.Keys<MapProp>())
-            {
-                var entry = _library.Get<MapProp>(key, null);
-                Add(_climate.decals, entry.groundDecal, File<MapProp>(key));
-            }
-        }
-
-        private void Surface(MapClimateSurface surface)
-        {
-            var file = File<MapClimateSurface>(surface.key);
-            Add(_climate.layers, surface.layer, file);
-            surface.mixes.ForEach(mix => Add(_climate.layers, mix.layer, file));
-            Add(_climate.layers, surface.tramlines.layer, file);
-            surface.trees.ForEach(tree => Tree(tree.tree, file));
-            surface.plants.ForEach(coverage => Plant(coverage.plant, file));
-            Add(_climate.rowCrops, surface.rowCrop, file);
-            surface.decals.ForEach(decal => Add(_climate.decals, decal.decal, file));
-        }
-
-        private void BeltKit(MapBeltKit kit)
-        {
-            var file = File<MapBeltKit>(kit.key);
-            kit.trees.ForEach(tree => Tree(tree.tree, file));
-            Tree(kit.shrub, file);
-        }
-
-        private void WoodlandKit(MapWoodlandKit kit)
-        {
-            var file = File<MapWoodlandKit>(kit.key);
-            kit.trees.ForEach(tree => Tree(tree.tree, file));
-            kit.edgeTrees.ForEach(tree => Tree(tree.tree, file));
-        }
-
-        private void WarKit(MapWarKit kit)
-        {
-            var file = File<MapWarKit>(kit.key);
-            Add(_climate.decals, kit.craterDecal, file);
-            Add(_climate.decals, kit.wetDecal, file);
-            Plant(kit.weedPlant, file);
-            Plant(kit.burnPlant, file);
-            Add(_climate.layers, kit.burntLayer, file);
-            kit.shreddedTrees.ForEach(swap => swap.shredded.ForEach(tree => Tree(tree, file)));
-        }
-
-        private void Tree(string key, string referrer) => Add(_climate.trees, key, referrer);
-
-        private void Plant(string key, string referrer) => Add(_climate.plants, key, referrer);
-
-        private void Add<T>(List<T> items, string key, string referrer) where T : MapLibraryItem
-        {
-            if (string.IsNullOrEmpty(key) || MapKeys.Contains(items, key))
-            {
-                return;
-            }
-
-            items.Add(_library.Get<T>(key, referrer));
-        }
-
-        private string File<T>(string key) => _library.FilePath<T>(key);
+        _library = library;
+        _climate = climate;
     }
+
+    public static MapClimate Assemble(MapLibrary library, string key, string referrer)
+    {
+        var climate = library.Get<MapClimate>(key, referrer);
+        var file = library.FilePath<MapClimate>(key);
+        climate.surfaces = All<MapClimateSurface>(library, climate.surfaceKeys, file);
+        climate.roadClasses = All<MapRoadClass>(library, climate.roadClassKeys, file);
+        climate.farmlandKits = All<MapFarmlandKit>(library, climate.farmlandKitKeys, file);
+        climate.beltKits = All<MapBeltKit>(library, climate.beltKitKeys, file);
+        climate.woodlandKits = All<MapWoodlandKit>(library, climate.woodlandKitKeys, file);
+        climate.war = string.IsNullOrEmpty(climate.warKit) ? null : library.Get<MapWarKit>(climate.warKit, file);
+        climate.layers = new List<MapClimateLayer>();
+        climate.trees = new List<MapClimateTree>();
+        climate.plants = new List<MapClimatePlant>();
+        climate.rowCrops = new List<MapClimateRowCrop>();
+        climate.decals = new List<MapClimateDecal>();
+        new MapClimateAssembly(library, climate).Collect(file);
+        if (climate.layers.Count > MapTerrainTextures.MaxLayers)
+        {
+            throw new InvalidOperationException(
+                $"HyperRTS: climate '{file}' uses {climate.layers.Count} terrain layers; the terrain shader blends at most {MapTerrainTextures.MaxLayers}.");
+        }
+
+        return climate;
+    }
+
+    private static List<T> All<T>(MapLibrary library, List<string> keys, string referrer)
+        where T : MapLibraryItem =>
+        keys.ConvertAll(key => library.Get<T>(key, referrer));
+
+    private void Collect(string climateFile)
+    {
+        _climate.surfaces.ForEach(Surface);
+        _climate.beltKits.ForEach(BeltKit);
+        _climate.woodlandKits.ForEach(WoodlandKit);
+        if (_climate.war != null)
+        {
+            WarKit(_climate.war);
+        }
+
+        Plant(_climate.reedPlant, climateFile);
+        foreach (var key in _library.Keys<MapSettlementKit>())
+        {
+            var kit = _library.Get<MapSettlementKit>(key, null);
+            Tree(kit.orchardTree, File<MapSettlementKit>(key));
+            Add(_climate.decals, kit.doorDecal, File<MapSettlementKit>(key));
+        }
+
+        foreach (var key in _library.Keys<MapProp>())
+        {
+            var entry = _library.Get<MapProp>(key, null);
+            Add(_climate.decals, entry.groundDecal, File<MapProp>(key));
+        }
+    }
+
+    private void Surface(MapClimateSurface surface)
+    {
+        var file = File<MapClimateSurface>(surface.key);
+        Add(_climate.layers, surface.layer, file);
+        surface.mixes.ForEach(mix => Add(_climate.layers, mix.layer, file));
+        Add(_climate.layers, surface.tramlines.layer, file);
+        surface.trees.ForEach(tree => Tree(tree.tree, file));
+        surface.plants.ForEach(coverage => Plant(coverage.plant, file));
+        Add(_climate.rowCrops, surface.rowCrop, file);
+        surface.decals.ForEach(decal => Add(_climate.decals, decal.decal, file));
+    }
+
+    private void BeltKit(MapBeltKit kit)
+    {
+        var file = File<MapBeltKit>(kit.key);
+        kit.trees.ForEach(tree => Tree(tree.tree, file));
+        Tree(kit.shrub, file);
+    }
+
+    private void WoodlandKit(MapWoodlandKit kit)
+    {
+        var file = File<MapWoodlandKit>(kit.key);
+        kit.trees.ForEach(tree => Tree(tree.tree, file));
+        kit.edgeTrees.ForEach(tree => Tree(tree.tree, file));
+    }
+
+    private void WarKit(MapWarKit kit)
+    {
+        var file = File<MapWarKit>(kit.key);
+        Add(_climate.decals, kit.craterDecal, file);
+        Add(_climate.decals, kit.wetDecal, file);
+        Plant(kit.weedPlant, file);
+        Plant(kit.burnPlant, file);
+        Add(_climate.layers, kit.burntLayer, file);
+        kit.shreddedTrees.ForEach(swap => swap.shredded.ForEach(tree => Tree(tree, file)));
+    }
+
+    private void Tree(string key, string referrer) => Add(_climate.trees, key, referrer);
+
+    private void Plant(string key, string referrer) => Add(_climate.plants, key, referrer);
+
+    private void Add<T>(List<T> items, string key, string referrer) where T : MapLibraryItem
+    {
+        if (string.IsNullOrEmpty(key) || MapKeys.Contains(items, key))
+        {
+            return;
+        }
+
+        items.Add(_library.Get<T>(key, referrer));
+    }
+
+    private string File<T>(string key) => _library.FilePath<T>(key);
 }

@@ -2,96 +2,95 @@ using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Layout;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Geometry
+namespace HyperRTS.Editor.Maps.Geometry;
+
+/// <summary>
+/// Seeded fractal noise in -1..1, averaged over the symmetry's copies so it is exactly symmetric with no seam at
+/// the sector edges.
+/// </summary>
+public sealed class MapNoise
 {
-    /// <summary>
-    /// Seeded fractal noise in -1..1, averaged over the symmetry's copies so it is exactly symmetric with no seam at
-    /// the sector edges.
-    /// </summary>
-    public sealed class MapNoise
+    private const int Octaves = 4;
+    private static readonly Vector2 SecondComponentOffset = new(311f, 173f);
+    private readonly MapSymmetry _symmetry;
+    private readonly Vector2 _offset;
+    private readonly float _gain;
+
+    public MapNoise(MapSymmetry symmetry, int seed, MapNoiseChannel channel)
     {
-        private const int Octaves = 4;
-        private static readonly Vector2 SecondComponentOffset = new(311f, 173f);
-        private readonly MapSymmetry _symmetry;
-        private readonly Vector2 _offset;
-        private readonly float _gain;
+        _symmetry = symmetry;
+        var random = MapRandom.Stream(seed, MapRandomChannel.Noise, (int)channel);
+        _offset = new Vector2(random.Value() * 10000f, random.Value() * 10000f);
 
-        public MapNoise(MapSymmetry symmetry, int seed, MapNoiseChannel channel)
+        // Averaging n uncorrelated copies shrinks the spread by sqrt(n); scale it back.
+        _gain = Mathf.Sqrt(symmetry.Copies.Count);
+    }
+
+    /// <summary>
+    /// <paramref name="count"/> noises on one channel, each seeded apart, so the layers or plants they place keep
+    /// apart from each other.
+    /// </summary>
+    public static MapNoise[] CreateMany(MapLayout layout, MapNoiseChannel channel, int count)
+    {
+        var noise = new MapNoise[count];
+        for (var i = 0; i < count; i++)
         {
-            _symmetry = symmetry;
-            var random = MapRandom.Stream(seed, MapRandomChannel.Noise, (int)channel);
-            _offset = new Vector2(random.Value() * 10000f, random.Value() * 10000f);
-
-            // Averaging n uncorrelated copies shrinks the spread by sqrt(n); scale it back.
-            _gain = Mathf.Sqrt(symmetry.Copies.Count);
+            noise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, channel);
         }
 
-        /// <summary>
-        /// <paramref name="count"/> noises on one channel, each seeded apart, so the layers or plants they place keep
-        /// apart from each other.
-        /// </summary>
-        public static MapNoise[] CreateMany(MapLayout layout, MapNoiseChannel channel, int count)
-        {
-            var noise = new MapNoise[count];
-            for (var i = 0; i < count; i++)
-            {
-                noise[i] = new MapNoise(layout.Symmetry, layout.Spec.seed + 7919 * i, channel);
-            }
+        return noise;
+    }
 
-            return noise;
+    /// <summary>Noise at a map point with features about <paramref name="wavelength"/> metres apart.</summary>
+    public float Sample(Vector2 point, float wavelength)
+    {
+        var sum = 0f;
+        foreach (var copy in _symmetry.Copies)
+        {
+            sum += Fractal(copy.Apply(point) / wavelength);
         }
 
-        /// <summary>Noise at a map point with features about <paramref name="wavelength"/> metres apart.</summary>
-        public float Sample(Vector2 point, float wavelength)
-        {
-            var sum = 0f;
-            foreach (var copy in _symmetry.Copies)
-            {
-                sum += Fractal(copy.Apply(point) / wavelength);
-            }
+        return Mathf.Clamp(sum / _symmetry.Copies.Count * _gain, -1f, 1f);
+    }
 
-            return Mathf.Clamp(sum / _symmetry.Copies.Count * _gain, -1f, 1f);
+    /// <summary>0 outside to 1 inside soft-edged blotches covering about <paramref name="share"/> of the map.</summary>
+    public float Blotches(Vector2 point, float wavelength, float share)
+    {
+        // Measured: map noise sits about 0.2 either side of -0.1, so this threshold leaves roughly the share.
+        var threshold = -0.1f + 0.72f * (0.5f - share);
+        return MapGeometry.Smooth((Sample(point, wavelength) - threshold) / 0.16f + 0.5f);
+    }
+
+    /// <summary>
+    /// A noise vector up to 1 long that turns with the symmetry (each copy's sample is turned back), so offsets
+    /// built from it move mirrored points to mirrored places.
+    /// </summary>
+    public Vector2 SampleVector(Vector2 point, float wavelength)
+    {
+        var sum = Vector2.zero;
+        for (var c = 0; c < _symmetry.Copies.Count; c++)
+        {
+            var copy = _symmetry.Copies[c];
+            var p = copy.Apply(point) / wavelength;
+            sum += copy.ApplyInverse(new Vector2(Fractal(p), Fractal(p + SecondComponentOffset)));
         }
 
-        /// <summary>0 outside to 1 inside soft-edged blotches covering about <paramref name="share"/> of the map.</summary>
-        public float Blotches(Vector2 point, float wavelength, float share)
+        return Vector2.ClampMagnitude(sum / _symmetry.Copies.Count * _gain, 1f);
+    }
+
+    private float Fractal(Vector2 point)
+    {
+        var sum = 0f;
+        var amplitude = 0.5f;
+        var frequency = 1f;
+        for (var i = 0; i < Octaves; i++)
         {
-            // Measured: map noise sits about 0.2 either side of -0.1, so this threshold leaves roughly the share.
-            var threshold = -0.1f + 0.72f * (0.5f - share);
-            return MapGeometry.Smooth((Sample(point, wavelength) - threshold) / 0.16f + 0.5f);
+            var p = point * frequency + _offset;
+            sum += (Mathf.PerlinNoise(p.x, p.y) * 2f - 1f) * amplitude;
+            amplitude *= 0.5f;
+            frequency *= 2.03f;
         }
 
-        /// <summary>
-        /// A noise vector up to 1 long that turns with the symmetry (each copy's sample is turned back), so offsets
-        /// built from it move mirrored points to mirrored places.
-        /// </summary>
-        public Vector2 SampleVector(Vector2 point, float wavelength)
-        {
-            var sum = Vector2.zero;
-            for (var c = 0; c < _symmetry.Copies.Count; c++)
-            {
-                var copy = _symmetry.Copies[c];
-                var p = copy.Apply(point) / wavelength;
-                sum += copy.ApplyInverse(new Vector2(Fractal(p), Fractal(p + SecondComponentOffset)));
-            }
-
-            return Vector2.ClampMagnitude(sum / _symmetry.Copies.Count * _gain, 1f);
-        }
-
-        private float Fractal(Vector2 point)
-        {
-            var sum = 0f;
-            var amplitude = 0.5f;
-            var frequency = 1f;
-            for (var i = 0; i < Octaves; i++)
-            {
-                var p = point * frequency + _offset;
-                sum += (Mathf.PerlinNoise(p.x, p.y) * 2f - 1f) * amplitude;
-                amplitude *= 0.5f;
-                frequency *= 2.03f;
-            }
-
-            return sum / 0.9375f;
-        }
+        return sum / 0.9375f;
     }
 }

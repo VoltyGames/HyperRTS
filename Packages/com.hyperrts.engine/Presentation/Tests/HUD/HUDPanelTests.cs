@@ -1,90 +1,89 @@
 using HyperRTS.Presentation.HUD;
+using HyperRTS.Presentation.HUD.Commands;
+using HyperRTS.Presentation.HUD.Map;
+using HyperRTS.Presentation.HUD.Panels;
 using HyperRTS.Simulation.Navigation.Heights;
 using NUnit.Framework;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
-using HyperRTS.Presentation.HUD.Commands;
-using HyperRTS.Presentation.HUD.Map;
-using HyperRTS.Presentation.HUD.Panels;
 
-namespace HyperRTS.Presentation.Tests.HUD
+namespace HyperRTS.Presentation.Tests.HUD;
+
+/// <summary>Panel framing, pointer rules, the UXML names the panels look up, and the minimap's view maths.</summary>
+public class HUDPanelTests
 {
-    /// <summary>Panel framing, pointer rules, the UXML names the panels look up, and the minimap's view maths.</summary>
-    public class HUDPanelTests
+    private const string LayoutsGuid = "063ced5c8bae4ff58d48995eac9c6741";
+
+    /// <summary>The engine's shipped panel templates.</summary>
+    internal static HUDPanelLayouts Layouts =>
+        AssetDatabase.LoadAssetAtPath<HUDPanelLayouts>(AssetDatabase.GUIDToAssetPath(LayoutsGuid));
+
+    /// <summary>A panel shell as the HUD holds it, taken from the unwrapped HUD tree.</summary>
+    internal static VisualElement Slot(string name)
     {
-        private const string LayoutsGuid = "063ced5c8bae4ff58d48995eac9c6741";
+        var hud = Layouts.Root.CloneRoot();
+        hud.UnwrapInstances();
+        return hud.Require<VisualElement>(name);
+    }
 
-        /// <summary>The engine's shipped panel templates.</summary>
-        internal static HUDPanelLayouts Layouts =>
-            AssetDatabase.LoadAssetAtPath<HUDPanelLayouts>(AssetDatabase.GUIDToAssetPath(LayoutsGuid));
+    // Each constructor requires every element it names, so building them checks the shells.
+    [Test]
+    public void EveryPanel_BuildsFromItsShell()
+    {
+        Assert.DoesNotThrow(() => new ResourceBar(Slot("top-bar"), Layouts));
+        Assert.DoesNotThrow(() => new Minimap(Slot("minimap")));
+        Assert.DoesNotThrow(() => new CommandCard(Slot("commands"), Layouts, CommandCatalog.Create()));
+    }
 
-        /// <summary>A panel shell as the HUD holds it, taken from the unwrapped HUD tree.</summary>
-        internal static VisualElement Slot(string name)
-        {
-            var hud = Layouts.Root.CloneRoot();
-            hud.UnwrapInstances();
-            return hud.Require<VisualElement>(name);
-        }
+    [Test]
+    public void Templates_HaveTheNamedElements()
+    {
+        var layouts = Layouts;
 
-        // Each constructor requires every element it names, so building them checks the shells.
-        [Test]
-        public void EveryPanel_BuildsFromItsShell()
-        {
-            Assert.DoesNotThrow(() => new ResourceBar(Slot("top-bar"), Layouts));
-            Assert.DoesNotThrow(() => new Minimap(Slot("minimap")));
-            Assert.DoesNotThrow(() => new CommandCard(Slot("commands"), Layouts, CommandCatalog.Create()));
-        }
+        var hud = layouts.Root.CloneRoot();
+        Assert.IsTrue(hud.ClassListContains("hud-root"));
+        hud.Require<VisualElement>("bottom");
 
-        [Test]
-        public void Templates_HaveTheNamedElements()
-        {
-            var layouts = Layouts;
+        var entry = layouts.ResourceBarEntry.CloneRoot();
+        entry.Require<HUDIcon>("icon");
+        entry.Require<Label>("name");
+        entry.Require<Label>("amount");
 
-            var hud = layouts.Root.CloneRoot();
-            Assert.IsTrue(hud.ClassListContains("hud-root"));
-            hud.Require<VisualElement>("bottom");
+        var group = layouts.SelectionPanelGroup.CloneRoot();
+        group.Require<HUDIcon>("icon");
+        group.Require<Label>("count");
 
-            var entry = layouts.ResourceBarEntry.CloneRoot();
-            entry.Require<HUDIcon>("icon");
-            entry.Require<Label>("name");
-            entry.Require<Label>("amount");
+        var slot = layouts.ProductionQueueViewSlot.CloneRoot();
+        Assert.IsInstanceOf<Button>(slot);
+        slot.Require<HUDIcon>("icon");
+        slot.Require<HUDBar>("progress");
+    }
 
-            var group = layouts.SelectionPanelGroup.CloneRoot();
-            group.Require<HUDIcon>("icon");
-            group.Require<Label>("count");
+    [Test]
+    public void Minimap_RoundTripsAndPutsNorthAtTop()
+    {
+        var min = new float2(-100f, -50f);
+        var size = new float2(200f, 100f);
 
-            var slot = layouts.ProductionQueueViewSlot.CloneRoot();
-            Assert.IsInstanceOf<Button>(slot);
-            slot.Require<HUDIcon>("icon");
-            slot.Require<HUDBar>("progress");
-        }
+        var topLeft = MinimapMath.WorldToMinimap(new float2(-100f, 50f), min, size);
+        var back = MinimapMath.MinimapToWorld(new Vector2(0.25f, 0.75f), min, size);
 
-        [Test]
-        public void Minimap_RoundTripsAndPutsNorthAtTop()
-        {
-            var min = new float2(-100f, -50f);
-            var size = new float2(200f, 100f);
+        Assert.AreEqual(Vector2.zero, topLeft);
+        Assert.AreEqual(new Vector2(0.25f, 0.75f), MinimapMath.WorldToMinimap(back, min, size));
+    }
 
-            var topLeft = MinimapMath.WorldToMinimap(new float2(-100f, 50f), min, size);
-            var back = MinimapMath.MinimapToWorld(new Vector2(0.25f, 0.75f), min, size);
+    [Test]
+    public void ViewGround_HitsGroundOrCapsAboveHorizon_AndFocusFallsBackBelowTheCamera()
+    {
+        var eye = new float3(0f, 10f, 0f);
+        var down = ViewGround.Reach(default, eye, math.normalize(new float3(0f, -1f, 1f)), 1000f);
+        var up = ViewGround.Reach(default, eye, new float3(0f, 0f, 1f), 50f);
+        var focus = ViewGround.Focus(default, new float3(4f, 10f, -2f), new float3(0f, 0f, 1f), 1000f);
 
-            Assert.AreEqual(Vector2.zero, topLeft);
-            Assert.AreEqual(new Vector2(0.25f, 0.75f), MinimapMath.WorldToMinimap(back, min, size));
-        }
-
-        [Test]
-        public void ViewGround_HitsGroundOrCapsAboveHorizon_AndFocusFallsBackBelowTheCamera()
-        {
-            var eye = new float3(0f, 10f, 0f);
-            var down = ViewGround.Reach(default, eye, math.normalize(new float3(0f, -1f, 1f)), 1000f);
-            var up = ViewGround.Reach(default, eye, new float3(0f, 0f, 1f), 50f);
-            var focus = ViewGround.Focus(default, new float3(4f, 10f, -2f), new float3(0f, 0f, 1f), 1000f);
-
-            Assert.That(math.distance(new float3(0f, 0f, 10f), down), Is.LessThan(1e-3f));
-            Assert.That(math.distance(new float3(0f, 0f, 50f), up), Is.LessThan(1e-3f));
-            Assert.That(math.distance(new float3(4f, 0f, -2f), focus), Is.LessThan(1e-3f));
-        }
+        Assert.That(math.distance(new float3(0f, 0f, 10f), down), Is.LessThan(1e-3f));
+        Assert.That(math.distance(new float3(0f, 0f, 50f), up), Is.LessThan(1e-3f));
+        Assert.That(math.distance(new float3(4f, 0f, -2f), focus), Is.LessThan(1e-3f));
     }
 }

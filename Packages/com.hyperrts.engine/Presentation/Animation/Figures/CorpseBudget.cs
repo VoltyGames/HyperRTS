@@ -7,61 +7,60 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Animation.Figures
+namespace HyperRTS.Presentation.Animation.Figures;
+
+/// <summary>The corpses a frame may make, the figures waiting for them and the camera that orders them.</summary>
+internal sealed class CorpseBudget : IDisposable
 {
-    /// <summary>The corpses a frame may make, the figures waiting for them and the camera that orders them.</summary>
-    internal sealed class CorpseBudget : IDisposable
+    public NativeList<CorpseHandover> Handovers = new(Allocator.Persistent);
+    public NativeList<WaitingFall> Waiting = new(Allocator.Persistent);
+    public Camera Camera;
+    public float3 CameraPosition;
+    public int Left;
+
+    public void Begin()
     {
-        public NativeList<CorpseHandover> Handovers = new(Allocator.Persistent);
-        public NativeList<WaitingFall> Waiting = new(Allocator.Persistent);
-        public Camera Camera;
-        public float3 CameraPosition;
-        public int Left;
+        Camera = MainCamera.Find(Camera);
+        CameraPosition = Camera == null ? default : (float3)Camera.transform.position;
+        Left = DetailBudget.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
+    }
 
-        public void Begin()
+    // Without a camera every figure is as near as any other.
+    public float DistanceTo(float3 position) => Camera == null ? 0f : math.distance(CameraPosition, position);
+
+    // Everything fits the budget, so the order doesn't matter.
+    public void SortWaiting()
+    {
+        if (Waiting.Length <= Left)
         {
-            Camera = MainCamera.Find(Camera);
-            CameraPosition = Camera == null ? default : (float3)Camera.transform.position;
-            Left = DetailBudget.CorpsesPerFrameAt(PresentationQuality.Current.Effects);
+            return;
         }
 
-        // Without a camera every figure is as near as any other.
-        public float DistanceTo(float3 position) => Camera == null ? 0f : math.distance(CameraPosition, position);
-
-        // Everything fits the budget, so the order doesn't matter.
-        public void SortWaiting()
+        for (var i = 0; i < Waiting.Length; i++)
         {
-            if (Waiting.Length <= Left)
-            {
-                return;
-            }
-
-            for (var i = 0; i < Waiting.Length; i++)
-            {
-                var waiting = Waiting[i];
-                waiting.Distance = DistanceTo(waiting.Shown.World.c3.xyz);
-                Waiting[i] = waiting;
-            }
-
-            Waiting.Sort();
+            var waiting = Waiting[i];
+            waiting.Distance = DistanceTo(waiting.Shown.World.c3.xyz);
+            Waiting[i] = waiting;
         }
 
-        public void SortHandovers()
-        {
-            for (var i = 0; i < Handovers.Length; i++)
-            {
-                var handover = Handovers[i];
-                handover.Distance = DistanceTo(handover.World.c3.xyz);
-                Handovers[i] = handover;
-            }
+        Waiting.Sort();
+    }
 
-            Handovers.Sort();
+    public void SortHandovers()
+    {
+        for (var i = 0; i < Handovers.Length; i++)
+        {
+            var handover = Handovers[i];
+            handover.Distance = DistanceTo(handover.World.c3.xyz);
+            Handovers[i] = handover;
         }
 
-        public void Dispose()
-        {
-            Handovers.Dispose();
-            Waiting.Dispose();
-        }
+        Handovers.Sort();
+    }
+
+    public void Dispose()
+    {
+        Handovers.Dispose();
+        Waiting.Dispose();
     }
 }

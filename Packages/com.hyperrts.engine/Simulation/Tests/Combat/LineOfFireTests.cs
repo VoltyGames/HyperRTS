@@ -11,138 +11,137 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Tests.Combat
+namespace HyperRTS.Simulation.Tests.Combat;
+
+/// <summary>
+/// Direct fire needs a clear line: rounds hit the block that stands in the way and wait for the ground, bullets close
+/// in, smoke breaks lock.
+/// </summary>
+public class LineOfFireTests : SimulationFixture
 {
-    /// <summary>
-    /// Direct fire needs a clear line: rounds hit the block that stands in the way and wait for the ground, bullets close
-    /// in, smoke breaks lock.
-    /// </summary>
-    public class LineOfFireTests : SimulationFixture
+    [SetUp]
+    public void Prepare()
     {
-        [SetUp]
-        public void Prepare()
+        World.DisableFog();
+    }
+
+    [Test]
+    public void TankBehindAHouse_CannotFireThroughIt_AndItsRoundHitsTheHouse()
+    {
+        var tank = Tank(new float3(1f, 0f, 1f));
+        var house = World.SpawnBuilding(0, new float3(11f, 0f, 1f), new float2(4f, 4f));
+        var writer = World.Writer(house);
+        SightBlockAuthoring.Add(writer, new SightBlock { Size = new float2(4f, 4f), Height = 6f });
+        var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+        var houseHealth = World.GetHealth(house);
+
+        Attack(tank, enemy);
+        World.Run(3f);
+
+        Assert.AreEqual(1000f, World.GetHealth(enemy), "nothing reaches the target through the house");
+        Assert.Less(World.GetHealth(house), houseHealth, "the rounds hit the house");
+    }
+
+    [Test]
+    public void ExplicitAttack_WithBullets_MovesUntilTheLineIsClear()
+    {
+        var rifleman = World.SpawnUnit(1, new float3(1f, 0f, 1f));
+        World.AddWeapon(rifleman, new TestWeapon { Range = 25f, Damage = 10f });
+        World.SpawnSightBlock(new float3(9f, 0f, 1f), new float2(0.5f, 6f), 3f);
+        var enemy = World.SpawnUnit(2, new float3(17f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+
+        Attack(rifleman, enemy);
+        World.Run(0.5f);
+        Assert.AreEqual(1000f, World.GetHealth(enemy), "no shot through the wall");
+        Assert.Greater(World.GetPosition(rifleman).x, 1.5f, "it closes in");
+
+        Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 10f), "it fires once the line is clear");
+    }
+
+    [Test]
+    public void RoundFiredOverAFold_ItsShooterSeesAcross_ReachesItsTarget()
+    {
+        // The eye, 2 m up, sees the target's top over the fold; the round leaves lower and would graze it.
+        World.CreateTerrain(point => point.x is > 9f and < 13f ? 1.3f : 0f);
+        var tank = Tank(new float3(1f, 0f, 1f));
+        var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+
+        Attack(tank, enemy);
+
+        Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 3f), "the round is not lost in the fold");
+    }
+
+    [Test]
+    public void ExplicitAttack_WithRounds_FiresNoneIntoARise_AndClosesInUntilItSeesOver()
+    {
+        World.CreateTerrain(point => point.x is > 9f and < 13f ? 4f : 0f);
+        var tank = Tank(new float3(1f, 0f, 1f));
+        var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+
+        Attack(tank, enemy);
+        World.Run(0.5f);
+        Assert.AreEqual(0, Projectiles(), "no round into the rise");
+        Assert.Greater(World.GetPosition(tank).x, 1.5f, "it closes in");
+
+        Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 10f), "it fires once it sees over");
+    }
+
+    [Test]
+    public void Smoke_HidesATarget_BreaksAGuidedRoundsLock_ThenClears()
+    {
+        World.SetFog(true);
+        var launcher = World.SpawnViewer(1, new float3(1f, 0f, 1f), 40f);
+        World.AddWeapon(launcher, new TestWeapon
         {
-            World.DisableFog();
-        }
+            Range = 30f,
+            Cooldown = 100f,
+            Projectile = World.ProjectilePrefab(),
+            Trajectory = Trajectory.Rocket,
+        });
+        var smoke = Smoke(new float3(11f, 0f, 1f));
+        var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+        World.EntityManager.AddComponent<TallTarget>(enemy);
 
-        [Test]
-        public void TankBehindAHouse_CannotFireThroughIt_AndItsRoundHitsTheHouse()
-        {
-            var tank = Tank(new float3(1f, 0f, 1f));
-            var house = World.SpawnBuilding(0, new float3(11f, 0f, 1f), new float2(4f, 4f));
-            var writer = World.Writer(house);
-            SightBlockAuthoring.Add(writer, new SightBlock { Size = new float2(4f, 4f), Height = 6f });
-            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
-            var houseHealth = World.GetHealth(house);
+        World.Run(0.3f);
+        Assert.IsFalse(World.Fog().IsVisible(World.GetPosition(enemy), 1, SightLayer.Tall), "the smoke hides it");
 
-            Attack(tank, enemy);
-            World.Run(3f);
+        Attack(launcher, enemy);
+        Assert.IsTrue(World.RunUntil(() => Projectiles() > 0, 3f), "it fires its missile");
+        Assert.AreEqual(Entity.Null, FirstProjectile().Hit.Target, "the smoke broke the lock");
 
-            Assert.AreEqual(1000f, World.GetHealth(enemy), "nothing reaches the target through the house");
-            Assert.Less(World.GetHealth(house), houseHealth, "the rounds hit the house");
-        }
+        Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<SightBlock>(smoke), 40f),
+            "the cloud clears");
+    }
 
-        [Test]
-        public void ExplicitAttack_WithBullets_MovesUntilTheLineIsClear()
-        {
-            var rifleman = World.SpawnUnit(1, new float3(1f, 0f, 1f));
-            World.AddWeapon(rifleman, new TestWeapon { Range = 25f, Damage = 10f });
-            World.SpawnSightBlock(new float3(9f, 0f, 1f), new float2(0.5f, 6f), 3f);
-            var enemy = World.SpawnUnit(2, new float3(17f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+    private Entity Smoke(float3 position)
+    {
+        var smoke = World.SpawnSightBlock(position,
+            new SightBlock { Size = new float2(12f, 12f), Density = 0.5f, PorousTop = 8f, Conceals = true });
+        var writer = World.Writer(smoke);
+        DecayAuthoring.Add(writer, "Smoke", 30f, 1f, 0.1f);
+        return smoke;
+    }
 
-            Attack(rifleman, enemy);
-            World.Run(0.5f);
-            Assert.AreEqual(1000f, World.GetHealth(enemy), "no shot through the wall");
-            Assert.Greater(World.GetPosition(rifleman).x, 1.5f, "it closes in");
+    private Entity Tank(float3 position)
+    {
+        var tank = World.SpawnUnit(1, position);
+        World.AddWeapon(tank, new TestWeapon { Range = 30f, Damage = 40f, Cooldown = 0.5f, Projectile = World.ProjectilePrefab() });
+        return tank;
+    }
 
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 10f), "it fires once the line is clear");
-        }
+    private void Attack(Entity unit, Entity target) => World.Command(World.Get<Owner>(unit).Value,
+        new PlayerCommand { Type = CommandType.Attack, Unit = unit, Target = target, Position = World.GetPosition(target) });
 
-        [Test]
-        public void RoundFiredOverAFold_ItsShooterSeesAcross_ReachesItsTarget()
-        {
-            // The eye, 2 m up, sees the target's top over the fold; the round leaves lower and would graze it.
-            World.CreateTerrain(point => point.x is > 9f and < 13f ? 1.3f : 0f);
-            var tank = Tank(new float3(1f, 0f, 1f));
-            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
+    private int Projectiles()
+    {
+        using var query = World.Query(typeof(Projectile));
+        return query.CalculateEntityCount();
+    }
 
-            Attack(tank, enemy);
-
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 3f), "the round is not lost in the fold");
-        }
-
-        [Test]
-        public void ExplicitAttack_WithRounds_FiresNoneIntoARise_AndClosesInUntilItSeesOver()
-        {
-            World.CreateTerrain(point => point.x is > 9f and < 13f ? 4f : 0f);
-            var tank = Tank(new float3(1f, 0f, 1f));
-            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
-
-            Attack(tank, enemy);
-            World.Run(0.5f);
-            Assert.AreEqual(0, Projectiles(), "no round into the rise");
-            Assert.Greater(World.GetPosition(tank).x, 1.5f, "it closes in");
-
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 1000f, 10f), "it fires once it sees over");
-        }
-
-        [Test]
-        public void Smoke_HidesATarget_BreaksAGuidedRoundsLock_ThenClears()
-        {
-            World.SetFog(true);
-            var launcher = World.SpawnViewer(1, new float3(1f, 0f, 1f), 40f);
-            World.AddWeapon(launcher, new TestWeapon
-            {
-                Range = 30f,
-                Cooldown = 100f,
-                Projectile = World.ProjectilePrefab(),
-                Trajectory = Trajectory.Rocket,
-            });
-            var smoke = Smoke(new float3(11f, 0f, 1f));
-            var enemy = World.SpawnUnit(2, new float3(21f, 0f, 1f), new TestUnit { MaxHealth = 1000f });
-            World.EntityManager.AddComponent<TallTarget>(enemy);
-
-            World.Run(0.3f);
-            Assert.IsFalse(World.Fog().IsVisible(World.GetPosition(enemy), 1, SightLayer.Tall), "the smoke hides it");
-
-            Attack(launcher, enemy);
-            Assert.IsTrue(World.RunUntil(() => Projectiles() > 0, 3f), "it fires its missile");
-            Assert.AreEqual(Entity.Null, FirstProjectile().Hit.Target, "the smoke broke the lock");
-
-            Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<SightBlock>(smoke), 40f),
-                "the cloud clears");
-        }
-
-        private Entity Smoke(float3 position)
-        {
-            var smoke = World.SpawnSightBlock(position,
-                new SightBlock { Size = new float2(12f, 12f), Density = 0.5f, PorousTop = 8f, Conceals = true });
-            var writer = World.Writer(smoke);
-            DecayAuthoring.Add(writer, "Smoke", 30f, 1f, 0.1f);
-            return smoke;
-        }
-
-        private Entity Tank(float3 position)
-        {
-            var tank = World.SpawnUnit(1, position);
-            World.AddWeapon(tank, new TestWeapon { Range = 30f, Damage = 40f, Cooldown = 0.5f, Projectile = World.ProjectilePrefab() });
-            return tank;
-        }
-
-        private void Attack(Entity unit, Entity target) => World.Command(World.Get<Owner>(unit).Value,
-            new PlayerCommand { Type = CommandType.Attack, Unit = unit, Target = target, Position = World.GetPosition(target) });
-
-        private int Projectiles()
-        {
-            using var query = World.Query(typeof(Projectile));
-            return query.CalculateEntityCount();
-        }
-
-        private Projectile FirstProjectile()
-        {
-            using var query = World.Query(typeof(Projectile));
-            using var flights = query.ToComponentDataArray<Projectile>(Allocator.Temp);
-            return flights[0];
-        }
+    private Projectile FirstProjectile()
+    {
+        using var query = World.Query(typeof(Projectile));
+        using var flights = query.ToComponentDataArray<Projectile>(Allocator.Temp);
+        return flights[0];
     }
 }

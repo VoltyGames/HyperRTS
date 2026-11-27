@@ -12,211 +12,210 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Tests.Buildings.Placement
+namespace HyperRTS.Simulation.Tests.Buildings.Placement;
+
+/// <summary>
+/// Building placement: snapping to cells, turned neighbours, the building gap and enemy units on the spot.
+/// </summary>
+public class BuildingPlacementTests : SimulationFixture
 {
-    /// <summary>
-    /// Building placement: snapping to cells, turned neighbours, the building gap and enemy units on the spot.
-    /// </summary>
-    public class BuildingPlacementTests : SimulationFixture
+    private static readonly float3 Far = new(90f, 0f, 90f);
+    private static readonly float3 SpawnOffset = new(0f, 0f, 4f);
+
+    // Right along (0.8, -0.6), so a neighbour one width over sits on the half-cell lattice.
+    private static readonly float TiltedYaw = math.atan2(0.6f, 0.8f);
+
+    private ResourceType _supplies;
+
+    [SetUp]
+    public void Prepare()
     {
-        private static readonly float3 Far = new(90f, 0f, 90f);
-        private static readonly float3 SpawnOffset = new(0f, 0f, 4f);
+        _supplies = World.CreateSupplies();
+        World.AddResources(1, _supplies, 1000);
+    }
 
-        // Right along (0.8, -0.6), so a neighbour one width over sits on the half-cell lattice.
-        private static readonly float TiltedYaw = math.atan2(0.6f, 0.8f);
-
-        private ResourceType _supplies;
-
-        [SetUp]
-        public void Prepare()
+    private Entity FactoryPrefab(float2 footprint)
+    {
+        var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, footprint, new TestBuilding
         {
-            _supplies = World.CreateSupplies();
-            World.AddResources(1, _supplies, 1000);
-        }
+            Name = "Factory",
+        }));
+        World.SetCost(prefab, _supplies, 100);
+        var unit = World.UnitPrefab(_supplies, 10);
+        return World.MakeProducer(prefab, SpawnOffset, unit);
+    }
 
-        private Entity FactoryPrefab(float2 footprint)
+    private static float Quarter(int turn) => PlacementMath.CameraYaw + math.PI * 0.5f * turn;
+
+    private void Command(Entity prefab, float3 position, float yaw)
+    {
+        var builder = World.MakeBuilder(World.SpawnUnit(1, float3.zero), prefab);
+        World.Command(1, new PlayerCommand
         {
-            var prefab = World.MakePrefab(World.SpawnBuilding(0, Far, footprint, new TestBuilding
+            Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position, Yaw = yaw,
+        });
+    }
+
+    private Entity Place(Entity prefab, float3 position, float yaw)
+    {
+        Command(prefab, position, yaw);
+        World.Tick();
+        foreach (var site in World.All<ConstructionProgress>())
+        {
+            if (World.Get<Owner>(site).Value == 1)
             {
-                Name = "Factory",
-            }));
-            World.SetCost(prefab, _supplies, 100);
-            var unit = World.UnitPrefab(_supplies, 10);
-            return World.MakeProducer(prefab, SpawnOffset, unit);
-        }
-
-        private static float Quarter(int turn) => PlacementMath.CameraYaw + math.PI * 0.5f * turn;
-
-        private void Command(Entity prefab, float3 position, float yaw)
-        {
-            var builder = World.MakeBuilder(World.SpawnUnit(1, float3.zero), prefab);
-            World.Command(1, new PlayerCommand
-            {
-                Type = CommandType.PlaceBuilding, Unit = builder, Prefab = prefab, Position = position, Yaw = yaw,
-            });
-        }
-
-        private Entity Place(Entity prefab, float3 position, float yaw)
-        {
-            Command(prefab, position, yaw);
-            World.Tick();
-            foreach (var site in World.All<ConstructionProgress>())
-            {
-                if (World.Get<Owner>(site).Value == 1)
-                {
-                    return site;
-                }
+                return site;
             }
-
-            return Entity.Null;
         }
 
-        private float3 Front(Entity site) => math.rotate(World.Get<LocalTransform>(site).Rotation, math.forward());
+        return Entity.Null;
+    }
 
-        [TestCase(0, 0f, -1f, 10.5f, 10f)]
-        [TestCase(1, -1f, 0f, 10f, 10.5f)]
-        [TestCase(2, 0f, 1f, 10.5f, 10f)]
-        [TestCase(3, 1f, 0f, 10f, 10.5f)]
-        public void QuarterTurn_TurnsTheFrontFootprintAndSpawnPoint(int turn, float frontX, float frontZ,
-            float centerX, float centerZ)
+    private float3 Front(Entity site) => math.rotate(World.Get<LocalTransform>(site).Rotation, math.forward());
+
+    [TestCase(0, 0f, -1f, 10.5f, 10f)]
+    [TestCase(1, -1f, 0f, 10f, 10.5f)]
+    [TestCase(2, 0f, 1f, 10.5f, 10f)]
+    [TestCase(3, 1f, 0f, 10f, 10.5f)]
+    public void QuarterTurn_TurnsTheFrontFootprintAndSpawnPoint(int turn, float frontX, float frontZ,
+        float centerX, float centerZ)
+    {
+        var site = Place(FactoryPrefab(new float2(3f, 2f)), new float3(10.2f, 0f, 10.2f), Quarter(turn));
+        var transform = World.Get<LocalTransform>(site);
+        var front = new float3(frontX, 0f, frontZ);
+
+        MathAssert.Near(front, Front(site));
+        Assert.AreEqual(centerX, transform.Position.x, 1e-4f, "snapped to the turned footprint");
+        Assert.AreEqual(centerZ, transform.Position.z, 1e-4f);
+        var box = new NavBox(transform.Position, transform.Rotation, World.Get<NavObstacle>(site).Size);
+        var extent = box.Extents * 2f;
+        MathAssert.Near(turn % 2 == 1 ? new float2(2f, 3f) : new float2(3f, 2f), extent);
+        var spawn = transform.TransformPoint(World.Get<Producer>(site).SpawnOffset);
+        MathAssert.Near(transform.Position + front * SpawnOffset.z, spawn);
+    }
+
+    [Test]
+    public void TurnedFootprint_DecidesValidity_AtTheMapEdge()
+    {
+        var prefab = FactoryPrefab(new float2(2f, 6f));
+
+        Assert.AreEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), Quarter(1)), "turned, it crosses the edge");
+        Assert.AreNotEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), Quarter(0)), "unturned, it fits");
+    }
+
+    [Test]
+    public void NonFiniteYaw_IsRefused()
+    {
+        Assert.AreEqual(Entity.Null, Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), float.NaN));
+        Assert.AreEqual(1000, World.GetResources(1, _supplies), "nothing charged");
+    }
+
+    [Test]
+    public void FreeYaw_TurnsTheSite_AndCentresItOnTheHalfCellLattice()
+    {
+        const float yaw = 0.7f;
+        var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10.3f, 0f, 10.1f), yaw);
+        var transform = World.Get<LocalTransform>(site);
+
+        MathAssert.Near(new float3(math.sin(yaw), 0f, math.cos(yaw)), Front(site));
+        Assert.AreEqual(10.5f, transform.Position.x, 1e-4f);
+        Assert.AreEqual(10f, transform.Position.z, 1e-4f);
+    }
+
+    [TestCase(14f, 7f, 2, TestName = "TurnedNeighbours_ThatOnlyTouch_AreBothPlaced")]
+    [TestCase(12f, 8.5f, 1, TestName = "TurnedNeighbours_ThatOverlap_AreRefused")]
+    public void TurnedNeighbours_AreComparedAsTurnedBoxes(float x, float z, int expected)
+    {
+        var prefab = FactoryPrefab(new float2(5f, 5f));
+        Command(prefab, new float3(10f, 0f, 10f), TiltedYaw);
+        Command(prefab, new float3(x, 0f, z), TiltedYaw);
+        World.Tick();
+
+        Assert.AreEqual(expected, PlayerSites());
+    }
+
+    [TestCase(14f, 10f, 0, TestName = "BuildingGap_FlushAtAQuarterYaw_IsPlaced")]
+    [TestCase(14f, 7f, -1, TestName = "BuildingGap_FlushAtAFreeYaw_IsPlaced")]
+    public void BuildingGap_FlushNeighbours_AreBothPlaced(float x, float z, int turn)
+    {
+        UseBuildingGap(4f);
+        var yaw = turn < 0 ? TiltedYaw : Quarter(turn);
+        var prefab = FactoryPrefab(turn < 0 ? new float2(5f, 5f) : new float2(4f, 4f));
+        Command(prefab, new float3(10f, 0f, 10f), yaw);
+        Command(prefab, new float3(x, 0f, z), yaw);
+        World.Tick();
+
+        Assert.AreEqual(2, PlayerSites());
+    }
+
+    [TestCase(0.05f, true)]
+    [TestCase(0.5f, false)]
+    [TestCase(2f, false)]
+    [TestCase(3.9f, false)]
+    [TestCase(4f, true)]
+    [TestCase(6f, true)]
+    public void BuildingGap_RefusesOnlyALaneNarrowerThanTheRule(float gap, bool places)
+    {
+        UseBuildingGap(4f);
+        // The new site spans x 8 to 12, so this neighbour's right edge sits gap metres from it.
+        World.SpawnBuilding(0, new float3(6f - gap, 0f, 10f), new float2(4f, 4f));
+
+        var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), Quarter(0));
+
+        Assert.AreEqual(places, site != Entity.Null);
+    }
+
+    [Test]
+    public void Gap_MeasuresTurnedBoxes_AndIsZeroWhenTheyOverlap()
+    {
+        var square = new NavBox(float3.zero, quaternion.identity, new float2(2f, 2f));
+        var diamond = new NavBox(new float3(4f, 0f, 0f), quaternion.RotateY(math.PI * 0.25f), new float2(2f, 2f));
+
+        Assert.AreEqual(3f - math.SQRT2, square.Gap(diamond), 1e-4f, "the diamond's corner to the square's side");
+        Assert.AreEqual(square.Gap(diamond), diamond.Gap(square), 1e-4f);
+        Assert.AreEqual(0f, square.Gap(new NavBox(new float3(1f, 0f, 0f), quaternion.identity, new float2(2f, 2f))));
+    }
+
+    private void UseBuildingGap(float gap)
+    {
+        var map = World.Singleton<MapSettings>();
+        map.BuildingGap = gap;
+        World.Set(World.MatchEntity(), map);
+    }
+
+    private int PlayerSites()
+    {
+        var count = 0;
+        foreach (var site in World.All<ConstructionProgress>())
         {
-            var site = Place(FactoryPrefab(new float2(3f, 2f)), new float3(10.2f, 0f, 10.2f), Quarter(turn));
-            var transform = World.Get<LocalTransform>(site);
-            var front = new float3(frontX, 0f, frontZ);
-
-            MathAssert.Near(front, Front(site));
-            Assert.AreEqual(centerX, transform.Position.x, 1e-4f, "snapped to the turned footprint");
-            Assert.AreEqual(centerZ, transform.Position.z, 1e-4f);
-            var box = new NavBox(transform.Position, transform.Rotation, World.Get<NavObstacle>(site).Size);
-            var extent = box.Extents * 2f;
-            MathAssert.Near(turn % 2 == 1 ? new float2(2f, 3f) : new float2(3f, 2f), extent);
-            var spawn = transform.TransformPoint(World.Get<Producer>(site).SpawnOffset);
-            MathAssert.Near(transform.Position + front * SpawnOffset.z, spawn);
+            count += World.Get<Owner>(site).Value == 1 ? 1 : 0;
         }
 
-        [Test]
-        public void TurnedFootprint_DecidesValidity_AtTheMapEdge()
-        {
-            var prefab = FactoryPrefab(new float2(2f, 6f));
+        return count;
+    }
 
-            Assert.AreEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), Quarter(1)), "turned, it crosses the edge");
-            Assert.AreNotEqual(Entity.Null, Place(prefab, new float3(98f, 0f, 0f), Quarter(0)), "unturned, it fits");
-        }
+    [TestCase(2, 2f, 1f, false, TestName = "EnemyUnitOnTheSpot_RulesItOut")]
+    [TestCase(1, 2f, 1f, true, TestName = "FriendlyUnitOnTheSpot_DrivesOff")]
+    [TestCase(2, 8f, 0f, true, TestName = "EnemyUnitBesideTheSpot_DoesNotCount")]
+    public void UnitOnTheSpot_OnlyAnEnemyRulesItOut(int owner, float x, float z, bool places)
+    {
+        var spot = new float3(20f, 0f, 20f);
+        var prefab = FactoryPrefab(new float2(6f, 6f));
+        World.SpawnUnit((byte)owner, spot + new float3(x, 0f, z));
+        // One tick first, so the spatial index holds the unit.
+        World.Tick();
 
-        [Test]
-        public void NonFiniteYaw_IsRefused()
-        {
-            Assert.AreEqual(Entity.Null, Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), float.NaN));
-            Assert.AreEqual(1000, World.GetResources(1, _supplies), "nothing charged");
-        }
+        Assert.AreEqual(places, Place(prefab, spot, Quarter(0)) != Entity.Null);
+    }
 
-        [Test]
-        public void FreeYaw_TurnsTheSite_AndCentresItOnTheHalfCellLattice()
-        {
-            const float yaw = 0.7f;
-            var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10.3f, 0f, 10.1f), yaw);
-            var transform = World.Get<LocalTransform>(site);
+    [Test]
+    public void TurnedSpot_ChecksTheUnitCapsuleAgainstTheTurnedBox()
+    {
+        var spot = new BuildingSpot(float3.zero, math.PI * 0.25f, new float2(4f, 4f), PlacementSurface.Land);
+        var axis = new float2(1f, 0f);
 
-            MathAssert.Near(new float3(math.sin(yaw), 0f, math.cos(yaw)), Front(site));
-            Assert.AreEqual(10.5f, transform.Position.x, 1e-4f);
-            Assert.AreEqual(10f, transform.Position.z, 1e-4f);
-        }
-
-        [TestCase(14f, 7f, 2, TestName = "TurnedNeighbours_ThatOnlyTouch_AreBothPlaced")]
-        [TestCase(12f, 8.5f, 1, TestName = "TurnedNeighbours_ThatOverlap_AreRefused")]
-        public void TurnedNeighbours_AreComparedAsTurnedBoxes(float x, float z, int expected)
-        {
-            var prefab = FactoryPrefab(new float2(5f, 5f));
-            Command(prefab, new float3(10f, 0f, 10f), TiltedYaw);
-            Command(prefab, new float3(x, 0f, z), TiltedYaw);
-            World.Tick();
-
-            Assert.AreEqual(expected, PlayerSites());
-        }
-
-        [TestCase(14f, 10f, 0, TestName = "BuildingGap_FlushAtAQuarterYaw_IsPlaced")]
-        [TestCase(14f, 7f, -1, TestName = "BuildingGap_FlushAtAFreeYaw_IsPlaced")]
-        public void BuildingGap_FlushNeighbours_AreBothPlaced(float x, float z, int turn)
-        {
-            UseBuildingGap(4f);
-            var yaw = turn < 0 ? TiltedYaw : Quarter(turn);
-            var prefab = FactoryPrefab(turn < 0 ? new float2(5f, 5f) : new float2(4f, 4f));
-            Command(prefab, new float3(10f, 0f, 10f), yaw);
-            Command(prefab, new float3(x, 0f, z), yaw);
-            World.Tick();
-
-            Assert.AreEqual(2, PlayerSites());
-        }
-
-        [TestCase(0.05f, true)]
-        [TestCase(0.5f, false)]
-        [TestCase(2f, false)]
-        [TestCase(3.9f, false)]
-        [TestCase(4f, true)]
-        [TestCase(6f, true)]
-        public void BuildingGap_RefusesOnlyALaneNarrowerThanTheRule(float gap, bool places)
-        {
-            UseBuildingGap(4f);
-            // The new site spans x 8 to 12, so this neighbour's right edge sits gap metres from it.
-            World.SpawnBuilding(0, new float3(6f - gap, 0f, 10f), new float2(4f, 4f));
-
-            var site = Place(FactoryPrefab(new float2(4f, 4f)), new float3(10f, 0f, 10f), Quarter(0));
-
-            Assert.AreEqual(places, site != Entity.Null);
-        }
-
-        [Test]
-        public void Gap_MeasuresTurnedBoxes_AndIsZeroWhenTheyOverlap()
-        {
-            var square = new NavBox(float3.zero, quaternion.identity, new float2(2f, 2f));
-            var diamond = new NavBox(new float3(4f, 0f, 0f), quaternion.RotateY(math.PI * 0.25f), new float2(2f, 2f));
-
-            Assert.AreEqual(3f - math.SQRT2, square.Gap(diamond), 1e-4f, "the diamond's corner to the square's side");
-            Assert.AreEqual(square.Gap(diamond), diamond.Gap(square), 1e-4f);
-            Assert.AreEqual(0f, square.Gap(new NavBox(new float3(1f, 0f, 0f), quaternion.identity, new float2(2f, 2f))));
-        }
-
-        private void UseBuildingGap(float gap)
-        {
-            var map = World.Singleton<MapSettings>();
-            map.BuildingGap = gap;
-            World.Set(World.MatchEntity(), map);
-        }
-
-        private int PlayerSites()
-        {
-            var count = 0;
-            foreach (var site in World.All<ConstructionProgress>())
-            {
-                count += World.Get<Owner>(site).Value == 1 ? 1 : 0;
-            }
-
-            return count;
-        }
-
-        [TestCase(2, 2f, 1f, false, TestName = "EnemyUnitOnTheSpot_RulesItOut")]
-        [TestCase(1, 2f, 1f, true, TestName = "FriendlyUnitOnTheSpot_DrivesOff")]
-        [TestCase(2, 8f, 0f, true, TestName = "EnemyUnitBesideTheSpot_DoesNotCount")]
-        public void UnitOnTheSpot_OnlyAnEnemyRulesItOut(int owner, float x, float z, bool places)
-        {
-            var spot = new float3(20f, 0f, 20f);
-            var prefab = FactoryPrefab(new float2(6f, 6f));
-            World.SpawnUnit((byte)owner, spot + new float3(x, 0f, z));
-            // One tick first, so the spatial index holds the unit.
-            World.Tick();
-
-            Assert.AreEqual(places, Place(prefab, spot, Quarter(0)) != Entity.Null);
-        }
-
-        [Test]
-        public void TurnedSpot_ChecksTheUnitCapsuleAgainstTheTurnedBox()
-        {
-            var spot = new BuildingSpot(float3.zero, math.PI * 0.25f, new float2(4f, 4f), PlacementSurface.Land);
-            var axis = new float2(1f, 0f);
-
-            // A box corner reaches 2.83 m along x at 45 degrees; the capsule's near end stops short of it.
-            Assert.IsFalse(spot.Overlaps(new float2(4.5f, 0f), axis, 0.5f));
-            Assert.IsTrue(spot.Overlaps(new float2(3.5f, 0f), axis, 0.5f));
-        }
+        // A box corner reaches 2.83 m along x at 45 degrees; the capsule's near end stops short of it.
+        Assert.IsFalse(spot.Overlaps(new float2(4.5f, 0f), axis, 0.5f));
+        Assert.IsTrue(spot.Overlaps(new float2(3.5f, 0f), axis, 0.5f));
     }
 }

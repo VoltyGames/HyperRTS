@@ -1,103 +1,102 @@
-using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
+using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Movement
+namespace HyperRTS.Simulation.Movement;
+
+/// <summary>
+/// Gives a ground vehicle handling and its <see cref="Navigation.Chassis"/>: acceleration, braking, steering,
+/// turning and reversing. Without it a unit steps straight at full speed, as infantry do.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Units/Locomotion")]
+[Icon(HyperRTSIcons.LocomotionAuthoring)]
+[HelpURL(HyperRTSDocs.Movement)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
+public class LocomotionAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Gives a ground vehicle handling and its <see cref="Navigation.Chassis"/>: acceleration, braking, steering,
-    /// turning and reversing. Without it a unit steps straight at full speed, as infantry do.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Locomotion")]
-    [Icon(HyperRTSIcons.LocomotionAuthoring)]
-    [HelpURL(HyperRTSDocs.Movement)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class LocomotionAuthoring : AuthoringBehaviour
+    [Tooltip("Speed gained per second.")]
+    [Unit("m/s²")]
+    [Min(0.1f)]
+    public float acceleration = 2.5f;
+
+    [Tooltip("Speed shed per second when braking.")]
+    [Unit("m/s²")]
+    [Min(0.1f)]
+    public float braking = 6f;
+
+    [Tooltip("Fastest the hull yaws: tracks turn at it, wheels hold it as their grip at speed.")]
+    [Unit("°/s")]
+    [Min(1f)]
+    public float turnRate = 50f;
+
+    [Tooltip("How fast the steered wheels turn. Wheels only.")]
+    [Unit("°/s")]
+    [Min(1f)]
+    public float steerRate = 45f;
+
+    [Tooltip("Tightest circle the rear axle drives. 0 turns at any speed. Ignored when it pivots.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float turnRadius;
+
+    [Tooltip("Stops and turns in place when far off its heading, as tracked vehicles do.")]
+    public bool pivots = true;
+
+    [Tooltip("Metres from the steering axles' midpoint to the rear axle. 0 for tracks.")]
+    [Min(0f)]
+    public float wheelbase;
+
+    [Tooltip("Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre. 0 for tracks.")]
+    public float rearAxle;
+
+    [Tooltip("How many axles, from the front, steer; Fill from model measures the rest as the rear axle.")]
+    [Range(1, 2)]
+    public int steeringAxles = 1;
+
+    [Tooltip("Top speed in reverse.")]
+    [Unit("m/s")]
+    [Min(0.1f)]
+    public float reverseSpeed = 2.5f;
+
+    [Tooltip("Longest leg it backs along when turning round would clearly take longer. 0 never reverses.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float reverseRun = 10f;
+
+    public Locomotion Locomotion => new()
     {
-        [Tooltip("Speed gained per second.")]
-        [Unit("m/s²")]
-        [Min(0.1f)]
-        public float acceleration = 2.5f;
+        Acceleration = acceleration,
+        Braking = braking,
+        TurnRate = math.radians(turnRate),
+        SteerRate = math.radians(steerRate),
+        ReverseSpeed = reverseSpeed,
+    };
 
-        [Tooltip("Speed shed per second when braking.")]
-        [Unit("m/s²")]
-        [Min(0.1f)]
-        public float braking = 6f;
+    public Chassis Chassis => new()
+    {
+        Wheelbase = wheelbase,
+        RearAxle = rearAxle,
+        TurnRadius = turnRadius,
+        Pivots = pivots,
+        ReverseRun = reverseRun,
+    };
 
-        [Tooltip("Fastest the hull yaws: tracks turn at it, wheels hold it as their grip at speed.")]
-        [Unit("°/s")]
-        [Min(1f)]
-        public float turnRate = 50f;
+    public static void Add(EntityWriter writer, Locomotion locomotion)
+    {
+        writer.Add(locomotion);
+        writer.Add<LocomotionState>();
+    }
 
-        [Tooltip("How fast the steered wheels turn. Wheels only.")]
-        [Unit("°/s")]
-        [Min(1f)]
-        public float steerRate = 45f;
-
-        [Tooltip("Tightest circle the rear axle drives. 0 turns at any speed. Ignored when it pivots.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float turnRadius;
-
-        [Tooltip("Stops and turns in place when far off its heading, as tracked vehicles do.")]
-        public bool pivots = true;
-
-        [Tooltip("Metres from the steering axles' midpoint to the rear axle. 0 for tracks.")]
-        [Min(0f)]
-        public float wheelbase;
-
-        [Tooltip("Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre. 0 for tracks.")]
-        public float rearAxle;
-
-        [Tooltip("How many axles, from the front, steer; Fill from model measures the rest as the rear axle.")]
-        [Range(1, 2)]
-        public int steeringAxles = 1;
-
-        [Tooltip("Top speed in reverse.")]
-        [Unit("m/s")]
-        [Min(0.1f)]
-        public float reverseSpeed = 2.5f;
-
-        [Tooltip("Longest leg it backs along when turning round would clearly take longer. 0 never reverses.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float reverseRun = 10f;
-
-        public Locomotion Locomotion => new()
+    public class Baker : Baker<LocomotionAuthoring>
+    {
+        public override void Bake(LocomotionAuthoring authoring)
         {
-            Acceleration = acceleration,
-            Braking = braking,
-            TurnRate = math.radians(turnRate),
-            SteerRate = math.radians(steerRate),
-            ReverseSpeed = reverseSpeed,
-        };
-
-        public Chassis Chassis => new()
-        {
-            Wheelbase = wheelbase,
-            RearAxle = rearAxle,
-            TurnRadius = turnRadius,
-            Pivots = pivots,
-            ReverseRun = reverseRun,
-        };
-
-        public static void Add(EntityWriter writer, Locomotion locomotion)
-        {
-            writer.Add(locomotion);
-            writer.Add<LocomotionState>();
-        }
-
-        public class Baker : Baker<LocomotionAuthoring>
-        {
-            public override void Bake(LocomotionAuthoring authoring)
-            {
-                var writer = this.Writer();
-                Add(writer, authoring.Locomotion);
-            }
+            var writer = this.Writer();
+            Add(writer, authoring.Locomotion);
         }
     }
 }

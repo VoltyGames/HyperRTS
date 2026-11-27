@@ -6,60 +6,59 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Tests.Production
+namespace HyperRTS.Simulation.Tests.Production;
+
+/// <summary>Why a purchase is refused, in the order the HUD shows: a lock before the price.</summary>
+public class PurchaseRefusalTests : SimulationFixture
 {
-    /// <summary>Why a purchase is refused, in the order the HUD shows: a lock before the price.</summary>
-    public class PurchaseRefusalTests : SimulationFixture
+    private static readonly float3 Far = new(60f, 0f, 60f);
+
+    private ResourceType _supplies;
+
+    [SetUp]
+    public void Prepare() => _supplies = World.CreateSupplies();
+
+    [Test]
+    public void FindRefusal_NamesAMissingPrerequisite_BeforeThePrice()
     {
-        private static readonly float3 Far = new(60f, 0f, 60f);
+        var prefab = World.UnitPrefab(_supplies, 100);
+        World.EntityManager.GetBuffer<Prerequisite>(prefab)
+            .Add(new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Barracks") });
 
-        private ResourceType _supplies;
+        Assert.AreEqual(PurchaseRefusal.MissingPrerequisite, Refusal(prefab), "locked and unaffordable");
 
-        [SetUp]
-        public void Prepare() => _supplies = World.CreateSupplies();
+        World.SpawnBuilding(1, Far, new float2(4f, 4f), new TestBuilding { Name = "Barracks" });
+        Assert.AreEqual(PurchaseRefusal.CannotAfford, Refusal(prefab));
 
-        [Test]
-        public void FindRefusal_NamesAMissingPrerequisite_BeforeThePrice()
+        World.AddResources(1, _supplies, 100);
+        Assert.AreEqual(PurchaseRefusal.None, Refusal(prefab));
+    }
+
+    [Test]
+    public void FindRefusal_NamesAReachedLimit_IncludingFinishedResearch()
+    {
+        var entityManager = World.EntityManager;
+        World.AddResources(1, _supplies, 1000);
+        var hero = World.AddBuildLimit(World.UnitPrefab(_supplies, 10, name: "Hero"), 1);
+        World.AddBuildLimit(World.SpawnUnit(1, Far, new TestUnit { Name = "Hero" }), 1);
+        var upgrade = World.UnitPrefab(_supplies, 10, name: "Upgrade");
+        entityManager.AddComponent<Research>(upgrade);
+        World.AddBuildLimit(upgrade, 1);
+        entityManager.GetBuffer<CompletedResearch>(World.Player(1)).Add(new CompletedResearch
         {
-            var prefab = World.UnitPrefab(_supplies, 100);
-            World.EntityManager.GetBuffer<Prerequisite>(prefab)
-                .Add(new Prerequisite { TypeId = EntityInfo.TypeIdFromName("Barracks") });
+            Prefab = upgrade, TypeId = EntityInfo.TypeIdFromName("Upgrade"),
+        });
 
-            Assert.AreEqual(PurchaseRefusal.MissingPrerequisite, Refusal(prefab), "locked and unaffordable");
+        Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(hero));
+        Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(upgrade));
+    }
 
-            World.SpawnBuilding(1, Far, new float2(4f, 4f), new TestBuilding { Name = "Barracks" });
-            Assert.AreEqual(PurchaseRefusal.CannotAfford, Refusal(prefab));
-
-            World.AddResources(1, _supplies, 100);
-            Assert.AreEqual(PurchaseRefusal.None, Refusal(prefab));
-        }
-
-        [Test]
-        public void FindRefusal_NamesAReachedLimit_IncludingFinishedResearch()
-        {
-            var entityManager = World.EntityManager;
-            World.AddResources(1, _supplies, 1000);
-            var hero = World.AddBuildLimit(World.UnitPrefab(_supplies, 10, name: "Hero"), 1);
-            World.AddBuildLimit(World.SpawnUnit(1, Far, new TestUnit { Name = "Hero" }), 1);
-            var upgrade = World.UnitPrefab(_supplies, 10, name: "Upgrade");
-            entityManager.AddComponent<Research>(upgrade);
-            World.AddBuildLimit(upgrade, 1);
-            entityManager.GetBuffer<CompletedResearch>(World.Player(1)).Add(new CompletedResearch
-            {
-                Prefab = upgrade, TypeId = EntityInfo.TypeIdFromName("Upgrade"),
-            });
-
-            Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(hero));
-            Assert.AreEqual(PurchaseRefusal.AtLimit, Refusal(upgrade));
-        }
-
-        private PurchaseRefusal Refusal(Entity prefab)
-        {
-            var entityManager = World.EntityManager;
-            var player = World.Player(1);
-            var buyer = new BuyerQueries(entityManager).Snapshot(entityManager, player);
-            var stock = entityManager.GetBuffer<ResourceStock>(player);
-            return buyer.FindRefusal(entityManager, prefab, new Stockpile(stock));
-        }
+    private PurchaseRefusal Refusal(Entity prefab)
+    {
+        var entityManager = World.EntityManager;
+        var player = World.Player(1);
+        var buyer = new BuyerQueries(entityManager).Snapshot(entityManager, player);
+        var stock = entityManager.GetBuffer<ResourceStock>(player);
+        return buyer.FindRefusal(entityManager, prefab, new Stockpile(stock));
     }
 }

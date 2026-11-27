@@ -1,94 +1,93 @@
 using HyperRTS.Editor.Maps.Geometry;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Heights
+namespace HyperRTS.Editor.Maps.Heights;
+
+/// <summary>
+/// Levels each road whose class asks for it onto a smoothed profile, so it crosses a ravine on an embankment.
+/// River channels under it are left alone.
+/// </summary>
+public static class MapRoadLeveller
 {
-    /// <summary>
-    /// Levels each road whose class asks for it onto a smoothed profile, so it crosses a ravine on an embankment.
-    /// River channels under it are left alone.
-    /// </summary>
-    public static class MapRoadLeveller
+    private const float Step = 2f;
+    private const int SmoothingSteps = 3;
+    private const float EndTaper = 8f;
+    private const int SmoothingPasses = 2;
+    private const float AboveWater = 0.6f;
+
+    public static void Level(MapHeights heights, MapHeights open, MapShapes shapes, float water)
     {
-        private const float Step = 2f;
-        private const int SmoothingSteps = 3;
-        private const float EndTaper = 8f;
-        private const int SmoothingPasses = 2;
-        private const float AboveWater = 0.6f;
-
-        public static void Level(MapHeights heights, MapHeights open, MapShapes shapes, float water)
+        foreach (var shape in shapes.Roads)
         {
-            foreach (var shape in shapes.Roads)
+            if (!shape.Class.level || shape.Generated)
             {
-                if (!shape.Class.level || shape.Generated)
+                continue;
+            }
+
+            var road = shape.Line;
+            var profile = Profile(road, open, water);
+            heights.ForEachIn(road.Bounds, (x, z, p) =>
+            {
+                var distance = road.Distance(p, out var along);
+                var edge = distance - road.Width * 0.5f;
+                if (edge > MapShapes.RoadShoulder || shapes.WaterEdgeDistance(p) < 1f)
                 {
-                    continue;
+                    return;
                 }
 
-                var road = shape.Line;
-                var profile = Profile(road, open, water);
-                heights.ForEachIn(road.Bounds, (x, z, p) =>
-                {
-                    var distance = road.Distance(p, out var along);
-                    var edge = distance - road.Width * 0.5f;
-                    if (edge > MapShapes.RoadShoulder || shapes.WaterEdgeDistance(p) < 1f)
-                    {
-                        return;
-                    }
-
-                    // Roads ease out at their ends instead of stopping on a levelled terrace.
-                    var ends = MapGeometry.Smooth(Mathf.Min(along, road.Length - along) / EndTaper);
-                    var weight = (1f - MapGeometry.Smooth(edge / MapShapes.RoadShoulder)) * ends;
-                    heights[x, z] = Mathf.Lerp(heights[x, z], At(profile, along), weight);
-                });
-            }
+                // Roads ease out at their ends instead of stopping on a levelled terrace.
+                var ends = MapGeometry.Smooth(Mathf.Min(along, road.Length - along) / EndTaper);
+                var weight = (1f - MapGeometry.Smooth(edge / MapShapes.RoadShoulder)) * ends;
+                heights[x, z] = Mathf.Lerp(heights[x, z], At(profile, along), weight);
+            });
         }
+    }
 
-        private static float[] Profile(MapLine road, MapHeights open, float water)
+    private static float[] Profile(MapLine road, MapHeights open, float water)
+    {
+        var count = Mathf.CeilToInt(road.Length / Step) + 1;
+        var profile = new float[count];
+        for (var i = 0; i < count; i++)
         {
-            var count = Mathf.CeilToInt(road.Length / Step) + 1;
-            var profile = new float[count];
-            for (var i = 0; i < count; i++)
-            {
-                profile[i] = open.Height(road.Path.PointAt(i * Step, out _));
-            }
-
-            for (var pass = 0; pass < SmoothingPasses; pass++)
-            {
-                profile = Smooth(profile);
-            }
-
-            for (var i = 0; i < count; i++)
-            {
-                profile[i] = Mathf.Max(profile[i], water + AboveWater);
-            }
-
-            return profile;
+            profile[i] = open.Height(road.Path.PointAt(i * Step, out _));
         }
 
-        private static float[] Smooth(float[] profile)
+        for (var pass = 0; pass < SmoothingPasses; pass++)
         {
-            var smoothed = new float[profile.Length];
-            for (var i = 0; i < profile.Length; i++)
-            {
-                var sum = 0f;
-                var count = 0;
-                for (var j = Mathf.Max(0, i - SmoothingSteps); j <= Mathf.Min(profile.Length - 1, i + SmoothingSteps); j++)
-                {
-                    sum += profile[j];
-                    count++;
-                }
+            profile = Smooth(profile);
+        }
 
-                smoothed[i] = sum / count;
+        for (var i = 0; i < count; i++)
+        {
+            profile[i] = Mathf.Max(profile[i], water + AboveWater);
+        }
+
+        return profile;
+    }
+
+    private static float[] Smooth(float[] profile)
+    {
+        var smoothed = new float[profile.Length];
+        for (var i = 0; i < profile.Length; i++)
+        {
+            var sum = 0f;
+            var count = 0;
+            for (var j = Mathf.Max(0, i - SmoothingSteps); j <= Mathf.Min(profile.Length - 1, i + SmoothingSteps); j++)
+            {
+                sum += profile[j];
+                count++;
             }
 
-            return smoothed;
+            smoothed[i] = sum / count;
         }
 
-        private static float At(float[] profile, float along)
-        {
-            var index = Mathf.Clamp(along / Step, 0f, profile.Length - 1);
-            var low = Mathf.Min((int)index, profile.Length - 2);
-            return profile.Length == 1 ? profile[0] : Mathf.Lerp(profile[low], profile[low + 1], index - low);
-        }
+        return smoothed;
+    }
+
+    private static float At(float[] profile, float along)
+    {
+        var index = Mathf.Clamp(along / Step, 0f, profile.Length - 1);
+        var low = Mathf.Min((int)index, profile.Length - 2);
+        return profile.Length == 1 ? profile[0] : Mathf.Lerp(profile[low], profile[low + 1], index - low);
     }
 }

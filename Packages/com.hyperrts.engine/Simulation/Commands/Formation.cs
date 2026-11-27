@@ -2,153 +2,152 @@ using System.Collections.Generic;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Commands
+namespace HyperRTS.Simulation.Commands;
+
+/// <summary>
+/// Box formation around a goal, facing the group's travel direction. The front-most units take the front row, each
+/// row fills left to right, and each unit gets a slot its own size.
+/// </summary>
+public static class Formation
 {
     /// <summary>
-    /// Box formation around a goal, facing the group's travel direction. The front-most units take the front row, each
-    /// row fills left to right, and each unit gets a slot its own size.
+    /// Writes one goal per unit into <paramref name="slots"/> (same index as its position), each taking its
+    /// <paramref name="spacings"/> across (x) and along (y) the travel direction.
     /// </summary>
-    public static class Formation
+    public static void Assign(NativeArray<float3> positions, float3 goal, NativeArray<float2> spacings,
+        NativeArray<float3> slots)
     {
-        /// <summary>
-        /// Writes one goal per unit into <paramref name="slots"/> (same index as its position), each taking its
-        /// <paramref name="spacings"/> across (x) and along (y) the travel direction.
-        /// </summary>
-        public static void Assign(NativeArray<float3> positions, float3 goal, NativeArray<float2> spacings,
-            NativeArray<float3> slots)
+        var count = positions.Length;
+        if (count == 1)
         {
-            var count = positions.Length;
-            if (count == 1)
-            {
-                slots[0] = goal;
-                return;
-            }
-
-            var forward = TravelDirection(positions, goal);
-            var right = new float2(forward.y, -forward.x);
-
-            // About twice as wide as deep, like a battle line.
-            var columns = math.min(count, (int)math.ceil(math.sqrt(count * 2f)));
-            var rows = (count + columns - 1) / columns;
-
-            var order = FrontFirst(positions, forward, out var keys);
-            var front = TotalDepth(order, rows, columns, spacings) * 0.5f;
-            for (var row = 0; row < rows; row++)
-            {
-                var start = row * columns;
-                var members = order.GetSubArray(start, math.min(columns, count - start));
-                var rowDepth = RowDepth(order, row, columns, spacings);
-                var center = goal.xz + forward * (front - rowDepth * 0.5f);
-                front -= rowDepth;
-                SortAcross(positions, members, keys, right);
-                LayRow(members, new float3(center.x, goal.y, center.y), right, spacings, slots);
-            }
-
-            order.Dispose();
-            keys.Dispose();
+            slots[0] = goal;
+            return;
         }
 
-        private static NativeArray<int> FrontFirst(NativeArray<float3> positions, float2 forward,
-            out NativeArray<float> keys)
-        {
-            var order = new NativeArray<int>(positions.Length, Allocator.Temp);
-            keys = new NativeArray<float>(positions.Length, Allocator.Temp);
-            for (var i = 0; i < positions.Length; i++)
-            {
-                order[i] = i;
-                keys[i] = -math.dot(positions[i].xz, forward);
-            }
+        var forward = TravelDirection(positions, goal);
+        var right = new float2(forward.y, -forward.x);
 
-            order.Sort(new ByKey { Keys = keys });
-            return order;
+        // About twice as wide as deep, like a battle line.
+        var columns = math.min(count, (int)math.ceil(math.sqrt(count * 2f)));
+        var rows = (count + columns - 1) / columns;
+
+        var order = FrontFirst(positions, forward, out var keys);
+        var front = TotalDepth(order, rows, columns, spacings) * 0.5f;
+        for (var row = 0; row < rows; row++)
+        {
+            var start = row * columns;
+            var members = order.GetSubArray(start, math.min(columns, count - start));
+            var rowDepth = RowDepth(order, row, columns, spacings);
+            var center = goal.xz + forward * (front - rowDepth * 0.5f);
+            front -= rowDepth;
+            SortAcross(positions, members, keys, right);
+            LayRow(members, new float3(center.x, goal.y, center.y), right, spacings, slots);
         }
 
-        private static float TotalDepth(NativeArray<int> order, int rows, int columns, NativeArray<float2> spacings)
-        {
-            var depth = 0f;
-            for (var row = 0; row < rows; row++)
-            {
-                depth += RowDepth(order, row, columns, spacings);
-            }
+        order.Dispose();
+        keys.Dispose();
+    }
 
-            return depth;
+    private static NativeArray<int> FrontFirst(NativeArray<float3> positions, float2 forward,
+        out NativeArray<float> keys)
+    {
+        var order = new NativeArray<int>(positions.Length, Allocator.Temp);
+        keys = new NativeArray<float>(positions.Length, Allocator.Temp);
+        for (var i = 0; i < positions.Length; i++)
+        {
+            order[i] = i;
+            keys[i] = -math.dot(positions[i].xz, forward);
         }
 
-        /// <summary>How far apart the slots can lie: twice the farthest slot's distance from the goal.</summary>
-        public static float Extent(NativeArray<float3> slots, float3 goal)
-        {
-            var farthest = 0f;
-            foreach (var slot in slots)
-            {
-                farthest = math.max(farthest, math.distance(slot.xz, goal.xz));
-            }
+        order.Sort(new ByKey { Keys = keys });
+        return order;
+    }
 
-            return farthest * 2f;
+    private static float TotalDepth(NativeArray<int> order, int rows, int columns, NativeArray<float2> spacings)
+    {
+        var depth = 0f;
+        for (var row = 0; row < rows; row++)
+        {
+            depth += RowDepth(order, row, columns, spacings);
         }
 
-        private static float RowDepth(NativeArray<int> order, int row, int columns, NativeArray<float2> spacings)
-        {
-            var depth = 0f;
-            var end = math.min(order.Length, (row + 1) * columns);
-            for (var k = row * columns; k < end; k++)
-            {
-                depth = math.max(depth, spacings[order[k]].y);
-            }
+        return depth;
+    }
 
-            return depth;
+    /// <summary>How far apart the slots can lie: twice the farthest slot's distance from the goal.</summary>
+    public static float Extent(NativeArray<float3> slots, float3 goal)
+    {
+        var farthest = 0f;
+        foreach (var slot in slots)
+        {
+            farthest = math.max(farthest, math.distance(slot.xz, goal.xz));
         }
 
-        private static float2 TravelDirection(NativeArray<float3> positions, float3 goal)
-        {
-            var centroid = float2.zero;
-            for (var i = 0; i < positions.Length; i++)
-            {
-                centroid += positions[i].xz;
-            }
+        return farthest * 2f;
+    }
 
-            return math.normalizesafe(goal.xz - centroid / positions.Length, new float2(0f, 1f));
+    private static float RowDepth(NativeArray<int> order, int row, int columns, NativeArray<float2> spacings)
+    {
+        var depth = 0f;
+        var end = math.min(order.Length, (row + 1) * columns);
+        for (var k = row * columns; k < end; k++)
+        {
+            depth = math.max(depth, spacings[order[k]].y);
         }
 
-        // Units keep their side-to-side order, so a row doesn't cross paths.
-        private static void SortAcross(NativeArray<float3> positions, NativeArray<int> members,
-            NativeArray<float> keys, float2 right)
-        {
-            for (var k = 0; k < members.Length; k++)
-            {
-                keys[members[k]] = math.dot(positions[members[k]].xz, right);
-            }
+        return depth;
+    }
 
-            members.Sort(new ByKey { Keys = keys });
+    private static float2 TravelDirection(NativeArray<float3> positions, float3 goal)
+    {
+        var centroid = float2.zero;
+        for (var i = 0; i < positions.Length; i++)
+        {
+            centroid += positions[i].xz;
         }
 
-        private static void LayRow(NativeArray<int> members, float3 center, float2 right,
-            NativeArray<float2> spacings, NativeArray<float3> slots)
-        {
-            var width = 0f;
-            for (var k = 0; k < members.Length; k++)
-            {
-                width += spacings[members[k]].x;
-            }
+        return math.normalizesafe(goal.xz - centroid / positions.Length, new float2(0f, 1f));
+    }
 
-            var left = -width * 0.5f;
-            for (var k = 0; k < members.Length; k++)
-            {
-                var span = spacings[members[k]].x;
-                var slot = center.xz + right * (left + span * 0.5f);
-                left += span;
-                slots[members[k]] = new float3(slot.x, center.y, slot.y);
-            }
+    // Units keep their side-to-side order, so a row doesn't cross paths.
+    private static void SortAcross(NativeArray<float3> positions, NativeArray<int> members,
+        NativeArray<float> keys, float2 right)
+    {
+        for (var k = 0; k < members.Length; k++)
+        {
+            keys[members[k]] = math.dot(positions[members[k]].xz, right);
         }
 
-        private struct ByKey : IComparer<int>
-        {
-            public NativeArray<float> Keys;
+        members.Sort(new ByKey { Keys = keys });
+    }
 
-            public int Compare(int a, int b)
-            {
-                var byKey = Keys[a].CompareTo(Keys[b]);
-                return byKey != 0 ? byKey : a.CompareTo(b);
-            }
+    private static void LayRow(NativeArray<int> members, float3 center, float2 right,
+        NativeArray<float2> spacings, NativeArray<float3> slots)
+    {
+        var width = 0f;
+        for (var k = 0; k < members.Length; k++)
+        {
+            width += spacings[members[k]].x;
+        }
+
+        var left = -width * 0.5f;
+        for (var k = 0; k < members.Length; k++)
+        {
+            var span = spacings[members[k]].x;
+            var slot = center.xz + right * (left + span * 0.5f);
+            left += span;
+            slots[members[k]] = new float3(slot.x, center.y, slot.y);
+        }
+    }
+
+    private struct ByKey : IComparer<int>
+    {
+        public NativeArray<float> Keys;
+
+        public int Compare(int a, int b)
+        {
+            var byKey = Keys[a].CompareTo(Keys[b]);
+            return byKey != 0 ? byKey : a.CompareTo(b);
         }
     }
 }

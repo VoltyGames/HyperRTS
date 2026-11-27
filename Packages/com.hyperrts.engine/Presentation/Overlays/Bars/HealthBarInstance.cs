@@ -1,22 +1,21 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Presentation.Overlays.Bars
+namespace HyperRTS.Presentation.Overlays.Bars;
+
+/// <summary>One health bar as <c>HyperRTS/HealthBar</c> reads it.</summary>
+[GenerateHLSL(needAccessors: false)]
+public struct HealthBarInstance
 {
-    /// <summary>One health bar as <c>HyperRTS/HealthBar</c> reads it.</summary>
-    [GenerateHLSL(needAccessors: false)]
-    public struct HealthBarInstance
-    {
-        /// <summary>Health fraction, segments, rank and opacity.</summary>
-        public Vector4 Bar;
+    /// <summary>Health fraction, segments, rank and opacity.</summary>
+    public Vector4 Bar;
 
-        /// <summary>Width and bar height in reference pixels, squad members and members alive.</summary>
-        public Vector4 Size;
+    /// <summary>Width and bar height in reference pixels, squad members and members alive.</summary>
+    public Vector4 Size;
 
-        /// <summary>Suppression (-1 for a non-squad), its level, cover kind and 1 while retreating.</summary>
-        public Vector4 Squad;
+    /// <summary>Suppression (-1 for a non-squad), its level, cover kind and 1 while retreating.</summary>
+    public Vector4 Squad;
 
-        /// <summary>World point the bar sits above.</summary>
-        public Vector3 Anchor;
-    }
+    /// <summary>World point the bar sits above.</summary>
+    public Vector3 Anchor;
 }

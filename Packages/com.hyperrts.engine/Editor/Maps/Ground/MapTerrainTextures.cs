@@ -6,136 +6,135 @@ using HyperRTS.Editor.Maps.Climate;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Ground
+namespace HyperRTS.Editor.Maps.Ground;
+
+/// <summary>
+/// The texture arrays HyperRTS/Terrain samples for a climate's layers, kept in a Generated folder beside the
+/// climate's asset and rebuilt only when their sources change.
+/// </summary>
+public static class MapTerrainTextures
 {
-    /// <summary>
-    /// The texture arrays HyperRTS/Terrain samples for a climate's layers, kept in a Generated folder beside the
-    /// climate's asset and rebuilt only when their sources change.
-    /// </summary>
-    public static class MapTerrainTextures
+    public const int MaxLayers = 16;
+
+    /// <summary>Width and height of every array slice; sources of other sizes are resampled.</summary>
+    public const int SliceSize = 1024;
+
+    public static (Texture2DArray Albedo, Texture2DArray Normal, Texture2DArray Mask) Ensure(MapClimate climate)
     {
-        public const int MaxLayers = 16;
-
-        /// <summary>Width and height of every array slice; sources of other sizes are resampled.</summary>
-        public const int SliceSize = 1024;
-
-        public static (Texture2DArray Albedo, Texture2DArray Normal, Texture2DArray Mask) Ensure(MapClimate climate)
+        var problem = Problems(climate).FirstOrDefault();
+        if (problem != null)
         {
-            var problem = Problems(climate).FirstOrDefault();
-            if (problem != null)
-            {
-                throw new ArgumentException($"HyperRTS: climate '{climate.key}': {problem}");
-            }
-
-            var layers = climate.layers.Select(l => l.terrainLayer).ToList();
-            var folder = GeneratedFolder(climate);
-            var atlas = new MapTerrainAtlas(layers, SliceSize);
-            var albedo = atlas.Ensure($"{folder}/{climate.key}_TerrainAlbedo.png",
-                l => new[] { l.diffuseTexture, l.maskMapTexture }, AlbedoCell, normalMap: false, sRGB: true);
-            var normal = atlas.Ensure($"{folder}/{climate.key}_TerrainNormal.png",
-                l => new[] { l.normalMapTexture }, l => MapTerrainSource.Read(l.normalMapTexture, SliceSize),
-                normalMap: true, sRGB: false);
-            var mask = atlas.Ensure($"{folder}/{climate.key}_TerrainMask.png",
-                l => new[] { l.maskMapTexture }, MaskCell, normalMap: false, sRGB: false);
-            return (albedo, normal, mask);
+            throw new ArgumentException($"HyperRTS: climate '{climate.key}': {problem}");
         }
 
-        /// <summary>What keeps the climate's layers from packing into the arrays, one message each.</summary>
-        public static IEnumerable<string> Problems(MapClimate climate)
+        var layers = climate.layers.Select(l => l.terrainLayer).ToList();
+        var folder = GeneratedFolder(climate);
+        var atlas = new MapTerrainAtlas(layers, SliceSize);
+        var albedo = atlas.Ensure($"{folder}/{climate.key}_TerrainAlbedo.png",
+            l => new[] { l.diffuseTexture, l.maskMapTexture }, AlbedoCell, normalMap: false, sRGB: true);
+        var normal = atlas.Ensure($"{folder}/{climate.key}_TerrainNormal.png",
+            l => new[] { l.normalMapTexture }, l => MapTerrainSource.Read(l.normalMapTexture, SliceSize),
+            normalMap: true, sRGB: false);
+        var mask = atlas.Ensure($"{folder}/{climate.key}_TerrainMask.png",
+            l => new[] { l.maskMapTexture }, MaskCell, normalMap: false, sRGB: false);
+        return (albedo, normal, mask);
+    }
+
+    /// <summary>What keeps the climate's layers from packing into the arrays, one message each.</summary>
+    public static IEnumerable<string> Problems(MapClimate climate)
+    {
+        if (climate.layers.Count == 0 || climate.layers.Count > MaxLayers)
         {
-            if (climate.layers.Count == 0 || climate.layers.Count > MaxLayers)
-            {
-                yield return $"{climate.layers.Count} layers; use 1 to {MaxLayers}.";
-            }
-
-            foreach (var layer in climate.layers)
-            {
-                if (layer.terrainLayer == null)
-                {
-                    yield return $"layer '{layer.key}' has no Terrain Layer.";
-                    continue;
-                }
-
-                foreach (var problem in TextureProblems(layer))
-                {
-                    yield return $"layer '{layer.key}' {problem}";
-                }
-            }
+            yield return $"{climate.layers.Count} layers; use 1 to {MaxLayers}.";
         }
 
-        private static IEnumerable<string> TextureProblems(MapClimateLayer layer)
+        foreach (var layer in climate.layers)
         {
-            var terrainLayer = layer.terrainLayer;
-            var textures = new[]
+            if (layer.terrainLayer == null)
             {
-                ("diffuse texture", terrainLayer.diffuseTexture), ("normal map", terrainLayer.normalMapTexture),
-                ("mask map", terrainLayer.maskMapTexture),
-            };
-            foreach (var (role, texture) in textures)
-            {
-                if (texture == null)
-                {
-                    yield return $"has no {role}.";
-                    continue;
-                }
-
-                var path = AssetDatabase.GetAssetPath(texture);
-                if (!MapTerrainSource.IsReadable(path))
-                {
-                    yield return $"has a {role} '{path}' that is not a PNG or JPG file.";
-                }
+                yield return $"layer '{layer.key}' has no Terrain Layer.";
+                continue;
             }
 
-            if (terrainLayer.maskMapTexture == null)
+            foreach (var problem in TextureProblems(layer))
             {
-                yield break;
+                yield return $"layer '{layer.key}' {problem}";
+            }
+        }
+    }
+
+    private static IEnumerable<string> TextureProblems(MapClimateLayer layer)
+    {
+        var terrainLayer = layer.terrainLayer;
+        var textures = new[]
+        {
+            ("diffuse texture", terrainLayer.diffuseTexture), ("normal map", terrainLayer.normalMapTexture),
+            ("mask map", terrainLayer.maskMapTexture),
+        };
+        foreach (var (role, texture) in textures)
+        {
+            if (texture == null)
+            {
+                yield return $"has no {role}.";
+                continue;
             }
 
-            var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(terrainLayer.maskMapTexture));
-            if (importer is TextureImporter mask && !mask.DoesSourceTextureHaveAlpha())
+            var path = AssetDatabase.GetAssetPath(texture);
+            if (!MapTerrainSource.IsReadable(path))
             {
-                yield return $"has a mask map '{mask.assetPath}' without alpha: smoothness belongs in its alpha.";
+                yield return $"has a {role} '{path}' that is not a PNG or JPG file.";
             }
         }
 
-        private static string GeneratedFolder(MapClimate climate)
+        if (terrainLayer.maskMapTexture == null)
         {
-            if (string.IsNullOrEmpty(climate.file))
-            {
-                throw new ArgumentException($"HyperRTS: climate '{climate.key}' must come from a map library asset.");
-            }
-
-            var parent = Path.GetDirectoryName(climate.file)?.Replace('\\', '/');
-            var folder = $"{parent}/Generated";
-            if (!AssetDatabase.IsValidFolder(folder))
-            {
-                AssetDatabase.CreateFolder(parent, "Generated");
-            }
-
-            return folder;
+            yield break;
         }
 
-        private static Color32[] AlbedoCell(TerrainLayer layer)
+        var importer = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(terrainLayer.maskMapTexture));
+        if (importer is TextureImporter mask && !mask.DoesSourceTextureHaveAlpha())
         {
-            var albedo = MapTerrainSource.Read(layer.diffuseTexture, SliceSize);
-            var heights = MapTerrainSource.Heights(MapTerrainSource.Read(layer.maskMapTexture, SliceSize));
-            for (var i = 0; i < albedo.Length; i++)
-            {
-                albedo[i].a = heights[i];
-            }
+            yield return $"has a mask map '{mask.assetPath}' without alpha: smoothness belongs in its alpha.";
+        }
+    }
 
-            return albedo;
+    private static string GeneratedFolder(MapClimate climate)
+    {
+        if (string.IsNullOrEmpty(climate.file))
+        {
+            throw new ArgumentException($"HyperRTS: climate '{climate.key}' must come from a map library asset.");
         }
 
-        private static Color32[] MaskCell(TerrainLayer layer)
+        var parent = Path.GetDirectoryName(climate.file)?.Replace('\\', '/');
+        var folder = $"{parent}/Generated";
+        if (!AssetDatabase.IsValidFolder(folder))
         {
-            var mask = MapTerrainSource.Read(layer.maskMapTexture, SliceSize);
-            for (var i = 0; i < mask.Length; i++)
-            {
-                mask[i] = new Color32(mask[i].g, mask[i].a, 0, 255);
-            }
-
-            return mask;
+            AssetDatabase.CreateFolder(parent, "Generated");
         }
+
+        return folder;
+    }
+
+    private static Color32[] AlbedoCell(TerrainLayer layer)
+    {
+        var albedo = MapTerrainSource.Read(layer.diffuseTexture, SliceSize);
+        var heights = MapTerrainSource.Heights(MapTerrainSource.Read(layer.maskMapTexture, SliceSize));
+        for (var i = 0; i < albedo.Length; i++)
+        {
+            albedo[i].a = heights[i];
+        }
+
+        return albedo;
+    }
+
+    private static Color32[] MaskCell(TerrainLayer layer)
+    {
+        var mask = MapTerrainSource.Read(layer.maskMapTexture, SliceSize);
+        for (var i = 0; i < mask.Length; i++)
+        {
+            mask[i] = new Color32(mask[i].g, mask[i].a, 0, 255);
+        }
+
+        return mask;
     }
 }

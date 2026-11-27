@@ -1,72 +1,71 @@
+using System;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Geometry;
-using System;
 using HyperRTS.Simulation.Destruction;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Death
+namespace HyperRTS.Simulation.Death;
+
+/// <summary>Destructible scenery that falls away from what killed it, such as a tree.</summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Topple")]
+[Icon(HyperRTSIcons.ToppleAuthoring)]
+[HelpURL(HyperRTSDocs.Destruction)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(DestructibleAuthoring), "a Destructible")]
+public class ToppleAuthoring : AuthoringBehaviour
 {
-    /// <summary>Destructible scenery that falls away from what killed it, such as a tree.</summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Destruction/Topple")]
-    [Icon(HyperRTSIcons.ToppleAuthoring)]
-    [HelpURL(HyperRTSDocs.Destruction)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(DestructibleAuthoring), "a Destructible")]
-    public class ToppleAuthoring : AuthoringBehaviour
+    [Tooltip("From the trunk's base at the origin to its top in the standing model; its length sets the fall speed.")]
+    public Vector3 trunk = Vector3.up;
+
+    [Tooltip("Heading from +Z toward +X that the canopy points in the remains model.")]
+    [Unit("°")]
+    public float lie;
+
+    [Tooltip("The material of the trunk faces in the standing model's LOD0, which Measure from model reads. Editor only.")]
+    public Material trunkMaterial;
+
+    /// <summary><paramref name="trunk"/> is a unit vector.</summary>
+    public static void AddTopple(EntityWriter writer, float3 trunk, float height, float lie,
+        float canopyRadius)
     {
-        [Tooltip("From the trunk's base at the origin to its top in the standing model; its length sets the fall speed.")]
-        public Vector3 trunk = Vector3.up;
+        writer.Add(new Topple { Trunk = trunk, Height = height, Lie = lie, CanopyRadius = canopyRadius });
+        writer.Add<LethalHit>();
+    }
 
-        [Tooltip("Heading from +Z toward +X that the canopy points in the remains model.")]
-        [Unit("°")]
-        public float lie;
-
-        [Tooltip("The material of the trunk faces in the standing model's LOD0, which Measure from model reads. Editor only.")]
-        public Material trunkMaterial;
-
-        /// <summary><paramref name="trunk"/> is a unit vector.</summary>
-        public static void AddTopple(EntityWriter writer, float3 trunk, float height, float lie,
-            float canopyRadius)
+    public class Baker : Baker<ToppleAuthoring>
+    {
+        public override void Bake(ToppleAuthoring authoring)
         {
-            writer.Add(new Topple { Trunk = trunk, Height = height, Lie = lie, CanopyRadius = canopyRadius });
-            writer.Add<LethalHit>();
+            if (authoring.trunk.sqrMagnitude < 1e-6f)
+            {
+                throw new InvalidOperationException($"Topple on '{authoring.name}' has a zero 'trunk'.");
+            }
+
+            var writer = this.Writer();
+            var trunk = math.normalize((float3)authoring.trunk);
+            AddTopple(writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
+                CanopyRadius(authoring.transform));
         }
 
-        public class Baker : Baker<ToppleAuthoring>
+        // The widest reach of the standing model's meshes from the stump, so a site clears a canopy over it.
+        private float CanopyRadius(Transform root)
         {
-            public override void Bake(ToppleAuthoring authoring)
+            var canopy = 0f;
+            foreach (var filter in GetComponentsInChildren<MeshFilter>())
             {
-                if (authoring.trunk.sqrMagnitude < 1e-6f)
+                var mesh = DependsOn(filter.sharedMesh);
+                if (mesh == null)
                 {
-                    throw new InvalidOperationException($"Topple on '{authoring.name}' has a zero 'trunk'.");
+                    continue;
                 }
 
-                var writer = this.Writer();
-                var trunk = math.normalize((float3)authoring.trunk);
-                AddTopple(writer, trunk, authoring.trunk.magnitude, math.radians(authoring.lie),
-                    CanopyRadius(authoring.transform));
+                var box = BoundsMath.Moved(mesh.bounds, root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
+                canopy = math.max(canopy, BoundsMath.FlatReach(box));
             }
 
-            // The widest reach of the standing model's meshes from the stump, so a site clears a canopy over it.
-            private float CanopyRadius(Transform root)
-            {
-                var canopy = 0f;
-                foreach (var filter in GetComponentsInChildren<MeshFilter>())
-                {
-                    var mesh = DependsOn(filter.sharedMesh);
-                    if (mesh == null)
-                    {
-                        continue;
-                    }
-
-                    var box = BoundsMath.Moved(mesh.bounds, root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
-                    canopy = math.max(canopy, BoundsMath.FlatReach(box));
-                }
-
-                return canopy;
-            }
+            return canopy;
         }
     }
 }

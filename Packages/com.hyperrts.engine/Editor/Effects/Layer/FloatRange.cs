@@ -1,20 +1,19 @@
 using System;
 
-namespace HyperRTS.Editor.Effects.Layer
+namespace HyperRTS.Editor.Effects.Layer;
+
+/// <summary>A value picked per particle between min and max; equal ends make it constant.</summary>
+[Serializable]
+public struct FloatRange
 {
-    /// <summary>A value picked per particle between min and max; equal ends make it constant.</summary>
-    [Serializable]
-    public struct FloatRange
+    public float min;
+    public float max;
+
+    public FloatRange(float min, float max)
     {
-        public float min;
-        public float max;
-
-        public FloatRange(float min, float max)
-        {
-            this.min = min;
-            this.max = max;
-        }
-
-        public bool IsConstant => min == max;
+        this.min = min;
+        this.max = max;
     }
+
+    public bool IsConstant => min == max;
 }

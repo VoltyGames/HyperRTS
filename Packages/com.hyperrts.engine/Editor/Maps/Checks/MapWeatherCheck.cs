@@ -2,37 +2,36 @@ using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Climate;
 using HyperRTS.Editor.Maps.Common;
 
-namespace HyperRTS.Editor.Maps.Checks
+namespace HyperRTS.Editor.Maps.Checks;
+
+/// <summary>Checks a climate's weathers: at least one, each with a unique key and an atmosphere prefab.</summary>
+public static class MapWeatherCheck
 {
-    /// <summary>Checks a climate's weathers: at least one, each with a unique key and an atmosphere prefab.</summary>
-    public static class MapWeatherCheck
+    public static void Check(MapClimate climate, MapIssues issues)
     {
-        public static void Check(MapClimate climate, MapIssues issues)
+        var name = $"Climate '{climate.key}'";
+        if (climate.weathers.Count == 0)
         {
-            var name = $"Climate '{climate.key}'";
-            if (climate.weathers.Count == 0)
+            issues.Error($"{name} lists no weathers.");
+        }
+
+        var keys = new HashSet<string>();
+        foreach (var weather in climate.weathers)
+        {
+            if (string.IsNullOrEmpty(weather.key))
             {
-                issues.Error($"{name} lists no weathers.");
+                issues.Error($"{name}: a weather has no key.");
+                continue;
             }
 
-            var keys = new HashSet<string>();
-            foreach (var weather in climate.weathers)
+            if (!keys.Add(weather.key))
             {
-                if (string.IsNullOrEmpty(weather.key))
-                {
-                    issues.Error($"{name}: a weather has no key.");
-                    continue;
-                }
+                issues.Error($"{name}: weather '{weather.key}' is listed twice.");
+            }
 
-                if (!keys.Add(weather.key))
-                {
-                    issues.Error($"{name}: weather '{weather.key}' is listed twice.");
-                }
-
-                if (weather.atmosphere == null)
-                {
-                    issues.Error($"{name}: weather '{weather.key}' has no atmosphere prefab.");
-                }
+            if (weather.atmosphere == null)
+            {
+                issues.Error($"{name}: weather '{weather.key}' has no atmosphere prefab.");
             }
         }
     }

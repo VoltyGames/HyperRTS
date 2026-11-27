@@ -1,253 +1,252 @@
-using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Simulation.Resources.Gathering;
-using HyperRTS.Simulation.Vision.Fog;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Heights;
+using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Vision;
+using HyperRTS.Simulation.Vision.Fog;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 using UnityEngine.UIElements;
-using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.Map
+namespace HyperRTS.Presentation.HUD.Map;
+
+/// <summary>
+/// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured markers (squares for
+/// structures, dimmed for remembered ones), resource nodes and the camera view; click or drag to move the camera.
+/// </summary>
+public sealed class Minimap : HUDPanel
 {
-    /// <summary>
-    /// Map overview: the scene's <see cref="MinimapImage"/>, the local fog of war, owner-coloured markers (squares for
-    /// structures, dimmed for remembered ones), resource nodes and the camera view; click or drag to move the camera.
-    /// </summary>
-    public sealed class Minimap : HUDPanel
+    private const float MaxViewDistance = 1000f;
+    private const float MarkerInterval = 0.1f;
+
+    /// <summary>Remembered buildings show at this share of their owner's brightness.</summary>
+    private const float MemoryShade = 0.5f;
+
+    private readonly LiveQuery _units = Markers(ComponentType.Exclude<NavObstacle>());
+    private readonly LiveQuery _structures = Markers(ComponentType.ReadOnly<NavObstacle>());
+
+    private readonly LiveQuery _memories = new(entityManager =>
+        entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogMemory>()));
+
+    private readonly LiveQuery _nodes = new(entityManager => entityManager.CreateEntityQuery(
+        ComponentType.ReadOnly<ResourceNode>(),
+        ComponentType.ReadOnly<LocalToWorld>()));
+
+    private readonly LiveSingleton<TerrainHeight> _terrain = new();
+
+    private readonly Vector2[] _view = new Vector2[4];
+    private readonly VisualElement _canvas;
+    private readonly MinimapMarkerLayer _markerLayer;
+    private readonly VisualElement _viewLayer;
+    private readonly MinimapFog _fog;
+    private readonly MinimapStyle _style;
+    private bool _imageSearched;
+    private HUDContext _context;
+    private MapSettings _map;
+    private bool _hasMap;
+    private float _nextMarkerTime;
+
+    public Minimap(VisualElement root) : base(root)
     {
-        private const float MaxViewDistance = 1000f;
-        private const float MarkerInterval = 0.1f;
+        _canvas = Root.Require<VisualElement>("canvas");
+        _fog = new MinimapFog(Root.Require<VisualElement>("fog"));
+        var markers = Root.Require<VisualElement>("markers");
+        _markerLayer = new MinimapMarkerLayer(markers);
+        _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
+        _canvas.RegisterCallback<PointerMoveEvent>(OnPointerMove);
+        _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
+        _viewLayer = Root.Require<VisualElement>("view");
+        _viewLayer.generateVisualContent += PaintView;
+        _style = new MinimapStyle(_viewLayer, markers);
+    }
 
-        /// <summary>Remembered buildings show at this share of their owner's brightness.</summary>
-        private const float MemoryShade = 0.5f;
+    public override bool NeedsPlayer => false;
 
-        private readonly LiveQuery _units = Markers(ComponentType.Exclude<NavObstacle>());
-        private readonly LiveQuery _structures = Markers(ComponentType.ReadOnly<NavObstacle>());
-
-        private readonly LiveQuery _memories = new(entityManager =>
-            entityManager.CreateEntityQuery(ComponentType.ReadOnly<FogMemory>()));
-
-        private readonly LiveQuery _nodes = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<ResourceNode>(),
-            ComponentType.ReadOnly<LocalToWorld>()));
-
-        private readonly LiveSingleton<TerrainHeight> _terrain = new();
-
-        private readonly Vector2[] _view = new Vector2[4];
-        private readonly VisualElement _canvas;
-        private readonly MinimapMarkerLayer _markerLayer;
-        private readonly VisualElement _viewLayer;
-        private readonly MinimapFog _fog;
-        private readonly MinimapStyle _style;
-        private bool _imageSearched;
-        private HUDContext _context;
-        private MapSettings _map;
-        private bool _hasMap;
-        private float _nextMarkerTime;
-
-        public Minimap(VisualElement root) : base(root)
+    public override void Refresh(HUDContext context)
+    {
+        _context = context;
+        var view = context.View;
+        _hasMap = view.HasMap;
+        _map = view.Map;
+        if (_hasMap)
         {
-            _canvas = Root.Require<VisualElement>("canvas");
-            _fog = new MinimapFog(Root.Require<VisualElement>("fog"));
-            var markers = Root.Require<VisualElement>("markers");
-            _markerLayer = new MinimapMarkerLayer(markers);
-            _canvas.RegisterCallback<PointerDownEvent>(OnPointerDown);
-            _canvas.RegisterCallback<PointerMoveEvent>(OnPointerMove);
-            _canvas.RegisterCallback<PointerUpEvent>(OnPointerUp);
-            _viewLayer = Root.Require<VisualElement>("view");
-            _viewLayer.generateVisualContent += PaintView;
-            _style = new MinimapStyle(_viewLayer, markers);
+            GatherCameraView(context.EntityManager);
+            FindImage();
+            _fog.Refresh(context.EntityManager);
+        }
+        else
+        {
+            _imageSearched = false;
+            _viewLayer.MarkDirtyRepaint();
         }
 
-        public override bool NeedsPlayer => false;
-
-        public override void Refresh(HUDContext context)
+        // Drawing and uploading the markers is the dear part, so they refresh at a fixed rate while the view rect stays live.
+        if (Time.unscaledTime < _nextMarkerTime)
         {
-            _context = context;
-            var view = context.View;
-            _hasMap = view.HasMap;
-            _map = view.Map;
-            if (_hasMap)
-            {
-                GatherCameraView(context.EntityManager);
-                FindImage();
-                _fog.Refresh(context.EntityManager);
-            }
-            else
-            {
-                _imageSearched = false;
-                _viewLayer.MarkDirtyRepaint();
-            }
-
-            // Drawing and uploading the markers is the dear part, so they refresh at a fixed rate while the view rect stays live.
-            if (Time.unscaledTime < _nextMarkerTime)
-            {
-                return;
-            }
-
-            _nextMarkerTime = Time.unscaledTime + MarkerInterval;
-            using var markers = new NativeList<MinimapMarker>(256, Allocator.TempJob);
-            if (_hasMap)
-            {
-                GatherNodes(context.EntityManager, markers);
-                GatherEntities(view, _units, _style.UnitRadius, false, markers);
-                GatherEntities(view, _structures, _style.StructureRadius, true, markers);
-                GatherMemories(view, markers);
-            }
-
-            _markerLayer.Draw(markers.AsArray(), _style);
+            return;
         }
 
-        // Units and structures differ only by NavObstacle, which sets their marker size.
-        private static LiveQuery Markers(ComponentType obstacle) => new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<EntityInfo>(),
-            ComponentType.ReadOnly<Owner>(),
-            ComponentType.ReadOnly<LocalToWorld>(),
-            obstacle,
-            ComponentType.Exclude<FogHidden>(),
-            ComponentType.Exclude<Inside>()));
-
-        /// <summary>The scene's map picture, looked up once per match; without one the canvas keeps its plain fill.</summary>
-        private void FindImage()
+        _nextMarkerTime = Time.unscaledTime + MarkerInterval;
+        using var markers = new NativeList<MinimapMarker>(256, Allocator.TempJob);
+        if (_hasMap)
         {
-            if (_imageSearched)
-            {
-                return;
-            }
-
-            _imageSearched = true;
-            var image = Object.FindAnyObjectByType<MinimapImage>();
-            _canvas.style.backgroundImage = image != null && image.image != null
-                ? new StyleBackground(image.image)
-                : new StyleBackground(StyleKeyword.Null);
+            GatherNodes(context.EntityManager, markers);
+            GatherEntities(view, _units, _style.UnitRadius, false, markers);
+            GatherEntities(view, _structures, _style.StructureRadius, true, markers);
+            GatherMemories(view, markers);
         }
 
-        private void GatherNodes(EntityManager entityManager, NativeList<MinimapMarker> markers)
+        _markerLayer.Draw(markers.AsArray(), _style);
+    }
+
+    // Units and structures differ only by NavObstacle, which sets their marker size.
+    private static LiveQuery Markers(ComponentType obstacle) => new(entityManager => entityManager.CreateEntityQuery(
+        ComponentType.ReadOnly<EntityInfo>(),
+        ComponentType.ReadOnly<Owner>(),
+        ComponentType.ReadOnly<LocalToWorld>(),
+        obstacle,
+        ComponentType.Exclude<FogHidden>(),
+        ComponentType.Exclude<Inside>()));
+
+    /// <summary>The scene's map picture, looked up once per match; without one the canvas keeps its plain fill.</summary>
+    private void FindImage()
+    {
+        if (_imageSearched)
         {
-            var query = _nodes.In(entityManager);
-            using var nodes = query.ToComponentDataArray<ResourceNode>(Allocator.Temp);
-            using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            for (var i = 0; i < nodes.Length; i++)
-            {
-                AddMarker(markers, transforms[i].Position.xz, nodes[i].Type.Value.color, _style.NodeRadius, true);
-            }
+            return;
         }
 
-        private void GatherEntities(MatchView view, LiveQuery liveQuery, float radius, bool square,
-            NativeList<MinimapMarker> markers)
+        _imageSearched = true;
+        var image = Object.FindAnyObjectByType<MinimapImage>();
+        _canvas.style.backgroundImage = image != null && image.image != null
+            ? new StyleBackground(image.image)
+            : new StyleBackground(StyleKeyword.Null);
+    }
+
+    private void GatherNodes(EntityManager entityManager, NativeList<MinimapMarker> markers)
+    {
+        var query = _nodes.In(entityManager);
+        using var nodes = query.ToComponentDataArray<ResourceNode>(Allocator.Temp);
+        using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+        for (var i = 0; i < nodes.Length; i++)
         {
-            var query = liveQuery.In(view.EntityManager);
-            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
-            using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            for (var i = 0; i < owners.Length; i++)
+            AddMarker(markers, transforms[i].Position.xz, nodes[i].Type.Value.color, _style.NodeRadius, true);
+        }
+    }
+
+    private void GatherEntities(MatchView view, LiveQuery liveQuery, float radius, bool square,
+        NativeList<MinimapMarker> markers)
+    {
+        var query = liveQuery.In(view.EntityManager);
+        using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
+        using var transforms = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+        for (var i = 0; i < owners.Length; i++)
+        {
+            AddMarker(markers, transforms[i].Position.xz, view.GetColor(owners[i].Value), radius, square);
+        }
+    }
+
+    private void GatherMemories(MatchView view, NativeList<MinimapMarker> markers)
+    {
+        using var memories = _memories.In(view.EntityManager).ToComponentDataArray<FogMemory>(Allocator.Temp);
+        foreach (var memory in memories)
+        {
+            var color = view.GetColor(memory.State.Owner);
+            var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
+            AddMarker(markers, memory.State.Transform.Position.xz, shaded, _style.StructureRadius, true);
+        }
+    }
+
+    private void GatherCameraView(EntityManager entityManager)
+    {
+        var camera = Camera.main;
+        _terrain.TryGet(entityManager, out var terrain);
+        var moved = false;
+        for (var i = 0; i < _view.Length; i++)
+        {
+            var ground = float3.zero;
+            if (camera != null)
             {
-                AddMarker(markers, transforms[i].Position.xz, view.GetColor(owners[i].Value), radius, square);
+                var corner = new Vector3(i == 1 || i == 2 ? 1f : 0f, i >= 2 ? 1f : 0f, 0f);
+                var ray = camera.ViewportPointToRay(corner);
+                ground = ViewGround.Reach(terrain, ray.origin, ray.direction, MaxViewDistance);
             }
+
+            var point = MinimapMath.WorldToMinimap(ground.xz, _map.Min, _map.Size);
+            moved |= point != _view[i];
+            _view[i] = point;
         }
 
-        private void GatherMemories(MatchView view, NativeList<MinimapMarker> markers)
+        if (moved)
         {
-            using var memories = _memories.In(view.EntityManager).ToComponentDataArray<FogMemory>(Allocator.Temp);
-            foreach (var memory in memories)
-            {
-                var color = view.GetColor(memory.State.Owner);
-                var shaded = new Color(color.r * MemoryShade, color.g * MemoryShade, color.b * MemoryShade, color.a);
-                AddMarker(markers, memory.State.Transform.Position.xz, shaded, _style.StructureRadius, true);
-            }
+            _viewLayer.MarkDirtyRepaint();
+        }
+    }
+
+    private void AddMarker(NativeList<MinimapMarker> markers, float2 world, Color color, float radius, bool square) =>
+        markers.Add(new MinimapMarker
+        {
+            Point = MinimapMath.WorldToMinimap(world, _map.Min, _map.Size),
+            Color = color,
+            Radius = radius,
+            Square = square,
+        });
+
+    private void PaintView(MeshGenerationContext context)
+    {
+        if (!_hasMap)
+        {
+            return;
         }
 
-        private void GatherCameraView(EntityManager entityManager)
+        var size = _viewLayer.contentRect.size;
+        var painter = context.painter2D;
+        painter.strokeColor = _style.ViewColor;
+        painter.lineWidth = _style.ViewWidth;
+        painter.BeginPath();
+        painter.MoveTo(Vector2.Scale(_view[0], size));
+        for (var i = 1; i < _view.Length; i++)
         {
-            var camera = Camera.main;
-            _terrain.TryGet(entityManager, out var terrain);
-            var moved = false;
-            for (var i = 0; i < _view.Length; i++)
-            {
-                var ground = float3.zero;
-                if (camera != null)
-                {
-                    var corner = new Vector3(i == 1 || i == 2 ? 1f : 0f, i >= 2 ? 1f : 0f, 0f);
-                    var ray = camera.ViewportPointToRay(corner);
-                    ground = ViewGround.Reach(terrain, ray.origin, ray.direction, MaxViewDistance);
-                }
-
-                var point = MinimapMath.WorldToMinimap(ground.xz, _map.Min, _map.Size);
-                moved |= point != _view[i];
-                _view[i] = point;
-            }
-
-            if (moved)
-            {
-                _viewLayer.MarkDirtyRepaint();
-            }
+            painter.LineTo(Vector2.Scale(_view[i], size));
         }
 
-        private void AddMarker(NativeList<MinimapMarker> markers, float2 world, Color color, float radius, bool square) =>
-            markers.Add(new MinimapMarker
-            {
-                Point = MinimapMath.WorldToMinimap(world, _map.Min, _map.Size),
-                Color = color,
-                Radius = radius,
-                Square = square,
-            });
+        painter.ClosePath();
+        painter.Stroke();
+    }
 
-        private void PaintView(MeshGenerationContext context)
+    private void OnPointerDown(PointerDownEvent evt)
+    {
+        _canvas.CapturePointer(evt.pointerId);
+        Focus(evt.localPosition);
+    }
+
+    private void OnPointerMove(PointerMoveEvent evt)
+    {
+        if (_canvas.HasPointerCapture(evt.pointerId))
         {
-            if (!_hasMap)
-            {
-                return;
-            }
-
-            var size = _viewLayer.contentRect.size;
-            var painter = context.painter2D;
-            painter.strokeColor = _style.ViewColor;
-            painter.lineWidth = _style.ViewWidth;
-            painter.BeginPath();
-            painter.MoveTo(Vector2.Scale(_view[0], size));
-            for (var i = 1; i < _view.Length; i++)
-            {
-                painter.LineTo(Vector2.Scale(_view[i], size));
-            }
-
-            painter.ClosePath();
-            painter.Stroke();
-        }
-
-        private void OnPointerDown(PointerDownEvent evt)
-        {
-            _canvas.CapturePointer(evt.pointerId);
             Focus(evt.localPosition);
         }
+    }
 
-        private void OnPointerMove(PointerMoveEvent evt)
+    private void OnPointerUp(PointerUpEvent evt) => _canvas.ReleasePointer(evt.pointerId);
+
+    // The camera moves itself (keeping height, angle and the map bounds) when it reads the request.
+    private void Focus(Vector2 local)
+    {
+        var size = _canvas.contentRect.size;
+        var hasArea = size.x > 0f && size.y > 0f;
+        if (!_hasMap || !hasArea || _context == null)
         {
-            if (_canvas.HasPointerCapture(evt.pointerId))
-            {
-                Focus(evt.localPosition);
-            }
+            return;
         }
 
-        private void OnPointerUp(PointerUpEvent evt) => _canvas.ReleasePointer(evt.pointerId);
-
-        // The camera moves itself (keeping height, angle and the map bounds) when it reads the request.
-        private void Focus(Vector2 local)
-        {
-            var size = _canvas.contentRect.size;
-            var hasArea = size.x > 0f && size.y > 0f;
-            if (!_hasMap || !hasArea || _context == null)
-            {
-                return;
-            }
-
-            var target = MinimapMath.MinimapToWorld(new Vector2(local.x / size.x, local.y / size.y), _map.Min, _map.Size);
-            _context.FocusCamera(new float3(target.x, 0f, target.y));
-        }
+        var target = MinimapMath.MinimapToWorld(new Vector2(local.x / size.x, local.y / size.y), _map.Min, _map.Size);
+        _context.FocusCamera(new float3(target.x, 0f, target.y));
     }
 }

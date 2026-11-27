@@ -3,27 +3,26 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Production
-{
-    /// <summary>Caps how many of this unit or building each player may have (a superweapon, a hero unit).</summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Build Limit")]
-    [Icon(HyperRTSIcons.BuildLimitAuthoring)]
-    [HelpURL(HyperRTSDocs.Production)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class BuildLimitAuthoring : AuthoringBehaviour
-    {
-        [Tooltip("Most a player may have at once, counting standing, under construction and queued.")]
-        [Min(1)]
-        public int max = 1;
+namespace HyperRTS.Simulation.Production;
 
-        public class Baker : Baker<BuildLimitAuthoring>
+/// <summary>Caps how many of this unit or building each player may have (a superweapon, a hero unit).</summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Build Limit")]
+[Icon(HyperRTSIcons.BuildLimitAuthoring)]
+[HelpURL(HyperRTSDocs.Production)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
+public class BuildLimitAuthoring : AuthoringBehaviour
+{
+    [Tooltip("Most a player may have at once, counting standing, under construction and queued.")]
+    [Min(1)]
+    public int max = 1;
+
+    public class Baker : Baker<BuildLimitAuthoring>
+    {
+        public override void Bake(BuildLimitAuthoring authoring)
         {
-            public override void Bake(BuildLimitAuthoring authoring)
-            {
-                var writer = this.Writer();
-                writer.Add(new BuildLimit { Max = authoring.max });
-            }
+            var writer = this.Writer();
+            writer.Add(new BuildLimit { Max = authoring.max });
         }
     }
 }

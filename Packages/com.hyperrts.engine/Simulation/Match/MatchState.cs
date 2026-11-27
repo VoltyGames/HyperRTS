@@ -1,25 +1,24 @@
 ﻿using Unity.Entities;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Match
+namespace HyperRTS.Simulation.Match;
+
+/// <summary>Whether the match is still being played.</summary>
+public enum MatchPhase : byte
 {
-    /// <summary>Whether the match is still being played.</summary>
-    public enum MatchPhase : byte
-    {
-        Playing = 0,
-        Ended = 1,
-    }
+    Playing = 0,
+    Ended = 1,
+}
 
-    /// <summary>Singleton match outcome; <see cref="WinningTeam"/> is 0 for a draw.</summary>
-    public struct MatchState : IComponentData
-    {
-        [GhostField] public MatchPhase Phase;
-        [GhostField] public byte WinningTeam;
+/// <summary>Singleton match outcome; <see cref="WinningTeam"/> is 0 for a draw.</summary>
+public struct MatchState : IComponentData
+{
+    [GhostField] public MatchPhase Phase;
+    [GhostField] public byte WinningTeam;
 
-        /// <summary>Bit per owner that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
-        [GhostField] public uint Contenders;
+    /// <summary>Bit per owner that has owned a <see cref="VictoryCritical"/> entity; only those can lose.</summary>
+    [GhostField] public uint Contenders;
 
-        /// <summary>Networked matches: set by the server once every human slot has joined (or the wait ran out).</summary>
-        [GhostField] public bool Started;
-    }
+    /// <summary>Networked matches: set by the server once every human slot has joined (or the wait ran out).</summary>
+    [GhostField] public bool Started;
 }

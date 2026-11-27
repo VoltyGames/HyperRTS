@@ -1,78 +1,77 @@
 using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Agents
+namespace HyperRTS.Simulation.Navigation.Agents;
+
+/// <summary>How a hull on wheels or tracks turns and reverses.</summary>
+public struct Chassis
 {
-    /// <summary>How a hull on wheels or tracks turns and reverses.</summary>
-    public struct Chassis
+    /// <summary>Metres from the steering axles' midpoint to the rear axle; 0 for tracks.</summary>
+    public float Wheelbase;
+
+    /// <summary>Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre; 0 for tracks.</summary>
+    public float RearAxle;
+
+    /// <summary>Tightest circle of the rear axle; 0 turns at any speed.</summary>
+    public float TurnRadius;
+
+    /// <summary>Turns in place about the centre, as tracks do.</summary>
+    public bool Pivots;
+
+    /// <summary>Longest reverse leg in metres; 0 never reverses.</summary>
+    public float ReverseRun;
+
+    /// <summary>Rolls on wheels that can't turn it standing.</summary>
+    public readonly bool IsWheeled => !Pivots && TurnRadius > 0f;
+
+    /// <summary>Tightest curvature in 1/m; unlimited without a turn radius.</summary>
+    public readonly float MaxCurvature => TurnRadius > 0f ? 1f / TurnRadius : float.PositiveInfinity;
+
+    /// <summary>Metres a radian of turn costs: the turn radius, or half the hull for one that pivots.</summary>
+    public readonly float TurnLength(float halfLength) => Pivots ? halfLength : TurnRadius;
+
+    public readonly AxlePose Pose(float2 center, float2 facing) => new(center - facing * RearAxle, facing);
+
+    public readonly float2 Center(in AxlePose pose) => pose.Position + pose.Facing * RearAxle;
+
+    public readonly float2 FrontAxle(in AxlePose pose) => pose.Position + pose.Facing * Wheelbase;
+
+    /// <summary>Turns the hull <paramref name="angle"/> radians about its centre, as tracks pivot.</summary>
+    public readonly AxlePose Rotate(in AxlePose pose, float angle)
     {
-        /// <summary>Metres from the steering axles' midpoint to the rear axle; 0 for tracks.</summary>
-        public float Wheelbase;
+        math.sincos(angle, out var sin, out var cos);
+        return Pose(Center(pose), math.normalize(Planar.Rotate(pose.Facing, sin, cos)));
+    }
 
-        /// <summary>Metres the rear axle (the fixed axles' midpoint) sits behind the hull centre; 0 for tracks.</summary>
-        public float RearAxle;
-
-        /// <summary>Tightest circle of the rear axle; 0 turns at any speed.</summary>
-        public float TurnRadius;
-
-        /// <summary>Turns in place about the centre, as tracks do.</summary>
-        public bool Pivots;
-
-        /// <summary>Longest reverse leg in metres; 0 never reverses.</summary>
-        public float ReverseRun;
-
-        /// <summary>Rolls on wheels that can't turn it standing.</summary>
-        public readonly bool IsWheeled => !Pivots && TurnRadius > 0f;
-
-        /// <summary>Tightest curvature in 1/m; unlimited without a turn radius.</summary>
-        public readonly float MaxCurvature => TurnRadius > 0f ? 1f / TurnRadius : float.PositiveInfinity;
-
-        /// <summary>Metres a radian of turn costs: the turn radius, or half the hull for one that pivots.</summary>
-        public readonly float TurnLength(float halfLength) => Pivots ? halfLength : TurnRadius;
-
-        public readonly AxlePose Pose(float2 center, float2 facing) => new(center - facing * RearAxle, facing);
-
-        public readonly float2 Center(in AxlePose pose) => pose.Position + pose.Facing * RearAxle;
-
-        public readonly float2 FrontAxle(in AxlePose pose) => pose.Position + pose.Facing * Wheelbase;
-
-        /// <summary>Turns the hull <paramref name="angle"/> radians about its centre, as tracks pivot.</summary>
-        public readonly AxlePose Rotate(in AxlePose pose, float angle)
+    /// <summary>
+    /// Whether no forward arc brings the hull centre to <paramref name="target"/>, so it must make a three-point
+    /// turn first. The centre's tightest circle is wider than the rear axle's by the axle's offset.
+    /// </summary>
+    public readonly bool IsInsideTurn(float2 center, float2 facing, float2 target, float slack)
+    {
+        if (!IsWheeled)
         {
-            math.sincos(angle, out var sin, out var cos);
-            return Pose(Center(pose), math.normalize(Planar.Rotate(pose.Facing, sin, cos)));
+            return false;
         }
 
-        /// <summary>
-        /// Whether no forward arc brings the hull centre to <paramref name="target"/>, so it must make a three-point
-        /// turn first. The centre's tightest circle is wider than the rear axle's by the axle's offset.
-        /// </summary>
-        public readonly bool IsInsideTurn(float2 center, float2 facing, float2 target, float slack)
-        {
-            if (!IsWheeled)
-            {
-                return false;
-            }
+        var rear = center - facing * RearAxle;
+        var side = Planar.Cross(facing, target - rear) >= 0f ? 1f : -1f;
+        var middle = rear + Planar.Left(facing) * (side * TurnRadius);
+        var reach = math.sqrt(TurnRadius * TurnRadius + RearAxle * RearAxle);
+        return math.distance(target, middle) < reach * slack;
+    }
 
-            var rear = center - facing * RearAxle;
-            var side = Planar.Cross(facing, target - rear) >= 0f ? 1f : -1f;
-            var middle = rear + Planar.Left(facing) * (side * TurnRadius);
-            var reach = math.sqrt(TurnRadius * TurnRadius + RearAxle * RearAxle);
-            return math.distance(target, middle) < reach * slack;
+    /// <summary>
+    /// Pure pursuit: the curvature of the arc from the rear axle to a target <paramref name="error"/> off the
+    /// heading. A target behind takes full lock.
+    /// </summary>
+    public static float Pursuit(float error, float distance)
+    {
+        if (math.abs(error) > math.PI * 0.5f)
+        {
+            return math.sign(error) * float.PositiveInfinity;
         }
 
-        /// <summary>
-        /// Pure pursuit: the curvature of the arc from the rear axle to a target <paramref name="error"/> off the
-        /// heading. A target behind takes full lock.
-        /// </summary>
-        public static float Pursuit(float error, float distance)
-        {
-            if (math.abs(error) > math.PI * 0.5f)
-            {
-                return math.sign(error) * float.PositiveInfinity;
-            }
-
-            return 2f * math.sin(error) / math.max(distance, 1e-3f);
-        }
+        return 2f * math.sin(error) / math.max(distance, 1e-3f);
     }
 }

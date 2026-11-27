@@ -1,23 +1,22 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common;
+
+/// <summary>Match-wide tuning on the match singleton, baked by <c>MatchAuthoring</c>; systems that read it require it.</summary>
+public struct MatchRules : IComponentData
 {
-    /// <summary>Match-wide tuning on the match singleton, baked by <c>MatchAuthoring</c>; systems that read it require it.</summary>
-    public struct MatchRules : IComponentData
-    {
-        /// <summary>Production speed of an unpowered producer (<c>OfflineReason.Unpowered</c>).</summary>
-        public float LowPowerProductionRate;
+    /// <summary>Production speed of an unpowered producer (<c>OfflineReason.Unpowered</c>).</summary>
+    public float LowPowerProductionRate;
 
-        /// <summary>Share of a finished building's cost refunded when sold; unfinished ones refund in full.</summary>
-        public float SellRefund;
+    /// <summary>Share of a finished building's cost refunded when sold; unfinished ones refund in full.</summary>
+    public float SellRefund;
 
-        /// <summary>Experience a kill pays per resource unit of the victim's cost (<c>KillCreditSystem</c>).</summary>
-        public float ExperiencePerCost;
+    /// <summary>Experience a kill pays per resource unit of the victim's cost (<c>KillCreditSystem</c>).</summary>
+    public float ExperiencePerCost;
 
-        /// <summary>Networked matches: seconds the server waits for every human slot to join before starting anyway.</summary>
-        public float JoinTimeout;
+    /// <summary>Networked matches: seconds the server waits for every human slot to join before starting anyway.</summary>
+    public float JoinTimeout;
 
-        /// <summary>Strategic assets charge and fire; off holds every charge (ranked 1v1 by default).</summary>
-        public bool StrategicAssets;
-    }
+    /// <summary>Strategic assets charge and fire; off holds every charge (ranked 1v1 by default).</summary>
+    public bool StrategicAssets;
 }

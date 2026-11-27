@@ -13,91 +13,90 @@ using Unity.Mathematics;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Overlays
+namespace HyperRTS.Presentation.Overlays;
+
+/// <summary>
+/// While a fire mission waits for its click, rings round each selected launcher from its minimum to its maximum
+/// range and, at the pointer, the circle one salvo covers: filled when a launcher reaches it from where it
+/// stands, an outline when every launcher would first drive into range.
+/// </summary>
+public sealed class FireMissionOverlay : IDisposable
 {
-    /// <summary>
-    /// While a fire mission waits for its click, rings round each selected launcher from its minimum to its maximum
-    /// range and, at the pointer, the circle one salvo covers: filled when a launcher reaches it from where it
-    /// stands, an outline when every launcher would first drive into range.
-    /// </summary>
-    public sealed class FireMissionOverlay : IDisposable
+    private readonly LiveQuery _launchers = new(entityManager => entityManager.CreateEntityQuery(
+        ComponentType.ReadOnly<Selected>(),
+        ComponentType.ReadOnly<Owner>(),
+        ComponentType.ReadOnly<WeaponMount>(),
+        ComponentType.ReadOnly<LocalToWorld>()));
+
+    private readonly LiveSingleton<HoveredEntity> _hovered = new();
+    private readonly GroundMarkers _markers;
+
+    public FireMissionOverlay(Mesh grid, Material markerMaterial)
     {
-        private readonly LiveQuery _launchers = new(entityManager => entityManager.CreateEntityQuery(
-            ComponentType.ReadOnly<Selected>(),
-            ComponentType.ReadOnly<Owner>(),
-            ComponentType.ReadOnly<WeaponMount>(),
-            ComponentType.ReadOnly<LocalToWorld>()));
+        _markers = new GroundMarkers(grid, markerMaterial);
+    }
 
-        private readonly LiveSingleton<HoveredEntity> _hovered = new();
-        private readonly GroundMarkers _markers;
-
-        public FireMissionOverlay(Mesh grid, Material markerMaterial)
+    public void Gather(MatchView view, OverlayStyle style)
+    {
+        if (view.Pending.Type != CommandType.FireMission)
         {
-            _markers = new GroundMarkers(grid, markerMaterial);
+            return;
         }
 
-        public void Gather(MatchView view, OverlayStyle style)
+        var entityManager = view.EntityManager;
+        _hovered.TryGet(entityManager, out var hovered);
+        var query = _launchers.In(entityManager);
+        using var entities = query.ToEntityArray(Allocator.Temp);
+        using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
+        using var worlds = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
+        var blast = 0f;
+        var reached = false;
+        for (var i = 0; i < entities.Length; i++)
         {
-            if (view.Pending.Type != CommandType.FireMission)
+            var mounts = entityManager.GetBuffer<WeaponMount>(entities[i], true);
+            if (owners[i].Value != view.Local.Owner || !FireMissionReach.TryRead(mounts, out var reach))
             {
-                return;
+                continue;
             }
 
-            var entityManager = view.EntityManager;
-            _hovered.TryGet(entityManager, out var hovered);
-            var query = _launchers.In(entityManager);
-            using var entities = query.ToEntityArray(Allocator.Temp);
-            using var owners = query.ToComponentDataArray<Owner>(Allocator.Temp);
-            using var worlds = query.ToComponentDataArray<LocalToWorld>(Allocator.Temp);
-            var blast = 0f;
-            var reached = false;
-            for (var i = 0; i < entities.Length; i++)
-            {
-                var mounts = entityManager.GetBuffer<WeaponMount>(entities[i], true);
-                if (owners[i].Value != view.Local.Owner || !FireMissionReach.TryRead(mounts, out var reach))
-                {
-                    continue;
-                }
-
-                AddRings(new MarkerPose(worlds[i], NavLayer.Ground), reach, style);
-                blast = math.max(blast, reach.Blast);
-                reached |= hovered.HasGround && reach.Covers(worlds[i].Position, hovered.Ground);
-            }
-
-            if (hovered.HasGround && blast > 0f)
-            {
-                AddBlast(hovered.Ground, blast, reached, style);
-            }
+            AddRings(new MarkerPose(worlds[i], NavLayer.Ground), reach, style);
+            blast = math.max(blast, reach.Blast);
+            reached |= hovered.HasGround && reach.Covers(worlds[i].Position, hovered.Ground);
         }
 
-        public void Draw(int layer) => _markers.Draw(layer);
-
-        public void Dispose() => _markers.Dispose();
-
-        private void AddRings(in MarkerPose pose, in FireMissionReach reach, OverlayStyle style)
+        if (hovered.HasGround && blast > 0f)
         {
-            _markers.Add(pose, MarkerFootprint.Round(reach.Band.Reach, 0f), style.fireReach, style.Outline);
-            if (reach.Band.Floor <= 0f)
-            {
-                return;
-            }
+            AddBlast(hovered.Ground, blast, reached, style);
+        }
+    }
 
-            // Fading over the whole radius makes the dead zone a soft disc rather than a rim.
-            var dead = style.FireDisc(reach.Band.Floor);
-            _markers.Add(pose, MarkerFootprint.Round(reach.Band.Floor, 0f), style.fireDeadZone, dead);
+    public void Draw(int layer) => _markers.Draw(layer);
+
+    public void Dispose() => _markers.Dispose();
+
+    private void AddRings(in MarkerPose pose, in FireMissionReach reach, OverlayStyle style)
+    {
+        _markers.Add(pose, MarkerFootprint.Round(reach.Band.Reach, 0f), style.fireReach, style.Outline);
+        if (reach.Band.Floor <= 0f)
+        {
+            return;
         }
 
-        private void AddBlast(float3 point, float radius, bool reached, OverlayStyle style)
-        {
-            var footprint = MarkerFootprint.Round(radius, 0f);
-            var pose = new MarkerPose(point);
-            if (reached)
-            {
-                _markers.Add(pose, footprint, style.fireReady, style.FireDisc(radius));
-                return;
-            }
+        // Fading over the whole radius makes the dead zone a soft disc rather than a rim.
+        var dead = style.FireDisc(reach.Band.Floor);
+        _markers.Add(pose, MarkerFootprint.Round(reach.Band.Floor, 0f), style.fireDeadZone, dead);
+    }
 
-            _markers.Add(pose, footprint, style.fireMove, style.Outline);
+    private void AddBlast(float3 point, float radius, bool reached, OverlayStyle style)
+    {
+        var footprint = MarkerFootprint.Round(radius, 0f);
+        var pose = new MarkerPose(point);
+        if (reached)
+        {
+            _markers.Add(pose, footprint, style.fireReady, style.FireDisc(radius));
+            return;
         }
+
+        _markers.Add(pose, footprint, style.fireMove, style.Outline);
     }
 }

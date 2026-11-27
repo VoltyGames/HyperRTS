@@ -7,60 +7,59 @@ using HyperRTS.Simulation.Vision.Sight;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Simulation.Cues;
+
+/// <summary>
+/// A sound and effect to play this frame, on the <see cref="CueQueue"/> singleton. It names the source by type and
+/// slot, so a client or a replay resolves the type's sounds, rigs and impact marks through its own prefab copy.
+/// </summary>
+[InternalBufferCapacity(0)]
+public struct CueEvent : IBufferElementData
 {
-    /// <summary>
-    /// A sound and effect to play this frame, on the <see cref="CueQueue"/> singleton. It names the source by type and
-    /// slot, so a client or a replay resolves the type's sounds, rigs and impact marks through its own prefab copy.
-    /// </summary>
-    [InternalBufferCapacity(0)]
-    public struct CueEvent : IBufferElementData
-    {
-        public int TypeId;
-        public CueSlot Slot;
+    public int TypeId;
+    public CueSlot Slot;
 
-        /// <summary>Which of the slot's cues: a fire cue's weapon pose index, an announcement's kind.</summary>
-        public byte Variant;
+    /// <summary>Which of the slot's cues: a fire cue's weapon pose index, an announcement's kind.</summary>
+    public byte Variant;
 
-        /// <summary>The source's <see cref="SpawnNumber"/>, 0 for none; ties a death cue to its squad's corpses.</summary>
-        public int SourceNumber;
+    /// <summary>The source's <see cref="SpawnNumber"/>, 0 for none; ties a death cue to its squad's corpses.</summary>
+    public int SourceNumber;
 
-        /// <summary>Owner of the source; decides who hears and sees it through fog and voice rules.</summary>
-        public byte Owner;
+    /// <summary>Owner of the source; decides who hears and sees it through fog and voice rules.</summary>
+    public byte Owner;
 
-        /// <summary>World position of the slot's effect socket, else of the source; where a shot landed for impacts.</summary>
-        public float3 Position;
+    /// <summary>World position of the slot's effect socket, else of the source; where a shot landed for impacts.</summary>
+    public float3 Position;
 
-        /// <summary>Unit vector the effect faces, e.g. along the shot.</summary>
-        public float3 Direction;
+    /// <summary>Unit vector the effect faces, e.g. along the shot.</summary>
+    public float3 Direction;
 
-        /// <summary>What kept the source hidden, so a cue reaches only the teams that could see its source.</summary>
-        public Concealment Concealment;
+    /// <summary>What kept the source hidden, so a cue reaches only the teams that could see its source.</summary>
+    public Concealment Concealment;
 
-        /// <summary>The source's sight layer, so a cue reaches whoever could see the source.</summary>
-        public SightLayer Layer;
+    /// <summary>The source's sight layer, so a cue reaches whoever could see the source.</summary>
+    public SightLayer Layer;
 
-        /// <summary>An impact's or a warning's splash radius; bigger blasts leave bigger marks.</summary>
-        public float Radius;
+    /// <summary>An impact's or a warning's splash radius; bigger blasts leave bigger marks.</summary>
+    public float Radius;
 
-        /// <summary>What an impact struck, set by <c>ImpactSurfaceSystem</c>.</summary>
-        public ImpactSurface Surface;
+    /// <summary>What an impact struck, set by <c>ImpactSurfaceSystem</c>.</summary>
+    public ImpactSurface Surface;
 
-        /// <summary>An impact's target material, water, or the <see cref="GroundMaterials"/> cell under open ground.</summary>
-        public SurfaceMaterial Material;
+    /// <summary>An impact's target material, water, or the <see cref="GroundMaterials"/> cell under open ground.</summary>
+    public SurfaceMaterial Material;
 
-        /// <summary>What an impact's shot was aimed at, for <c>ImpactSurfaceSystem</c>; it never leaves the frame.</summary>
-        public Entity Target;
+    /// <summary>What an impact's shot was aimed at, for <c>ImpactSurfaceSystem</c>; it never leaves the frame.</summary>
+    public Entity Target;
 
-        public readonly AnnouncementKind Announcement => new(Variant);
+    public readonly AnnouncementKind Announcement => new(Variant);
 
-        /// <summary>A shot that landed on the ground, the only impact that marks or deforms terrain.</summary>
-        public readonly bool IsGroundImpact => Slot == CueSlot.Impact && Surface == ImpactSurface.Ground;
+    /// <summary>A shot that landed on the ground, the only impact that marks or deforms terrain.</summary>
+    public readonly bool IsGroundImpact => Slot == CueSlot.Impact && Surface == ImpactSurface.Ground;
 
-        /// <summary>An impact with a splash radius, a blast that shakes and throws what is near it.</summary>
-        public readonly bool IsBlast => Slot == CueSlot.Impact && Radius > 0f;
-    }
-
-    /// <summary>Tags the singleton holding this frame's <see cref="CueEvent"/>s.</summary>
-    public struct CueQueue : IComponentData { }
+    /// <summary>An impact with a splash radius, a blast that shakes and throws what is near it.</summary>
+    public readonly bool IsBlast => Slot == CueSlot.Impact && Radius > 0f;
 }
+
+/// <summary>Tags the singleton holding this frame's <see cref="CueEvent"/>s.</summary>
+public struct CueQueue : IComponentData { }

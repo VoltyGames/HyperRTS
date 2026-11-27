@@ -1,8 +1,8 @@
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Announcements;
 using HyperRTS.Simulation.Cues.Surfaces;
-using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Detection;
 using HyperRTS.Simulation.Vision.Sight;
@@ -10,78 +10,77 @@ using NUnit.Framework;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Tests.Cues
+namespace HyperRTS.Simulation.Tests.Cues;
+
+/// <summary>Cue events survive the wire and replay files.</summary>
+public class CuePackingTests
 {
-    /// <summary>Cue events survive the wire and replay files.</summary>
-    public class CuePackingTests
+    [Test]
+    public void PackUnpack_KeepsTheEvent_WithinAPositionStep_AndItsDirectionWithinAStep()
     {
-        [Test]
-        public void PackUnpack_KeepsTheEvent_WithinAPositionStep_AndItsDirectionWithinAStep()
+        var cue = new CueEvent
         {
-            var cue = new CueEvent
-            {
-                TypeId = 1234, SourceNumber = 70000, Slot = CueSlot.Fire, Owner = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
-                Direction = math.normalize(new float3(1f, 0.5f, -1f)), Concealment = Concealment.Concealed, Layer = SightLayer.Air,
-            };
+            TypeId = 1234, SourceNumber = 70000, Slot = CueSlot.Fire, Owner = 3, Position = new float3(1500.3f, 12.1f, -1800.7f),
+            Direction = math.normalize(new float3(1f, 0.5f, -1f)), Concealment = Concealment.Concealed, Layer = SightLayer.Air,
+        };
 
-            var read = PackedCue.Pack(cue).Unpack();
+        var read = PackedCue.Pack(cue).Unpack();
 
-            Assert.AreEqual(cue.TypeId, read.TypeId);
-            Assert.AreEqual(cue.SourceNumber, read.SourceNumber);
-            Assert.AreEqual(cue.Slot, read.Slot);
-            Assert.AreEqual(cue.Owner, read.Owner);
-            Assert.That(math.distance(cue.Position, read.Position), Is.LessThan(QuantizedPosition.Step));
-            Assert.That(math.dot(cue.Direction, read.Direction), Is.GreaterThan(0.999f));
-            Assert.AreEqual(Concealment.Concealed, read.Concealment);
-            Assert.AreEqual(SightLayer.Air, read.Layer);
-            Assert.AreEqual(Concealment.None, PackedCue.Pack(default).Unpack().Concealment);
-        }
+        Assert.AreEqual(cue.TypeId, read.TypeId);
+        Assert.AreEqual(cue.SourceNumber, read.SourceNumber);
+        Assert.AreEqual(cue.Slot, read.Slot);
+        Assert.AreEqual(cue.Owner, read.Owner);
+        Assert.That(math.distance(cue.Position, read.Position), Is.LessThan(QuantizedPosition.Step));
+        Assert.That(math.dot(cue.Direction, read.Direction), Is.GreaterThan(0.999f));
+        Assert.AreEqual(Concealment.Concealed, read.Concealment);
+        Assert.AreEqual(SightLayer.Air, read.Layer);
+        Assert.AreEqual(Concealment.None, PackedCue.Pack(default).Unpack().Concealment);
+    }
 
-        [Test]
-        public void PackUnpack_KeepsAnImpactsRadiusSurfaceAndMaterial()
+    [Test]
+    public void PackUnpack_KeepsAnImpactsRadiusSurfaceAndMaterial()
+    {
+        var impact = new CueEvent
         {
-            var impact = new CueEvent
-            {
-                TypeId = 1234, Slot = CueSlot.Impact, Position = new float3(3f, 0f, 4f), Radius = 2.5f, Owner = 3,
-                Surface = ImpactSurface.Structure, Material = SurfaceMaterial.Concrete,
-            };
+            TypeId = 1234, Slot = CueSlot.Impact, Position = new float3(3f, 0f, 4f), Radius = 2.5f, Owner = 3,
+            Surface = ImpactSurface.Structure, Material = SurfaceMaterial.Concrete,
+        };
 
-            var read = PackedCue.Pack(impact).Unpack();
+        var read = PackedCue.Pack(impact).Unpack();
 
-            Assert.AreEqual(impact.Radius, read.Radius, QuantizedPosition.Step);
-            Assert.AreEqual(impact.Surface, read.Surface);
-            Assert.AreEqual(impact.Material, read.Material);
-            Assert.AreEqual(0, read.Variant, "impacts carry their material, not a variant");
-        }
+        Assert.AreEqual(impact.Radius, read.Radius, QuantizedPosition.Step);
+        Assert.AreEqual(impact.Surface, read.Surface);
+        Assert.AreEqual(impact.Material, read.Material);
+        Assert.AreEqual(0, read.Variant, "impacts carry their material, not a variant");
+    }
 
-        [TestCase(CueSlot.Fire, 3)]
-        [TestCase(CueSlot.Announce, AnnouncementKind.GameFirst + 2)]
-        public void PackUnpack_KeepsTheVariant(CueSlot slot, int variant)
-        {
-            var read = PackedCue.Pack(new CueEvent { Slot = slot, Variant = (byte)variant }).Unpack();
+    [TestCase(CueSlot.Fire, 3)]
+    [TestCase(CueSlot.Announce, AnnouncementKind.GameFirst + 2)]
+    public void PackUnpack_KeepsTheVariant(CueSlot slot, int variant)
+    {
+        var read = PackedCue.Pack(new CueEvent { Slot = slot, Variant = (byte)variant }).Unpack();
 
-            Assert.AreEqual(variant, read.Variant);
-            Assert.AreEqual(SurfaceMaterial.None, read.Material);
-        }
+        Assert.AreEqual(variant, read.Variant);
+        Assert.AreEqual(SurfaceMaterial.None, read.Material);
+    }
 
-        [TestCase(0f, 0f, 1f)]
-        [TestCase(0f, 0f, -1f)]
-        [TestCase(-1f, 0f, 0f)]
-        [TestCase(0f, 1f, 0f)]
-        [TestCase(0f, -1f, 0f)]
-        public void PackUnpack_KeepsAxisDirections(float x, float y, float z)
-        {
-            var direction = new float3(x, y, z);
+    [TestCase(0f, 0f, 1f)]
+    [TestCase(0f, 0f, -1f)]
+    [TestCase(-1f, 0f, 0f)]
+    [TestCase(0f, 1f, 0f)]
+    [TestCase(0f, -1f, 0f)]
+    public void PackUnpack_KeepsAxisDirections(float x, float y, float z)
+    {
+        var direction = new float3(x, y, z);
 
-            var read = PackedCue.Pack(new CueEvent { Direction = direction }).Unpack();
+        var read = PackedCue.Pack(new CueEvent { Direction = direction }).Unpack();
 
-            Assert.That(math.dot(direction, read.Direction), Is.GreaterThan(0.999f));
-        }
+        Assert.That(math.dot(direction, read.Direction), Is.GreaterThan(0.999f));
+    }
 
-        [Test]
-        public void PackedCue_IsExactly22Bytes_AsReplayFilesStoreIt()
-        {
-            Assert.AreEqual(22, UnsafeUtility.SizeOf<PackedCue>());
-        }
+    [Test]
+    public void PackedCue_IsExactly22Bytes_AsReplayFilesStoreIt()
+    {
+        Assert.AreEqual(22, UnsafeUtility.SizeOf<PackedCue>());
     }
 }

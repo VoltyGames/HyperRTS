@@ -7,78 +7,77 @@ using HyperRTS.Editor.Validation.Project;
 using HyperRTS.Editor.Validation.Sets;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Library
+namespace HyperRTS.Editor.Maps.Library;
+
+/// <summary>
+/// The map library loads: every item asset is named <c>&lt;Key&gt;.&lt;type&gt;</c> with a key of its own, its
+/// load checks pass, every <see cref="MapKeyAttribute"/> field names an item that exists and no asset link is broken.
+/// </summary>
+public sealed class MapLibraryRule : IAssetRule
 {
-    /// <summary>
-    /// The map library loads: every item asset is named <c>&lt;Key&gt;.&lt;type&gt;</c> with a key of its own, its
-    /// load checks pass, every <see cref="MapKeyAttribute"/> field names an item that exists and no asset link is broken.
-    /// </summary>
-    public sealed class MapLibraryRule : IAssetRule
+    public void Check(AssetSet assets, ValidationIssues issues)
     {
-        public void Check(AssetSet assets, ValidationIssues issues)
+        MapLibrary library;
+        try
         {
-            MapLibrary library;
-            try
-            {
-                library = MapLibrary.Load();
-            }
-            catch (InvalidOperationException e)
-            {
-                issues.Error(null, e.Message);
-                return;
-            }
-
-            using (library)
-            {
-                Check(library, issues);
-            }
+            library = MapLibrary.Load();
+        }
+        catch (InvalidOperationException e)
+        {
+            issues.Error(null, e.Message);
+            return;
         }
 
-        /// <summary>Checks every item of <paramref name="library"/>, which tests make from items in memory.</summary>
-        public static void Check(MapLibrary library, ValidationIssues issues)
+        using (library)
         {
-            foreach (var type in MapLibrary.ItemTypes)
+            Check(library, issues);
+        }
+    }
+
+    /// <summary>Checks every item of <paramref name="library"/>, which tests make from items in memory.</summary>
+    public static void Check(MapLibrary library, ValidationIssues issues)
+    {
+        foreach (var type in MapLibrary.ItemTypes)
+        {
+            foreach (var key in library.Keys(type))
             {
-                foreach (var key in library.Keys(type))
-                {
-                    CheckItem(library, type, key, library.Original(type, key), issues);
-                }
+                CheckItem(library, type, key, library.Original(type, key), issues);
             }
         }
+    }
 
-        private static void CheckItem(MapLibrary library, Type type, string key, MapLibraryItem item, ValidationIssues issues)
+    private static void CheckItem(MapLibrary library, Type type, string key, MapLibraryItem item, ValidationIssues issues)
+    {
+        try
         {
-            try
-            {
-                library.Get(type, key, null);
-            }
-            catch (InvalidOperationException e)
-            {
-                issues.Error(item, e.Message);
-            }
-
-            MapLibraryFields.Walk(item, (field, _, value) => CheckKey(library, field, value as string, item, issues));
-            CheckLinks(item, issues);
+            library.Get(type, key, null);
+        }
+        catch (InvalidOperationException e)
+        {
+            issues.Error(item, e.Message);
         }
 
-        private static void CheckKey(MapLibrary library, FieldInfo field, string text, MapLibraryItem item, ValidationIssues issues)
-        {
-            var key = field.GetCustomAttribute<MapKeyAttribute>();
-            if (key == null || string.IsNullOrEmpty(text) || key.Types.Any(type => library.Contains(type, text)))
-            {
-                return;
-            }
+        MapLibraryFields.Walk(item, (field, _, value) => CheckKey(library, field, value as string, item, issues));
+        CheckLinks(item, issues);
+    }
 
-            var types = string.Join(" or ", key.Types.Select(MapLibrary.TypeName));
-            issues.Error(item, $"{item.name}: {field.Name} names {types} '{text}', which is not in the map library.");
+    private static void CheckKey(MapLibrary library, FieldInfo field, string text, MapLibraryItem item, ValidationIssues issues)
+    {
+        var key = field.GetCustomAttribute<MapKeyAttribute>();
+        if (key == null || string.IsNullOrEmpty(text) || key.Types.Any(type => library.Contains(type, text)))
+        {
+            return;
         }
 
-        private static void CheckLinks(MapLibraryItem item, ValidationIssues issues)
+        var types = string.Join(" or ", key.Types.Select(MapLibrary.TypeName));
+        issues.Error(item, $"{item.name}: {field.Name} names {types} '{text}', which is not in the map library.");
+    }
+
+    private static void CheckLinks(MapLibraryItem item, ValidationIssues issues)
+    {
+        foreach (var path in BrokenLinks.Find(item))
         {
-            foreach (var path in BrokenLinks.Find(item))
-            {
-                issues.Error(item, $"{item.name}: {path} links an asset that no longer exists.");
-            }
+            issues.Error(item, $"{item.name}: {path} links an asset that no longer exists.");
         }
     }
 }

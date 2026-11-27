@@ -9,261 +9,260 @@ using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Tests.Animation.Rigs
+namespace HyperRTS.Editor.Tests.Animation.Rigs;
+
+/// <summary>The motion rig's and locomotion's fill from model: parts found by name, weapons wired, steering axles, tuned slots kept.</summary>
+public class MotionRigFillTests
 {
-    /// <summary>The motion rig's and locomotion's fill from model: parts found by name, weapons wired, steering axles, tuned slots kept.</summary>
-    public class MotionRigFillTests
+    private GameObject _unit;
+
+    [SetUp]
+    public void SetUp() => _unit = new GameObject("Unit");
+
+    [TearDown]
+    public void TearDown() => Object.DestroyImmediate(_unit);
+
+    [Test]
+    public void FillFromModel_FindsThePartsByName()
     {
-        private GameObject _unit;
+        var model = Pivot("Model", _unit.transform);
+        var hull = Pivot("Hull", model, new Vector3(3f, 2f, 7f));
+        var turret = Pivot("Turret", hull);
+        var barrel = Pivot("Barrel", turret);
+        var launcher = Pivot("Launcher", turret);
+        var wheel = Pivot("Wheel_L01", hull, new Vector3(0.3f, 0.8f, 0.8f));
+        Pivot("Sprocket_R", hull, Vector3.one);
+        Pivot("Muzzle_01", barrel);
+        var weapon = _unit.AddComponent<WeaponAuthoring>();
+        weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-        [SetUp]
-        public void SetUp() => _unit = new GameObject("Unit");
+        ModelFillCommands.Fill(rig);
 
-        [TearDown]
-        public void TearDown() => Object.DestroyImmediate(_unit);
+        Assert.AreEqual(turret, rig.turrets.Single().part);
+        Assert.AreEqual(new[] { barrel, launcher }, rig.elevations.Select(slot => slot.part).ToArray());
+        Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray(), "launcher on the mount");
+        Assert.AreEqual(barrel, rig.recoils.Single().part);
+        Assert.AreEqual(2, rig.wheels.Count);
+        Assert.AreEqual(0.4f, rig.wheels.Single(slot => slot.part == wheel).radius, 1e-4f);
+        Assert.IsEmpty(rig.rotors);
+        Assert.AreEqual(hull, rig.tiltRoot);
+        Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
+        Assert.AreEqual((turret, barrel), (weapon.stats.turret, weapon.stats.barrel), "the gun's pivots");
+        var mount = weapon.extraWeapons[0].stats;
+        Assert.AreEqual((turret, launcher), (mount.turret, mount.barrel), "the launcher turns with the turret it sits on");
+        CollectionAssert.IsEmpty(rig.Problems());
+    }
 
-        [Test]
-        public void FillFromModel_FindsThePartsByName()
+    [Test]
+    public void FillFromModel_PosesTheDamagedModelLikeTheIntactOne()
+    {
+        var model = Pivot("Model", _unit.transform);
+        var hull = Pivot("Hull", model, new Vector3(3f, 2f, 7f));
+        var turret = Pivot("Turret", hull);
+        var damaged = Pivot("Damaged", _unit.transform);
+        var damagedHull = Pivot("Hull", damaged, new Vector3(3f, 2f, 7f));
+        var damagedTurret = Pivot("Turret", damagedHull);
+        _unit.AddComponent<DamageStagesAuthoring>().stages = new()
         {
-            var model = Pivot("Model", _unit.transform);
-            var hull = Pivot("Hull", model, new Vector3(3f, 2f, 7f));
-            var turret = Pivot("Turret", hull);
-            var barrel = Pivot("Barrel", turret);
-            var launcher = Pivot("Launcher", turret);
-            var wheel = Pivot("Wheel_L01", hull, new Vector3(0.3f, 0.8f, 0.8f));
-            Pivot("Sprocket_R", hull, Vector3.one);
-            Pivot("Muzzle_01", barrel);
-            var weapon = _unit.AddComponent<WeaponAuthoring>();
-            weapon.extraWeapons.Add(new WeaponAuthoring.WeaponSlot());
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
+            new() { below = 1f, visual = model.gameObject },
+            new() { below = 0.5f, visual = damaged.gameObject },
+        };
+        _unit.AddComponent<WeaponAuthoring>().turreted = true;
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
 
-            ModelFillCommands.Fill(rig);
+        ModelFillCommands.Fill(rig);
 
-            Assert.AreEqual(turret, rig.turrets.Single().part);
-            Assert.AreEqual(new[] { barrel, launcher }, rig.elevations.Select(slot => slot.part).ToArray());
-            Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray(), "launcher on the mount");
-            Assert.AreEqual(barrel, rig.recoils.Single().part);
-            Assert.AreEqual(2, rig.wheels.Count);
-            Assert.AreEqual(0.4f, rig.wheels.Single(slot => slot.part == wheel).radius, 1e-4f);
-            Assert.IsEmpty(rig.rotors);
-            Assert.AreEqual(hull, rig.tiltRoot);
-            Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
-            Assert.AreEqual((turret, barrel), (weapon.stats.turret, weapon.stats.barrel), "the gun's pivots");
-            var mount = weapon.extraWeapons[0].stats;
-            Assert.AreEqual((turret, launcher), (mount.turret, mount.barrel), "the launcher turns with the turret it sits on");
-            CollectionAssert.IsEmpty(rig.Problems());
+        Assert.AreEqual(new[] { turret, damagedTurret }, rig.turrets.Select(slot => slot.part).ToArray());
+        Assert.AreEqual((hull, damagedHull), (rig.tiltRoot, rig.tiltFollower));
+        CollectionAssert.IsEmpty(rig.Problems());
+    }
+
+    [Test]
+    public void FillFromModel_LeavesMachinePartsToTheirMachine()
+    {
+        var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
+        var box = Pivot("Barrel", turret);
+        box.gameObject.AddComponent<MachinePartAuthoring>();
+        var weapon = _unit.AddComponent<WeaponAuthoring>();
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.IsEmpty(rig.elevations, "the machine raises the box");
+        Assert.AreEqual((turret, box), (weapon.stats.turret, weapon.stats.barrel), "shots still leave the raised box");
+    }
+
+    [Test]
+    public void FillFromModel_AgainKeepsTunedSlots()
+    {
+        var barrel = Pivot("Barrel", Pivot("Hull", _unit.transform, Vector3.one));
+        _unit.AddComponent<WeaponAuthoring>();
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+        ModelFillCommands.Fill(rig);
+        rig.recoils[0].distance = 0.8f;
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(barrel, rig.recoils.Single().part);
+        Assert.AreEqual(0.8f, rig.recoils[0].distance);
+    }
+
+    [Test]
+    public void FillFromModel_SpinsPropellersAboutTheNose()
+    {
+        var hull = Pivot("Hull", _unit.transform, new Vector3(4f, 3f, 30f));
+        var props = new[] { Pivot("Prop_01", hull), Pivot("Prop_02", hull) };
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(props, rig.rotors.Select(slot => slot.part).ToArray());
+        Assert.IsTrue(rig.rotors.All(slot => slot.axis == Vector3.forward));
+    }
+
+    [Test]
+    public void FillFromModel_TiltsTheModelWhenTheHullIsItsRoot()
+    {
+        var model = Pivot("Model", _unit.transform, new Vector3(3f, 2f, 7f));
+        Pivot("Turret", model);
+        _unit.AddComponent<WeaponAuthoring>();
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(model, rig.tiltRoot);
+        Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
+    }
+
+    private static WeaponStats AddInterceptor(WeaponAuthoring weapon)
+    {
+        var slot = new WeaponAuthoring.WeaponSlot { stats = { targets = WeaponTargets.Projectile } };
+        weapon.extraWeapons.Add(slot);
+        return slot.stats;
+    }
+
+    [Test]
+    public void FillFromModel_OnABuilding_AimsTheInterceptorAfterTheWeapon_AndNeverTilts()
+    {
+        var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
+        var launcher = Pivot("Launcher", turret);
+        _unit.AddComponent<BuildingAuthoring>();
+        var weapon = _unit.AddComponent<WeaponAuthoring>();
+        var interceptor = AddInterceptor(weapon);
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(1, rig.elevations.Single(slot => slot.part == launcher).weapon, "the launcher follows it");
+        Assert.AreEqual((turret, launcher), (interceptor.turret, interceptor.barrel));
+        Assert.IsNull(rig.tiltRoot);
+        CollectionAssert.IsEmpty(rig.Problems());
+
+        rig.tiltRoot = turret;
+        StringAssert.Contains("never tilts", rig.Problems().Single());
+    }
+
+    [Test]
+    public void FillFromModel_GivesNumberedTurretsAndLaunchersTheirOwnWeapon()
+    {
+        var first = Pivot("Turret_01", _unit.transform, Vector3.one);
+        var firstLauncher = Pivot("Launcher_01", first);
+        var second = Pivot("Turret_02", _unit.transform, Vector3.one);
+        var secondLauncher = Pivot("Launcher_02", second);
+        _unit.AddComponent<BuildingAuthoring>();
+        var weapon = _unit.AddComponent<WeaponAuthoring>();
+        var interceptor = AddInterceptor(weapon);
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(new[] { 0, 1 }, rig.turrets.Select(slot => slot.weapon).ToArray());
+        Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray());
+        Assert.AreEqual((first, firstLauncher), (weapon.stats.turret, weapon.stats.barrel), "the weapon's pivots");
+        Assert.AreEqual((second, secondLauncher), (interceptor.turret, interceptor.barrel), "the interceptor's pivots");
+        CollectionAssert.IsEmpty(rig.Problems());
+    }
+
+    [Test]
+    public void Problems_NameAPoseTheUnitLacks()
+    {
+        Pivot("Turret", _unit.transform, Vector3.one);
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+        ModelFillCommands.Fill(rig);
+
+        StringAssert.Contains("follows weapon 0", rig.Problems().Single());
+    }
+
+    [Test]
+    public void FillFromModel_MeasuresTheChassis_AndTheRigSteersOnlyTheFrontAxle()
+    {
+        var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
+        var steered = new[] { Wheel("Wheel_L01", hull, -1f, 2.5f), Wheel("Wheel_R01", hull, 1f, 2.5f) };
+        Wheel("Wheel_L02", hull, -1f, -1f);
+        Wheel("Wheel_R02", hull, 1f, -1f);
+        Wheel("Wheel_L03", hull, -1f, -2.4f);
+        var locomotion = _unit.AddComponent<LocomotionAuthoring>();
+        locomotion.pivots = false;
+        locomotion.turnRadius = 9f;
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(locomotion);
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(4.2f, locomotion.wheelbase, 1e-4f, "front axle to the rear pair's midpoint");
+        Assert.AreEqual(1.7f, locomotion.rearAxle, 1e-4f, "rear pair's midpoint behind the centre");
+        CollectionAssert.AreEquivalent(steered, rig.wheels.Where(slot => slot.steers).Select(slot => slot.part));
+        CollectionAssert.IsEmpty(rig.Problems());
+    }
+
+    [Test]
+    public void FillFromModel_PairsEachTrackWithItsSidesRoadWheels_AndOnlyRoadWheelsFollowTheGround()
+    {
+        var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
+        var left = new[] { Wheel("Wheel_L01", hull, -1f, 2f), Wheel("Wheel_L02", hull, -1f, -2f) };
+        var right = Wheel("Wheel_R01", hull, 1f, 2f);
+        var sprocket = Pivot("Sprocket_L", hull, Vector3.one);
+        var track = Pivot("Track_L", hull, new Vector3(0.5f, 1f, 6f));
+        Pivot("Track_R", hull, new Vector3(0.5f, 1f, 6f));
+        var damagedHull = Pivot("Hull", Pivot("Damaged", _unit.transform), Vector3.one);
+        var other = Wheel("Wheel_L01", damagedHull, -1f, 0f);
+        var damagedTrack = Pivot("Track_L", damagedHull, new Vector3(0.5f, 1f, 6f));
+        var rig = _unit.AddComponent<MotionRigAuthoring>();
+
+        ModelFillCommands.Fill(rig);
+
+        Assert.AreEqual(left, rig.tracks.Single(slot => slot.part == track).wheels.ToArray());
+        Assert.AreEqual(new[] { right }, rig.tracks.Single(slot => slot.part.name == "Track_R").wheels.ToArray());
+        Assert.AreEqual(new[] { other }, rig.tracks.Single(slot => slot.part == damagedTrack).wheels.ToArray(), "each model's track keeps to its own wheels");
+        Assert.IsFalse(rig.wheels.Single(slot => slot.part == sprocket).followsGround);
+        Assert.IsTrue(rig.wheels.Where(slot => slot.part != sprocket).All(slot => slot.followsGround));
+        Assert.IsTrue(track.TryGetComponent<TrackMeshAuthoring>(out _), "the track's mesh gets what the shader needs");
+
+        rig.tracks[0].wheels.Clear();
+        Assert.That(rig.Problems(), Has.Some.Contain("has no wheels"));
+    }
+
+    // A part carrying a box mesh of the given size, as the art exports it, or an empty pivot.
+    private static Transform Pivot(string name, Transform parent, Vector3 meshSize = default)
+    {
+        var pivot = new GameObject(name).transform;
+        pivot.SetParent(parent, false);
+        if (meshSize != default)
+        {
+            // Parts are measured by their mesh's bounds alone.
+            var box = new Mesh { bounds = new Bounds(Vector3.zero, meshSize) };
+            pivot.gameObject.AddComponent<MeshFilter>().sharedMesh = box;
+            pivot.gameObject.AddComponent<MeshRenderer>();
         }
 
-        [Test]
-        public void FillFromModel_PosesTheDamagedModelLikeTheIntactOne()
-        {
-            var model = Pivot("Model", _unit.transform);
-            var hull = Pivot("Hull", model, new Vector3(3f, 2f, 7f));
-            var turret = Pivot("Turret", hull);
-            var damaged = Pivot("Damaged", _unit.transform);
-            var damagedHull = Pivot("Hull", damaged, new Vector3(3f, 2f, 7f));
-            var damagedTurret = Pivot("Turret", damagedHull);
-            _unit.AddComponent<DamageStagesAuthoring>().stages = new()
-            {
-                new() { below = 1f, visual = model.gameObject },
-                new() { below = 0.5f, visual = damaged.gameObject },
-            };
-            _unit.AddComponent<WeaponAuthoring>().turreted = true;
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
+        return pivot;
+    }
 
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(new[] { turret, damagedTurret }, rig.turrets.Select(slot => slot.part).ToArray());
-            Assert.AreEqual((hull, damagedHull), (rig.tiltRoot, rig.tiltFollower));
-            CollectionAssert.IsEmpty(rig.Problems());
-        }
-
-        [Test]
-        public void FillFromModel_LeavesMachinePartsToTheirMachine()
-        {
-            var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
-            var box = Pivot("Barrel", turret);
-            box.gameObject.AddComponent<MachinePartAuthoring>();
-            var weapon = _unit.AddComponent<WeaponAuthoring>();
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.IsEmpty(rig.elevations, "the machine raises the box");
-            Assert.AreEqual((turret, box), (weapon.stats.turret, weapon.stats.barrel), "shots still leave the raised box");
-        }
-
-        [Test]
-        public void FillFromModel_AgainKeepsTunedSlots()
-        {
-            var barrel = Pivot("Barrel", Pivot("Hull", _unit.transform, Vector3.one));
-            _unit.AddComponent<WeaponAuthoring>();
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-            ModelFillCommands.Fill(rig);
-            rig.recoils[0].distance = 0.8f;
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(barrel, rig.recoils.Single().part);
-            Assert.AreEqual(0.8f, rig.recoils[0].distance);
-        }
-
-        [Test]
-        public void FillFromModel_SpinsPropellersAboutTheNose()
-        {
-            var hull = Pivot("Hull", _unit.transform, new Vector3(4f, 3f, 30f));
-            var props = new[] { Pivot("Prop_01", hull), Pivot("Prop_02", hull) };
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(props, rig.rotors.Select(slot => slot.part).ToArray());
-            Assert.IsTrue(rig.rotors.All(slot => slot.axis == Vector3.forward));
-        }
-
-        [Test]
-        public void FillFromModel_TiltsTheModelWhenTheHullIsItsRoot()
-        {
-            var model = Pivot("Model", _unit.transform, new Vector3(3f, 2f, 7f));
-            Pivot("Turret", model);
-            _unit.AddComponent<WeaponAuthoring>();
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(model, rig.tiltRoot);
-            Assert.AreEqual(new Vector2(7f, 3f), rig.footprint);
-        }
-
-        private static WeaponStats AddInterceptor(WeaponAuthoring weapon)
-        {
-            var slot = new WeaponAuthoring.WeaponSlot { stats = { targets = WeaponTargets.Projectile } };
-            weapon.extraWeapons.Add(slot);
-            return slot.stats;
-        }
-
-        [Test]
-        public void FillFromModel_OnABuilding_AimsTheInterceptorAfterTheWeapon_AndNeverTilts()
-        {
-            var turret = Pivot("Turret", Pivot("Hull", _unit.transform, Vector3.one));
-            var launcher = Pivot("Launcher", turret);
-            _unit.AddComponent<BuildingAuthoring>();
-            var weapon = _unit.AddComponent<WeaponAuthoring>();
-            var interceptor = AddInterceptor(weapon);
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(1, rig.elevations.Single(slot => slot.part == launcher).weapon, "the launcher follows it");
-            Assert.AreEqual((turret, launcher), (interceptor.turret, interceptor.barrel));
-            Assert.IsNull(rig.tiltRoot);
-            CollectionAssert.IsEmpty(rig.Problems());
-
-            rig.tiltRoot = turret;
-            StringAssert.Contains("never tilts", rig.Problems().Single());
-        }
-
-        [Test]
-        public void FillFromModel_GivesNumberedTurretsAndLaunchersTheirOwnWeapon()
-        {
-            var first = Pivot("Turret_01", _unit.transform, Vector3.one);
-            var firstLauncher = Pivot("Launcher_01", first);
-            var second = Pivot("Turret_02", _unit.transform, Vector3.one);
-            var secondLauncher = Pivot("Launcher_02", second);
-            _unit.AddComponent<BuildingAuthoring>();
-            var weapon = _unit.AddComponent<WeaponAuthoring>();
-            var interceptor = AddInterceptor(weapon);
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(new[] { 0, 1 }, rig.turrets.Select(slot => slot.weapon).ToArray());
-            Assert.AreEqual(new[] { 0, 1 }, rig.elevations.Select(slot => slot.weapon).ToArray());
-            Assert.AreEqual((first, firstLauncher), (weapon.stats.turret, weapon.stats.barrel), "the weapon's pivots");
-            Assert.AreEqual((second, secondLauncher), (interceptor.turret, interceptor.barrel), "the interceptor's pivots");
-            CollectionAssert.IsEmpty(rig.Problems());
-        }
-
-        [Test]
-        public void Problems_NameAPoseTheUnitLacks()
-        {
-            Pivot("Turret", _unit.transform, Vector3.one);
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-            ModelFillCommands.Fill(rig);
-
-            StringAssert.Contains("follows weapon 0", rig.Problems().Single());
-        }
-
-        [Test]
-        public void FillFromModel_MeasuresTheChassis_AndTheRigSteersOnlyTheFrontAxle()
-        {
-            var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
-            var steered = new[] { Wheel("Wheel_L01", hull, -1f, 2.5f), Wheel("Wheel_R01", hull, 1f, 2.5f) };
-            Wheel("Wheel_L02", hull, -1f, -1f);
-            Wheel("Wheel_R02", hull, 1f, -1f);
-            Wheel("Wheel_L03", hull, -1f, -2.4f);
-            var locomotion = _unit.AddComponent<LocomotionAuthoring>();
-            locomotion.pivots = false;
-            locomotion.turnRadius = 9f;
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(locomotion);
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(4.2f, locomotion.wheelbase, 1e-4f, "front axle to the rear pair's midpoint");
-            Assert.AreEqual(1.7f, locomotion.rearAxle, 1e-4f, "rear pair's midpoint behind the centre");
-            CollectionAssert.AreEquivalent(steered, rig.wheels.Where(slot => slot.steers).Select(slot => slot.part));
-            CollectionAssert.IsEmpty(rig.Problems());
-        }
-
-        [Test]
-        public void FillFromModel_PairsEachTrackWithItsSidesRoadWheels_AndOnlyRoadWheelsFollowTheGround()
-        {
-            var hull = Pivot("Hull", Pivot("Model", _unit.transform), new Vector3(2.5f, 2f, 7f));
-            var left = new[] { Wheel("Wheel_L01", hull, -1f, 2f), Wheel("Wheel_L02", hull, -1f, -2f) };
-            var right = Wheel("Wheel_R01", hull, 1f, 2f);
-            var sprocket = Pivot("Sprocket_L", hull, Vector3.one);
-            var track = Pivot("Track_L", hull, new Vector3(0.5f, 1f, 6f));
-            Pivot("Track_R", hull, new Vector3(0.5f, 1f, 6f));
-            var damagedHull = Pivot("Hull", Pivot("Damaged", _unit.transform), Vector3.one);
-            var other = Wheel("Wheel_L01", damagedHull, -1f, 0f);
-            var damagedTrack = Pivot("Track_L", damagedHull, new Vector3(0.5f, 1f, 6f));
-            var rig = _unit.AddComponent<MotionRigAuthoring>();
-
-            ModelFillCommands.Fill(rig);
-
-            Assert.AreEqual(left, rig.tracks.Single(slot => slot.part == track).wheels.ToArray());
-            Assert.AreEqual(new[] { right }, rig.tracks.Single(slot => slot.part.name == "Track_R").wheels.ToArray());
-            Assert.AreEqual(new[] { other }, rig.tracks.Single(slot => slot.part == damagedTrack).wheels.ToArray(), "each model's track keeps to its own wheels");
-            Assert.IsFalse(rig.wheels.Single(slot => slot.part == sprocket).followsGround);
-            Assert.IsTrue(rig.wheels.Where(slot => slot.part != sprocket).All(slot => slot.followsGround));
-            Assert.IsTrue(track.TryGetComponent<TrackMeshAuthoring>(out _), "the track's mesh gets what the shader needs");
-
-            rig.tracks[0].wheels.Clear();
-            Assert.That(rig.Problems(), Has.Some.Contain("has no wheels"));
-        }
-
-        // A part carrying a box mesh of the given size, as the art exports it, or an empty pivot.
-        private static Transform Pivot(string name, Transform parent, Vector3 meshSize = default)
-        {
-            var pivot = new GameObject(name).transform;
-            pivot.SetParent(parent, false);
-            if (meshSize != default)
-            {
-                // Parts are measured by their mesh's bounds alone.
-                var box = new Mesh { bounds = new Bounds(Vector3.zero, meshSize) };
-                pivot.gameObject.AddComponent<MeshFilter>().sharedMesh = box;
-                pivot.gameObject.AddComponent<MeshRenderer>();
-            }
-
-            return pivot;
-        }
-
-        private static Transform Wheel(string name, Transform hull, float x, float z)
-        {
-            var wheel = Pivot(name, hull, new Vector3(0.3f, 0.8f, 0.8f));
-            wheel.localPosition = new Vector3(x, 0f, z);
-            return wheel;
-        }
+    private static Transform Wheel(string name, Transform hull, float x, float z)
+    {
+        var wheel = Pivot(name, hull, new Vector3(0.3f, 0.8f, 0.8f));
+        wheel.localPosition = new Vector3(x, 0f, z);
+        return wheel;
     }
 }

@@ -4,36 +4,35 @@ using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Library;
 using HyperRTS.Editor.Maps.Palette;
 
-namespace HyperRTS.Editor.Maps.Checks
+namespace HyperRTS.Editor.Maps.Checks;
+
+/// <summary>Checks the palette's sides: ids 1 to 255 listed once and kit pieces that are entity entries.</summary>
+public sealed class MapSideCheck : MapCheck
 {
-    /// <summary>Checks the palette's sides: ids 1 to 255 listed once and kit pieces that are entity entries.</summary>
-    public sealed class MapSideCheck : MapCheck
+    public MapSideCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
     {
-        public MapSideCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
+    }
+
+    public void Check()
+    {
+        var ids = new HashSet<int>();
+        foreach (var side in Palette.sides)
         {
+            var name = $"Palette side {side.side}";
+            Require(side.side >= 1 && side.side <= byte.MaxValue, $"{name}: side ids run from 1 to {byte.MaxValue}.");
+            Require(ids.Add(side.side), $"{name} is listed twice.");
+            side.startKit.ForEach(item => KitItem(item.key, $"{name} start kit"));
+        }
+    }
+
+    private void KitItem(string key, string source)
+    {
+        if (!MapKeys.Contains(Palette.entries, key))
+        {
+            return;
         }
 
-        public void Check()
-        {
-            var ids = new HashSet<int>();
-            foreach (var side in Palette.sides)
-            {
-                var name = $"Palette side {side.side}";
-                Require(side.side >= 1 && side.side <= byte.MaxValue, $"{name}: side ids run from 1 to {byte.MaxValue}.");
-                Require(ids.Add(side.side), $"{name} is listed twice.");
-                side.startKit.ForEach(item => KitItem(item.key, $"{name} start kit"));
-            }
-        }
-
-        private void KitItem(string key, string source)
-        {
-            if (!MapKeys.Contains(Palette.entries, key))
-            {
-                return;
-            }
-
-            var entry = Palette.Entry(key);
-            Require(entry.prefab == null || entry.IsEntity, $"{source}: '{key}' is not an entity prefab, so it can't spawn in a match.");
-        }
+        var entry = Palette.Entry(key);
+        Require(entry.prefab == null || entry.IsEntity, $"{source}: '{key}' is not an entity prefab, so it can't spawn in a match.");
     }
 }

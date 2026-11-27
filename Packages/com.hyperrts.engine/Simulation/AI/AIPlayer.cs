@@ -1,56 +1,55 @@
 using HyperRTS.Simulation.Match;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.AI
+namespace HyperRTS.Simulation.AI;
+
+/// <summary>Marks a computer-controlled player and tunes its skirmish behaviour.</summary>
+public struct AIPlayer : IComponentData
 {
-    /// <summary>Marks a computer-controlled player and tunes its skirmish behaviour.</summary>
-    public struct AIPlayer : IComponentData
-    {
-        /// <summary>The preset it was tuned from, recorded in replays.</summary>
-        public AIDifficulty Difficulty;
+    /// <summary>The preset it was tuned from, recorded in replays.</summary>
+    public AIDifficulty Difficulty;
 
-        public float ThinkInterval;
-        public float TimeUntilThink;
+    public float ThinkInterval;
+    public float TimeUntilThink;
 
-        /// <summary>Idle combat units needed before the AI attacks.</summary>
-        public int AttackWaveSize;
+    /// <summary>Idle combat units needed before the AI attacks.</summary>
+    public int AttackWaveSize;
 
-        public bool UseAbilities;
+    public bool UseAbilities;
 
-        /// <summary>Enemy distance that triggers self-targeted abilities.</summary>
-        public float SelfAbilityTriggerRange;
+    /// <summary>Enemy distance that triggers self-targeted abilities.</summary>
+    public float SelfAbilityTriggerRange;
 
-        /// <summary>Clear margin kept around each building the AI places.</summary>
-        public float BuildingGap;
+    /// <summary>Clear margin kept around each building the AI places.</summary>
+    public float BuildingGap;
 
-        /// <summary>Attacks only what its team sees, or buildings it has explored; otherwise sweeps the map centre.</summary>
-        public bool LimitedByFog;
+    /// <summary>Attacks only what its team sees, or buildings it has explored; otherwise sweeps the map centre.</summary>
+    public bool LimitedByFog;
 
-        /// <summary>Whether squads that are pinned or hurt past the shares below run for a retreat point.</summary>
-        public bool RetreatsSquads;
+    /// <summary>Whether squads that are pinned or hurt past the shares below run for a retreat point.</summary>
+    public bool RetreatsSquads;
 
-        /// <summary>A squad retreats when its living members fall to this share of its size.</summary>
-        public float RetreatLivingShare;
+    /// <summary>A squad retreats when its living members fall to this share of its size.</summary>
+    public float RetreatLivingShare;
 
-        /// <summary>A squad retreats when its health falls to this share of its full health.</summary>
-        public float RetreatHealthShare;
+    /// <summary>A squad retreats when its health falls to this share of its full health.</summary>
+    public float RetreatHealthShare;
 
-        /// <summary>Field work lines built at each defence point; 0 builds none.</summary>
-        public int FieldWorkLines;
+    /// <summary>Field work lines built at each defence point; 0 builds none.</summary>
+    public int FieldWorkLines;
 
-        /// <summary>Also lays a barrier line in front of each defence point's cover.</summary>
-        public bool FieldWorkBarrier;
+    /// <summary>Also lays a barrier line in front of each defence point's cover.</summary>
+    public bool FieldWorkBarrier;
 
-        /// <summary>Round-robin cursor over production options.</summary>
-        public int NextOption;
+    /// <summary>Round-robin cursor over production options.</summary>
+    public int NextOption;
 
-        /// <summary>
-        /// Seed of the attack lane choice (see <see cref="AIRoutes.PickLane"/>). Bots differ by owner and vary by
-        /// <see cref="Attacks"/> whatever it is; a game sets it from its match seed to vary matches too.
-        /// </summary>
-        public uint RouteSeed;
+    /// <summary>
+    /// Seed of the attack lane choice (see <see cref="AIRoutes.PickLane"/>). Bots differ by owner and vary by
+    /// <see cref="Attacks"/> whatever it is; a game sets it from its match seed to vary matches too.
+    /// </summary>
+    public uint RouteSeed;
 
-        /// <summary>Attacks sent along a lane so far.</summary>
-        public int Attacks;
-    }
+    /// <summary>Attacks sent along a lane so far.</summary>
+    public int Attacks;
 }

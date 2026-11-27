@@ -3,94 +3,93 @@ using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace HyperRTS.Input
+namespace HyperRTS.Input;
+
+/// <summary>
+/// The one <see cref="MatchInputActions"/> instance the input systems and camera share. Menus and rebinding
+/// <see cref="Suspend"/> every map until they <see cref="Resume"/>.
+/// </summary>
+public static partial class InputActionsProvider
 {
+    [AutoStaticsCleanup]
+    private static readonly Dictionary<InputActionMap, int> Users = new();
+    [AutoStaticsCleanup]
+    private static readonly HashSet<object> Suspenders = new();
+    [NoAutoStaticsCleanup]
+    private static MatchInputActions _actions;
+
+    public static MatchInputActions Actions => _actions ??= new MatchInputActions();
+
+    public static bool IsSuspended => Suspenders.Count > 0;
+
     /// <summary>
-    /// The one <see cref="MatchInputActions"/> instance the input systems and camera share. Menus and rebinding
-    /// <see cref="Suspend"/> every map until they <see cref="Resume"/>.
+    /// Set by a front end that owns Escape (and cancels through <c>MatchView.CancelInteraction</c>), so the input
+    /// systems ignore Commands/Cancel. Off by default: the engine cancels placement and targeting itself.
     /// </summary>
-    public static partial class InputActionsProvider
+    [AutoStaticsCleanup]
+    public static bool FrontEndOwnsCancel { get; set; }
+
+    /// <summary>Commands/Cancel this frame, unless <see cref="FrontEndOwnsCancel"/>.</summary>
+    public static bool CancelPressed => !FrontEndOwnsCancel && Actions.Commands.Cancel.WasPressedThisFrame();
+
+    public static void Enable(InputActionMap map)
     {
-        [AutoStaticsCleanup]
-        private static readonly Dictionary<InputActionMap, int> Users = new();
-        [AutoStaticsCleanup]
-        private static readonly HashSet<object> Suspenders = new();
-        [NoAutoStaticsCleanup]
-        private static MatchInputActions _actions;
-
-        public static MatchInputActions Actions => _actions ??= new MatchInputActions();
-
-        public static bool IsSuspended => Suspenders.Count > 0;
-
-        /// <summary>
-        /// Set by a front end that owns Escape (and cancels through <c>MatchView.CancelInteraction</c>), so the input
-        /// systems ignore Commands/Cancel. Off by default: the engine cancels placement and targeting itself.
-        /// </summary>
-        [AutoStaticsCleanup]
-        public static bool FrontEndOwnsCancel { get; set; }
-
-        /// <summary>Commands/Cancel this frame, unless <see cref="FrontEndOwnsCancel"/>.</summary>
-        public static bool CancelPressed => !FrontEndOwnsCancel && Actions.Commands.Cancel.WasPressedThisFrame();
-
-        public static void Enable(InputActionMap map)
+        Users.TryGetValue(map, out var count);
+        Users[map] = count + 1;
+        if (!IsSuspended)
         {
-            Users.TryGetValue(map, out var count);
-            Users[map] = count + 1;
-            if (!IsSuspended)
-            {
-                map.Enable();
-            }
+            map.Enable();
+        }
+    }
+
+    public static void Disable(InputActionMap map)
+    {
+        if (!Users.TryGetValue(map, out var count))
+        {
+            return;
         }
 
-        public static void Disable(InputActionMap map)
+        if (count > 1)
         {
-            if (!Users.TryGetValue(map, out var count))
-            {
-                return;
-            }
+            Users[map] = count - 1;
+            return;
+        }
 
-            if (count > 1)
-            {
-                Users[map] = count - 1;
-                return;
-            }
+        Users.Remove(map);
+        map.Disable();
+    }
 
-            Users.Remove(map);
+    /// <summary>Disables every map while <paramref name="owner"/> (an open menu, a rebind) holds input.</summary>
+    public static void Suspend(object owner)
+    {
+        if (!Suspenders.Add(owner) || Suspenders.Count > 1)
+        {
+            return;
+        }
+
+        foreach (var map in Users.Keys)
+        {
             map.Disable();
         }
+    }
 
-        /// <summary>Disables every map while <paramref name="owner"/> (an open menu, a rebind) holds input.</summary>
-        public static void Suspend(object owner)
+    public static void Resume(object owner)
+    {
+        if (!Suspenders.Remove(owner) || IsSuspended)
         {
-            if (!Suspenders.Add(owner) || Suspenders.Count > 1)
-            {
-                return;
-            }
-
-            foreach (var map in Users.Keys)
-            {
-                map.Disable();
-            }
+            return;
         }
 
-        public static void Resume(object owner)
+        foreach (var map in Users.Keys)
         {
-            if (!Suspenders.Remove(owner) || IsSuspended)
-            {
-                return;
-            }
-
-            foreach (var map in Users.Keys)
-            {
-                map.Enable();
-            }
+            map.Enable();
         }
+    }
 
-        [OnEnteringPlayMode]
-        private static void DisposeActions()
-        {
-            _actions?.Dispose();
-            _actions = null;
-        }
+    [OnEnteringPlayMode]
+    private static void DisposeActions()
+    {
+        _actions?.Dispose();
+        _actions = null;
     }
 }

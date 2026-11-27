@@ -1,9 +1,9 @@
-using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Cursors;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Capture;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -14,228 +14,227 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Tests.Cursors
+namespace HyperRTS.Presentation.Tests.Cursors;
+
+/// <summary>The cursor intent decision table through the right-click order rules, and the cursor set it picks from.</summary>
+public class CursorTests
 {
-    /// <summary>The cursor intent decision table through the right-click order rules, and the cursor set it picks from.</summary>
-    public class CursorTests
+    private static readonly float2 Footprint = new(4f, 4f);
+
+    private TestWorld _world;
+    private SystemHandle _intent;
+    private CursorSet _set;
+
+    [SetUp]
+    public void SetUp()
     {
-        private static readonly float2 Footprint = new(4f, 4f);
+        _world = new TestWorld();
+        _world.CreateMatch(1, 2);
+        _world.World.CreateSystem<ClientSingletonSystem>();
+        _intent = _world.World.CreateSystem<CursorIntentSystem>();
+        _set = ScriptableObject.CreateInstance<CursorSet>();
+        _set.animations = new[] { Animation(CursorKind.Default, true), Animation(CursorKind.Select, false) };
+    }
 
-        private TestWorld _world;
-        private SystemHandle _intent;
-        private CursorSet _set;
+    [TearDown]
+    public void TearDown()
+    {
+        _world.Dispose();
+        Object.DestroyImmediate(_set);
+    }
 
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-            _world.World.CreateSystem<ClientSingletonSystem>();
-            _intent = _world.World.CreateSystem<CursorIntentSystem>();
-            _set = ScriptableObject.CreateInstance<CursorSet>();
-            _set.animations = new[] { Animation(CursorKind.Default, true), Animation(CursorKind.Select, false) };
-        }
+    [Test]
+    public void TankAndProducer_OnGround_ShowsDefaultNotRally()
+    {
+        Select(Tank(float3.zero));
+        var barracks = _world.SpawnBuilding(1, new float3(10f, 0f, 0f), Footprint);
+        Select(_world.MakeProducer(barracks, new float3(10f, 0f, 4f)));
 
-        [TearDown]
-        public void TearDown()
-        {
-            _world.Dispose();
-            Object.DestroyImmediate(_set);
-        }
+        Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
+    }
 
-        [Test]
-        public void TankAndProducer_OnGround_ShowsDefaultNotRally()
-        {
-            Select(Tank(float3.zero));
-            var barracks = _world.SpawnBuilding(1, new float3(10f, 0f, 0f), Footprint);
-            Select(_world.MakeProducer(barracks, new float3(10f, 0f, 4f)));
+    [Test]
+    public void Tank_OnVisibleEnemy_Attacks()
+    {
+        Select(Tank(float3.zero));
+        var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
+        _world.Tick();
 
-            Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
-        }
+        Assert.AreEqual(CursorKind.Attack, Decide(enemy));
+    }
 
-        [Test]
-        public void Tank_OnVisibleEnemy_Attacks()
-        {
-            Select(Tank(float3.zero));
-            var enemy = _world.SpawnUnit(2, new float3(4f, 0f, 0f));
-            _world.Tick();
+    [Test]
+    public void Engineer_OnNeutralPost_Captures()
+    {
+        Select(Engineer(float3.zero));
 
-            Assert.AreEqual(CursorKind.Attack, Decide(enemy));
-        }
+        Assert.AreEqual(CursorKind.Capture, Decide(Post()));
+    }
 
-        [Test]
-        public void Engineer_OnNeutralPost_Captures()
-        {
-            Select(Engineer(float3.zero));
+    [Test]
+    public void MixedSelection_ShowsTheHighestOrder()
+    {
+        Select(Tank(float3.zero));
+        Select(Engineer(new float3(2f, 0f, 0f)));
 
-            Assert.AreEqual(CursorKind.Capture, Decide(Post()));
-        }
+        Assert.AreEqual(CursorKind.Capture, Decide(Post()));
+    }
 
-        [Test]
-        public void MixedSelection_ShowsTheHighestOrder()
-        {
-            Select(Tank(float3.zero));
-            Select(Engineer(new float3(2f, 0f, 0f)));
+    [Test]
+    public void Truck_OnResourceNode_Gathers()
+    {
+        Select(_world.MakeHarvester(_world.SpawnUnit(1, float3.zero), 10, 1f));
+        var node = _world.SpawnNode(new float3(6f, 0f, 0f), _world.CreateSupplies(), 500);
 
-            Assert.AreEqual(CursorKind.Capture, Decide(Post()));
-        }
+        Assert.AreEqual(CursorKind.Gather, Decide(node));
+    }
 
-        [Test]
-        public void Truck_OnResourceNode_Gathers()
-        {
-            Select(_world.MakeHarvester(_world.SpawnUnit(1, float3.zero), 10, 1f));
-            var node = _world.SpawnNode(new float3(6f, 0f, 0f), _world.CreateSupplies(), 500);
+    [Test]
+    public void Infantry_OnOwnContainer_Garrisons()
+    {
+        var rifleman = _world.SpawnUnit(1, float3.zero);
+        var writer = _world.Writer(rifleman);
+        TransportSetup.AddPassenger(writer, 1);
+        Select(rifleman);
+        var bunker = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
+        writer = _world.Writer(bunker);
+        TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
 
-            Assert.AreEqual(CursorKind.Gather, Decide(node));
-        }
+        Assert.AreEqual(CursorKind.Garrison, Decide(bunker));
+    }
 
-        [Test]
-        public void Infantry_OnOwnContainer_Garrisons()
-        {
-            var rifleman = _world.SpawnUnit(1, float3.zero);
-            var writer = _world.Writer(rifleman);
-            TransportSetup.AddPassenger(writer, 1);
-            Select(rifleman);
-            var bunker = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
-            writer = _world.Writer(bunker);
-            TransportSetup.AddContainer(writer, new Container { Capacity = 4, MaxPassengerSize = 1 });
+    [Test]
+    public void Dozer_OnDamagedOwnBuilding_Repairs()
+    {
+        Select(_world.MakeBuilder(_world.SpawnUnit(1, float3.zero)));
+        var barracks = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
+        _world.Set(barracks, new Health { Current = 200f, Max = 500f });
 
-            Assert.AreEqual(CursorKind.Garrison, Decide(bunker));
-        }
+        Assert.AreEqual(CursorKind.Repair, Decide(barracks));
+    }
 
-        [Test]
-        public void Dozer_OnDamagedOwnBuilding_Repairs()
-        {
-            Select(_world.MakeBuilder(_world.SpawnUnit(1, float3.zero)));
-            var barracks = _world.SpawnBuilding(1, new float3(8f, 0f, 0f), Footprint);
-            _world.Set(barracks, new Health { Current = 200f, Max = 500f });
+    [Test]
+    public void Tank_OnOwnUnit_Selects()
+    {
+        Select(Tank(float3.zero));
 
-            Assert.AreEqual(CursorKind.Repair, Decide(barracks));
-        }
+        Assert.AreEqual(CursorKind.Select, Decide(Tank(new float3(3f, 0f, 0f))));
+    }
 
-        [Test]
-        public void Tank_OnOwnUnit_Selects()
-        {
-            Select(Tank(float3.zero));
+    [Test]
+    public void Producer_OnGround_SetsRally()
+    {
+        Select(_world.MakeProducer(_world.SpawnBuilding(1, float3.zero, Footprint), new float3(0f, 0f, 4f)));
 
-            Assert.AreEqual(CursorKind.Select, Decide(Tank(new float3(3f, 0f, 0f))));
-        }
+        Assert.AreEqual(CursorKind.Rally, Decide(Entity.Null));
+    }
 
-        [Test]
-        public void Producer_OnGround_SetsRally()
-        {
-            Select(_world.MakeProducer(_world.SpawnBuilding(1, float3.zero, Footprint), new float3(0f, 0f, 4f)));
+    [Test]
+    public void Placement_ShowsBuildOrInvalid()
+    {
+        SetSingleton(new PlacementState { Active = true, Valid = true });
+        Assert.AreEqual(CursorKind.Build, Decide(Entity.Null));
 
-            Assert.AreEqual(CursorKind.Rally, Decide(Entity.Null));
-        }
+        SetSingleton(new PlacementState { Active = true, Valid = false });
+        Assert.AreEqual(CursorKind.Invalid, Decide(Entity.Null));
+    }
 
-        [Test]
-        public void Placement_ShowsBuildOrInvalid()
-        {
-            SetSingleton(new PlacementState { Active = true, Valid = true });
-            Assert.AreEqual(CursorKind.Build, Decide(Entity.Null));
+    [Test]
+    public void PendingAttackMove_BeatsTheRightClick()
+    {
+        Select(Tank(float3.zero));
+        SetSingleton(new PendingCommand { Type = CommandType.AttackMove });
 
-            SetSingleton(new PlacementState { Active = true, Valid = false });
-            Assert.AreEqual(CursorKind.Invalid, Decide(Entity.Null));
-        }
+        Assert.AreEqual(CursorKind.AttackMove, Decide(Entity.Null));
+    }
 
-        [Test]
-        public void PendingAttackMove_BeatsTheRightClick()
-        {
-            Select(Tank(float3.zero));
-            SetSingleton(new PendingCommand { Type = CommandType.AttackMove });
+    [Test]
+    public void PointerOverUI_ShowsDefault_ButEdgeScrollWins()
+    {
+        Select(Tank(float3.zero));
+        SetSingleton(new PointerState { OverUI = true });
+        Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
 
-            Assert.AreEqual(CursorKind.AttackMove, Decide(Entity.Null));
-        }
+        SetSingleton(new ScrollEdge { Direction = new int2(1, 1) });
+        Assert.AreEqual(CursorKind.ScrollUpRight, Decide(Entity.Null));
+    }
 
-        [Test]
-        public void PointerOverUI_ShowsDefault_ButEdgeScrollWins()
-        {
-            Select(Tank(float3.zero));
-            SetSingleton(new PointerState { OverUI = true });
-            Assert.AreEqual(CursorKind.Default, Decide(Entity.Null));
+    [TestCase(-1, 1, CursorKind.ScrollUpLeft)]
+    [TestCase(0, 1, CursorKind.ScrollUp)]
+    [TestCase(1, 0, CursorKind.ScrollRight)]
+    [TestCase(1, -1, CursorKind.ScrollDownRight)]
+    public void Scroll_PointsAlongTheEdge(int x, int y, CursorKind expected) =>
+        Assert.AreEqual(expected, CursorIntent.Scroll(new int2(x, y)));
 
-            SetSingleton(new ScrollEdge { Direction = new int2(1, 1) });
-            Assert.AreEqual(CursorKind.ScrollUpRight, Decide(Entity.Null));
-        }
+    [TestCase(0f, 500f, -1, 0)]
+    [TestCase(1919f, 1079f, 1, 1)]
+    [TestCase(960f, 540f, 0, 0)]
+    [TestCase(-5f, 540f, 0, 0)]
+    public void ScrollEdge_ComesFromThePointer(float x, float y, int edgeX, int edgeY) =>
+        Assert.AreEqual(new int2(edgeX, edgeY), ScrollEdge.At(new float2(x, y), new float2(1920f, 1080f), 8f));
 
-        [TestCase(-1, 1, CursorKind.ScrollUpLeft)]
-        [TestCase(0, 1, CursorKind.ScrollUp)]
-        [TestCase(1, 0, CursorKind.ScrollRight)]
-        [TestCase(1, -1, CursorKind.ScrollDownRight)]
-        public void Scroll_PointsAlongTheEdge(int x, int y, CursorKind expected) =>
-            Assert.AreEqual(expected, CursorIntent.Scroll(new int2(x, y)));
+    [Test]
+    public void Set_FallsBackToDefault_AndThrowsWithoutOne()
+    {
+        Assert.AreEqual(CursorKind.Select, _set.Animation(CursorKind.Select).kind);
+        Assert.AreEqual(CursorKind.Default, _set.Animation(CursorKind.Attack).kind);
 
-        [TestCase(0f, 500f, -1, 0)]
-        [TestCase(1919f, 1079f, 1, 1)]
-        [TestCase(960f, 540f, 0, 0)]
-        [TestCase(-5f, 540f, 0, 0)]
-        public void ScrollEdge_ComesFromThePointer(float x, float y, int edgeX, int edgeY) =>
-            Assert.AreEqual(new int2(edgeX, edgeY), ScrollEdge.At(new float2(x, y), new float2(1920f, 1080f), 8f));
+        _set.animations = new[] { Animation(CursorKind.Select, true) };
+        Assert.Throws<MissingReferenceException>(() => _set.Animation(CursorKind.Attack));
+    }
 
-        [Test]
-        public void Set_FallsBackToDefault_AndThrowsWithoutOne()
-        {
-            Assert.AreEqual(CursorKind.Select, _set.Animation(CursorKind.Select).kind);
-            Assert.AreEqual(CursorKind.Default, _set.Animation(CursorKind.Attack).kind);
+    [Test]
+    public void LoopingCursor_Wraps_AndOneShotHoldsItsLastFrame()
+    {
+        Assert.AreEqual(2, _set.Animation(CursorKind.Default).FrameAt(1.25f, 4));
+        Assert.AreEqual(3, _set.Animation(CursorKind.Select).FrameAt(1.25f, 4));
+    }
 
-            _set.animations = new[] { Animation(CursorKind.Select, true) };
-            Assert.Throws<MissingReferenceException>(() => _set.Animation(CursorKind.Attack));
-        }
+    [TestCase(1.25f, 48)]
+    [TestCase(2f, 64)]
+    public void Scale_PicksTheClosestDrawnSize(float scale, int expected) =>
+        Assert.AreEqual(expected, _set.Animation(CursorKind.Default).Closest(_set.baseSize * scale).size);
 
-        [Test]
-        public void LoopingCursor_Wraps_AndOneShotHoldsItsLastFrame()
-        {
-            Assert.AreEqual(2, _set.Animation(CursorKind.Default).FrameAt(1.25f, 4));
-            Assert.AreEqual(3, _set.Animation(CursorKind.Select).FrameAt(1.25f, 4));
-        }
+    private static CursorAnimation Animation(CursorKind kind, bool loop) => new()
+    {
+        kind = kind,
+        fps = 8f,
+        loop = loop,
+        sizes = new[] { Sized(32), Sized(48), Sized(64) },
+    };
 
-        [TestCase(1.25f, 48)]
-        [TestCase(2f, 64)]
-        public void Scale_PicksTheClosestDrawnSize(float scale, int expected) =>
-            Assert.AreEqual(expected, _set.Animation(CursorKind.Default).Closest(_set.baseSize * scale).size);
+    private static CursorFrames Sized(int size) => new() { size = size, frames = new Texture2D[4] };
 
-        private static CursorAnimation Animation(CursorKind kind, bool loop) => new()
-        {
-            kind = kind,
-            fps = 8f,
-            loop = loop,
-            sizes = new[] { Sized(32), Sized(48), Sized(64) },
-        };
+    private CursorKind Decide(Entity hovered)
+    {
+        SetSingleton(new HoveredEntity { Value = hovered });
+        _intent.Update(_world.World.Unmanaged);
+        return _world.Singleton<CursorIntent>().Kind;
+    }
 
-        private static CursorFrames Sized(int size) => new() { size = size, frames = new Texture2D[4] };
+    private void SetSingleton<T>(T value) where T : unmanaged, IComponentData
+    {
+        using var query = _world.Query(ComponentType.ReadWrite<T>());
+        query.SetSingleton(value);
+    }
 
-        private CursorKind Decide(Entity hovered)
-        {
-            SetSingleton(new HoveredEntity { Value = hovered });
-            _intent.Update(_world.World.Unmanaged);
-            return _world.Singleton<CursorIntent>().Kind;
-        }
+    private void Select(Entity entity) => _world.SetEnabled<Selected>(entity, true);
 
-        private void SetSingleton<T>(T value) where T : unmanaged, IComponentData
-        {
-            using var query = _world.Query(ComponentType.ReadWrite<T>());
-            query.SetSingleton(value);
-        }
+    private Entity Tank(float3 position) => _world.AddWeapon(_world.SpawnUnit(1, position));
 
-        private void Select(Entity entity) => _world.SetEnabled<Selected>(entity, true);
+    private Entity Engineer(float3 position)
+    {
+        var engineer = _world.SpawnUnit(1, position);
+        var writer = _world.Writer(engineer);
+        CaptureSetup.AddCapturer(writer, 1f, consumedOnCapture: false);
+        return engineer;
+    }
 
-        private Entity Tank(float3 position) => _world.AddWeapon(_world.SpawnUnit(1, position));
-
-        private Entity Engineer(float3 position)
-        {
-            var engineer = _world.SpawnUnit(1, position);
-            var writer = _world.Writer(engineer);
-            CaptureSetup.AddCapturer(writer, 1f, consumedOnCapture: false);
-            return engineer;
-        }
-
-        private Entity Post()
-        {
-            var post = _world.SpawnBuilding(Owner.Neutral, new float3(10f, 0f, 0f), Footprint);
-            var writer = _world.Writer(post);
-            CaptureSetup.AddCapturable(writer, 2f);
-            return post;
-        }
+    private Entity Post()
+    {
+        var post = _world.SpawnBuilding(Owner.Neutral, new float3(10f, 0f, 0f), Footprint);
+        var writer = _world.Writer(post);
+        CaptureSetup.AddCapturable(writer, 2f);
+        return post;
     }
 }

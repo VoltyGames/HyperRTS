@@ -1,120 +1,119 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Status;
 using Unity.Collections;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Abilities
+namespace HyperRTS.Simulation.Abilities;
+
+/// <summary>
+/// Cooldown abilities used from the command card (grenades, smoke, airstrikes, superweapons). On a building with
+/// unlimited range an ability works as a support power.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Combat/Ability")]
+[Icon(HyperRTSIcons.AbilityAuthoring)]
+[HelpURL(HyperRTSDocs.Abilities)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
+public class AbilityAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Cooldown abilities used from the command card (grenades, smoke, airstrikes, superweapons). On a building with
-    /// unlimited range an ability works as a support power.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Ability")]
-    [Icon(HyperRTSIcons.AbilityAuthoring)]
-    [HelpURL(HyperRTSDocs.Abilities)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class AbilityAuthoring : AuthoringBehaviour
+    [Serializable]
+    public class Entry
     {
-        [Serializable]
-        public class Entry
+        [Tooltip("Name shown on the button; also the ability's id, so keep it unique per entity.")]
+        public string name = "Ability";
+
+        [Tooltip("Button icon.")]
+        public Texture2D icon;
+
+        [Tooltip("What the ability is aimed at.")]
+        public AbilityTarget target = AbilityTarget.Point;
+
+        [Tooltip("Which entities an entity-targeted ability accepts.")]
+        public AbilityTargetFilter filter = AbilityTargetFilter.Hostile;
+
+        [Tooltip("Cast range, edge to edge; units walk into range first. 0 = unlimited.")]
+        [Min(0f)]
+        public float range = 10f;
+
+        [Tooltip("Seconds before it can be used again.")]
+        [Min(0f)]
+        public float cooldown = 30f;
+
+        [Tooltip("Start on cooldown (superweapons charge up first).")]
+        public bool startsOnCooldown;
+
+        [Tooltip("Building the owner must have completed to use it.")]
+        public GameEntityAuthoring requires;
+
+        [Header("Built-in effects")]
+        [Tooltip("Prefab spawned at the target (mine, beacon, incoming aircraft), owned by the caster's player. An ability with no spawn prefab and no damage only raises its event for game code.")]
+        [PrefabAsset("Spawn prefab")]
+        public GameObject spawnPrefab;
+
+        [Tooltip("Damage dealt around the target, 0 for none; negative heals.")]
+        public DamageSettings hit = new() { damage = 0f, edgeFactor = 1f, friendlyFire = true };
+
+        [Tooltip("Status effect prefab applied to an entity target.")]
+        public StatusEffectAuthoring statusEffect;
+    }
+
+    [Tooltip("Abilities in command-card order.")]
+    public List<Entry> abilities = new();
+
+    public class Baker : Baker<AbilityAuthoring>
+    {
+        public override void Bake(AbilityAuthoring authoring)
         {
-            [Tooltip("Name shown on the button; also the ability's id, so keep it unique per entity.")]
-            public string name = "Ability";
+            var abilities = new List<Ability>();
+            var states = new List<AbilityCooldown>();
+            foreach (var entry in authoring.abilities)
+            {
+                var ability = BakeEntry(entry);
+                abilities.Add(ability);
+                states.Add(new AbilityCooldown
+                {
+                    Id = ability.Id, Remaining = entry.startsOnCooldown ? entry.cooldown : 0f,
+                });
+            }
 
-            [Tooltip("Button icon.")]
-            public Texture2D icon;
-
-            [Tooltip("What the ability is aimed at.")]
-            public AbilityTarget target = AbilityTarget.Point;
-
-            [Tooltip("Which entities an entity-targeted ability accepts.")]
-            public AbilityTargetFilter filter = AbilityTargetFilter.Hostile;
-
-            [Tooltip("Cast range, edge to edge; units walk into range first. 0 = unlimited.")]
-            [Min(0f)]
-            public float range = 10f;
-
-            [Tooltip("Seconds before it can be used again.")]
-            [Min(0f)]
-            public float cooldown = 30f;
-
-            [Tooltip("Start on cooldown (superweapons charge up first).")]
-            public bool startsOnCooldown;
-
-            [Tooltip("Building the owner must have completed to use it.")]
-            public GameEntityAuthoring requires;
-
-            [Header("Built-in effects")]
-            [Tooltip("Prefab spawned at the target (mine, beacon, incoming aircraft), owned by the caster's player. An ability with no spawn prefab and no damage only raises its event for game code.")]
-            [PrefabAsset("Spawn prefab")]
-            public GameObject spawnPrefab;
-
-            [Tooltip("Damage dealt around the target, 0 for none; negative heals.")]
-            public DamageSettings hit = new() { damage = 0f, edgeFactor = 1f, friendlyFire = true };
-
-            [Tooltip("Status effect prefab applied to an entity target.")]
-            public StatusEffectAuthoring statusEffect;
+            var writer = this.Writer();
+            writer.AddBuffer(abilities);
+            writer.AddBuffer(states);
         }
 
-        [Tooltip("Abilities in command-card order.")]
-        public List<Entry> abilities = new();
-
-        public class Baker : Baker<AbilityAuthoring>
+        private Ability BakeEntry(Entry entry)
         {
-            public override void Bake(AbilityAuthoring authoring)
+            var name = new FixedString32Bytes();
+            name.CopyFromTruncated(entry.name);
+            if (entry.requires != null)
             {
-                var abilities = new List<Ability>();
-                var states = new List<AbilityCooldown>();
-                foreach (var entry in authoring.abilities)
-                {
-                    var ability = BakeEntry(entry);
-                    abilities.Add(ability);
-                    states.Add(new AbilityCooldown
-                    {
-                        Id = ability.Id, Remaining = entry.startsOnCooldown ? entry.cooldown : 0f,
-                    });
-                }
-
-                var writer = this.Writer();
-                writer.AddBuffer(abilities);
-                writer.AddBuffer(states);
+                DependsOn(entry.requires);
             }
 
-            private Ability BakeEntry(Entry entry)
+            return new Ability
             {
-                var name = new FixedString32Bytes();
-                name.CopyFromTruncated(entry.name);
-                if (entry.requires != null)
-                {
-                    DependsOn(entry.requires);
-                }
-
-                return new Ability
-                {
-                    Id = EntityInfo.TypeIdFromName(entry.name),
-                    Name = name,
-                    Icon = entry.icon,
-                    Target = entry.target,
-                    Filter = entry.filter,
-                    Range = entry.range,
-                    Cooldown = entry.cooldown,
-                    RequiredTypeId = entry.requires != null ? entry.requires.TypeId : 0,
-                    SpawnPrefab = entry.spawnPrefab != null
-                        ? GetEntity(entry.spawnPrefab, TransformUsageFlags.Dynamic)
-                        : Entity.Null,
-                    Damage = entry.hit.Bake(),
-                    StatusEffect = entry.statusEffect != null
-                        ? GetEntity(entry.statusEffect, TransformUsageFlags.None)
-                        : Entity.Null,
-                };
-            }
+                Id = EntityInfo.TypeIdFromName(entry.name),
+                Name = name,
+                Icon = entry.icon,
+                Target = entry.target,
+                Filter = entry.filter,
+                Range = entry.range,
+                Cooldown = entry.cooldown,
+                RequiredTypeId = entry.requires != null ? entry.requires.TypeId : 0,
+                SpawnPrefab = entry.spawnPrefab != null
+                    ? GetEntity(entry.spawnPrefab, TransformUsageFlags.Dynamic)
+                    : Entity.Null,
+                Damage = entry.hit.Bake(),
+                StatusEffect = entry.statusEffect != null
+                    ? GetEntity(entry.statusEffect, TransformUsageFlags.None)
+                    : Entity.Null,
+            };
         }
     }
 }

@@ -1,9 +1,8 @@
-namespace HyperRTS.Editor.PlayMode.Launch
+namespace HyperRTS.Editor.PlayMode.Launch;
+
+/// <summary>Where a launch begins: straight in the map, or through the game's main menu.</summary>
+public enum LaunchEntry : byte
 {
-    /// <summary>Where a launch begins: straight in the map, or through the game's main menu.</summary>
-    public enum LaunchEntry : byte
-    {
-        Map,
-        MainMenu,
-    }
+    Map,
+    MainMenu,
 }

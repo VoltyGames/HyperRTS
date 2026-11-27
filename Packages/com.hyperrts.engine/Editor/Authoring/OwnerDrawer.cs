@@ -1,73 +1,72 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Common;
 using HyperRTS.Presentation.HUD;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring;
+
+/// <summary>Draws <see cref="OwnerAttribute"/> fields as a player dropdown with the owner's colour beside it.</summary>
+[CustomPropertyDrawer(typeof(OwnerAttribute))]
+public sealed class OwnerDrawer : PropertyDrawer
 {
-    /// <summary>Draws <see cref="OwnerAttribute"/> fields as a player dropdown with the owner's colour beside it.</summary>
-    [CustomPropertyDrawer(typeof(OwnerAttribute))]
-    public sealed class OwnerDrawer : PropertyDrawer
+    public override VisualElement CreatePropertyGUI(SerializedProperty property)
     {
-        public override VisualElement CreatePropertyGUI(SerializedProperty property)
+        var row = EditorAssets.Layout(typeof(OwnerDrawer)).Instantiate();
+        var field = row.Require<DropdownField>("owner");
+        field.label = property.displayName;
+        var swatch = row.Require<VisualElement>("swatch");
+
+        // Owners run 0 to the last slot, so a choice's index is its owner.
+        void Show()
         {
-            var row = EditorAssets.Layout(typeof(OwnerDrawer)).Instantiate();
-            var field = row.Require<DropdownField>("owner");
-            field.label = property.displayName;
-            var swatch = row.Require<VisualElement>("swatch");
+            field.choices = Choices(property.intValue).ConvertAll(Label);
+            field.showMixedValue = property.hasMultipleDifferentValues;
+            field.SetValueWithoutNotify(field.choices[property.intValue]);
+            swatch.style.backgroundColor = SceneMatch.PlayerColor(property.intValue);
+        }
 
-            // Owners run 0 to the last slot, so a choice's index is its owner.
-            void Show()
-            {
-                field.choices = Choices(property.intValue).ConvertAll(Label);
-                field.showMixedValue = property.hasMultipleDifferentValues;
-                field.SetValueWithoutNotify(field.choices[property.intValue]);
-                swatch.style.backgroundColor = SceneMatch.PlayerColor(property.intValue);
-            }
-
-            field.RegisterValueChangedCallback(change =>
-            {
-                property.intValue = field.index;
-                property.serializedObject.ApplyModifiedProperties();
-                Show();
-            });
-
-            // Undo, other inspectors and Match edits (renamed or added players) change what the field shows.
-            row.TrackPropertyValue(property, _ => Show());
-            row.WhileAttached(() => EditorApplication.hierarchyChanged += Show,
-                () => EditorApplication.hierarchyChanged -= Show);
+        field.RegisterValueChangedCallback(change =>
+        {
+            property.intValue = field.index;
+            property.serializedObject.ApplyModifiedProperties();
             Show();
-            return row;
-        }
+        });
 
-        // Every player slot of the scene's Match, plus the current value when it has no slot.
-        private static List<int> Choices(int current)
+        // Undo, other inspectors and Match edits (renamed or added players) change what the field shows.
+        row.TrackPropertyValue(property, _ => Show());
+        row.WhileAttached(() => EditorApplication.hierarchyChanged += Show,
+            () => EditorApplication.hierarchyChanged -= Show);
+        Show();
+        return row;
+    }
+
+    // Every player slot of the scene's Match, plus the current value when it has no slot.
+    private static List<int> Choices(int current)
+    {
+        var match = SceneMatch.Current;
+        var slots = match != null ? Mathf.Max(match.players.Count, current) : Mathf.Max(Owner.Max, current);
+        return Enumerable.Range(0, slots + 1).ToList();
+    }
+
+    private static string Label(int owner)
+    {
+        if (owner == 0)
         {
-            var match = SceneMatch.Current;
-            var slots = match != null ? Mathf.Max(match.players.Count, current) : Mathf.Max(Owner.Max, current);
-            return Enumerable.Range(0, slots + 1).ToList();
+            return "0. Neutral";
         }
 
-        private static string Label(int owner)
+        var match = SceneMatch.Current;
+        if (match == null)
         {
-            if (owner == 0)
-            {
-                return "0. Neutral";
-            }
-
-            var match = SceneMatch.Current;
-            if (match == null)
-            {
-                return $"{owner}. Player {owner}";
-            }
-
-            return owner <= match.players.Count ? $"{owner}. {match.players[owner - 1].name}" : $"{owner}. (no player slot)";
+            return $"{owner}. Player {owner}";
         }
+
+        return owner <= match.players.Count ? $"{owner}. {match.players[owner - 1].name}" : $"{owner}. (no player slot)";
     }
 }

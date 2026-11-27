@@ -1,9 +1,8 @@
 using Unity.Entities;
 
-namespace HyperRTS.Network.Scenery
+namespace HyperRTS.Network.Scenery;
+
+/// <summary>Server, on a connection: it has been sent what its team knows of the scenery; sightings follow as seen.</summary>
+public struct ScenerySynced : IComponentData
 {
-    /// <summary>Server, on a connection: it has been sent what its team knows of the scenery; sightings follow as seen.</summary>
-    public struct ScenerySynced : IComponentData
-    {
-    }
 }

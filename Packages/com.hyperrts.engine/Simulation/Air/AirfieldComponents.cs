@@ -3,66 +3,65 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Air
+namespace HyperRTS.Simulation.Air;
+
+/// <summary>One landing pad of an airfield and the aircraft that calls it home.</summary>
+[InternalBufferCapacity(4)]
+public struct LandingPad : IBufferElementData
 {
-    /// <summary>One landing pad of an airfield and the aircraft that calls it home.</summary>
-    [InternalBufferCapacity(4)]
-    public struct LandingPad : IBufferElementData
+    public float3 Offset;
+
+    public PadKind Kind;
+
+    /// <summary>Held by the aircraft based here, which renews it every frame; free when it dies or leaves.</summary>
+    public Reservation Reservation;
+
+    /// <summary>An Any pad takes every aircraft, and an Any aircraft lands on every pad.</summary>
+    public readonly bool Accepts(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
+
+    /// <summary>Index of the first free pad that takes <paramref name="aircraft"/>, or -1.</summary>
+    public static int FindFree(DynamicBuffer<LandingPad> pads, PadKind aircraft)
     {
-        public float3 Offset;
-
-        public PadKind Kind;
-
-        /// <summary>Held by the aircraft based here, which renews it every frame; free when it dies or leaves.</summary>
-        public Reservation Reservation;
-
-        /// <summary>An Any pad takes every aircraft, and an Any aircraft lands on every pad.</summary>
-        public readonly bool Accepts(PadKind aircraft) => Kind == PadKind.Any || aircraft == PadKind.Any || Kind == aircraft;
-
-        /// <summary>Index of the first free pad that takes <paramref name="aircraft"/>, or -1.</summary>
-        public static int FindFree(DynamicBuffer<LandingPad> pads, PadKind aircraft)
+        for (var i = 0; i < pads.Length; i++)
         {
-            for (var i = 0; i < pads.Length; i++)
+            if (pads[i].Reservation.IsFree &&pads[i].Accepts(aircraft))
             {
-                if (pads[i].Reservation.IsFree &&pads[i].Accepts(aircraft))
-                {
-                    return i;
-                }
+                return i;
             }
-
-            return -1;
         }
+
+        return -1;
     }
-
-    /// <summary>The airfield and pad an aircraft returns to; <c>Entity.Null</c> while it has no home.</summary>
-    public struct HomePad : IComponentData
-    {
-        public Entity Airfield;
-        public int Pad;
-
-        /// <summary>Sent home once on running dry, so player orders hold until it has rounds again.</summary>
-        public bool Recalled;
-
-        /// <summary>The pads it lands on, kept when it changes or loses its home.</summary>
-        public PadKind Kind;
-
-        public readonly HomePad ToPad(Entity airfield, int pad) => new() { Airfield = airfield, Pad = pad, Kind = Kind };
-
-        public void Release() => this = new HomePad { Kind = Kind };
-    }
-
-    /// <summary>Which aircraft a landing pad takes: helicopters on a helipad, jets in a shelter.</summary>
-    public enum PadKind : byte
-    {
-        Any = 0,
-        Helipad = 1,
-        Shelter = 2,
-    }
-
-    /// <summary>
-    /// Enabled while the aircraft sits landed on its pad: ammo reloads, and games refuel or repair it. Any move lifts
-    /// it off again.
-    /// </summary>
-    [GhostEnabledBit]
-    public struct Docked : IComponentData, IEnableableComponent { }
 }
+
+/// <summary>The airfield and pad an aircraft returns to; <c>Entity.Null</c> while it has no home.</summary>
+public struct HomePad : IComponentData
+{
+    public Entity Airfield;
+    public int Pad;
+
+    /// <summary>Sent home once on running dry, so player orders hold until it has rounds again.</summary>
+    public bool Recalled;
+
+    /// <summary>The pads it lands on, kept when it changes or loses its home.</summary>
+    public PadKind Kind;
+
+    public readonly HomePad ToPad(Entity airfield, int pad) => new() { Airfield = airfield, Pad = pad, Kind = Kind };
+
+    public void Release() => this = new HomePad { Kind = Kind };
+}
+
+/// <summary>Which aircraft a landing pad takes: helicopters on a helipad, jets in a shelter.</summary>
+public enum PadKind : byte
+{
+    Any = 0,
+    Helipad = 1,
+    Shelter = 2,
+}
+
+/// <summary>
+/// Enabled while the aircraft sits landed on its pad: ammo reloads, and games refuel or repair it. Any move lifts
+/// it off again.
+/// </summary>
+[GhostEnabledBit]
+public struct Docked : IComponentData, IEnableableComponent { }

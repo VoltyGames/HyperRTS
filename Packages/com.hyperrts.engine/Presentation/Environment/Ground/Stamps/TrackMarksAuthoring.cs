@@ -3,42 +3,41 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Environment.Ground.Stamps
+namespace HyperRTS.Presentation.Environment.Ground.Stamps;
+
+/// <summary>Lets a vehicle leave ruts and flatten grass where the local player sees it drive.</summary>
+[AddComponentMenu(HyperRTSMenu.Look + "Effects/Track Marks")]
+[Icon(HyperRTSIcons.TrackMarksAuthoring)]
+[HelpURL(HyperRTSDocs.Movement)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
+public class TrackMarksAuthoring : AuthoringBehaviour
 {
-    /// <summary>Lets a vehicle leave ruts and flatten grass where the local player sees it drive.</summary>
-    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Track Marks")]
-    [Icon(HyperRTSIcons.TrackMarksAuthoring)]
-    [HelpURL(HyperRTSDocs.Movement)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class TrackMarksAuthoring : AuthoringBehaviour
+    [Tooltip("Width of one track or tyre.")]
+    [Unit("m")]
+    [Min(0.05f)]
+    public float width = 0.6f;
+
+    [Tooltip("Distance between the left and right track centres.")]
+    [Unit("m")]
+    [Min(0.1f)]
+    public float gauge = 2.8f;
+
+    [Tooltip("How deep the ruts read: about 0.3 for a light car, 1 for a tank.")]
+    [Range(0f, 1f)]
+    public float rutDepth = 1f;
+
+    public class Baker : Baker<TrackMarksAuthoring>
     {
-        [Tooltip("Width of one track or tyre.")]
-        [Unit("m")]
-        [Min(0.05f)]
-        public float width = 0.6f;
-
-        [Tooltip("Distance between the left and right track centres.")]
-        [Unit("m")]
-        [Min(0.1f)]
-        public float gauge = 2.8f;
-
-        [Tooltip("How deep the ruts read: about 0.3 for a light car, 1 for a tank.")]
-        [Range(0f, 1f)]
-        public float rutDepth = 1f;
-
-        public class Baker : Baker<TrackMarksAuthoring>
+        public override void Bake(TrackMarksAuthoring authoring)
         {
-            public override void Bake(TrackMarksAuthoring authoring)
+            var writer = this.Writer();
+            writer.Add(new TrackMarks
             {
-                var writer = this.Writer();
-                writer.Add(new TrackMarks
-                {
-                    Width = authoring.width,
-                    Gauge = authoring.gauge,
-                    RutDepth = authoring.rutDepth,
-                });
-            }
+                Width = authoring.width,
+                Gauge = authoring.gauge,
+                RutDepth = authoring.rutDepth,
+            });
         }
     }
 }

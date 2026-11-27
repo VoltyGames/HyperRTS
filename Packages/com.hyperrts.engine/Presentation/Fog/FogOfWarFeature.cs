@@ -3,49 +3,48 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Fog
+namespace HyperRTS.Presentation.Fog;
+
+/// <summary>
+/// Draws the <see cref="FogOfWarRenderer"/> grid full screen in game cameras while a match shows it, and keeps URP's
+/// fog off orthographic cameras, which URP's fog feature skips without resetting the last perspective camera's fog.
+/// </summary>
+public sealed class FogOfWarFeature : ScriptableRendererFeature
 {
-    /// <summary>
-    /// Draws the <see cref="FogOfWarRenderer"/> grid full screen in game cameras while a match shows it, and keeps URP's
-    /// fog off orthographic cameras, which URP's fog feature skips without resetting the last perspective camera's fog.
-    /// </summary>
-    public sealed class FogOfWarFeature : ScriptableRendererFeature
+    private Material _material;
+    private FogOfWarPass _pass;
+    private ClearAtmosphereFogPass _clearFog;
+
+    public override void Create()
     {
-        private Material _material;
-        private FogOfWarPass _pass;
-        private ClearAtmosphereFogPass _clearFog;
+        _clearFog = new ClearAtmosphereFogPass();
+        _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().FogOfWar);
+        _pass = new FogOfWarPass(_material);
+    }
 
-        public override void Create()
+    // Orthographic cameras are top-down captures such as the minimap: neither fog draws there.
+    public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+    {
+        var cameraData = renderingData.cameraData;
+        if (cameraData.camera.orthographic)
         {
-            _clearFog = new ClearAtmosphereFogPass();
-            _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().FogOfWar);
-            _pass = new FogOfWarPass(_material);
+            renderer.EnqueuePass(_clearFog);
+            return;
         }
 
-        // Orthographic cameras are top-down captures such as the minimap: neither fog draws there.
-        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+        if (cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
         {
-            var cameraData = renderingData.cameraData;
-            if (cameraData.camera.orthographic)
-            {
-                renderer.EnqueuePass(_clearFog);
-                return;
-            }
-
-            if (cameraData.cameraType != CameraType.Game || !FogOfWarRenderer.Shown)
-            {
-                return;
-            }
-
-            renderer.EnqueuePass(_pass);
+            return;
         }
 
-        protected override void Dispose(bool disposing)
-        {
-            CoreUtils.Destroy(_material);
-            _material = null;
-            _pass = null;
-            _clearFog = null;
-        }
+        renderer.EnqueuePass(_pass);
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        CoreUtils.Destroy(_material);
+        _material = null;
+        _pass = null;
+        _clearFog = null;
     }
 }

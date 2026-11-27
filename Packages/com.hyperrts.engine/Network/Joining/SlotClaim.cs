@@ -1,76 +1,75 @@
 using System;
 using HyperRTS.Simulation.Common.Players;
 
-namespace HyperRTS.Network.Joining
+namespace HyperRTS.Network.Joining;
+
+/// <summary>
+/// Which human slot a join request gets: the slot its token owns (even while a stale connection holds it), else
+/// a never-claimed slot (the wanted one first), else none, which makes the sender an observer.
+/// </summary>
+public static class SlotClaim
 {
-    /// <summary>
-    /// Which human slot a join request gets: the slot its token owns (even while a stale connection holds it), else
-    /// a never-claimed slot (the wanted one first), else none, which makes the sender an observer.
-    /// </summary>
-    public static class SlotClaim
+    /// <summary>A human slot as the server sees it.</summary>
+    public struct Slot
     {
-        /// <summary>A human slot as the server sees it.</summary>
-        public struct Slot
+        public byte Owner;
+
+        /// <summary>0 while no connection holds the slot.</summary>
+        public int NetworkId;
+
+        /// <summary>The token of the last client that held the slot; 0 if none or it sent none.</summary>
+        public ulong Token;
+    }
+
+    /// <summary>The index of the slot to bind, or -1 for none.</summary>
+    public static int Choose(ReadOnlySpan<Slot> slots, byte wanted, ulong token)
+    {
+        var owned = Owned(slots, token);
+        if (owned >= 0)
         {
-            public byte Owner;
-
-            /// <summary>0 while no connection holds the slot.</summary>
-            public int NetworkId;
-
-            /// <summary>The token of the last client that held the slot; 0 if none or it sent none.</summary>
-            public ulong Token;
+            return owned;
         }
 
-        /// <summary>The index of the slot to bind, or -1 for none.</summary>
-        public static int Choose(ReadOnlySpan<Slot> slots, byte wanted, ulong token)
+        var free = -1;
+        for (var i = 0; i < slots.Length; i++)
         {
-            var owned = Owned(slots, token);
-            if (owned >= 0)
+            if (!IsFree(slots[i]))
             {
-                return owned;
+                continue;
             }
 
-            var free = -1;
-            for (var i = 0; i < slots.Length; i++)
+            if (slots[i].Owner == wanted)
             {
-                if (!IsFree(slots[i]))
-                {
-                    continue;
-                }
-
-                if (slots[i].Owner == wanted)
-                {
-                    return i;
-                }
-
-                if (free < 0)
-                {
-                    free = i;
-                }
+                return i;
             }
 
-            return free;
+            if (free < 0)
+            {
+                free = i;
+            }
         }
 
-        private static int Owned(ReadOnlySpan<Slot> slots, ulong token)
+        return free;
+    }
+
+    private static int Owned(ReadOnlySpan<Slot> slots, ulong token)
+    {
+        if (token == 0)
         {
-            if (token == 0)
-            {
-                return -1;
-            }
-
-            for (var i = 0; i < slots.Length; i++)
-            {
-                if (slots[i].Token == token)
-                {
-                    return i;
-                }
-            }
-
             return -1;
         }
 
-        // A dropped slot keeps its token, so it waits for its owner instead of going to whoever joins next.
-        private static bool IsFree(Slot slot) => slot.NetworkId == 0 && slot.Token == 0;
+        for (var i = 0; i < slots.Length; i++)
+        {
+            if (slots[i].Token == token)
+            {
+                return i;
+            }
+        }
+
+        return -1;
     }
+
+    // A dropped slot keeps its token, so it waits for its owner instead of going to whoever joins next.
+    private static bool IsFree(Slot slot) => slot.NetworkId == 0 && slot.Token == 0;
 }

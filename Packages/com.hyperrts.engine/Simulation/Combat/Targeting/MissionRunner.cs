@@ -4,88 +4,87 @@ using HyperRTS.Simulation.Orders;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat.Targeting
+namespace HyperRTS.Simulation.Combat.Targeting;
+
+/// <summary>One unit's fire mission: the parts of it a job gathers, and the steps that approach the point, aim and end the order.</summary>
+internal struct MissionRunner
 {
-    /// <summary>One unit's fire mission: the parts of it a job gathers, and the steps that approach the point, aim and end the order.</summary>
-    internal struct MissionRunner
+    private EnabledRefRW<ActiveOrder> _busy;
+    private RefRW<PointAim> _aim;
+    private EnabledRefRW<PointAim> _aiming;
+    private UnitMove _moves;
+
+    public MissionRunner(EnabledRefRW<ActiveOrder> busy, RefRW<PointAim> aim, EnabledRefRW<PointAim> aiming,
+        in UnitMove moves)
     {
-        private EnabledRefRW<ActiveOrder> _busy;
-        private RefRW<PointAim> _aim;
-        private EnabledRefRW<PointAim> _aiming;
-        private UnitMove _moves;
+        _busy = busy;
+        _aim = aim;
+        _aiming = aiming;
+        _moves = moves;
+    }
 
-        public MissionRunner(EnabledRefRW<ActiveOrder> busy, RefRW<PointAim> aim, EnabledRefRW<PointAim> aiming,
-            in UnitMove moves)
+    /// <summary>One frame of the unit's order with its primary <paramref name="mount"/>; range is a <see cref="Weapon.PointGap"/>.</summary>
+    public void Run(float3 position, in WeaponMount mount, in Order order)
+    {
+        if (!_busy.ValueRO || order.Type != OrderType.FireMission)
         {
-            _busy = busy;
-            _aim = aim;
-            _aiming = aiming;
-            _moves = moves;
+            // A new order or a stop drops the aim; a salvo already under way still finishes.
+            if (_aiming.ValueRO)
+            {
+                _aiming.ValueRW = false;
+            }
+
+            return;
         }
 
-        /// <summary>One frame of the unit's order with its primary <paramref name="mount"/>; range is a <see cref="Weapon.PointGap"/>.</summary>
-        public void Run(float3 position, in WeaponMount mount, in Order order)
+        if (!mount.Ready || !mount.Weapon.FiresAtGround)
         {
-            if (!_busy.ValueRO || order.Type != OrderType.FireMission)
-            {
-                // A new order or a stop drops the aim; a salvo already under way still finishes.
-                if (_aiming.ValueRO)
-                {
-                    _aiming.ValueRW = false;
-                }
-
-                return;
-            }
-
-            if (!mount.Ready || !mount.Weapon.FiresAtGround)
-            {
-                End();
-            }
-            else if (!_aiming.ValueRO)
-            {
-                Approach(position, order.Position, mount);
-            }
-            else if (mount.Cycle.SalvosFired != _aim.ValueRO.SalvosAtStart)
-            {
-                // Only the order's own salvo counts, which the weapon completes once.
-                End();
-            }
+            End();
         }
-
-        /// <summary>Halts and aims once the point is in range and the weapon is between salvos, else moves to the near edge of its range.</summary>
-        private void Approach(float3 position, float3 point, in WeaponMount mount)
+        else if (!_aiming.ValueRO)
         {
-            var weapon = mount.Weapon;
-            var gap = Weapon.PointGap(position, point);
-            var band = weapon.Band(weapon.Range);
-            if (band.Contains(gap))
-            {
-                _moves.Halt();
-                if (mount.Cycle.SalvoShot == 0)
-                {
-                    _aim.ValueRW = new PointAim { Value = point, SalvosAtStart = mount.Cycle.SalvosFired };
-                    _aiming.ValueRW = true;
-                }
-
-                return;
-            }
-
-            if (!_moves.HasDestination)
-            {
-                End();
-                return;
-            }
-
-            // Asked every frame, so a deployed unit packs up first and goes once packed.
-            _moves.StandOff(point, position, band.Nearest(gap));
+            Approach(position, order.Position, mount);
         }
-
-        private void End()
+        else if (mount.Cycle.SalvosFired != _aim.ValueRO.SalvosAtStart)
         {
-            // Fixed launchers have no destination, so the halt goes through UnitMove.
-            ActiveOrder.FinishLeavingMovement(_busy);
-            _aiming.ValueRW = false;
+            // Only the order's own salvo counts, which the weapon completes once.
+            End();
+        }
+    }
+
+    /// <summary>Halts and aims once the point is in range and the weapon is between salvos, else moves to the near edge of its range.</summary>
+    private void Approach(float3 position, float3 point, in WeaponMount mount)
+    {
+        var weapon = mount.Weapon;
+        var gap = Weapon.PointGap(position, point);
+        var band = weapon.Band(weapon.Range);
+        if (band.Contains(gap))
+        {
             _moves.Halt();
+            if (mount.Cycle.SalvoShot == 0)
+            {
+                _aim.ValueRW = new PointAim { Value = point, SalvosAtStart = mount.Cycle.SalvosFired };
+                _aiming.ValueRW = true;
+            }
+
+            return;
         }
+
+        if (!_moves.HasDestination)
+        {
+            End();
+            return;
+        }
+
+        // Asked every frame, so a deployed unit packs up first and goes once packed.
+        _moves.StandOff(point, position, band.Nearest(gap));
+    }
+
+    private void End()
+    {
+        // Fixed launchers have no destination, so the halt goes through UnitMove.
+        ActiveOrder.FinishLeavingMovement(_busy);
+        _aiming.ValueRW = false;
+        _moves.Halt();
     }
 }

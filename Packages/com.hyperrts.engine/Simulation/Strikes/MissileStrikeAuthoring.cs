@@ -7,118 +7,117 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Strikes
+namespace HyperRTS.Simulation.Strikes;
+
+/// <summary>
+/// Turns one of this structure's abilities into a missile strike: firing it launches a missile from the structure
+/// that lands on the target a set time later, with a warning every player sees for the whole flight.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Combat/Missile Strike")]
+[Icon(HyperRTSIcons.MissileStrikeAuthoring)]
+[HelpURL(HyperRTSDocs.StrategicAssets)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
+[RequiresAuthoring(typeof(AbilityAuthoring), "an Ability")]
+public class MissileStrikeAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Turns one of this structure's abilities into a missile strike: firing it launches a missile from the structure
-    /// that lands on the target a set time later, with a warning every player sees for the whole flight.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Missile Strike")]
-    [Icon(HyperRTSIcons.MissileStrikeAuthoring)]
-    [HelpURL(HyperRTSDocs.StrategicAssets)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    [RequiresAuthoring(typeof(AbilityAuthoring), "an Ability")]
-    public class MissileStrikeAuthoring : AuthoringBehaviour
+    [Tooltip("Name of the point-targeted Ability entry that fires the strike; it starts on cooldown.")]
+    public string ability = "Strategic Strike";
+
+    [Tooltip("The ability's cooldown is the owner's strategic asset charge, shown to every player.")]
+    public bool strategic = true;
+
+    [Tooltip("Projectile prefab the missile flies as.")]
+    [PrefabAsset("Missile")]
+    public GameObject missile;
+
+    [Tooltip("Child transform the missile leaves from, such as the silo mouth; none launches from the root.")]
+    public Transform launchPoint;
+
+    [Tooltip("Height of the climb above the launch point and of the dive above the target.")]
+    [Unit("m")]
+    [Min(1f)]
+    public float apex = 300f;
+
+    [Tooltip("Seconds from launch to landing, which is how long the warning shows.")]
+    [Unit("s")]
+    [Min(1f)]
+    public float flightSeconds = 10f;
+
+    [Tooltip("The blast where it lands: full damage inside the core radius, falling off to the splash radius.")]
+    public DamageSettings blast = new() { damage = 5000f, splashRadius = 120f, coreRadius = 40f, edgeFactor = 0f };
+
+    [Tooltip("Prefab left where each missile lands, such as a burning crater whose smoke hangs over the ground; none leaves nothing.")]
+    [PrefabAsset("Remains")]
+    public GameObject remains;
+
+    [Tooltip("Metres round the remains the blast leaves bare: wrecks, ruins and fallen trees of what it killed there go without a trace. 0 keeps them.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float clearRadius;
+
+    [Tooltip("Share of the blast's radii each enemy anti-air or missile interceptor covering the target cuts.")]
+    [Range(0f, 1f)]
+    public float cutPerDefence = 0.1f;
+
+    [Tooltip("Share of the blast's radii enemy defences cut at most.")]
+    [Range(0f, 1f)]
+    public float maxCut = 0.5f;
+
+    /// <summary>The strike's entry in the structure's <see cref="StrikeAbility"/> list.</summary>
+    public StrikeAbility Entry() => new()
     {
-        [Tooltip("Name of the point-targeted Ability entry that fires the strike; it starts on cooldown.")]
-        public string ability = "Strategic Strike";
+        AbilityId = EntityInfo.TypeIdFromName(ability),
+        Reach = blast.Bake().SplashRadius,
+        Kind = StrikeKind.Missile,
+    };
 
-        [Tooltip("The ability's cooldown is the owner's strategic asset charge, shown to every player.")]
-        public bool strategic = true;
-
-        [Tooltip("Projectile prefab the missile flies as.")]
-        [PrefabAsset("Missile")]
-        public GameObject missile;
-
-        [Tooltip("Child transform the missile leaves from, such as the silo mouth; none launches from the root.")]
-        public Transform launchPoint;
-
-        [Tooltip("Height of the climb above the launch point and of the dive above the target.")]
-        [Unit("m")]
-        [Min(1f)]
-        public float apex = 300f;
-
-        [Tooltip("Seconds from launch to landing, which is how long the warning shows.")]
-        [Unit("s")]
-        [Min(1f)]
-        public float flightSeconds = 10f;
-
-        [Tooltip("The blast where it lands: full damage inside the core radius, falling off to the splash radius.")]
-        public DamageSettings blast = new() { damage = 5000f, splashRadius = 120f, coreRadius = 40f, edgeFactor = 0f };
-
-        [Tooltip("Prefab left where each missile lands, such as a burning crater whose smoke hangs over the ground; none leaves nothing.")]
-        [PrefabAsset("Remains")]
-        public GameObject remains;
-
-        [Tooltip("Metres round the remains the blast leaves bare: wrecks, ruins and fallen trees of what it killed there go without a trace. 0 keeps them.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float clearRadius;
-
-        [Tooltip("Share of the blast's radii each enemy anti-air or missile interceptor covering the target cuts.")]
-        [Range(0f, 1f)]
-        public float cutPerDefence = 0.1f;
-
-        [Tooltip("Share of the blast's radii enemy defences cut at most.")]
-        [Range(0f, 1f)]
-        public float maxCut = 0.5f;
-
-        /// <summary>The strike's entry in the structure's <see cref="StrikeAbility"/> list.</summary>
-        public StrikeAbility Entry() => new()
+    /// <summary>Adds the strike, and the strategic asset on its ability when <paramref name="strategic"/>.</summary>
+    public static void Add(EntityWriter writer, int abilityId, in MissileStrike strike, bool strategic)
+    {
+        writer.Add(strike);
+        if (strategic)
         {
-            AbilityId = EntityInfo.TypeIdFromName(ability),
-            Reach = blast.Bake().SplashRadius,
-            Kind = StrikeKind.Missile,
-        };
-
-        /// <summary>Adds the strike, and the strategic asset on its ability when <paramref name="strategic"/>.</summary>
-        public static void Add(EntityWriter writer, int abilityId, in MissileStrike strike, bool strategic)
-        {
-            writer.Add(strike);
-            if (strategic)
-            {
-                writer.Add(new StrategicAsset { AbilityId = abilityId });
-            }
+            writer.Add(new StrategicAsset { AbilityId = abilityId });
         }
+    }
 
-        public class Baker : Baker<MissileStrikeAuthoring>
+    public class Baker : Baker<MissileStrikeAuthoring>
+    {
+        private Entity RemainsEntity(GameObject prefab) =>
+            prefab == null ? Entity.Null : GetEntity(prefab, TransformUsageFlags.Dynamic);
+
+        public override void Bake(MissileStrikeAuthoring authoring)
         {
-            private Entity RemainsEntity(GameObject prefab) =>
-                prefab == null ? Entity.Null : GetEntity(prefab, TransformUsageFlags.Dynamic);
-
-            public override void Bake(MissileStrikeAuthoring authoring)
+            // MissileStrikeRule reports a missing missile or ability entry.
+            if (authoring.missile == null)
             {
-                // MissileStrikeRule reports a missing missile or ability entry.
-                if (authoring.missile == null)
-                {
-                    return;
-                }
-
-                var writer = this.Writer();
-                var id = EntityInfo.TypeIdFromName(authoring.ability);
-                var root = authoring.transform;
-                var launch = authoring.launchPoint == null ? root : authoring.launchPoint;
-                DependsOn(launch);
-                // BomberStrikeAuthoring writes the list when the structure has both strikes.
-                if (GetComponent<BomberStrikeAuthoring>() == null)
-                {
-                    writer.AddBuffer(new[] { authoring.Entry() });
-                }
-
-                Add(writer, id, new MissileStrike
-                {
-                    Missile = GetEntity(authoring.missile, TransformUsageFlags.Dynamic),
-                    LaunchPoint = root.InverseTransformPoint(launch.position),
-                    Apex = authoring.apex,
-                    FlightSeconds = authoring.flightSeconds,
-                    Blast = authoring.blast.Bake(),
-                    Remains = RemainsEntity(authoring.remains),
-                    ClearRadius = authoring.clearRadius,
-                    CutPerDefence = authoring.cutPerDefence,
-                    MaxCut = authoring.maxCut,
-                }, authoring.strategic);
+                return;
             }
+
+            var writer = this.Writer();
+            var id = EntityInfo.TypeIdFromName(authoring.ability);
+            var root = authoring.transform;
+            var launch = authoring.launchPoint == null ? root : authoring.launchPoint;
+            DependsOn(launch);
+            // BomberStrikeAuthoring writes the list when the structure has both strikes.
+            if (GetComponent<BomberStrikeAuthoring>() == null)
+            {
+                writer.AddBuffer(new[] { authoring.Entry() });
+            }
+
+            Add(writer, id, new MissileStrike
+            {
+                Missile = GetEntity(authoring.missile, TransformUsageFlags.Dynamic),
+                LaunchPoint = root.InverseTransformPoint(launch.position),
+                Apex = authoring.apex,
+                FlightSeconds = authoring.flightSeconds,
+                Blast = authoring.blast.Bake(),
+                Remains = RemainsEntity(authoring.remains),
+                ClearRadius = authoring.clearRadius,
+                CutPerDefence = authoring.cutPerDefence,
+                MaxCut = authoring.maxCut,
+            }, authoring.strategic);
         }
     }
 }

@@ -9,134 +9,133 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Catalog
+namespace HyperRTS.Editor.Catalog;
+
+/// <summary>Tools ▸ Catalog: every unit and building prefab in one editable stats table, plus the tech tree.</summary>
+public class CatalogPage : HubPage
 {
-    /// <summary>Tools ▸ Catalog: every unit and building prefab in one editable stats table, plus the tech tree.</summary>
-    public class CatalogPage : HubPage
+    // Asset changes arrive in bursts; one project walk after they settle is enough.
+    private const long ReloadDelayMilliseconds = 500;
+
+    private List<GameEntityAuthoring> _prefabs = new();
+    private string _filter = "";
+    private bool _reloadPending;
+    private bool _treePending;
+    private VisualElement _root;
+    private StatsTable _stats;
+    private TechTreeView _techTree;
+    private TabView _tabs;
+    private Tab _treeTab;
+
+    public override string Title => "Catalog";
+
+    public override string Glyph => "library";
+
+    public override int Order => 20;
+
+    public override VisualElement Build()
     {
-        // Asset changes arrive in bursts; one project walk after they settle is enough.
-        private const long ReloadDelayMilliseconds = 500;
-
-        private List<GameEntityAuthoring> _prefabs = new();
-        private string _filter = "";
-        private bool _reloadPending;
-        private bool _treePending;
-        private VisualElement _root;
-        private StatsTable _stats;
-        private TechTreeView _techTree;
-        private TabView _tabs;
-        private Tab _treeTab;
-
-        public override string Title => "Catalog";
-
-        public override string Glyph => "library";
-
-        public override int Order => 20;
-
-        public override VisualElement Build()
+        _root = Layout().Instantiate();
+        var search = _root.Require<ToolbarSearchField>("search");
+        search.SetValueWithoutNotify(_filter);
+        search.RegisterValueChangedCallback(change =>
         {
-            _root = Layout().Instantiate();
-            var search = _root.Require<ToolbarSearchField>("search");
-            search.SetValueWithoutNotify(_filter);
-            search.RegisterValueChangedCallback(change =>
-            {
-                _filter = change.newValue;
-                ShowPrefabs();
-            });
+            _filter = change.newValue;
+            ShowPrefabs();
+        });
 
-            _stats = _root.Require<StatsTable>("stats");
-            _techTree = _root.Require<TechTreeView>("tree");
-            _tabs = _root.Require<TabView>("tabs");
-            _treeTab = _root.Require<Tab>("tree-tab");
-            _tabs.activeTabChanged += (_, _) =>
-            {
-                _techTree.Link(_prefabs);
-                ShowPrefabs();
-            };
-
-            _root.WhileAttached(Subscribe, Unsubscribe);
-            Reload();
-            return _root;
-        }
-
-        private void Subscribe()
+        _stats = _root.Require<StatsTable>("stats");
+        _techTree = _root.Require<TechTreeView>("tree");
+        _tabs = _root.Require<TabView>("tabs");
+        _treeTab = _root.Require<Tab>("tree-tab");
+        _tabs.activeTabChanged += (_, _) =>
         {
-            EditorApplication.projectChanged += OnProjectChange;
-            ObjectChangeEvents.changesPublished += OnObjectsChanged;
-        }
-
-        // A hidden page's scheduled reloads never run, so the pending flags start over.
-        private void Unsubscribe()
-        {
-            EditorApplication.projectChanged -= OnProjectChange;
-            ObjectChangeEvents.changesPublished -= OnObjectsChanged;
-            _stats.Release();
-            _reloadPending = false;
-            _treePending = false;
-        }
-
-        private void OnProjectChange()
-        {
-            if (_reloadPending)
-            {
-                return;
-            }
-
-            _reloadPending = true;
-            _root.schedule.Execute(Reload).ExecuteLater(ReloadDelayMilliseconds);
-        }
-
-        // Inspector edits to options or prerequisites show up in the open tree, once a burst of edits (a drag) settles.
-        private void OnObjectsChanged(ref ObjectChangeEventStream stream)
-        {
-            if (_treePending || _tabs.activeTab != _treeTab)
-            {
-                return;
-            }
-
-            _treePending = true;
-            _root.schedule.Execute(RefreshTree).ExecuteLater(ReloadDelayMilliseconds);
-        }
-
-        private void RefreshTree()
-        {
-            _treePending = false;
             _techTree.Link(_prefabs);
             ShowPrefabs();
-        }
+        };
 
-        private void Reload()
+        _root.WhileAttached(Subscribe, Unsubscribe);
+        Reload();
+        return _root;
+    }
+
+    private void Subscribe()
+    {
+        EditorApplication.projectChanged += OnProjectChange;
+        ObjectChangeEvents.changesPublished += OnObjectsChanged;
+    }
+
+    // A hidden page's scheduled reloads never run, so the pending flags start over.
+    private void Unsubscribe()
+    {
+        EditorApplication.projectChanged -= OnProjectChange;
+        ObjectChangeEvents.changesPublished -= OnObjectsChanged;
+        _stats.Release();
+        _reloadPending = false;
+        _treePending = false;
+    }
+
+    private void OnProjectChange()
+    {
+        if (_reloadPending)
         {
-            _reloadPending = false;
-            _prefabs = EditorAssets.EntityPrefabs()
-                .OrderBy(prefab => prefab is BuildingAuthoring)
-                .ThenBy(prefab => prefab.DisplayName)
-                .ToList();
-            _techTree.Link(_prefabs);
-            ShowPrefabs();
+            return;
         }
 
-        private void ShowPrefabs()
+        _reloadPending = true;
+        _root.schedule.Execute(Reload).ExecuteLater(ReloadDelayMilliseconds);
+    }
+
+    // Inspector edits to options or prerequisites show up in the open tree, once a burst of edits (a drag) settles.
+    private void OnObjectsChanged(ref ObjectChangeEventStream stream)
+    {
+        if (_treePending || _tabs.activeTab != _treeTab)
         {
-            if (_tabs.activeTab == _treeTab)
-            {
-                _techTree.Show(Visible());
-                return;
-            }
-
-            _stats.Show(Visible());
+            return;
         }
 
-        private List<GameEntityAuthoring> Visible() => _prefabs.Where(MatchesFilter).ToList();
+        _treePending = true;
+        _root.schedule.Execute(RefreshTree).ExecuteLater(ReloadDelayMilliseconds);
+    }
 
-        private bool MatchesFilter(GameEntityAuthoring prefab)
+    private void RefreshTree()
+    {
+        _treePending = false;
+        _techTree.Link(_prefabs);
+        ShowPrefabs();
+    }
+
+    private void Reload()
+    {
+        _reloadPending = false;
+        _prefabs = EditorAssets.EntityPrefabs()
+            .OrderBy(prefab => prefab is BuildingAuthoring)
+            .ThenBy(prefab => prefab.DisplayName)
+            .ToList();
+        _techTree.Link(_prefabs);
+        ShowPrefabs();
+    }
+
+    private void ShowPrefabs()
+    {
+        if (_tabs.activeTab == _treeTab)
         {
-            if (prefab == null)
-            {
-                return false;
-            }
-
-            return prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
+            _techTree.Show(Visible());
+            return;
         }
+
+        _stats.Show(Visible());
+    }
+
+    private List<GameEntityAuthoring> Visible() => _prefabs.Where(MatchesFilter).ToList();
+
+    private bool MatchesFilter(GameEntityAuthoring prefab)
+    {
+        if (prefab == null)
+        {
+            return false;
+        }
+
+        return prefab.DisplayName.IndexOf(_filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
     }
 }

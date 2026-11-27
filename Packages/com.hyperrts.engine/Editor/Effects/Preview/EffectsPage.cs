@@ -10,233 +10,232 @@ using HyperRTS.Editor.Stages;
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.HUD;
-using Object = UnityEngine.Object;
-using UnityEditor.UIElements;
 using UnityEditor;
-using UnityEngine.UIElements;
+using UnityEditor.UIElements;
 using UnityEngine;
+using UnityEngine.UIElements;
+using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Effects.Preview
+namespace HyperRTS.Editor.Effects.Preview;
+
+/// <summary>
+/// Tools ▸ Effects: every effect rig prefab by kind. Picking one plays it at the Scene view pivot on a loop, the way
+/// the pool plays it, with its recipes and the stages that make it. It plays only while the page is shown.
+/// </summary>
+public class EffectsPage : HubPage
 {
-    /// <summary>
-    /// Tools ▸ Effects: every effect rig prefab by kind. Picking one plays it at the Scene view pivot on a loop, the way
-    /// the pool plays it, with its recipes and the stages that make it. It plays only while the page is shown.
-    /// </summary>
-    public class EffectsPage : HubPage
+    private const long ReloadDelayMilliseconds = 500;
+    private const string PickHint = "Pick an effect from the list.";
+    private static readonly string[] PlaySettings = { "scale", "wind-strength", "wind-heading" };
+
+    private List<EffectRigEntry> _rigs = new();
+    private EffectRigEntry _current;
+    private string _filter = "";
+    private EffectPlayback _playback;
+    private IVisualElementScheduledItem _reload;
+    private VisualElement _root;
+    private PageShell _shell;
+    private EffectRigList _list;
+    private Label _hint;
+    private Label _title;
+    private VisualElement _controls;
+    private VisualElement _recipes;
+    private Label _noRecipes;
+    private StagesView<EffectRigEntry> _stages;
+    private EffectSheet _sheet;
+    private IssueList _issues;
+
+    public override string Title => "Effects";
+
+    public override string Glyph => "sparkles";
+
+    public override int Order => 25;
+
+    private static EffectPreviewSettings Settings => EffectPreviewSettings.instance;
+
+    public override VisualElement Build()
     {
-        private const long ReloadDelayMilliseconds = 500;
-        private const string PickHint = "Pick an effect from the list.";
-        private static readonly string[] PlaySettings = { "scale", "wind-strength", "wind-heading" };
+        _root = Layout().Instantiate();
+        _shell = _root.Require<PageShell>("shell");
+        _hint = _root.Require<Label>("hint");
+        _title = _root.Require<Label>("title");
+        _controls = _root.Require<VisualElement>("controls");
+        _recipes = _root.Require<VisualElement>("recipes");
+        _noRecipes = _root.Require<Label>("no-recipes");
+        _stages = new StagesView<EffectRigEntry>(_root, _shell, EffectRigStage.For, rig => rig.Path);
+        _stages.Queue.Finished += ShowAfterRun;
+        _root.Require<Button>("run-stale").clicked += () => _stages.RunOutOfDate(new[] { _current });
+        _sheet = new EffectSheet(_root.Require<VisualElement>("sheet"));
+        _issues = _root.Require<IssueList>("issues");
+        _list = new EffectRigList(_root.Require<TreeView>("list"), Layout("Row"));
+        _list.Picked += Show;
 
-        private List<EffectRigEntry> _rigs = new();
-        private EffectRigEntry _current;
-        private string _filter = "";
-        private EffectPlayback _playback;
-        private IVisualElementScheduledItem _reload;
-        private VisualElement _root;
-        private PageShell _shell;
-        private EffectRigList _list;
-        private Label _hint;
-        private Label _title;
-        private VisualElement _controls;
-        private VisualElement _recipes;
-        private Label _noRecipes;
-        private StagesView<EffectRigEntry> _stages;
-        private EffectSheet _sheet;
-        private IssueList _issues;
-
-        public override string Title => "Effects";
-
-        public override string Glyph => "sparkles";
-
-        public override int Order => 25;
-
-        private static EffectPreviewSettings Settings => EffectPreviewSettings.instance;
-
-        public override VisualElement Build()
+        _root.Require<ToolbarSearchField>("search").RegisterValueChangedCallback(change =>
         {
-            _root = Layout().Instantiate();
-            _shell = _root.Require<PageShell>("shell");
-            _hint = _root.Require<Label>("hint");
-            _title = _root.Require<Label>("title");
-            _controls = _root.Require<VisualElement>("controls");
-            _recipes = _root.Require<VisualElement>("recipes");
-            _noRecipes = _root.Require<Label>("no-recipes");
-            _stages = new StagesView<EffectRigEntry>(_root, _shell, EffectRigStage.For, rig => rig.Path);
-            _stages.Queue.Finished += ShowAfterRun;
-            _root.Require<Button>("run-stale").clicked += () => _stages.RunOutOfDate(new[] { _current });
-            _sheet = new EffectSheet(_root.Require<VisualElement>("sheet"));
-            _issues = _root.Require<IssueList>("issues");
-            _list = new EffectRigList(_root.Require<TreeView>("list"), Layout("Row"));
-            _list.Picked += Show;
-
-            _root.Require<ToolbarSearchField>("search").RegisterValueChangedCallback(change =>
-            {
-                _filter = change.newValue;
-                ShowList();
-            });
-
-            EffectPreviewSettings.Bind(_root);
-            _root.Require<Toggle>("pause").RegisterValueChangedCallback(change => _playback.Paused = change.newValue);
-            foreach (var setting in PlaySettings)
-            {
-                // The binding raises these on attach, before Subscribe has made the playback.
-                _root.Require<PropertyField>(setting).RegisterValueChangeCallback(_ => _playback?.ApplySettings());
-            }
-
-            _root.Require<Button>("replay").clicked += () => _playback.Replay(true);
-
-            _root.WhileAttached(Subscribe, Unsubscribe);
-            Reload();
-            return _root;
-        }
-
-        private void Subscribe()
-        {
-            _playback = new EffectPlayback();
-            EditorApplication.update += ShowRequested;
-            EffectPreviewImport.EffectsChanged += QueueReload;
-            Selection.selectionChanged += OnSelectionChanged;
-            EffectPreviewImport.Imported += OnImported;
-            Show(FindRig(Settings.lastEffect));
-        }
-
-        private void Unsubscribe()
-        {
-            EditorApplication.update -= ShowRequested;
-            EffectPreviewImport.EffectsChanged -= QueueReload;
-            Selection.selectionChanged -= OnSelectionChanged;
-            EffectPreviewImport.Imported -= OnImported;
-            _playback.Dispose();
-            _playback = null;
-            _reload?.Pause();
-        }
-
-        // An import raises many changes, so the list reloads once they have stopped for a moment.
-        private void QueueReload() => (_reload ??= _root.schedule.Execute(Reload)).ExecuteLater(ReloadDelayMilliseconds);
-
-        private void Reload()
-        {
-            _rigs = EffectRigEntry.Find();
-            _current = FindRig(_current?.Path);
-            _shell.ShowEmpty(_rigs.Count == 0);
+            _filter = change.newValue;
             ShowList();
-        }
+        });
 
-        private void ShowList() =>
-            _list.Show(_rigs.Where(rig => rig.Name.Contains(_filter, StringComparison.OrdinalIgnoreCase)), _current);
-
-        private EffectRigEntry FindRig(string path) => _rigs.FirstOrDefault(rig => rig.Path == path);
-
-        private void Show(EffectRigEntry rig)
+        EffectPreviewSettings.Bind(_root);
+        _root.Require<Toggle>("pause").RegisterValueChangedCallback(change => _playback.Paused = change.newValue);
+        foreach (var setting in PlaySettings)
         {
-            _current = rig;
-            var prefab = rig == null ? null : AssetDatabase.LoadAssetAtPath<GameObject>(rig.Path);
-            var loaded = _playback.Load(prefab);
-            _controls.SetHidden(!loaded);
-            Say(loaded ? string.Empty : PickHint);
-            if (!loaded)
-            {
-                return;
-            }
-
-            Settings.lastEffect = rig.Path;
-            Settings.Save();
-            _title.text = $"{rig.Name} ({rig.Kind})";
-            ShowRecipes(rig.Recipes);
-            _stages.Show(rig);
-            _sheet.Show(EffectRigStage.For(rig).SelectMany(stage => stage.Sheets(rig)));
-            var problems = EffectRig.Problems(prefab)
-                .Select(problem => new ValidationIssue { Severity = MessageType.Error, Message = problem,
-                    Context = prefab })
-                .ToList();
-            _issues.Show(problems);
-            _issues.SetHidden(problems.Count == 0);
+            // The binding raises these on attach, before Subscribe has made the playback.
+            _root.Require<PropertyField>(setting).RegisterValueChangeCallback(_ => _playback?.ApplySettings());
         }
 
-        // Selects and shows a rig asked for outside the list, unless it is already shown.
-        private void Focus(EffectRigEntry rig)
+        _root.Require<Button>("replay").clicked += () => _playback.Replay(true);
+
+        _root.WhileAttached(Subscribe, Unsubscribe);
+        Reload();
+        return _root;
+    }
+
+    private void Subscribe()
+    {
+        _playback = new EffectPlayback();
+        EditorApplication.update += ShowRequested;
+        EffectPreviewImport.EffectsChanged += QueueReload;
+        Selection.selectionChanged += OnSelectionChanged;
+        EffectPreviewImport.Imported += OnImported;
+        Show(FindRig(Settings.lastEffect));
+    }
+
+    private void Unsubscribe()
+    {
+        EditorApplication.update -= ShowRequested;
+        EffectPreviewImport.EffectsChanged -= QueueReload;
+        Selection.selectionChanged -= OnSelectionChanged;
+        EffectPreviewImport.Imported -= OnImported;
+        _playback.Dispose();
+        _playback = null;
+        _reload?.Pause();
+    }
+
+    // An import raises many changes, so the list reloads once they have stopped for a moment.
+    private void QueueReload() => (_reload ??= _root.schedule.Execute(Reload)).ExecuteLater(ReloadDelayMilliseconds);
+
+    private void Reload()
+    {
+        _rigs = EffectRigEntry.Find();
+        _current = FindRig(_current?.Path);
+        _shell.ShowEmpty(_rigs.Count == 0);
+        ShowList();
+    }
+
+    private void ShowList() =>
+        _list.Show(_rigs.Where(rig => rig.Name.Contains(_filter, StringComparison.OrdinalIgnoreCase)), _current);
+
+    private EffectRigEntry FindRig(string path) => _rigs.FirstOrDefault(rig => rig.Path == path);
+
+    private void Show(EffectRigEntry rig)
+    {
+        _current = rig;
+        var prefab = rig == null ? null : AssetDatabase.LoadAssetAtPath<GameObject>(rig.Path);
+        var loaded = _playback.Load(prefab);
+        _controls.SetHidden(!loaded);
+        Say(loaded ? string.Empty : PickHint);
+        if (!loaded)
         {
-            if (rig != null && rig.Path != _current?.Path)
-            {
-                _list.Select(rig);
-                Show(rig);
-            }
+            return;
         }
 
-        // The recipe inspector's Preview button asks for an effect by setting the remembered one.
-        private void ShowRequested()
+        Settings.lastEffect = rig.Path;
+        Settings.Save();
+        _title.text = $"{rig.Name} ({rig.Kind})";
+        ShowRecipes(rig.Recipes);
+        _stages.Show(rig);
+        _sheet.Show(EffectRigStage.For(rig).SelectMany(stage => stage.Sheets(rig)));
+        var problems = EffectRig.Problems(prefab)
+            .Select(problem => new ValidationIssue { Severity = MessageType.Error, Message = problem,
+                Context = prefab })
+            .ToList();
+        _issues.Show(problems);
+        _issues.SetHidden(problems.Count == 0);
+    }
+
+    // Selects and shows a rig asked for outside the list, unless it is already shown.
+    private void Focus(EffectRigEntry rig)
+    {
+        if (rig != null && rig.Path != _current?.Path)
         {
-            if (Settings.lastEffect != _current?.Path)
-            {
-                Focus(FindRig(Settings.lastEffect));
-            }
+            _list.Select(rig);
+            Show(rig);
         }
+    }
 
-        private void OnSelectionChanged()
+    // The recipe inspector's Preview button asks for an effect by setting the remembered one.
+    private void ShowRequested()
+    {
+        if (Settings.lastEffect != _current?.Path)
         {
-            if (Settings.follow && Selection.activeObject != null)
-            {
-                Focus(FollowTarget(Selection.activeObject));
-            }
+            Focus(FindRig(Settings.lastEffect));
         }
+    }
 
-        // A recipe stays on the current effect when that effect uses it.
-        private EffectRigEntry FollowTarget(Object selected)
+    private void OnSelectionChanged()
+    {
+        if (Settings.follow && Selection.activeObject != null)
         {
-            var path = AssetDatabase.GetAssetPath(selected);
-            if (selected is not EffectRecipe)
-            {
-                return FindRig(path);
-            }
-
-            if (_current != null && _current.Recipes.Contains(path))
-            {
-                return _current;
-            }
-
-            return _rigs.FirstOrDefault(rig => rig.Recipes.Contains(path));
+            Focus(FollowTarget(Selection.activeObject));
         }
+    }
 
-        private void ShowRecipes(List<string> recipes)
+    // A recipe stays on the current effect when that effect uses it.
+    private EffectRigEntry FollowTarget(Object selected)
+    {
+        var path = AssetDatabase.GetAssetPath(selected);
+        if (selected is not EffectRecipe)
         {
-            _recipes.Clear();
-            _noRecipes.SetHidden(recipes.Count > 0);
-            var template = Layout("Recipe");
-            foreach (var path in recipes)
-            {
-                var row = template.CloneRoot();
-                row.Require<Label>("name").text = Path.GetFileName(path);
-                row.Require<Button>("select").clicked += () => EditorAssets.Reveal(AssetDatabase.LoadAssetAtPath<EffectRecipe>(path));
-                _recipes.Add(row);
-            }
+            return FindRig(path);
         }
 
-        // A stage may have rebuilt a graph or changed what the rig draws, so the shown rig loads again.
-        private void ShowAfterRun(EffectRigEntry rig)
+        if (_current != null && _current.Recipes.Contains(path))
         {
-            if (_playback != null && rig.Path == _current?.Path)
-            {
-                Show(_current);
-            }
+            return _current;
         }
 
-        // A saved recipe rebuilds after the import, since a build imports the graph it writes.
-        private void OnImported(string[] imported)
+        return _rigs.FirstOrDefault(rig => rig.Recipes.Contains(path));
+    }
+
+    private void ShowRecipes(List<string> recipes)
+    {
+        _recipes.Clear();
+        _noRecipes.SetHidden(recipes.Count > 0);
+        var template = Layout("Recipe");
+        foreach (var path in recipes)
         {
-            var rig = _current;
-            if (rig == null || !rig.Recipes.Any(imported.Contains))
-            {
-                return;
-            }
-
-            EditorApplication.delayCall += () => _stages.Queue.Add(rig, new EffectGraphStage());
+            var row = template.CloneRoot();
+            row.Require<Label>("name").text = Path.GetFileName(path);
+            row.Require<Button>("select").clicked += () => EditorAssets.Reveal(AssetDatabase.LoadAssetAtPath<EffectRecipe>(path));
+            _recipes.Add(row);
         }
+    }
 
-        private void Say(string message)
+    // A stage may have rebuilt a graph or changed what the rig draws, so the shown rig loads again.
+    private void ShowAfterRun(EffectRigEntry rig)
+    {
+        if (_playback != null && rig.Path == _current?.Path)
         {
-            _hint.text = message;
-            _hint.SetHidden(message.Length == 0);
+            Show(_current);
         }
+    }
+
+    // A saved recipe rebuilds after the import, since a build imports the graph it writes.
+    private void OnImported(string[] imported)
+    {
+        var rig = _current;
+        if (rig == null || !rig.Recipes.Any(imported.Contains))
+        {
+            return;
+        }
+
+        EditorApplication.delayCall += () => _stages.Queue.Add(rig, new EffectGraphStage());
+    }
+
+    private void Say(string message)
+    {
+        _hint.text = message;
+        _hint.SetHidden(message.Length == 0);
     }
 }

@@ -2,50 +2,49 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common;
+
+/// <summary>
+/// The entities one object is made of, to destroy it whole. SubScene objects have no
+/// <see cref="LinkedEntityGroup"/>, so their transform children (models, damage stages) are listed here too.
+/// </summary>
+public static class EntityParts
 {
-    /// <summary>
-    /// The entities one object is made of, to destroy it whole. SubScene objects have no
-    /// <see cref="LinkedEntityGroup"/>, so their transform children (models, damage stages) are listed here too.
-    /// </summary>
-    public static class EntityParts
+    /// <summary>Destroys <paramref name="root"/> with everything it is made of.</summary>
+    public static void Destroy(Entity root, in BufferLookup<LinkedEntityGroup> groups,
+        in BufferLookup<Child> children, EntityCommandBuffer.ParallelWriter ecb, int sortKey)
     {
-        /// <summary>Destroys <paramref name="root"/> with everything it is made of.</summary>
-        public static void Destroy(Entity root, in BufferLookup<LinkedEntityGroup> groups,
-            in BufferLookup<Child> children, EntityCommandBuffer.ParallelWriter ecb, int sortKey)
-        {
-            var parts = new NativeList<Entity>(4, Allocator.Temp);
-            Collect(root, groups, children, parts);
-            ecb.DestroyEntity(sortKey, parts.AsArray());
-        }
+        var parts = new NativeList<Entity>(4, Allocator.Temp);
+        Collect(root, groups, children, parts);
+        ecb.DestroyEntity(sortKey, parts.AsArray());
+    }
 
-        /// <summary>Destroys <paramref name="root"/> with everything it is made of, on a single-threaded buffer.</summary>
-        public static void Destroy(Entity root, in BufferLookup<LinkedEntityGroup> groups,
-            in BufferLookup<Child> children, EntityCommandBuffer ecb)
-        {
-            var parts = new NativeList<Entity>(4, Allocator.Temp);
-            Collect(root, groups, children, parts);
-            ecb.DestroyEntity(parts.AsArray());
-        }
+    /// <summary>Destroys <paramref name="root"/> with everything it is made of, on a single-threaded buffer.</summary>
+    public static void Destroy(Entity root, in BufferLookup<LinkedEntityGroup> groups,
+        in BufferLookup<Child> children, EntityCommandBuffer ecb)
+    {
+        var parts = new NativeList<Entity>(4, Allocator.Temp);
+        Collect(root, groups, children, parts);
+        ecb.DestroyEntity(parts.AsArray());
+    }
 
-        private static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> groups, in BufferLookup<Child> children,
-            NativeList<Entity> parts)
+    private static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> groups, in BufferLookup<Child> children,
+        NativeList<Entity> parts)
+    {
+        var start = parts.Length;
+        parts.Add(root);
+        for (var i = start; i < parts.Length; i++)
         {
-            var start = parts.Length;
-            parts.Add(root);
-            for (var i = start; i < parts.Length; i++)
+            // A group's members go with it, so listing them again would destroy them twice.
+            var part = parts[i];
+            if (groups.HasBuffer(part) || !children.TryGetBuffer(part, out var kids))
             {
-                // A group's members go with it, so listing them again would destroy them twice.
-                var part = parts[i];
-                if (groups.HasBuffer(part) || !children.TryGetBuffer(part, out var kids))
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                foreach (var kid in kids)
-                {
-                    parts.Add(kid.Value);
-                }
+            foreach (var kid in kids)
+            {
+                parts.Add(kid.Value);
             }
         }
     }

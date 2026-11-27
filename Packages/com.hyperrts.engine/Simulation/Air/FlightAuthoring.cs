@@ -4,80 +4,79 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Air
+namespace HyperRTS.Simulation.Air;
+
+/// <summary>
+/// Makes the unit an aircraft: it moves on the Air layer, flying straight over everything at its cruise height,
+/// and can take a pad at the Airfield that builds it.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Units/Flight")]
+[Icon(HyperRTSIcons.FlightAuthoring)]
+[HelpURL(HyperRTSDocs.Air)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
+public class FlightAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Makes the unit an aircraft: it moves on the Air layer, flying straight over everything at its cruise height,
-    /// and can take a pad at the Airfield that builds it.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Units/Flight")]
-    [Icon(HyperRTSIcons.FlightAuthoring)]
-    [HelpURL(HyperRTSDocs.Air)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(UnitAuthoring), "a Unit")]
-    public class FlightAuthoring : AuthoringBehaviour
+    [Tooltip("Cruise height above the ground or water.")]
+    [Min(0f)]
+    public float altitude = 12f;
+
+    [Tooltip("Vertical speed for take-off, landing and following the terrain.")]
+    [Min(0.1f)]
+    public float climbSpeed = 6f;
+
+    [Tooltip("0 hovers when idle (helicopters); otherwise keeps circling at this radius (jets).")]
+    [Min(0f)]
+    public float loiterRadius;
+
+    [Tooltip("Metres per second squared it gains speed at.")]
+    [Min(0.1f)]
+    public float acceleration = 3f;
+
+    [Tooltip("Metres per second squared it sheds speed at.")]
+    [Min(0.1f)]
+    public float braking = 4f;
+
+    [Tooltip("Degrees it banks at most in a turn: steeper turns tighter at speed.")]
+    [Range(5f, 75f)]
+    public float maxBank = 30f;
+
+    [Tooltip("Degrees per second its nose turns at most.")]
+    [Min(1f)]
+    public float yawRate = 60f;
+
+    [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to reload (Return order or out of ammo) and docks there.")]
+    public bool usesLandingPads;
+
+    [Tooltip("The pads it lands on: helipads, shelters, or Any pad.")]
+    [ShowIf(nameof(usesLandingPads))]
+    public PadKind padKind;
+
+    [Tooltip("Optional child that airdrop crates and strike bombs leave from, such as a ramp or bomb bay; the origin "
+        + "without one.")]
+    public Transform releasePoint;
+
+    private Flight Flight() => new()
     {
-        [Tooltip("Cruise height above the ground or water.")]
-        [Min(0f)]
-        public float altitude = 12f;
+        Altitude = altitude,
+        ClimbSpeed = climbSpeed,
+        LoiterRadius = loiterRadius,
+        Acceleration = acceleration,
+        Braking = braking,
+        MaxBank = math.radians(maxBank),
+        YawRate = math.radians(yawRate),
+    };
 
-        [Tooltip("Vertical speed for take-off, landing and following the terrain.")]
-        [Min(0.1f)]
-        public float climbSpeed = 6f;
-
-        [Tooltip("0 hovers when idle (helicopters); otherwise keeps circling at this radius (jets).")]
-        [Min(0f)]
-        public float loiterRadius;
-
-        [Tooltip("Metres per second squared it gains speed at.")]
-        [Min(0.1f)]
-        public float acceleration = 3f;
-
-        [Tooltip("Metres per second squared it sheds speed at.")]
-        [Min(0.1f)]
-        public float braking = 4f;
-
-        [Tooltip("Degrees it banks at most in a turn: steeper turns tighter at speed.")]
-        [Range(5f, 75f)]
-        public float maxBank = 30f;
-
-        [Tooltip("Degrees per second its nose turns at most.")]
-        [Min(1f)]
-        public float yawRate = 60f;
-
-        [Tooltip("Takes a pad at the Airfield that builds it, flies back to it to reload (Return order or out of ammo) and docks there.")]
-        public bool usesLandingPads;
-
-        [Tooltip("The pads it lands on: helipads, shelters, or Any pad.")]
-        [ShowIf(nameof(usesLandingPads))]
-        public PadKind padKind;
-
-        [Tooltip("Optional child that airdrop crates and strike bombs leave from, such as a ramp or bomb bay; the origin "
-            + "without one.")]
-        public Transform releasePoint;
-
-        private Flight Flight() => new()
+    public class Baker : Baker<FlightAuthoring>
+    {
+        public override void Bake(FlightAuthoring authoring)
         {
-            Altitude = altitude,
-            ClimbSpeed = climbSpeed,
-            LoiterRadius = loiterRadius,
-            Acceleration = acceleration,
-            Braking = braking,
-            MaxBank = math.radians(maxBank),
-            YawRate = math.radians(yawRate),
-        };
-
-        public class Baker : Baker<FlightAuthoring>
-        {
-            public override void Bake(FlightAuthoring authoring)
+            var writer = this.Writer();
+            AirSetup.AddFlight(writer, authoring.Flight(),
+                AuthoringBehaviour.Socket(this, authoring.transform, authoring.releasePoint));
+            if (authoring.usesLandingPads)
             {
-                var writer = this.Writer();
-                AirSetup.AddFlight(writer, authoring.Flight(),
-                    AuthoringBehaviour.Socket(this, authoring.transform, authoring.releasePoint));
-                if (authoring.usesLandingPads)
-                {
-                    AirSetup.AddPadUser(writer, authoring.padKind);
-                }
+                AirSetup.AddPadUser(writer, authoring.padKind);
             }
         }
     }

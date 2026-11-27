@@ -3,37 +3,36 @@ using HyperRTS.Editor.Maps.Common;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Ground
+namespace HyperRTS.Editor.Maps.Ground;
+
+/// <summary>Writes the terrain's ground tint map (<see cref="MapGroundTint"/>) as a linear texture over the terrain.</summary>
+public static class MapGroundTintPainter
 {
-    /// <summary>Writes the terrain's ground tint map (<see cref="MapGroundTint"/>) as a linear texture over the terrain.</summary>
-    public static class MapGroundTintPainter
+    /// <summary>Fine enough that a soil patch or a damp hollow keeps its shape under the RTS camera.</summary>
+    public const float PixelsPerMetre = 2f;
+
+    /// <summary>Texels along each side, rounded up to a multiple of 4 for block compression.</summary>
+    public static int Size(Rect area) => Mathf.CeilToInt(area.width * PixelsPerMetre / 4f) * 4;
+
+    public static Texture2D Write(string path, Rect area, MapGroundTint tint)
     {
-        /// <summary>Fine enough that a soil patch or a damp hollow keeps its shape under the RTS camera.</summary>
-        public const float PixelsPerMetre = 2f;
-
-        /// <summary>Texels along each side, rounded up to a multiple of 4 for block compression.</summary>
-        public static int Size(Rect area) => Mathf.CeilToInt(area.width * PixelsPerMetre / 4f) * 4;
-
-        public static Texture2D Write(string path, Rect area, MapGroundTint tint)
+        var size = Size(area);
+        var pixels = new Color[size * size];
+        MapParallel.ForRows(size, y =>
         {
-            var size = Size(area);
-            var pixels = new Color[size * size];
-            MapParallel.ForRows(size, y =>
+            for (var x = 0; x < size; x++)
             {
-                for (var x = 0; x < size; x++)
-                {
-                    var p = area.min + new Vector2((x + 0.5f) / size * area.width, (y + 0.5f) / size * area.height);
-                    pixels[y * size + x] = tint.At(p);
-                }
-            });
+                var p = area.min + new Vector2((x + 0.5f) / size * area.width, (y + 0.5f) / size * area.height);
+                pixels[y * size + x] = tint.At(p);
+            }
+        });
 
-            return EditorTextures.WritePng(path, size, size, TextureFormat.RGBA32, pixels, importer =>
-            {
-                importer.sRGBTexture = false;
-                importer.mipmapEnabled = true;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-            });
-        }
+        return EditorTextures.WritePng(path, size, size, TextureFormat.RGBA32, pixels, importer =>
+        {
+            importer.sRGBTexture = false;
+            importer.mipmapEnabled = true;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+        });
     }
 }

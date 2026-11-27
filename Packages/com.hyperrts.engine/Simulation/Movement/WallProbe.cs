@@ -1,67 +1,66 @@
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Movement
+namespace HyperRTS.Simulation.Movement;
+
+/// <summary>How deep a mover's footprint would sink into the walls of its grid; aircraft have none.</summary>
+internal struct WallProbe
 {
-    /// <summary>How deep a mover's footprint would sink into the walls of its grid; aircraft have none.</summary>
-    internal struct WallProbe
+    private readonly float2 _position;
+    private readonly float _radius;
+    private NavAccess _access;
+    private bool _hasWalls;
+
+    public WallProbe(float2 position, float radius)
     {
-        private readonly float2 _position;
-        private readonly float _radius;
-        private NavAccess _access;
-        private bool _hasWalls;
+        _position = position;
+        _radius = radius;
+        _access = default;
+        _hasWalls = false;
+        Reach = 0f;
+    }
 
-        public WallProbe(float2 position, float radius)
+    /// <summary>How far the path runs before it turns, which bounds the look-ahead.</summary>
+    public float Reach;
+
+    public void Add(in NavAccess access)
+    {
+        _access = access;
+        _hasWalls = true;
+    }
+
+    public readonly bool IsNear(float2 axis)
+    {
+        if (!_hasWalls)
         {
-            _position = position;
-            _radius = radius;
-            _access = default;
-            _hasWalls = false;
-            Reach = 0f;
+            return false;
         }
 
-        /// <summary>How far the path runs before it turns, which bounds the look-ahead.</summary>
-        public float Reach;
+        var nearest = math.min(_access.Distance(_position - axis), _access.Distance(_position + axis));
+        return nearest < _access.WallMargin;
+    }
 
-        public void Add(in NavAccess access)
+    /// <summary>The depth the footprint already sits in the walls.</summary>
+    public readonly float Resting(float2 axis) => _hasWalls ? DepthAt(_position, axis) : 0f;
+
+    // Only as far as the next corner, since the path turns there and a straight line on would cross its wall.
+    // Only sinking deeper counts, so a unit already touching a wall may still slide along it.
+    public readonly float Depth(float2 candidate, float2 axis, float time, float resting)
+    {
+        if (!_hasWalls)
         {
-            _access = access;
-            _hasWalls = true;
+            return 0f;
         }
 
-        public readonly bool IsNear(float2 axis)
-        {
-            if (!_hasWalls)
-            {
-                return false;
-            }
+        var travel = math.min(math.length(candidate) * time, Reach);
+        var center = _position + math.normalizesafe(candidate) * travel;
+        return math.max(0f, DepthAt(center, axis) - resting);
+    }
 
-            var nearest = math.min(_access.Distance(_position - axis), _access.Distance(_position + axis));
-            return nearest < _access.WallMargin;
-        }
-
-        /// <summary>The depth the footprint already sits in the walls.</summary>
-        public readonly float Resting(float2 axis) => _hasWalls ? DepthAt(_position, axis) : 0f;
-
-        // Only as far as the next corner, since the path turns there and a straight line on would cross its wall.
-        // Only sinking deeper counts, so a unit already touching a wall may still slide along it.
-        public readonly float Depth(float2 candidate, float2 axis, float time, float resting)
-        {
-            if (!_hasWalls)
-            {
-                return 0f;
-            }
-
-            var travel = math.min(math.length(candidate) * time, Reach);
-            var center = _position + math.normalizesafe(candidate) * travel;
-            return math.max(0f, DepthAt(center, axis) - resting);
-        }
-
-        private readonly float DepthAt(float2 center, float2 axis)
-        {
-            var open = _radius - NavTolerances.WallOverlap;
-            return math.max(0f, open - _access.Distance(center - axis)) +
-                   math.max(0f, open - _access.Distance(center + axis));
-        }
+    private readonly float DepthAt(float2 center, float2 axis)
+    {
+        var open = _radius - NavTolerances.WallOverlap;
+        return math.max(0f, open - _access.Distance(center - axis)) +
+               math.max(0f, open - _access.Distance(center + axis));
     }
 }

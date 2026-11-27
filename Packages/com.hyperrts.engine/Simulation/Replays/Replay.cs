@@ -4,58 +4,57 @@ using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Match;
 using Unity.Collections;
 
-namespace HyperRTS.Simulation.Replays
+namespace HyperRTS.Simulation.Replays;
+
+/// <summary>A recorded match: header plus the sample stream, as saved by <see cref="ReplaySerializer"/>.</summary>
+public sealed class Replay
 {
-    /// <summary>A recorded match: header plus the sample stream, as saved by <see cref="ReplaySerializer"/>.</summary>
-    public sealed class Replay
+    public string ScenePath = "";
+
+    /// <summary>Game data the engine stores but never reads (a JSON of map id, settings...).</summary>
+    public string Metadata = "";
+    public float SampleRate;
+
+    /// <summary>The <see cref="MatchSetup.Seed"/> the match ran with.</summary>
+    public uint Seed;
+
+    /// <summary>The <see cref="MatchSetup.Weather"/> the match ran with; empty for the map's own.</summary>
+    public string Weather = "";
+    public float Duration;
+    public List<ReplayPlayerInfo> Players = new();
+
+    /// <summary>The outcome when the recording was taken; still <see cref="MatchPhase.Playing"/> if unfinished.</summary>
+    public MatchState Result;
+
+    public ReplayFrame[] Frames = Array.Empty<ReplayFrame>();
+    public ReplayEntity[] Entities = Array.Empty<ReplayEntity>();
+    public int[] Removed = Array.Empty<int>();
+    public PackedCue[] Cues = Array.Empty<PackedCue>();
+
+    /// <summary>Copies the samples into a native stream the caller disposes.</summary>
+    public ReplayStream ToStream(Allocator allocator)
     {
-        public string ScenePath = "";
+        var stream = ReplayStream.Create(allocator);
+        Append(stream.Frames, Frames);
+        Append(stream.Entities, Entities);
+        Append(stream.Removed, Removed);
+        Append(stream.Cues, Cues);
+        return stream;
+    }
 
-        /// <summary>Game data the engine stores but never reads (a JSON of map id, settings...).</summary>
-        public string Metadata = "";
-        public float SampleRate;
+    /// <summary>Takes a copy of <paramref name="stream"/>'s samples.</summary>
+    public void CopySamples(in ReplayStream stream)
+    {
+        Frames = stream.Frames.AsArray().ToArray();
+        Entities = stream.Entities.AsArray().ToArray();
+        Removed = stream.Removed.AsArray().ToArray();
+        Cues = stream.Cues.AsArray().GetSubArray(0, stream.SampledCues).ToArray();
+        Duration = Frames.Length == 0 ? 0f : Frames[^1].Time;
+    }
 
-        /// <summary>The <see cref="MatchSetup.Seed"/> the match ran with.</summary>
-        public uint Seed;
-
-        /// <summary>The <see cref="MatchSetup.Weather"/> the match ran with; empty for the map's own.</summary>
-        public string Weather = "";
-        public float Duration;
-        public List<ReplayPlayerInfo> Players = new();
-
-        /// <summary>The outcome when the recording was taken; still <see cref="MatchPhase.Playing"/> if unfinished.</summary>
-        public MatchState Result;
-
-        public ReplayFrame[] Frames = Array.Empty<ReplayFrame>();
-        public ReplayEntity[] Entities = Array.Empty<ReplayEntity>();
-        public int[] Removed = Array.Empty<int>();
-        public PackedCue[] Cues = Array.Empty<PackedCue>();
-
-        /// <summary>Copies the samples into a native stream the caller disposes.</summary>
-        public ReplayStream ToStream(Allocator allocator)
-        {
-            var stream = ReplayStream.Create(allocator);
-            Append(stream.Frames, Frames);
-            Append(stream.Entities, Entities);
-            Append(stream.Removed, Removed);
-            Append(stream.Cues, Cues);
-            return stream;
-        }
-
-        /// <summary>Takes a copy of <paramref name="stream"/>'s samples.</summary>
-        public void CopySamples(in ReplayStream stream)
-        {
-            Frames = stream.Frames.AsArray().ToArray();
-            Entities = stream.Entities.AsArray().ToArray();
-            Removed = stream.Removed.AsArray().ToArray();
-            Cues = stream.Cues.AsArray().GetSubArray(0, stream.SampledCues).ToArray();
-            Duration = Frames.Length == 0 ? 0f : Frames[^1].Time;
-        }
-
-        private static void Append<T>(NativeList<T> list, T[] items) where T : unmanaged
-        {
-            using var copy = new NativeArray<T>(items, Allocator.Temp);
-            list.AddRange(copy);
-        }
+    private static void Append<T>(NativeList<T> list, T[] items) where T : unmanaged
+    {
+        using var copy = new NativeArray<T>(items, Allocator.Temp);
+        list.AddRange(copy);
     }
 }

@@ -8,211 +8,210 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Tests.Squads
+namespace HyperRTS.Simulation.Tests.Squads;
+
+/// <summary>
+/// A squad of four, 25 health each: hits land on members without carrying over, splash and heals go by member,
+/// weapons follow their living carriers, and members walk to their slots. Health always equals the members' sum.
+/// </summary>
+public class SquadTests : SquadFixture
 {
-    /// <summary>
-    /// A squad of four, 25 health each: hits land on members without carrying over, splash and heals go by member,
-    /// weapons follow their living carriers, and members walk to their slots. Health always equals the members' sum.
-    /// </summary>
-    public class SquadTests : SquadFixture
+    private Entity Squad(float3 position, params byte[] weapons) => World.SpawnSquad(1, position, weapons);
+
+    private float Member(Entity squad, int index) => World.Buffer<SquadMember>(squad)[index].Health;
+
+    private int Hurt(Entity squad)
     {
-        private Entity Squad(float3 position, params byte[] weapons) => World.SpawnSquad(1, position, weapons);
-
-        private float Member(Entity squad, int index) => World.Buffer<SquadMember>(squad)[index].Health;
-
-        private int Hurt(Entity squad)
+        var hurt = 0;
+        foreach (var member in World.Buffer<SquadMember>(squad))
         {
-            var hurt = 0;
-            foreach (var member in World.Buffer<SquadMember>(squad))
-            {
-                hurt += member.Health < member.MaxHealth ? 1 : 0;
-            }
-
-            return hurt;
+            hurt += member.Health < member.MaxHealth ? 1 : 0;
         }
 
-        private void StandAt(Entity squad, params float[] xs)
+        return hurt;
+    }
+
+    private void StandAt(Entity squad, params float[] xs)
+    {
+        var members = World.Buffer<SquadMember>(squad);
+        for (var i = 0; i < xs.Length; i++)
         {
-            var members = World.Buffer<SquadMember>(squad);
-            for (var i = 0; i < xs.Length; i++)
-            {
-                var member = members[i];
-                member.Offset = new float2(xs[i], 0f);
-                members[i] = member;
-            }
+            var member = members[i];
+            member.Offset = new float2(xs[i], 0f);
+            members[i] = member;
+        }
+    }
+
+    [Test]
+    public void DirectHit_LandsOnOneMemberAndDoesNotCarryOver()
+    {
+        var squad = Squad(float3.zero, 0, 0, 0, 0);
+
+        World.HitSquad(squad, new TestHit { Amount = 40f });
+        World.Tick();
+
+        Assert.AreEqual(1, Hurt(squad), "one member took the hit");
+        Assert.AreEqual(3f * SquadTestKit.MemberHealth, World.GetHealth(squad), 1e-3f, "the 15 past its health is lost");
+        var shot = 0;
+        foreach (var member in World.Buffer<SquadMember>(squad))
+        {
+            shot += member.Death == DeathCause.Shot ? 1 : 0;
         }
 
-        [Test]
-        public void DirectHit_LandsOnOneMemberAndDoesNotCarryOver()
+        Assert.AreEqual(1, shot, "the fallen member remembers it was shot");
+        World.AssertHealthIsMemberSum(squad);
+    }
+
+    [Test]
+    public void Splash_HurtsEachMemberByItsOwnDistanceEvenPastTheSquadsRadius()
+    {
+        var squad = Squad(float3.zero, 0, 0, 0, 0);
+        StandAt(squad, -2f, 0f, 2f, 3f);
+
+        World.HitSquad(Entity.Null, new TestHit
         {
-            var squad = Squad(float3.zero, 0, 0, 0, 0);
+            Amount = 20f,
+            At = new float3(3f, 0f, 0f),
+            Radius = 3f,
+            Edge = 0f,
+        });
+        World.Tick();
 
-            World.HitSquad(squad, new TestHit { Amount = 40f });
-            World.Tick();
+        Assert.AreEqual(SquadTestKit.MemberHealth, Member(squad, 0), 0.5f, "outside the blast");
+        Assert.Greater(SquadTestKit.MemberHealth, Member(squad, 1) + 0.5f);
+        Assert.Greater(Member(squad, 1), Member(squad, 2) + 0.5f, "nearer members lose more");
+        Assert.Greater(Member(squad, 2), Member(squad, 3) + 0.5f);
+        World.AssertHealthIsMemberSum(squad);
+    }
 
-            Assert.AreEqual(1, Hurt(squad), "one member took the hit");
-            Assert.AreEqual(3f * SquadTestKit.MemberHealth, World.GetHealth(squad), 1e-3f, "the 15 past its health is lost");
-            var shot = 0;
-            foreach (var member in World.Buffer<SquadMember>(squad))
-            {
-                shot += member.Death == DeathCause.Shot ? 1 : 0;
-            }
+    [Test]
+    public void BlastAimedAtTheSquad_StrikesTheMemberNearestIt()
+    {
+        var squad = Squad(float3.zero, 0, 0, 0, 0);
+        StandAt(squad, -3f, -1f, 1f, 3f);
 
-            Assert.AreEqual(1, shot, "the fallen member remembers it was shot");
-            World.AssertHealthIsMemberSum(squad);
+        World.HitSquad(squad, new TestHit { Amount = 30f, At = new float3(3f, 0f, 0.4f), Radius = 0.5f });
+        World.Tick();
+
+        Assert.AreEqual(0f, Member(squad, 3), 1e-3f, "the member under the blast");
+        var dead = World.Buffer<SquadMember>(squad)[3];
+        Assert.AreEqual(DeathCause.Blast, dead.Death);
+        Assert.Greater(dead.BlastDirection.y, 0.9f, "it fell away from the blast beside it");
+        Assert.AreEqual(1, Hurt(squad), "the others stand outside the blast");
+        World.AssertHealthIsMemberSum(squad);
+    }
+
+    [Test]
+    public void Fill_KeepsTheDeadDeadAndSharesTheHealthAmongTheLiving()
+    {
+        var members = World.Buffer<SquadMember>(Squad(float3.zero, 0, 0, 0, 0));
+
+        new SquadRoster(members).Fill(40f, 0b1010);
+
+        Assert.AreEqual(0f, members[0].Health, 1e-3f);
+        Assert.AreEqual(20f, members[1].Health, 1e-3f);
+        Assert.AreEqual(0f, members[2].Health, 1e-3f);
+        Assert.AreEqual(20f, members[3].Health, 1e-3f);
+        Assert.AreEqual(0b1010, new SquadRoster(members).LivingMask());
+    }
+
+    [Test]
+    public void Heal_GoesToTheMostHurtMember()
+    {
+        var squad = Squad(float3.zero, 0, 0, 0, 0);
+        var members = World.Buffer<SquadMember>(squad);
+        float[] health = { 25f, 10f, 20f, 25f };
+        for (var i = 0; i < 4; i++)
+        {
+            var member = members[i];
+            member.Health = health[i];
+            members[i] = member;
         }
 
-        [Test]
-        public void Splash_HurtsEachMemberByItsOwnDistanceEvenPastTheSquadsRadius()
+        World.Set(squad, new Health { Current = 80f, Max = 100f });
+
+        World.QueueDamage(DamageEvent.Direct(squad, float3.zero, Entity.Null, 1, -5f));
+        World.Tick();
+
+        Assert.AreEqual(15f, Member(squad, 1), 1e-3f);
+        Assert.AreEqual(20f, Member(squad, 2), 1e-3f);
+        World.AssertHealthIsMemberSum(squad);
+    }
+
+    [Test]
+    public void StatChangeToMaxHealth_ScalesMembersAndKeepsTheSum()
+    {
+        var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
+        World.HitSquad(squad, new TestHit { Amount = 10f });
+        World.Tick();
+
+        var health = World.Get<Health>(squad);
+        World.Set(squad, new Health { Current = health.Current * 2f, Max = health.Max * 2f });
+        World.Tick();
+
+        World.AssertHealthIsMemberSum(squad);
+        Assert.AreEqual(180f, World.GetHealth(squad), 1e-2f);
+    }
+
+    [Test]
+    public void HaltedMembers_WalkToARingAroundTheSquad()
+    {
+        var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
+        var members = World.Buffer<SquadMember>(squad);
+        for (var i = 0; i < 4; i++)
         {
-            var squad = Squad(float3.zero, 0, 0, 0, 0);
-            StandAt(squad, -2f, 0f, 2f, 3f);
-
-            World.HitSquad(Entity.Null, new TestHit
-            {
-                Amount = 20f,
-                At = new float3(3f, 0f, 0f),
-                Radius = 3f,
-                Edge = 0f,
-            });
-            World.Tick();
-
-            Assert.AreEqual(SquadTestKit.MemberHealth, Member(squad, 0), 0.5f, "outside the blast");
-            Assert.Greater(SquadTestKit.MemberHealth, Member(squad, 1) + 0.5f);
-            Assert.Greater(Member(squad, 1), Member(squad, 2) + 0.5f, "nearer members lose more");
-            Assert.Greater(Member(squad, 2), Member(squad, 3) + 0.5f);
-            World.AssertHealthIsMemberSum(squad);
+            var member = members[i];
+            member.Offset = float2.zero;
+            members[i] = member;
         }
 
-        [Test]
-        public void BlastAimedAtTheSquad_StrikesTheMemberNearestIt()
+        World.Tick();
+        Assert.Less(math.length(World.Buffer<SquadMember>(squad)[0].Offset), 0.5f, "a member walks, not jumps");
+
+        World.Run(2f);
+
+        var rules = World.Singleton<SquadRules>();
+        for (var i = 0; i < 4; i++)
         {
-            var squad = Squad(float3.zero, 0, 0, 0, 0);
-            StandAt(squad, -3f, -1f, 1f, 3f);
+            var offset = World.Buffer<SquadMember>(squad)[i].Offset;
+            Assert.AreEqual(0f, math.distance(offset, rules.SpreadSlot(i, 4)), 0.05f);
+            Assert.LessOrEqual(math.length(offset), rules.MaxSpread);
+        }
+    }
 
-            World.HitSquad(squad, new TestHit { Amount = 30f, At = new float3(3f, 0f, 0.4f), Radius = 0.5f });
-            World.Tick();
+    [Test]
+    public void MovingSquad_FormsAWedgeAlongItsHeading()
+    {
+        var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
+        World.Issue(squad, new Order { Type = OrderType.Move, Position = new float3(60f, 0f, 0f) });
 
-            Assert.AreEqual(0f, Member(squad, 3), 1e-3f, "the member under the blast");
-            var dead = World.Buffer<SquadMember>(squad)[3];
-            Assert.AreEqual(DeathCause.Blast, dead.Death);
-            Assert.Greater(dead.BlastDirection.y, 0.9f, "it fell away from the blast beside it");
-            Assert.AreEqual(1, Hurt(squad), "the others stand outside the blast");
-            World.AssertHealthIsMemberSum(squad);
+        World.Run(3f);
+
+        var members = World.Buffer<SquadMember>(squad);
+        Assert.Greater(members[0].Offset.x, members[3].Offset.x + 1f, "the point man leads the rear");
+        Assert.AreEqual(0f, math.distance(members[1].Offset, members[1].Slot), 0.1f);
+    }
+
+    // The ring reaches past ground closed 1 m east of the squad; the fixture checks every member stays open.
+    [TestCase(false, TestName = "HaltedMembers_StopShortOfAWall")]
+    [TestCase(true, TestName = "HaltedMembers_StopShortOfARiverbank")]
+    public void HaltedMembers_StopShortOfClosedGround(bool river)
+    {
+        if (river)
+        {
+            World.SpawnNavArea(new float3(7f, 0f, 0f), new float2(12f, 600f), NavAreaKind.Water);
+        }
+        else
+        {
+            World.SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 20f));
         }
 
-        [Test]
-        public void Fill_KeepsTheDeadDeadAndSharesTheHealthAmongTheLiving()
+        var squad = World.SpawnSquad(1, float3.zero);
+        World.Run(3f);
+
+        foreach (var member in World.Buffer<SquadMember>(squad))
         {
-            var members = World.Buffer<SquadMember>(Squad(float3.zero, 0, 0, 0, 0));
-
-            new SquadRoster(members).Fill(40f, 0b1010);
-
-            Assert.AreEqual(0f, members[0].Health, 1e-3f);
-            Assert.AreEqual(20f, members[1].Health, 1e-3f);
-            Assert.AreEqual(0f, members[2].Health, 1e-3f);
-            Assert.AreEqual(20f, members[3].Health, 1e-3f);
-            Assert.AreEqual(0b1010, new SquadRoster(members).LivingMask());
-        }
-
-        [Test]
-        public void Heal_GoesToTheMostHurtMember()
-        {
-            var squad = Squad(float3.zero, 0, 0, 0, 0);
-            var members = World.Buffer<SquadMember>(squad);
-            float[] health = { 25f, 10f, 20f, 25f };
-            for (var i = 0; i < 4; i++)
-            {
-                var member = members[i];
-                member.Health = health[i];
-                members[i] = member;
-            }
-
-            World.Set(squad, new Health { Current = 80f, Max = 100f });
-
-            World.QueueDamage(DamageEvent.Direct(squad, float3.zero, Entity.Null, 1, -5f));
-            World.Tick();
-
-            Assert.AreEqual(15f, Member(squad, 1), 1e-3f);
-            Assert.AreEqual(20f, Member(squad, 2), 1e-3f);
-            World.AssertHealthIsMemberSum(squad);
-        }
-
-        [Test]
-        public void StatChangeToMaxHealth_ScalesMembersAndKeepsTheSum()
-        {
-            var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
-            World.HitSquad(squad, new TestHit { Amount = 10f });
-            World.Tick();
-
-            var health = World.Get<Health>(squad);
-            World.Set(squad, new Health { Current = health.Current * 2f, Max = health.Max * 2f });
-            World.Tick();
-
-            World.AssertHealthIsMemberSum(squad);
-            Assert.AreEqual(180f, World.GetHealth(squad), 1e-2f);
-        }
-
-        [Test]
-        public void HaltedMembers_WalkToARingAroundTheSquad()
-        {
-            var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
-            var members = World.Buffer<SquadMember>(squad);
-            for (var i = 0; i < 4; i++)
-            {
-                var member = members[i];
-                member.Offset = float2.zero;
-                members[i] = member;
-            }
-
-            World.Tick();
-            Assert.Less(math.length(World.Buffer<SquadMember>(squad)[0].Offset), 0.5f, "a member walks, not jumps");
-
-            World.Run(2f);
-
-            var rules = World.Singleton<SquadRules>();
-            for (var i = 0; i < 4; i++)
-            {
-                var offset = World.Buffer<SquadMember>(squad)[i].Offset;
-                Assert.AreEqual(0f, math.distance(offset, rules.SpreadSlot(i, 4)), 0.05f);
-                Assert.LessOrEqual(math.length(offset), rules.MaxSpread);
-            }
-        }
-
-        [Test]
-        public void MovingSquad_FormsAWedgeAlongItsHeading()
-        {
-            var squad = World.SpawnArmedSquad(float3.zero, 0, 0, 0, 0);
-            World.Issue(squad, new Order { Type = OrderType.Move, Position = new float3(60f, 0f, 0f) });
-
-            World.Run(3f);
-
-            var members = World.Buffer<SquadMember>(squad);
-            Assert.Greater(members[0].Offset.x, members[3].Offset.x + 1f, "the point man leads the rear");
-            Assert.AreEqual(0f, math.distance(members[1].Offset, members[1].Slot), 0.1f);
-        }
-
-        // The ring reaches past ground closed 1 m east of the squad; the fixture checks every member stays open.
-        [TestCase(false, TestName = "HaltedMembers_StopShortOfAWall")]
-        [TestCase(true, TestName = "HaltedMembers_StopShortOfARiverbank")]
-        public void HaltedMembers_StopShortOfClosedGround(bool river)
-        {
-            if (river)
-            {
-                World.SpawnNavArea(new float3(7f, 0f, 0f), new float2(12f, 600f), NavAreaKind.Water);
-            }
-            else
-            {
-                World.SpawnObstacle(new float3(3f, 0f, 0f), new float2(4f, 20f));
-            }
-
-            var squad = World.SpawnSquad(1, float3.zero);
-            World.Run(3f);
-
-            foreach (var member in World.Buffer<SquadMember>(squad))
-            {
-                Assert.Less(member.Offset.x, 1f, "no member past the edge");
-            }
+            Assert.Less(member.Offset.x, 1f, "no member past the edge");
         }
     }
 }

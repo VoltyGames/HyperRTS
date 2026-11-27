@@ -4,106 +4,105 @@ using Unity.Entities;
 using Unity.Jobs;
 using Unity.Profiling;
 
-namespace HyperRTS.Simulation.Navigation.Spatial
+namespace HyperRTS.Simulation.Navigation.Spatial;
+
+/// <summary>
+/// Counts the snapshots per cell, turns the counts into starts and files each snapshot in its cell, so a cell
+/// lists its entries in reverse query order every frame. Single-threaded: a thousand entries take microseconds.
+/// </summary>
+[BurstCompile]
+internal struct SpatialSortJob : IJob
 {
-    /// <summary>
-    /// Counts the snapshots per cell, turns the counts into starts and files each snapshot in its cell, so a cell
-    /// lists its entries in reverse query order every frame. Single-threaded: a thousand entries take microseconds.
-    /// </summary>
-    [BurstCompile]
-    internal struct SpatialSortJob : IJob
+    private static readonly ProfilerMarker SortMarker = new("SpatialIndexSystem.Sort");
+
+    public SpatialIndex Index;
+    public NativeArray<SpatialEntry> Snapshots;
+
+    public void Execute()
     {
-        private static readonly ProfilerMarker SortMarker = new("SpatialIndexSystem.Sort");
-
-        public SpatialIndex Index;
-        public NativeArray<SpatialEntry> Snapshots;
-
-        public void Execute()
+        using var marker = SortMarker.Auto();
+        var cells = Index.Grid.Count;
+        var starts = Index.CellStarts;
+        Clear(starts, cells);
+        Count(starts);
+        for (var i = 1; i <= cells; i++)
         {
-            using var marker = SortMarker.Auto();
-            var cells = Index.Grid.Count;
-            var starts = Index.CellStarts;
-            Clear(starts, cells);
-            Count(starts);
-            for (var i = 1; i <= cells; i++)
-            {
-                starts[i] += starts[i - 1];
-            }
-
-            Scatter(starts);
+            starts[i] += starts[i - 1];
         }
 
-        private void Clear(NativeList<int> starts, int cells)
+        Scatter(starts);
+    }
+
+    private void Clear(NativeList<int> starts, int cells)
+    {
+        starts.Resize(cells + 1, NativeArrayOptions.UninitializedMemory);
+        for (var i = 0; i <= cells; i++)
         {
-            starts.Resize(cells + 1, NativeArrayOptions.UninitializedMemory);
-            for (var i = 0; i <= cells; i++)
-            {
-                starts[i] = 0;
-            }
-
-            Index.VehicleCells.Resize(cells, NativeArrayOptions.UninitializedMemory);
-            for (var i = 0; i < cells; i++)
-            {
-                Index.VehicleCells[i] = 0;
-            }
-
-            Index.Oversized.Clear();
+            starts[i] = 0;
         }
 
-        // Counts each entry into the slot after its cell, so the running sum gives every cell's start.
-        private void Count(NativeList<int> starts)
+        Index.VehicleCells.Resize(cells, NativeArrayOptions.UninitializedMemory);
+        for (var i = 0; i < cells; i++)
         {
-            for (var i = 0; i < Snapshots.Length; i++)
-            {
-                var entry = Snapshots[i];
-                if (entry.Entity == Entity.Null)
-                {
-                    continue;
-                }
-
-                if (entry.IsVehicle && entry.IsMoving)
-                {
-                    Index.MarkVehicleLane(entry);
-                }
-
-                if (entry.IsOversized(SpatialIndexSystem.CellSize))
-                {
-                    Index.Oversized.Add(entry);
-                }
-                else
-                {
-                    starts[Index.CellIndex(entry.Position) + 1]++;
-                }
-            }
+            Index.VehicleCells[i] = 0;
         }
 
-        // Each cell's start serves as its write cursor, which leaves it at the next cell's start; shifting back
-        // restores them. Slots are emptied as they go, ready for the next frame. Reverse order is the one the
-        // head-on crowd scenarios settle in.
-        private void Scatter(NativeList<int> starts)
+        Index.Oversized.Clear();
+    }
+
+    // Counts each entry into the slot after its cell, so the running sum gives every cell's start.
+    private void Count(NativeList<int> starts)
+    {
+        for (var i = 0; i < Snapshots.Length; i++)
         {
-            var cells = Index.Grid.Count;
-            Index.Entries.ResizeUninitialized(starts[cells]);
-            for (var i = Snapshots.Length - 1; i >= 0; i--)
+            var entry = Snapshots[i];
+            if (entry.Entity == Entity.Null)
             {
-                var entry = Snapshots[i];
-                Snapshots[i] = default;
-                if (entry.Entity == Entity.Null || entry.IsOversized(SpatialIndexSystem.CellSize))
-                {
-                    continue;
-                }
-
-                var cell = Index.CellIndex(entry.Position);
-                Index.Entries[starts[cell]] = entry;
-                starts[cell]++;
+                continue;
             }
 
-            for (var i = cells; i > 0; i--)
+            if (entry.IsVehicle && entry.IsMoving)
             {
-                starts[i] = starts[i - 1];
+                Index.MarkVehicleLane(entry);
             }
 
-            starts[0] = 0;
+            if (entry.IsOversized(SpatialIndexSystem.CellSize))
+            {
+                Index.Oversized.Add(entry);
+            }
+            else
+            {
+                starts[Index.CellIndex(entry.Position) + 1]++;
+            }
         }
+    }
+
+    // Each cell's start serves as its write cursor, which leaves it at the next cell's start; shifting back
+    // restores them. Slots are emptied as they go, ready for the next frame. Reverse order is the one the
+    // head-on crowd scenarios settle in.
+    private void Scatter(NativeList<int> starts)
+    {
+        var cells = Index.Grid.Count;
+        Index.Entries.ResizeUninitialized(starts[cells]);
+        for (var i = Snapshots.Length - 1; i >= 0; i--)
+        {
+            var entry = Snapshots[i];
+            Snapshots[i] = default;
+            if (entry.Entity == Entity.Null || entry.IsOversized(SpatialIndexSystem.CellSize))
+            {
+                continue;
+            }
+
+            var cell = Index.CellIndex(entry.Position);
+            Index.Entries[starts[cell]] = entry;
+            starts[cell]++;
+        }
+
+        for (var i = cells; i > 0; i--)
+        {
+            starts[i] = starts[i - 1];
+        }
+
+        starts[0] = 0;
     }
 }

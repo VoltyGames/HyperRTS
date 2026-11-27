@@ -12,180 +12,179 @@ using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
 
-namespace HyperRTS.Presentation.Tests.Fog
+namespace HyperRTS.Presentation.Tests.Fog;
+
+/// <summary>Fog on screen: hiding fogged roots and passengers with every part, the fog texels and hierarchy collection.</summary>
+public class FogTests
 {
-    /// <summary>Fog on screen: hiding fogged roots and passengers with every part, the fog texels and hierarchy collection.</summary>
-    public class FogTests
+    private const int Parts = 100;
+
+    private PresentationWorldKit _kit;
+    private EntityManager _em;
+    private SystemHandle _fog;
+    private EntityCommandBufferSystem _commands;
+    private double _time;
+
+    [SetUp]
+    public void SetUp()
     {
-        private const int Parts = 100;
+        _kit = new PresentationWorldKit("Fog Tests");
+        _em = _kit.EntityManager;
+        _commands = _kit.World.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
+        _fog = _kit.World.CreateSystem<FogVisibilitySystem>();
+        _kit.AddPlayer(1, local: true);
+        _kit.AddPlayer(2);
+    }
 
-        private PresentationWorldKit _kit;
-        private EntityManager _em;
-        private SystemHandle _fog;
-        private EntityCommandBufferSystem _commands;
-        private double _time;
+    [TearDown]
+    public void TearDown() => _kit.Dispose();
 
-        [SetUp]
-        public void SetUp()
+    [Test]
+    public void SeenEnemy_FadesOutOfTheFog_ThenStopsDrawing_AndFadesBackIn()
+    {
+        var enemy = Spawn(2);
+        var child = Part(enemy);
+        Run();
+        Assert.AreEqual(1f, Reveal(child), "in sight: fully shown");
+
+        _em.AddComponent<FogHidden>(enemy);
+        Run(FogVisibilitySystem.FadeTime * 0.5f);
+        Assert.That(Reveal(child), Is.InRange(0.3f, 0.7f), "half way out");
+        Assert.IsTrue(Drawn(child), "still drawn while fading");
+
+        Run(FogVisibilitySystem.FadeTime * 0.6f);
+        Assert.IsFalse(Drawn(child), "gone once faded out");
+
+        _em.RemoveComponent<FogHidden>(enemy);
+        Run(FogVisibilitySystem.FadeTime * 0.5f);
+        Assert.IsTrue(Drawn(child), "drawn again at once");
+        Assert.That(Reveal(child), Is.InRange(0.3f, 0.7f), "half way in");
+    }
+
+    [Test]
+    public void Ease_ReachesTheTarget_InTheFadeTime()
+    {
+        using var shown = new NativeArray<byte>(new byte[] { 0, 255, 100 }, Allocator.TempJob);
+        using var target = new NativeArray<byte>(new byte[] { 255, 0, 100 }, Allocator.TempJob);
+
+        Assert.IsFalse(FogEase.Step(shown, target, 0.15f, 0.3f), "half way after half the time");
+        Assert.That(shown[0], Is.InRange(120, 135));
+        Assert.That(shown[1], Is.InRange(120, 135));
+
+        Assert.IsTrue(FogEase.Step(shown, target, 0.15f, 0.3f), "there after the whole time");
+        CollectionAssert.AreEqual(new byte[] { 255, 0, 100 }, shown.ToArray());
+    }
+
+    [Test]
+    public void PassengerInside_IsHidden_AndShownAgainOnceOut()
+    {
+        var passenger = Spawn(1);
+        var child = Part(passenger);
+        _em.AddComponentData(passenger, new Inside { Container = Entity.Null });
+
+        Run();
+        Assert.IsFalse(Drawn(child), "aboard: not drawn");
+
+        _em.SetComponentEnabled<Inside>(passenger, false);
+        Run();
+        Assert.IsTrue(Drawn(passenger));
+        Assert.IsTrue(Drawn(child), "out again: drawn");
+    }
+
+    [Test]
+    public void Reveal_KeepsAPartHiddenForAnotherReason()
+    {
+        var enemy = Spawn(2);
+        var stage = Part(enemy);
+        _em.SetComponentData(stage, new HiddenBy { Reasons = HideReason.Stage });
+        _em.SetComponentEnabled<MaterialMeshInfo>(stage, false);
+        _em.AddComponent<FogHidden>(enemy);
+        Run();
+
+        _em.RemoveComponent<FogHidden>(enemy);
+        Run();
+        Assert.IsTrue(Drawn(enemy));
+        Assert.IsFalse(Drawn(stage), "still not the stage on screen");
+    }
+
+    [Test]
+    public void Texels_ClearWhenVisible_DimWhenExplored_DarkOtherwise()
+    {
+        const byte team = 2;
+        var fog = FogOfWar.Create(new CellGrid(float2.zero, 1f, new int2(4, 1)), Allocator.TempJob);
+        using var output = new NativeArray<byte>(4, Allocator.TempJob);
+        fog.Set(fog.Visible, new int2(0, 0), team);
+        fog.Set(fog.Explored, new int2(0, 0), team);
+        fog.Set(fog.Explored, new int2(1, 0), team);
+        fog.Set(fog.Visible, new int2(3, 0), 1);
+        fog.Set(fog.Explored, new int2(3, 0), 1);
+
+        FogTexels.Fill(fog, team, 128, 217, output);
+        fog.Dispose();
+
+        CollectionAssert.AreEqual(new byte[] { 0, 128, 217, 217 }, output.ToArray());
+    }
+
+    [Test]
+    public void Collect_PastSixtyThreeParts_ListsEveryPart()
+    {
+        var root = _em.CreateEntity();
+        _em.AddBuffer<LinkedEntityGroup>(root).Add(root);
+        for (var i = 1; i < Parts; i++)
         {
-            _kit = new PresentationWorldKit("Fog Tests");
-            _em = _kit.EntityManager;
-            _commands = _kit.World.GetOrCreateSystemManaged<BeginPresentationEntityCommandBufferSystem>();
-            _fog = _kit.World.CreateSystem<FogVisibilitySystem>();
-            _kit.AddPlayer(1, local: true);
-            _kit.AddPlayer(2);
+            var part = _em.CreateEntity();
+            _em.GetBuffer<LinkedEntityGroup>(root).Add(part);
         }
 
-        [TearDown]
-        public void TearDown() => _kit.Dispose();
+        Assert.AreEqual(Parts, CollectedCount(root));
 
-        [Test]
-        public void SeenEnemy_FadesOutOfTheFog_ThenStopsDrawing_AndFadesBackIn()
+        var parent = _em.CreateEntity();
+        _em.AddBuffer<Child>(parent);
+        for (var i = 1; i < Parts; i++)
         {
-            var enemy = Spawn(2);
-            var child = Part(enemy);
-            Run();
-            Assert.AreEqual(1f, Reveal(child), "in sight: fully shown");
-
-            _em.AddComponent<FogHidden>(enemy);
-            Run(FogVisibilitySystem.FadeTime * 0.5f);
-            Assert.That(Reveal(child), Is.InRange(0.3f, 0.7f), "half way out");
-            Assert.IsTrue(Drawn(child), "still drawn while fading");
-
-            Run(FogVisibilitySystem.FadeTime * 0.6f);
-            Assert.IsFalse(Drawn(child), "gone once faded out");
-
-            _em.RemoveComponent<FogHidden>(enemy);
-            Run(FogVisibilitySystem.FadeTime * 0.5f);
-            Assert.IsTrue(Drawn(child), "drawn again at once");
-            Assert.That(Reveal(child), Is.InRange(0.3f, 0.7f), "half way in");
+            _em.GetBuffer<Child>(parent).Add(new Child { Value = _em.CreateEntity() });
         }
 
-        [Test]
-        public void Ease_ReachesTheTarget_InTheFadeTime()
-        {
-            using var shown = new NativeArray<byte>(new byte[] { 0, 255, 100 }, Allocator.TempJob);
-            using var target = new NativeArray<byte>(new byte[] { 255, 0, 100 }, Allocator.TempJob);
+        Assert.AreEqual(Parts, CollectedCount(parent), "transform children too");
+    }
 
-            Assert.IsFalse(FogEase.Step(shown, target, 0.15f, 0.3f), "half way after half the time");
-            Assert.That(shown[0], Is.InRange(120, 135));
-            Assert.That(shown[1], Is.InRange(120, 135));
+    // The fog visibility system collects hierarchies itself, so its state builds the lookups.
+    private int CollectedCount(Entity root)
+    {
+        ref var state = ref _kit.World.Unmanaged.ResolveSystemStateRef(_fog);
+        using var targets = new NativeList<Entity>(Allocator.Temp);
+        RenderHierarchy.Collect(root, state.GetBufferLookup<LinkedEntityGroup>(true),
+            state.GetBufferLookup<Child>(true), targets);
+        return targets.Length;
+    }
 
-            Assert.IsTrue(FogEase.Step(shown, target, 0.15f, 0.3f), "there after the whole time");
-            CollectionAssert.AreEqual(new byte[] { 255, 0, 100 }, shown.ToArray());
-        }
+    // A mesh in the root's group, as baking leaves it.
+    private Entity Part(Entity root)
+    {
+        var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
+        _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
+            new LinkedEntityGroup[] { root, part }, Allocator.Temp));
+        return part;
+    }
 
-        [Test]
-        public void PassengerInside_IsHidden_AndShownAgainOnceOut()
-        {
-            var passenger = Spawn(1);
-            var child = Part(passenger);
-            _em.AddComponentData(passenger, new Inside { Container = Entity.Null });
+    private bool Drawn(Entity entity) => _em.IsComponentEnabled<MaterialMeshInfo>(entity);
 
-            Run();
-            Assert.IsFalse(Drawn(child), "aboard: not drawn");
+    private Entity Spawn(byte owner)
+    {
+        var entity = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo), typeof(HiddenBy));
+        _em.AddComponentData(entity, new Owner { Value = owner });
+        _em.AddComponentData(entity, new LocalToWorld { Value = float4x4.identity });
+        return entity;
+    }
 
-            _em.SetComponentEnabled<Inside>(passenger, false);
-            Run();
-            Assert.IsTrue(Drawn(passenger));
-            Assert.IsTrue(Drawn(child), "out again: drawn");
-        }
+    private float Reveal(Entity part) => _em.GetComponentData<RevealFade>(part).Value;
 
-        [Test]
-        public void Reveal_KeepsAPartHiddenForAnotherReason()
-        {
-            var enemy = Spawn(2);
-            var stage = Part(enemy);
-            _em.SetComponentData(stage, new HiddenBy { Reasons = HideReason.Stage });
-            _em.SetComponentEnabled<MaterialMeshInfo>(stage, false);
-            _em.AddComponent<FogHidden>(enemy);
-            Run();
-
-            _em.RemoveComponent<FogHidden>(enemy);
-            Run();
-            Assert.IsTrue(Drawn(enemy));
-            Assert.IsFalse(Drawn(stage), "still not the stage on screen");
-        }
-
-        [Test]
-        public void Texels_ClearWhenVisible_DimWhenExplored_DarkOtherwise()
-        {
-            const byte team = 2;
-            var fog = FogOfWar.Create(new CellGrid(float2.zero, 1f, new int2(4, 1)), Allocator.TempJob);
-            using var output = new NativeArray<byte>(4, Allocator.TempJob);
-            fog.Set(fog.Visible, new int2(0, 0), team);
-            fog.Set(fog.Explored, new int2(0, 0), team);
-            fog.Set(fog.Explored, new int2(1, 0), team);
-            fog.Set(fog.Visible, new int2(3, 0), 1);
-            fog.Set(fog.Explored, new int2(3, 0), 1);
-
-            FogTexels.Fill(fog, team, 128, 217, output);
-            fog.Dispose();
-
-            CollectionAssert.AreEqual(new byte[] { 0, 128, 217, 217 }, output.ToArray());
-        }
-
-        [Test]
-        public void Collect_PastSixtyThreeParts_ListsEveryPart()
-        {
-            var root = _em.CreateEntity();
-            _em.AddBuffer<LinkedEntityGroup>(root).Add(root);
-            for (var i = 1; i < Parts; i++)
-            {
-                var part = _em.CreateEntity();
-                _em.GetBuffer<LinkedEntityGroup>(root).Add(part);
-            }
-
-            Assert.AreEqual(Parts, CollectedCount(root));
-
-            var parent = _em.CreateEntity();
-            _em.AddBuffer<Child>(parent);
-            for (var i = 1; i < Parts; i++)
-            {
-                _em.GetBuffer<Child>(parent).Add(new Child { Value = _em.CreateEntity() });
-            }
-
-            Assert.AreEqual(Parts, CollectedCount(parent), "transform children too");
-        }
-
-        // The fog visibility system collects hierarchies itself, so its state builds the lookups.
-        private int CollectedCount(Entity root)
-        {
-            ref var state = ref _kit.World.Unmanaged.ResolveSystemStateRef(_fog);
-            using var targets = new NativeList<Entity>(Allocator.Temp);
-            RenderHierarchy.Collect(root, state.GetBufferLookup<LinkedEntityGroup>(true),
-                state.GetBufferLookup<Child>(true), targets);
-            return targets.Length;
-        }
-
-        // A mesh in the root's group, as baking leaves it.
-        private Entity Part(Entity root)
-        {
-            var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
-            _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
-                new LinkedEntityGroup[] { root, part }, Allocator.Temp));
-            return part;
-        }
-
-        private bool Drawn(Entity entity) => _em.IsComponentEnabled<MaterialMeshInfo>(entity);
-
-        private Entity Spawn(byte owner)
-        {
-            var entity = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(EntityInfo), typeof(HiddenBy));
-            _em.AddComponentData(entity, new Owner { Value = owner });
-            _em.AddComponentData(entity, new LocalToWorld { Value = float4x4.identity });
-            return entity;
-        }
-
-        private float Reveal(Entity part) => _em.GetComponentData<RevealFade>(part).Value;
-
-        private void Run(float deltaTime = 0.02f)
-        {
-            _time += deltaTime;
-            _kit.World.SetTime(new Unity.Core.TimeData(_time, deltaTime));
-            _fog.Update(_kit.World.Unmanaged);
-            _commands.Update();
-            _em.CompleteAllTrackedJobs();
-        }
+    private void Run(float deltaTime = 0.02f)
+    {
+        _time += deltaTime;
+        _kit.World.SetTime(new Unity.Core.TimeData(_time, deltaTime));
+        _fog.Update(_kit.World.Unmanaged);
+        _commands.Update();
+        _em.CompleteAllTrackedJobs();
     }
 }

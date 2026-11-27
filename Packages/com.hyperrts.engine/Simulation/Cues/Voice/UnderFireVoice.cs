@@ -1,20 +1,19 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Cues.Voice
-{
-    /// <summary>When a unit with an under fire voice was last hit, so it calls out only after a quiet spell.</summary>
-    public struct UnderFireVoice : IComponentData
-    {
-        public double LastHit;
-        public bool WasHit;
+namespace HyperRTS.Simulation.Cues.Voice;
 
-        /// <summary>Records a hit; true when it broke a spell of <paramref name="quietTime"/> seconds without one.</summary>
-        public bool Strike(double now, float quietTime)
-        {
-            var quiet = !WasHit || now - LastHit >= quietTime;
-            WasHit = true;
-            LastHit = now;
-            return quiet;
-        }
+/// <summary>When a unit with an under fire voice was last hit, so it calls out only after a quiet spell.</summary>
+public struct UnderFireVoice : IComponentData
+{
+    public double LastHit;
+    public bool WasHit;
+
+    /// <summary>Records a hit; true when it broke a spell of <paramref name="quietTime"/> seconds without one.</summary>
+    public bool Strike(double now, float quietTime)
+    {
+        var quiet = !WasHit || now - LastHit >= quietTime;
+        WasHit = true;
+        LastHit = now;
+        return quiet;
     }
 }

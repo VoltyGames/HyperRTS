@@ -3,23 +3,22 @@ using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Resources.Gathering
+namespace HyperRTS.Simulation.Resources.Gathering;
+
+/// <summary>Harvesters of the same owner deposit cargo here (supply center, town hall).</summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Drop-Off")]
+[Icon(HyperRTSIcons.ResourceDropOffAuthoring)]
+[HelpURL(HyperRTSDocs.Resources)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
+public class ResourceDropOffAuthoring : AuthoringBehaviour
 {
-    /// <summary>Harvesters of the same owner deposit cargo here (supply center, town hall).</summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Drop-Off")]
-    [Icon(HyperRTSIcons.ResourceDropOffAuthoring)]
-    [HelpURL(HyperRTSDocs.Resources)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    public class ResourceDropOffAuthoring : AuthoringBehaviour
+    public class Baker : Baker<ResourceDropOffAuthoring>
     {
-        public class Baker : Baker<ResourceDropOffAuthoring>
+        public override void Bake(ResourceDropOffAuthoring authoring)
         {
-            public override void Bake(ResourceDropOffAuthoring authoring)
-            {
-                var writer = this.Writer();
-                writer.Add<ResourceDropOff>();
-            }
+            var writer = this.Writer();
+            writer.Add<ResourceDropOff>();
         }
     }
 }

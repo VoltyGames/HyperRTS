@@ -5,88 +5,87 @@ using System.Linq;
 using HyperRTS.Network.Session;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode.BotMatches
+namespace HyperRTS.Editor.PlayMode.BotMatches;
+
+/// <summary>A bot match run's settings and the result of each match, written to Logs/BotMatches as JSON.</summary>
+[Serializable]
+internal class BotMatchReport
 {
-    /// <summary>A bot match run's settings and the result of each match, written to Logs/BotMatches as JSON.</summary>
+    private const string Folder = "Logs/BotMatches";
+
+    public string scene;
+    public string started;
+    public BotMatchSettings settings;
+    public List<Match> matches = new();
+
+    /// <summary>One match's outcome.</summary>
     [Serializable]
-    internal class BotMatchReport
+    public class Match
     {
-        private const string Folder = "Logs/BotMatches";
+        public uint seed;
+        public float minutes;
+        public bool timedOut;
+        public int winningTeam;
+        public List<int> winningSides = new();
+        public List<ServerReport.PlayerResult> players = new();
 
-        public string scene;
-        public string started;
-        public BotMatchSettings settings;
-        public List<Match> matches = new();
-
-        /// <summary>One match's outcome.</summary>
-        [Serializable]
-        public class Match
+        public string Winner()
         {
-            public uint seed;
-            public float minutes;
-            public bool timedOut;
-            public int winningTeam;
-            public List<int> winningSides = new();
-            public List<ServerReport.PlayerResult> players = new();
-
-            public string Winner()
+            if (timedOut)
             {
-                if (timedOut)
-                {
-                    return "none (time limit)";
-                }
-
-                return winningSides.Count == 0 ? "draw" : Sides;
+                return "none (time limit)";
             }
 
-            public string Describe()
-            {
-                if (timedOut)
-                {
-                    return $"no winner after {minutes:F1} min";
-                }
-
-                return winningSides.Count == 0 ? $"draw at {minutes:F1} min" : $"{Sides} won at {minutes:F1} min";
-            }
-
-            private string Sides => $"side {string.Join("+", winningSides)}";
+            return winningSides.Count == 0 ? "draw" : Sides;
         }
 
-        public string Summary()
+        public string Describe()
         {
-            var wins = new SortedDictionary<int, int>();
-            var decidedMinutes = new List<float>();
-            foreach (var match in matches)
+            if (timedOut)
             {
-                if (match.winningSides.Count == 0)
-                {
-                    continue;
-                }
-
-                decidedMinutes.Add(match.minutes);
-                foreach (var side in match.winningSides)
-                {
-                    wins[side] = wins.TryGetValue(side, out var count) ? count + 1 : 1;
-                }
+                return $"no winner after {minutes:F1} min";
             }
 
-            var parts = new List<string>();
-            foreach (var pair in wins)
+            return winningSides.Count == 0 ? $"draw at {minutes:F1} min" : $"{Sides} won at {minutes:F1} min";
+        }
+
+        private string Sides => $"side {string.Join("+", winningSides)}";
+    }
+
+    public string Summary()
+    {
+        var wins = new SortedDictionary<int, int>();
+        var decidedMinutes = new List<float>();
+        foreach (var match in matches)
+        {
+            if (match.winningSides.Count == 0)
             {
-                parts.Add($"side {pair.Key} won {pair.Value}");
+                continue;
             }
 
-            var decided = decidedMinutes.Count > 0 ? $", {decidedMinutes.Min():F1}-{decidedMinutes.Max():F1} min" : "";
-            return $"{matches.Count} matches: {string.Join(", ", parts)}{decided}";
+            decidedMinutes.Add(match.minutes);
+            foreach (var side in match.winningSides)
+            {
+                wins[side] = wins.TryGetValue(side, out var count) ? count + 1 : 1;
+            }
         }
 
-        public string Write()
+        var parts = new List<string>();
+        foreach (var pair in wins)
         {
-            Directory.CreateDirectory(Folder);
-            var name = $"{Path.GetFileNameWithoutExtension(scene)}-{DateTime.Now:yyyyMMdd-HHmmss}.json";
-            var path = Path.Combine(Folder, name).Replace('\\', '/');
-            File.WriteAllText(path, JsonUtility.ToJson(this, true));
-            return path;
+            parts.Add($"side {pair.Key} won {pair.Value}");
         }
+
+        var decided = decidedMinutes.Count > 0 ? $", {decidedMinutes.Min():F1}-{decidedMinutes.Max():F1} min" : "";
+        return $"{matches.Count} matches: {string.Join(", ", parts)}{decided}";
+    }
+
+    public string Write()
+    {
+        Directory.CreateDirectory(Folder);
+        var name = $"{Path.GetFileNameWithoutExtension(scene)}-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+        var path = Path.Combine(Folder, name).Replace('\\', '/');
+        File.WriteAllText(path, JsonUtility.ToJson(this, true));
+        return path;
     }
 }

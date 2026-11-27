@@ -1,79 +1,78 @@
-using HyperRTS.Presentation.Rendering.Parts;
 using System;
+using HyperRTS.Presentation.Rendering.Parts;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Rendering;
 using Unity.Transforms;
 
-namespace HyperRTS.Presentation.Rendering
+namespace HyperRTS.Presentation.Rendering;
+
+/// <summary>
+/// Copies a gameplay prefab down to what draws it (transforms, meshes, material properties), so its instances are
+/// scenery no simulation, network, physics or selection code ever sees.
+/// </summary>
+public static class VisualPrefab
 {
-    /// <summary>
-    /// Copies a gameplay prefab down to what draws it (transforms, meshes, material properties), so its instances are
-    /// scenery no simulation, network, physics or selection code ever sees.
-    /// </summary>
-    public static class VisualPrefab
+    public static Entity Build(EntityManager entityManager, Entity prefab)
     {
-        public static Entity Build(EntityManager entityManager, Entity prefab)
+        var root = entityManager.Instantiate(prefab);
+        using var group = Members(entityManager, root);
+        foreach (var entity in group)
         {
-            var root = entityManager.Instantiate(prefab);
-            using var group = Members(entityManager, root);
-            foreach (var entity in group)
+            Strip(entityManager, entity);
+            entityManager.AddComponent<Prefab>(entity);
+        }
+
+        return root;
+    }
+
+    /// <summary>A visual-only copy of one renderer, unparented and drawn whatever hid its source.</summary>
+    public static Entity Copy(EntityManager entityManager, Entity part)
+    {
+        var copy = entityManager.Instantiate(part);
+        Strip(entityManager, copy);
+        entityManager.RemoveComponent<Parent>(copy);
+        entityManager.SetComponentEnabled<MaterialMeshInfo>(copy, true);
+        return copy;
+    }
+
+    /// <summary>The root and every part under it.</summary>
+    public static NativeList<Entity> Members(EntityManager entityManager, Entity root)
+    {
+        var members = new NativeList<Entity>(Allocator.Temp);
+        RenderHierarchy.Collect(entityManager, root, members);
+        return members;
+    }
+
+    private static void Strip(EntityManager entityManager, Entity entity)
+    {
+        using var types = entityManager.GetComponentTypes(entity, Allocator.Temp);
+        foreach (var type in types)
+        {
+            if (!IsVisual(type))
             {
-                Strip(entityManager, entity);
-                entityManager.AddComponent<Prefab>(entity);
-            }
-
-            return root;
-        }
-
-        /// <summary>A visual-only copy of one renderer, unparented and drawn whatever hid its source.</summary>
-        public static Entity Copy(EntityManager entityManager, Entity part)
-        {
-            var copy = entityManager.Instantiate(part);
-            Strip(entityManager, copy);
-            entityManager.RemoveComponent<Parent>(copy);
-            entityManager.SetComponentEnabled<MaterialMeshInfo>(copy, true);
-            return copy;
-        }
-
-        /// <summary>The root and every part under it.</summary>
-        public static NativeList<Entity> Members(EntityManager entityManager, Entity root)
-        {
-            var members = new NativeList<Entity>(Allocator.Temp);
-            RenderHierarchy.Collect(entityManager, root, members);
-            return members;
-        }
-
-        private static void Strip(EntityManager entityManager, Entity entity)
-        {
-            using var types = entityManager.GetComponentTypes(entity, Allocator.Temp);
-            foreach (var type in types)
-            {
-                if (!IsVisual(type))
-                {
-                    entityManager.RemoveComponent(entity, type);
-                }
+                entityManager.RemoveComponent(entity, type);
             }
         }
+    }
 
-        private static bool IsVisual(ComponentType type)
+    private static bool IsVisual(ComponentType type)
+    {
+        var managed = TypeManager.GetType(type.TypeIndex);
+        // Scene membership is kept so copies unload with the scene that loaded their source.
+        if (managed == typeof(LinkedEntityGroup) || managed == typeof(SceneSection) || managed == typeof(SceneTag))
         {
-            var managed = TypeManager.GetType(type.TypeIndex);
-            // Scene membership is kept so copies unload with the scene that loaded their source.
-            if (managed == typeof(LinkedEntityGroup) || managed == typeof(SceneSection) || managed == typeof(SceneTag))
-            {
-                return true;
-            }
-
-            // Matched by the packages' assemblies through their types, so a namespace rename can't strip a renderer.
-            var rendering = managed.Assembly == typeof(MaterialMeshInfo).Assembly;
-            var transform = managed.Assembly == typeof(LocalTransform).Assembly;
-            if (rendering || transform)
-            {
-                return true;
-            }
-
-            return Attribute.IsDefined(managed, typeof(MaterialPropertyAttribute));
+            return true;
         }
+
+        // Matched by the packages' assemblies through their types, so a namespace rename can't strip a renderer.
+        var rendering = managed.Assembly == typeof(MaterialMeshInfo).Assembly;
+        var transform = managed.Assembly == typeof(LocalTransform).Assembly;
+        if (rendering || transform)
+        {
+            return true;
+        }
+
+        return Attribute.IsDefined(managed, typeof(MaterialPropertyAttribute));
     }
 }

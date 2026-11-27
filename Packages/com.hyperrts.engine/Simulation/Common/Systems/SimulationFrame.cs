@@ -1,11 +1,10 @@
 using HyperRTS.Simulation.Common.Events;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common.Systems
+namespace HyperRTS.Simulation.Common.Systems;
+
+/// <summary>Counts simulation frames from zero; <see cref="GameEventSystem"/> advances it once at the start of each.</summary>
+public struct SimulationFrame : IComponentData
 {
-    /// <summary>Counts simulation frames from zero; <see cref="GameEventSystem"/> advances it once at the start of each.</summary>
-    public struct SimulationFrame : IComponentData
-    {
-        public uint Value;
-    }
+    public uint Value;
 }

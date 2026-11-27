@@ -9,113 +9,112 @@ using HyperRTS.Simulation.Common.Authoring;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation.Rigid
+namespace HyperRTS.Editor.Animation.Rigid;
+
+/// <summary>
+/// A model whose pieces move rigidly, such as a sectioned building, and its motion model, baked into the position
+/// and rotation textures and the clip table its pieces play.
+/// </summary>
+[CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Rigid Animation Set", fileName = "RigidAnimationSet")]
+[HelpURL(HyperRTSDocs.Presentation)]
+public class RigidAnimationSet : ScriptableObject, IAnimationSet
 {
-    /// <summary>
-    /// A model whose pieces move rigidly, such as a sectioned building, and its motion model, baked into the position
-    /// and rotation textures and the clip table its pieces play.
-    /// </summary>
-    [CreateAssetMenu(menuName = HyperRTSMenu.Animation + "Rigid Animation Set", fileName = "RigidAnimationSet")]
-    [HelpURL(HyperRTSDocs.Presentation)]
-    public class RigidAnimationSet : ScriptableObject, IAnimationSet
+    [Tooltip("The model that holds the pieces' meshes.")]
+    public GameObject model;
+
+    [Tooltip("The model's meshes that carry each vertex's texture column in UV1. Its other meshes are not measured.")]
+    public List<Mesh> pieces = new();
+
+    [Tooltip("The motion model, VAT/<Model>_Motion.fbx: an empty a piece, keyed on every frame of one take.")]
+    public GameObject motion;
+
+    [Tooltip("The clip table the model's VAT renderers play; the bake writes its width, clips and bounds.")]
+    public VATClipTable table;
+
+    [Tooltip("Position texture the bake writes; empty writes T_<Set>_Pos.exr beside the set.")]
+    public Texture2D positions;
+
+    [Tooltip("Rotation texture the bake writes; empty writes T_<Set>_Rot.exr beside the set.")]
+    public Texture2D rotations;
+
+    private string Folder => Path.GetDirectoryName(AssetDatabase.GetAssetPath(this))!.Replace('\\', '/');
+
+    /// <summary>Samples the motion's take at every row and writes the textures and the table; returns their paths.</summary>
+    [ContextMenu("Bake")]
+    public List<string> Bake()
     {
-        [Tooltip("The model that holds the pieces' meshes.")]
-        public GameObject model;
-
-        [Tooltip("The model's meshes that carry each vertex's texture column in UV1. Its other meshes are not measured.")]
-        public List<Mesh> pieces = new();
-
-        [Tooltip("The motion model, VAT/<Model>_Motion.fbx: an empty a piece, keyed on every frame of one take.")]
-        public GameObject motion;
-
-        [Tooltip("The clip table the model's VAT renderers play; the bake writes its width, clips and bounds.")]
-        public VATClipTable table;
-
-        [Tooltip("Position texture the bake writes; empty writes T_<Set>_Pos.exr beside the set.")]
-        public Texture2D positions;
-
-        [Tooltip("Rotation texture the bake writes; empty writes T_<Set>_Rot.exr beside the set.")]
-        public Texture2D rotations;
-
-        private string Folder => Path.GetDirectoryName(AssetDatabase.GetAssetPath(this))!.Replace('\\', '/');
-
-        /// <summary>Samples the motion's take at every row and writes the textures and the table; returns their paths.</summary>
-        [ContextMenu("Bake")]
-        public List<string> Bake()
+        Check();
+        var rigid = RigidMotion.Find(motion);
+        var rows = rigid.RowCount;
+        if (rows > AnimationSetBake.MaxTextureSize || rigid.pieces.Count > AnimationSetBake.MaxTextureSize)
         {
-            Check();
-            var rigid = RigidMotion.Find(motion);
-            var rows = rigid.RowCount;
-            if (rows > AnimationSetBake.MaxTextureSize || rigid.pieces.Count > AnimationSetBake.MaxTextureSize)
-            {
-                throw new InvalidOperationException($"Rigid set '{name}' needs {rigid.pieces.Count} x {rows} texels, over the {AnimationSetBake.MaxTextureSize} texture limit.");
-            }
-
-            var poses = RigidPoses.Sample(motion, SingleTake(motion), rigid, rows);
-            // First, since it throws on a model whose vertices miss a column: nothing is written for one.
-            var bounds = poses.Bounds(model, pieces);
-            var positionsPath = TexturePath(positions, "Pos");
-            var rotationsPath = TexturePath(rotations, "Rot");
-            positions = WriteTexture(poses.Positions(), positionsPath);
-            rotations = WriteTexture(poses.Rotations(), rotationsPath);
-
-            table.width = rigid.pieces.Count;
-            table.boundsMin = bounds.min;
-            table.boundsMax = bounds.max;
-            table.clips = rigid.clips.Select(clip => new NamedClip
-            {
-                name = clip.name, startRow = clip.startRow, frameCount = clip.frameCount, fps = clip.fps, loop = clip.loop,
-            }).ToList();
-            EditorUtility.SetDirty(table);
-            EditorUtility.SetDirty(this);
-            AssetDatabase.SaveAssets();
-            return new List<string> { positionsPath, rotationsPath, AssetDatabase.GetAssetPath(table) };
+            throw new InvalidOperationException($"Rigid set '{name}' needs {rigid.pieces.Count} x {rows} texels, over the {AnimationSetBake.MaxTextureSize} texture limit.");
         }
 
-        private void Check()
-        {
-            if (model == null || motion == null || table == null)
-            {
-                throw new InvalidOperationException($"Rigid set '{name}' needs a model, a motion model and a clip table.");
-            }
+        var poses = RigidPoses.Sample(motion, SingleTake(motion), rigid, rows);
+        // First, since it throws on a model whose vertices miss a column: nothing is written for one.
+        var bounds = poses.Bounds(model, pieces);
+        var positionsPath = TexturePath(positions, "Pos");
+        var rotationsPath = TexturePath(rotations, "Rot");
+        positions = WriteTexture(poses.Positions(), positionsPath);
+        rotations = WriteTexture(poses.Rotations(), rotationsPath);
 
-            if (pieces.Count == 0)
-            {
-                throw new InvalidOperationException($"Rigid set '{name}' lists no piece meshes.");
-            }
+        table.width = rigid.pieces.Count;
+        table.boundsMin = bounds.min;
+        table.boundsMax = bounds.max;
+        table.clips = rigid.clips.Select(clip => new NamedClip
+        {
+            name = clip.name, startRow = clip.startRow, frameCount = clip.frameCount, fps = clip.fps, loop = clip.loop,
+        }).ToList();
+        EditorUtility.SetDirty(table);
+        EditorUtility.SetDirty(this);
+        AssetDatabase.SaveAssets();
+        return new List<string> { positionsPath, rotationsPath, AssetDatabase.GetAssetPath(table) };
+    }
+
+    private void Check()
+    {
+        if (model == null || motion == null || table == null)
+        {
+            throw new InvalidOperationException($"Rigid set '{name}' needs a model, a motion model and a clip table.");
         }
 
-        private static AnimationClip SingleTake(GameObject motionModel)
+        if (pieces.Count == 0)
         {
-            var path = AssetDatabase.GetAssetPath(motionModel);
-            var takes = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
-                .Where(clip => !clip.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
-            return takes.Count == 1 ? takes[0] : throw new InvalidOperationException($"HyperRTS: {path} needs exactly one take, but has {takes.Count}.");
+            throw new InvalidOperationException($"Rigid set '{name}' lists no piece meshes.");
         }
+    }
 
-        private string TexturePath(Texture2D texture, string kind) =>
-            texture != null ? AssetDatabase.GetAssetPath(texture) : $"{Folder}/T_{name}_{kind}.exr";
+    private static AnimationClip SingleTake(GameObject motionModel)
+    {
+        var path = AssetDatabase.GetAssetPath(motionModel);
+        var takes = AssetDatabase.LoadAllAssetsAtPath(path).OfType<AnimationClip>()
+            .Where(clip => !clip.name.StartsWith("__preview__", StringComparison.Ordinal)).ToList();
+        return takes.Count == 1 ? takes[0] : throw new InvalidOperationException($"HyperRTS: {path} needs exactly one take, but has {takes.Count}.");
+    }
 
-        // Half-float EXR, point sampled and uncompressed: the shader reads exact texels.
-        private static Texture2D WriteTexture(Texture2D made, string path)
+    private string TexturePath(Texture2D texture, string kind) =>
+        texture != null ? AssetDatabase.GetAssetPath(texture) : $"{Folder}/T_{name}_{kind}.exr";
+
+    // Half-float EXR, point sampled and uncompressed: the shader reads exact texels.
+    private static Texture2D WriteTexture(Texture2D made, string path)
+    {
+        File.WriteAllBytes(path, made.EncodeToEXR(Texture2D.EXRFlags.CompressZIP));
+        DestroyImmediate(made);
+        var texture = EditorTextures.Import(path, importer =>
         {
-            File.WriteAllBytes(path, made.EncodeToEXR(Texture2D.EXRFlags.CompressZIP));
-            DestroyImmediate(made);
-            var texture = EditorTextures.Import(path, importer =>
-            {
-                importer.textureType = TextureImporterType.Default;
-                importer.sRGBTexture = false;
-                importer.mipmapEnabled = false;
-                importer.npotScale = TextureImporterNPOTScale.None;
-                importer.filterMode = FilterMode.Point;
-                importer.wrapMode = TextureWrapMode.Clamp;
-                importer.isReadable = false;
-                importer.maxTextureSize = AnimationSetBake.MaxTextureSize;
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
-            });
-            GeneratedAssets.Mark(texture);
+            importer.textureType = TextureImporterType.Default;
+            importer.sRGBTexture = false;
+            importer.mipmapEnabled = false;
+            importer.npotScale = TextureImporterNPOTScale.None;
+            importer.filterMode = FilterMode.Point;
+            importer.wrapMode = TextureWrapMode.Clamp;
+            importer.isReadable = false;
+            importer.maxTextureSize = AnimationSetBake.MaxTextureSize;
+            importer.textureCompression = TextureImporterCompression.Uncompressed;
+        });
+        GeneratedAssets.Mark(texture);
 
-            return texture;
-        }
+        return texture;
     }
 }

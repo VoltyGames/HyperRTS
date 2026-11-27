@@ -1,216 +1,215 @@
+using HyperRTS.Presentation.Overlays.Markers;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
-using HyperRTS.Presentation.Overlays.Markers;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Overlays
+namespace HyperRTS.Presentation.Overlays;
+
+/// <summary>Colours and sizes of the world overlays; a game supplies its own asset to the overlay renderer.</summary>
+[CreateAssetMenu(menuName = HyperRTSMenu.Rig + "Overlay Style", fileName = "OverlayStyle")]
+public class OverlayStyle : ScriptableObject
 {
-    /// <summary>Colours and sizes of the world overlays; a game supplies its own asset to the overlay renderer.</summary>
-    [CreateAssetMenu(menuName = HyperRTSMenu.Rig + "Overlay Style", fileName = "OverlayStyle")]
-    public class OverlayStyle : ScriptableObject
+    [Header("Ground Markers")]
+    [Tooltip("Marker round the local player's own units.")]
+    public Color own = new(0.47f, 0.86f, 0.42f, 1f);
+
+    [Tooltip("Marker round allied units.")]
+    public Color ally = new(0.36f, 0.67f, 0.9f, 1f);
+
+    [Tooltip("Marker round hostile units.")]
+    public Color enemy = new(0.9f, 0.27f, 0.22f, 1f);
+
+    [Tooltip("Marker round neutral entities (resources, civilians).")]
+    public Color neutral = new(0.89f, 0.65f, 0.23f, 1f);
+
+    [Tooltip("Metres of clearance between the footprint and the marker line.")]
+    [Min(0f)]
+    public float markerMargin = 0.35f;
+
+    [Tooltip("Line width; never thinner than one and a half pixels.")]
+    [Unit("m")]
+    [Min(0.01f)]
+    public float markerLine = 0.16f;
+
+    [Tooltip("Metres the soft fill fades over inward from the line.")]
+    [Min(0f)]
+    public float markerFade = 0.7f;
+
+    [Tooltip("Opacity of the soft fill at the line.")]
+    [Range(0f, 1f)]
+    public float markerFill = 0.16f;
+
+    [Tooltip("Opacity of a hovered marker; it also draws with a thinner line and no fill.")]
+    [Range(0f, 1f)]
+    public float hoverOpacity = 0.8f;
+
+    [Tooltip("Seconds a new selection takes to settle from its larger, faded start.")]
+    [Min(0.01f)]
+    public float selectSeconds = 0.15f;
+
+    [Tooltip("Marker size at the start of the selection animation, relative to its final size.")]
+    [Min(1f)]
+    public float selectStartScale = 1.18f;
+
+    [Header("Team Markers")]
+    [Tooltip("A mobile unit drawn shorter than this many pixels at 1080p, feet to top, gets an owner-coloured pip above it.")]
+    [Min(0f)]
+    public float smallUnitHeight = 20f;
+
+    [Tooltip("Diameter of the small-unit pip in pixels at 1080p.")]
+    [Min(2f)]
+    public float unitPipSize = 6f;
+
+    [Tooltip("Gap in pixels at 1080p between the top of the model and the pip; keep it below the bar offset.")]
+    [Min(0f)]
+    public float unitPipOffset = 2f;
+
+    [Header("Health Bars")]
+    [Tooltip("Bar width in pixels at 1080p per metre of unit radius, before the clamp below.")]
+    [Min(0f)]
+    public float barWidthPerMetre = 12f;
+
+    [Tooltip("Narrowest and widest bar in pixels at 1080p.")]
+    public Vector2 barWidthRange = new(36f, 96f);
+
+    [Tooltip("Bar height in pixels at 1080p.")]
+    [Min(2f)]
+    public float barHeight = 6f;
+
+    [Tooltip("Fewest screen pixels a health bar is tall at any resolution or UI scale; unit pips grow with it.")]
+    [Min(1f)]
+    public float barMinHeight = 5f;
+
+    [Tooltip("Gap in pixels at 1080p between the top of the model and the bar.")]
+    [Min(0f)]
+    public float barOffset = 10f;
+
+    [Tooltip("Health one bar segment stands for; squads show a segment per member.")]
+    [Min(1f)]
+    public float healthPerSegment = 100f;
+
+    [Tooltip("Most segments a bar is cut into.")]
+    [Range(1, 20)]
+    public int maxSegments = 10;
+
+    [Tooltip("Backing behind the bar and its pips.")]
+    public Color healthBack = new(0.02f, 0.03f, 0.03f, 0.82f);
+
+    [Tooltip("Fill at full health.")]
+    public Color healthHigh = new(0.52f, 0.8f, 0.36f, 1f);
+
+    [Tooltip("Fill at half health.")]
+    public Color healthMid = new(0.93f, 0.74f, 0.23f, 1f);
+
+    [Tooltip("Fill near death.")]
+    public Color healthLow = new(0.88f, 0.27f, 0.2f, 1f);
+
+    [Tooltip("Veterancy rank pips.")]
+    public Color rankPip = new(0.98f, 0.78f, 0.38f, 1f);
+
+    [Tooltip("Living squad member pips; fallen members show as dim pips.")]
+    public Color memberPip = new(0.92f, 0.91f, 0.87f, 1f);
+
+    [Header("Squads")]
+    [Tooltip("Suppression strip under a squad's health bar while suppressed.")]
+    public Color suppressed = new(0.98f, 0.8f, 0.25f, 1f);
+
+    [Tooltip("Suppression strip while pinned.")]
+    public Color pinned = new(0.9f, 0.25f, 0.2f, 1f);
+
+    [Tooltip("Strip while the squad retreats.")]
+    public Color retreating = new(0.45f, 0.7f, 1f, 1f);
+
+    [Tooltip("Cover mark on a squad's bar and cover preview spots: heavy cover.")]
+    public Color heavyCover = new(0.35f, 0.85f, 0.4f, 1f);
+
+    [Tooltip("Cover mark and preview spots for light cover.")]
+    public Color lightCover = new(0.95f, 0.85f, 0.25f, 1f);
+
+    [Tooltip("Cover preview ring where a move would find no cover.")]
+    public Color noCover = new(0.9f, 0.25f, 0.2f, 0.8f);
+
+    [Header("Capture & Garrison")]
+    [Tooltip("Backing behind the capture dial and the garrison pips.")]
+    public Color markerBack = new(0.03f, 0.03f, 0.03f, 0.7f);
+
+    [Tooltip("Unfilled part of the capture dial's ring; the filled part takes the capturer's colour.")]
+    public Color dialTrack = new(1f, 1f, 1f, 0.22f);
+
+    [Tooltip("Capture dial radius in pixels at 1080p, the same at every zoom.")]
+    [Min(4f)]
+    public float dialRadius = 18f;
+
+    [Tooltip("Empty garrison slot; filled slots take the holder's colour.")]
+    public Color pipEmpty = new(1f, 1f, 1f, 0.22f);
+
+    [Tooltip("Garrison pip size in pixels at 1080p.")]
+    [Min(2f)]
+    public float pipSize = 7f;
+
+    [Tooltip("Gap in pixels at 1080p between the top of a building and its markers.")]
+    [Min(0f)]
+    public float markerOffset = 14f;
+
+    [Header("Placement & Rally")]
+    [Tooltip("Placement ghost and footprint outline where the building can be placed.")]
+    public Color placementValid = new(0.25f, 1f, 0.35f, 0.35f);
+
+    [Tooltip("Placement ghost, outline and blocking cells where the building can't be placed.")]
+    public Color placementInvalid = new(1f, 0.2f, 0.2f, 0.35f);
+
+    [Tooltip("Rally point marker and line.")]
+    public Color rally = new(0.3f, 0.8f, 1f, 0.85f);
+
+    [Header("Fire Missions")]
+    [Tooltip("Outline of each launcher's farthest reach while aiming a fire mission.")]
+    public Color fireReach = new(0.95f, 0.9f, 0.6f, 0.9f);
+
+    [Tooltip("Soft fill inside each launcher's minimum range, which it can't hit.")]
+    public Color fireDeadZone = new(0.9f, 0.3f, 0.22f, 1f);
+
+    [Tooltip("Circle the salvo covers at the pointer when a launcher can reach it from where it stands.")]
+    public Color fireReady = new(0.95f, 0.55f, 0.2f, 1f);
+
+    [Tooltip("Outline of the salvo circle when no launcher reaches the point and each would drive into range.")]
+    public Color fireMove = new(0.55f, 0.8f, 1f, 0.9f);
+
+    [Tooltip("Opacity of the fire mission fills at their edge.")]
+    [Range(0f, 1f)]
+    public float fireFill = 0.35f;
+
+    /// <summary>Bumped on every inspector edit, so drawers that cache style values re-read them.</summary>
+    public int Version { get; private set; }
+
+    private void OnValidate() => Version++;
+
+    /// <summary>
+    /// Reference pixels to screen pixels at the current resolution and UI scale, kept large enough that a bar is
+    /// never shorter than the minimum.
+    /// </summary>
+    public float PixelScale(float screenHeight, float uiScale) => Mathf.Max(
+        screenHeight / ReferencePixels.ScreenHeight * uiScale, barMinHeight / barHeight);
+
+    public Color RelationColor(Relation relation) => relation switch
     {
-        [Header("Ground Markers")]
-        [Tooltip("Marker round the local player's own units.")]
-        public Color own = new(0.47f, 0.86f, 0.42f, 1f);
+        Relation.Own => own,
+        Relation.Ally => ally,
+        Relation.Enemy => enemy,
+        _ => neutral,
+    };
 
-        [Tooltip("Marker round allied units.")]
-        public Color ally = new(0.36f, 0.67f, 0.9f, 1f);
+    /// <summary>Bar width in reference pixels for a unit of <paramref name="radius"/> metres.</summary>
+    public float BarWidth(float radius) =>
+        Mathf.Clamp(radius * barWidthPerMetre * 2f, barWidthRange.x, barWidthRange.y);
 
-        [Tooltip("Marker round hostile units.")]
-        public Color enemy = new(0.9f, 0.27f, 0.22f, 1f);
+    /// <summary>Segments for a bar of <paramref name="maxHealth"/>, or one per member for squads.</summary>
+    public int Segments(float maxHealth, int members) =>
+        members > 0 ? members : Mathf.Clamp(Mathf.CeilToInt(maxHealth / healthPerSegment), 1, maxSegments);
 
-        [Tooltip("Marker round neutral entities (resources, civilians).")]
-        public Color neutral = new(0.89f, 0.65f, 0.23f, 1f);
+    /// <summary>A marker drawn as its rim alone.</summary>
+    public MarkerLook Outline => new(markerLine, markerFade, 0f);
 
-        [Tooltip("Metres of clearance between the footprint and the marker line.")]
-        [Min(0f)]
-        public float markerMargin = 0.35f;
-
-        [Tooltip("Line width; never thinner than one and a half pixels.")]
-        [Unit("m")]
-        [Min(0.01f)]
-        public float markerLine = 0.16f;
-
-        [Tooltip("Metres the soft fill fades over inward from the line.")]
-        [Min(0f)]
-        public float markerFade = 0.7f;
-
-        [Tooltip("Opacity of the soft fill at the line.")]
-        [Range(0f, 1f)]
-        public float markerFill = 0.16f;
-
-        [Tooltip("Opacity of a hovered marker; it also draws with a thinner line and no fill.")]
-        [Range(0f, 1f)]
-        public float hoverOpacity = 0.8f;
-
-        [Tooltip("Seconds a new selection takes to settle from its larger, faded start.")]
-        [Min(0.01f)]
-        public float selectSeconds = 0.15f;
-
-        [Tooltip("Marker size at the start of the selection animation, relative to its final size.")]
-        [Min(1f)]
-        public float selectStartScale = 1.18f;
-
-        [Header("Team Markers")]
-        [Tooltip("A mobile unit drawn shorter than this many pixels at 1080p, feet to top, gets an owner-coloured pip above it.")]
-        [Min(0f)]
-        public float smallUnitHeight = 20f;
-
-        [Tooltip("Diameter of the small-unit pip in pixels at 1080p.")]
-        [Min(2f)]
-        public float unitPipSize = 6f;
-
-        [Tooltip("Gap in pixels at 1080p between the top of the model and the pip; keep it below the bar offset.")]
-        [Min(0f)]
-        public float unitPipOffset = 2f;
-
-        [Header("Health Bars")]
-        [Tooltip("Bar width in pixels at 1080p per metre of unit radius, before the clamp below.")]
-        [Min(0f)]
-        public float barWidthPerMetre = 12f;
-
-        [Tooltip("Narrowest and widest bar in pixels at 1080p.")]
-        public Vector2 barWidthRange = new(36f, 96f);
-
-        [Tooltip("Bar height in pixels at 1080p.")]
-        [Min(2f)]
-        public float barHeight = 6f;
-
-        [Tooltip("Fewest screen pixels a health bar is tall at any resolution or UI scale; unit pips grow with it.")]
-        [Min(1f)]
-        public float barMinHeight = 5f;
-
-        [Tooltip("Gap in pixels at 1080p between the top of the model and the bar.")]
-        [Min(0f)]
-        public float barOffset = 10f;
-
-        [Tooltip("Health one bar segment stands for; squads show a segment per member.")]
-        [Min(1f)]
-        public float healthPerSegment = 100f;
-
-        [Tooltip("Most segments a bar is cut into.")]
-        [Range(1, 20)]
-        public int maxSegments = 10;
-
-        [Tooltip("Backing behind the bar and its pips.")]
-        public Color healthBack = new(0.02f, 0.03f, 0.03f, 0.82f);
-
-        [Tooltip("Fill at full health.")]
-        public Color healthHigh = new(0.52f, 0.8f, 0.36f, 1f);
-
-        [Tooltip("Fill at half health.")]
-        public Color healthMid = new(0.93f, 0.74f, 0.23f, 1f);
-
-        [Tooltip("Fill near death.")]
-        public Color healthLow = new(0.88f, 0.27f, 0.2f, 1f);
-
-        [Tooltip("Veterancy rank pips.")]
-        public Color rankPip = new(0.98f, 0.78f, 0.38f, 1f);
-
-        [Tooltip("Living squad member pips; fallen members show as dim pips.")]
-        public Color memberPip = new(0.92f, 0.91f, 0.87f, 1f);
-
-        [Header("Squads")]
-        [Tooltip("Suppression strip under a squad's health bar while suppressed.")]
-        public Color suppressed = new(0.98f, 0.8f, 0.25f, 1f);
-
-        [Tooltip("Suppression strip while pinned.")]
-        public Color pinned = new(0.9f, 0.25f, 0.2f, 1f);
-
-        [Tooltip("Strip while the squad retreats.")]
-        public Color retreating = new(0.45f, 0.7f, 1f, 1f);
-
-        [Tooltip("Cover mark on a squad's bar and cover preview spots: heavy cover.")]
-        public Color heavyCover = new(0.35f, 0.85f, 0.4f, 1f);
-
-        [Tooltip("Cover mark and preview spots for light cover.")]
-        public Color lightCover = new(0.95f, 0.85f, 0.25f, 1f);
-
-        [Tooltip("Cover preview ring where a move would find no cover.")]
-        public Color noCover = new(0.9f, 0.25f, 0.2f, 0.8f);
-
-        [Header("Capture & Garrison")]
-        [Tooltip("Backing behind the capture dial and the garrison pips.")]
-        public Color markerBack = new(0.03f, 0.03f, 0.03f, 0.7f);
-
-        [Tooltip("Unfilled part of the capture dial's ring; the filled part takes the capturer's colour.")]
-        public Color dialTrack = new(1f, 1f, 1f, 0.22f);
-
-        [Tooltip("Capture dial radius in pixels at 1080p, the same at every zoom.")]
-        [Min(4f)]
-        public float dialRadius = 18f;
-
-        [Tooltip("Empty garrison slot; filled slots take the holder's colour.")]
-        public Color pipEmpty = new(1f, 1f, 1f, 0.22f);
-
-        [Tooltip("Garrison pip size in pixels at 1080p.")]
-        [Min(2f)]
-        public float pipSize = 7f;
-
-        [Tooltip("Gap in pixels at 1080p between the top of a building and its markers.")]
-        [Min(0f)]
-        public float markerOffset = 14f;
-
-        [Header("Placement & Rally")]
-        [Tooltip("Placement ghost and footprint outline where the building can be placed.")]
-        public Color placementValid = new(0.25f, 1f, 0.35f, 0.35f);
-
-        [Tooltip("Placement ghost, outline and blocking cells where the building can't be placed.")]
-        public Color placementInvalid = new(1f, 0.2f, 0.2f, 0.35f);
-
-        [Tooltip("Rally point marker and line.")]
-        public Color rally = new(0.3f, 0.8f, 1f, 0.85f);
-
-        [Header("Fire Missions")]
-        [Tooltip("Outline of each launcher's farthest reach while aiming a fire mission.")]
-        public Color fireReach = new(0.95f, 0.9f, 0.6f, 0.9f);
-
-        [Tooltip("Soft fill inside each launcher's minimum range, which it can't hit.")]
-        public Color fireDeadZone = new(0.9f, 0.3f, 0.22f, 1f);
-
-        [Tooltip("Circle the salvo covers at the pointer when a launcher can reach it from where it stands.")]
-        public Color fireReady = new(0.95f, 0.55f, 0.2f, 1f);
-
-        [Tooltip("Outline of the salvo circle when no launcher reaches the point and each would drive into range.")]
-        public Color fireMove = new(0.55f, 0.8f, 1f, 0.9f);
-
-        [Tooltip("Opacity of the fire mission fills at their edge.")]
-        [Range(0f, 1f)]
-        public float fireFill = 0.35f;
-
-        /// <summary>Bumped on every inspector edit, so drawers that cache style values re-read them.</summary>
-        public int Version { get; private set; }
-
-        private void OnValidate() => Version++;
-
-        /// <summary>
-        /// Reference pixels to screen pixels at the current resolution and UI scale, kept large enough that a bar is
-        /// never shorter than the minimum.
-        /// </summary>
-        public float PixelScale(float screenHeight, float uiScale) => Mathf.Max(
-            screenHeight / ReferencePixels.ScreenHeight * uiScale, barMinHeight / barHeight);
-
-        public Color RelationColor(Relation relation) => relation switch
-        {
-            Relation.Own => own,
-            Relation.Ally => ally,
-            Relation.Enemy => enemy,
-            _ => neutral,
-        };
-
-        /// <summary>Bar width in reference pixels for a unit of <paramref name="radius"/> metres.</summary>
-        public float BarWidth(float radius) =>
-            Mathf.Clamp(radius * barWidthPerMetre * 2f, barWidthRange.x, barWidthRange.y);
-
-        /// <summary>Segments for a bar of <paramref name="maxHealth"/>, or one per member for squads.</summary>
-        public int Segments(float maxHealth, int members) =>
-            members > 0 ? members : Mathf.Clamp(Mathf.CeilToInt(maxHealth / healthPerSegment), 1, maxSegments);
-
-        /// <summary>A marker drawn as its rim alone.</summary>
-        public MarkerLook Outline => new(markerLine, markerFade, 0f);
-
-        /// <summary>A fire-mission disc filled from its rim, fading in over <paramref name="fade"/> metres.</summary>
-        public MarkerLook FireDisc(float fade) => new(markerLine, fade, fireFill);
-    }
+    /// <summary>A fire-mission disc filled from its rim, fading in over <paramref name="fade"/> metres.</summary>
+    public MarkerLook FireDisc(float fade) => new(markerLine, fade, fireFill);
 }

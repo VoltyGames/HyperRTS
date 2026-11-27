@@ -1,15 +1,14 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Common.Prefabs
-{
-    /// <summary>
-    /// A replicated buffer element that names a prefab by <c>EntityInfo.TypeId</c>, since entities can't cross the
-    /// network; clients fill the prefab back in (<c>PrefabReferences.Resolve</c>).
-    /// </summary>
-    public interface IPrefabReference : IBufferElementData
-    {
-        int TypeId { get; }
+namespace HyperRTS.Simulation.Common.Prefabs;
 
-        Entity Prefab { get; set; }
-    }
+/// <summary>
+/// A replicated buffer element that names a prefab by <c>EntityInfo.TypeId</c>, since entities can't cross the
+/// network; clients fill the prefab back in (<c>PrefabReferences.Resolve</c>).
+/// </summary>
+public interface IPrefabReference : IBufferElementData
+{
+    int TypeId { get; }
+
+    Entity Prefab { get; set; }
 }

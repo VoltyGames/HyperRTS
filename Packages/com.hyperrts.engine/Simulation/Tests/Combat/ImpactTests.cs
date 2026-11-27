@@ -12,178 +12,177 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Tests.Combat
+namespace HyperRTS.Simulation.Tests.Combat;
+
+/// <summary>Impact cues for marks and effects: who writes them, where they land and what surface they struck.</summary>
+public class ImpactTests
 {
-    /// <summary>Impact cues for marks and effects: who writes them, where they land and what surface they struck.</summary>
-    public class ImpactTests
+    private TestWorld _world;
+    private ImpactMark _mark;
+
+    [SetUp]
+    public void SetUp()
     {
-        private TestWorld _world;
-        private ImpactMark _mark;
+        _world = new TestWorld();
+        _world.CreateMatch(1, 2);
+        _mark = ScriptableObject.CreateInstance<ImpactMark>();
+    }
 
-        [SetUp]
-        public void SetUp()
+    [TearDown]
+    public void TearDown()
+    {
+        _world.Dispose();
+        Object.DestroyImmediate(_mark);
+    }
+
+    internal static Entity Marked(TestWorld world, Entity shooter, ImpactMark mark)
+    {
+        var writer = world.Writer(shooter);
+        ImpactAuthoring.Add(writer, new[] { mark });
+        return shooter;
+    }
+
+    private Entity Gun(float3 position, float range = 6f, WeaponTargets targets = WeaponTargets.Surface) =>
+        Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, position, new TestUnit
         {
-            _world = new TestWorld();
-            _world.CreateMatch(1, 2);
-            _mark = ScriptableObject.CreateInstance<ImpactMark>();
+            Name = "Mortar",
+        }), new TestWeapon
+        {
+            Range = range,
+            Cooldown = 100f,
+            Targets = targets,
+        }), _mark);
+
+    [Test]
+    public void InstantHit_LandsOnceOnTheGroundAtItsTarget_UnderTheShootersType()
+    {
+        var gun = Gun(float3.zero);
+        _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+
+        var landed = _world.QueuedOver(1f, CueSlot.Impact);
+
+        Assert.AreEqual(1, landed.Count, "one shot, reported for its frame only");
+        Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
+        Assert.AreEqual(new float3(3f, 0f, 0f), landed[0].Position);
+        Assert.AreEqual(1, landed[0].Owner);
+        Assert.AreEqual(ImpactSurface.Ground, landed[0].Surface);
+    }
+
+    [Test]
+    public void ProjectileImpact_LandsOnArrival_EvenAfterTheShooterDied()
+    {
+        var gun = Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, float3.zero, new TestUnit
+        {
+            Name = "Howitzer",
+        }), new TestWeapon
+        {
+            Range = 8f,
+            Cooldown = 100f,
+            Projectile = _world.ProjectilePrefab(),
+        }), _mark);
+        var typeId = _world.GetTypeId(gun);
+        _world.SpawnUnit(2, new float3(6f, 0f, 0f));
+
+        using var projectiles = _world.Query(typeof(Projectile));
+        Assert.IsTrue(_world.RunUntil(() => !projectiles.IsEmpty, 1f), "the shell is in flight");
+
+        _world.EntityManager.DestroyEntity(gun);
+        var landed = _world.QueuedOver(2f, CueSlot.Impact);
+
+        Assert.AreEqual(1, landed.Count);
+        Assert.AreEqual(typeId, landed[0].TypeId);
+        Assert.AreEqual(6f, landed[0].Position.x, 0.5f);
+        Assert.AreEqual(ImpactSurface.Ground, landed[0].Surface, "the target is gone or not; the ground is land");
+    }
+
+    [Test]
+    public void HitOnABuilding_StruckAStructure()
+    {
+        Gun(float3.zero);
+        _world.SpawnBuilding(2, new float3(4f, 0f, 0f), new float2(2f, 2f));
+
+        Assert.AreEqual(ImpactSurface.Structure, _world.QueuedOver(1f, CueSlot.Impact)[0].Surface);
+    }
+
+    [Test]
+    public void HitOnAShip_StruckTheWater()
+    {
+        _world.ConfigureMap(waterLevel: -1f);
+        _world.SpawnNavArea(new float3(10f, 0f, 0f), new float2(10f, 40f), NavAreaKind.Water);
+        Gun(float3.zero, range: 10f);
+        _world.SpawnShip(2, new float3(9f, 0f, 0f));
+
+        var landed = _world.QueuedOver(1f, CueSlot.Impact)[0];
+        Assert.AreEqual(ImpactSurface.Water, landed.Surface);
+        Assert.AreEqual(SurfaceMaterial.Water, landed.Material, "a ship without a hit material splashes");
+    }
+
+    [Test]
+    public void HitOnATargetWithAHitMaterial_StruckThatMaterial_OpenGroundTheGroundMap()
+    {
+        var cells = new NativeArray<byte>(64 * 64, Allocator.Temp);
+        for (var i = 0; i < cells.Length; i++)
+        {
+            cells[i] = (byte)SurfaceMaterial.Sand;
         }
 
-        [TearDown]
-        public void TearDown()
+        var ground = GroundMaterials.Create(cells, new int2(64, 64), new float2(-32f, -32f), 2f, Allocator.Persistent);
+        cells.Dispose();
+        _world.EntityManager.CreateSingleton(ground);
+        Gun(float3.zero);
+        Gun(new float3(0f, 0f, 40f));
+        var tank = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+        var writer = _world.Writer(tank);
+        HitMaterialAuthoring.Add(writer, SurfaceMaterial.Metal);
+        _world.SpawnUnit(2, new float3(3f, 0f, 40f));
+
+        var landed = _world.QueuedOver(1f, CueSlot.Impact);
+
+        Assert.AreEqual(2, landed.Count);
+        var onTank = landed[0].Position.z < 20f ? landed[0] : landed[1];
+        var onGround = landed[0].Position.z < 20f ? landed[1] : landed[0];
+        Assert.AreEqual(SurfaceMaterial.Metal, onTank.Material);
+        Assert.AreEqual(SurfaceMaterial.Sand, onGround.Material, "open ground reads the ground map");
+        ground.Blob.Dispose();
+    }
+
+    [Test]
+    public void ShotsWithOnlyImpactEffects_StillWriteImpacts()
+    {
+        var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
+        var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, new TestUnit { Name = "Rifle" }), new TestWeapon
         {
-            _world.Dispose();
-            Object.DestroyImmediate(_mark);
-        }
+            Cooldown = 100f,
+        });
+        var writer = _world.Writer(gun);
+        ImpactAuthoring.Add(writer, effects);
+        _world.SpawnUnit(2, new float3(3f, 0f, 0f));
 
-        internal static Entity Marked(TestWorld world, Entity shooter, ImpactMark mark)
-        {
-            var writer = world.Writer(shooter);
-            ImpactAuthoring.Add(writer, new[] { mark });
-            return shooter;
-        }
+        var landed = _world.QueuedOver(1f, CueSlot.Impact);
+        Object.DestroyImmediate(effects);
 
-        private Entity Gun(float3 position, float range = 6f, WeaponTargets targets = WeaponTargets.Surface) =>
-            Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, position, new TestUnit
-            {
-                Name = "Mortar",
-            }), new TestWeapon
-            {
-                Range = range,
-                Cooldown = 100f,
-                Targets = targets,
-            }), _mark);
+        Assert.AreEqual(1, landed.Count);
+        Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
+    }
 
-        [Test]
-        public void InstantHit_LandsOnceOnTheGroundAtItsTarget_UnderTheShootersType()
-        {
-            var gun = Gun(float3.zero);
-            _world.SpawnUnit(2, new float3(3f, 0f, 0f));
+    [Test]
+    public void HitOnABridge_StruckAStructure_AndInAFord_TheWater()
+    {
+        _world.ConfigureMap(waterLevel: -1f);
+        _world.SpawnNavArea(float3.zero, new float2(6f, 200f), NavAreaKind.Water);
+        _world.SpawnNavArea(new float3(0f, 2f, 0f), new float2(10f, 4f), NavAreaKind.Deck);
+        _world.SpawnNavArea(new float3(0f, -1.15f, 40f), new float2(10f, 4f), NavAreaKind.Deck);
+        Gun(new float3(-8f, 0f, 0f), range: 10f);
+        Gun(new float3(-8f, 0f, 40f), range: 10f);
+        _world.SpawnUnit(2, new float3(0f, 2f, 0f));
+        _world.SpawnUnit(2, new float3(0f, -1.15f, 40f));
 
-            var landed = _world.QueuedOver(1f, CueSlot.Impact);
+        var landed = _world.QueuedOver(1f, CueSlot.Impact);
 
-            Assert.AreEqual(1, landed.Count, "one shot, reported for its frame only");
-            Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
-            Assert.AreEqual(new float3(3f, 0f, 0f), landed[0].Position);
-            Assert.AreEqual(1, landed[0].Owner);
-            Assert.AreEqual(ImpactSurface.Ground, landed[0].Surface);
-        }
-
-        [Test]
-        public void ProjectileImpact_LandsOnArrival_EvenAfterTheShooterDied()
-        {
-            var gun = Marked(_world, _world.AddWeapon(_world.SpawnUnit(1, float3.zero, new TestUnit
-            {
-                Name = "Howitzer",
-            }), new TestWeapon
-            {
-                Range = 8f,
-                Cooldown = 100f,
-                Projectile = _world.ProjectilePrefab(),
-            }), _mark);
-            var typeId = _world.GetTypeId(gun);
-            _world.SpawnUnit(2, new float3(6f, 0f, 0f));
-
-            using var projectiles = _world.Query(typeof(Projectile));
-            Assert.IsTrue(_world.RunUntil(() => !projectiles.IsEmpty, 1f), "the shell is in flight");
-
-            _world.EntityManager.DestroyEntity(gun);
-            var landed = _world.QueuedOver(2f, CueSlot.Impact);
-
-            Assert.AreEqual(1, landed.Count);
-            Assert.AreEqual(typeId, landed[0].TypeId);
-            Assert.AreEqual(6f, landed[0].Position.x, 0.5f);
-            Assert.AreEqual(ImpactSurface.Ground, landed[0].Surface, "the target is gone or not; the ground is land");
-        }
-
-        [Test]
-        public void HitOnABuilding_StruckAStructure()
-        {
-            Gun(float3.zero);
-            _world.SpawnBuilding(2, new float3(4f, 0f, 0f), new float2(2f, 2f));
-
-            Assert.AreEqual(ImpactSurface.Structure, _world.QueuedOver(1f, CueSlot.Impact)[0].Surface);
-        }
-
-        [Test]
-        public void HitOnAShip_StruckTheWater()
-        {
-            _world.ConfigureMap(waterLevel: -1f);
-            _world.SpawnNavArea(new float3(10f, 0f, 0f), new float2(10f, 40f), NavAreaKind.Water);
-            Gun(float3.zero, range: 10f);
-            _world.SpawnShip(2, new float3(9f, 0f, 0f));
-
-            var landed = _world.QueuedOver(1f, CueSlot.Impact)[0];
-            Assert.AreEqual(ImpactSurface.Water, landed.Surface);
-            Assert.AreEqual(SurfaceMaterial.Water, landed.Material, "a ship without a hit material splashes");
-        }
-
-        [Test]
-        public void HitOnATargetWithAHitMaterial_StruckThatMaterial_OpenGroundTheGroundMap()
-        {
-            var cells = new NativeArray<byte>(64 * 64, Allocator.Temp);
-            for (var i = 0; i < cells.Length; i++)
-            {
-                cells[i] = (byte)SurfaceMaterial.Sand;
-            }
-
-            var ground = GroundMaterials.Create(cells, new int2(64, 64), new float2(-32f, -32f), 2f, Allocator.Persistent);
-            cells.Dispose();
-            _world.EntityManager.CreateSingleton(ground);
-            Gun(float3.zero);
-            Gun(new float3(0f, 0f, 40f));
-            var tank = _world.SpawnUnit(2, new float3(3f, 0f, 0f));
-            var writer = _world.Writer(tank);
-            HitMaterialAuthoring.Add(writer, SurfaceMaterial.Metal);
-            _world.SpawnUnit(2, new float3(3f, 0f, 40f));
-
-            var landed = _world.QueuedOver(1f, CueSlot.Impact);
-
-            Assert.AreEqual(2, landed.Count);
-            var onTank = landed[0].Position.z < 20f ? landed[0] : landed[1];
-            var onGround = landed[0].Position.z < 20f ? landed[1] : landed[0];
-            Assert.AreEqual(SurfaceMaterial.Metal, onTank.Material);
-            Assert.AreEqual(SurfaceMaterial.Sand, onGround.Material, "open ground reads the ground map");
-            ground.Blob.Dispose();
-        }
-
-        [Test]
-        public void ShotsWithOnlyImpactEffects_StillWriteImpacts()
-        {
-            var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
-            var gun = _world.AddWeapon(_world.SpawnUnit(1, float3.zero, new TestUnit { Name = "Rifle" }), new TestWeapon
-            {
-                Cooldown = 100f,
-            });
-            var writer = _world.Writer(gun);
-            ImpactAuthoring.Add(writer, effects);
-            _world.SpawnUnit(2, new float3(3f, 0f, 0f));
-
-            var landed = _world.QueuedOver(1f, CueSlot.Impact);
-            Object.DestroyImmediate(effects);
-
-            Assert.AreEqual(1, landed.Count);
-            Assert.AreEqual(_world.GetTypeId(gun), landed[0].TypeId);
-        }
-
-        [Test]
-        public void HitOnABridge_StruckAStructure_AndInAFord_TheWater()
-        {
-            _world.ConfigureMap(waterLevel: -1f);
-            _world.SpawnNavArea(float3.zero, new float2(6f, 200f), NavAreaKind.Water);
-            _world.SpawnNavArea(new float3(0f, 2f, 0f), new float2(10f, 4f), NavAreaKind.Deck);
-            _world.SpawnNavArea(new float3(0f, -1.15f, 40f), new float2(10f, 4f), NavAreaKind.Deck);
-            Gun(new float3(-8f, 0f, 0f), range: 10f);
-            Gun(new float3(-8f, 0f, 40f), range: 10f);
-            _world.SpawnUnit(2, new float3(0f, 2f, 0f));
-            _world.SpawnUnit(2, new float3(0f, -1.15f, 40f));
-
-            var landed = _world.QueuedOver(1f, CueSlot.Impact);
-
-            Assert.AreEqual(2, landed.Count);
-            var onBridge = landed[0].Position.z < 20f ? landed[0] : landed[1];
-            var inFord = landed[0].Position.z < 20f ? landed[1] : landed[0];
-            Assert.AreEqual(ImpactSurface.Structure, onBridge.Surface);
-            Assert.AreEqual(ImpactSurface.Water, inFord.Surface);
-        }
+        Assert.AreEqual(2, landed.Count);
+        var onBridge = landed[0].Position.z < 20f ? landed[0] : landed[1];
+        var inFord = landed[0].Position.z < 20f ? landed[1] : landed[0];
+        Assert.AreEqual(ImpactSurface.Structure, onBridge.Surface);
+        Assert.AreEqual(ImpactSurface.Water, inFord.Surface);
     }
 }

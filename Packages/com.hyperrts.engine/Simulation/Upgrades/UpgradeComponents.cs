@@ -2,22 +2,21 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Upgrades
+namespace HyperRTS.Simulation.Upgrades;
+
+/// <summary>How many of <see cref="Owner"/>'s researched upgrades this entity already carries.</summary>
+public struct AppliedUpgrades : IComponentData
 {
-    /// <summary>How many of <see cref="Owner"/>'s researched upgrades this entity already carries.</summary>
-    public struct AppliedUpgrades : IComponentData
-    {
-        public int Count;
+    public int Count;
 
-        /// <summary>The owner they came from; a new owner's upgrades replace them.</summary>
-        public byte Owner;
-    }
+    /// <summary>The owner they came from; a new owner's upgrades replace them.</summary>
+    public byte Owner;
+}
 
-    /// <summary>One modifier an upgrade grants; <see cref="AppliesTo"/> is an entity type id, 0 for every type.</summary>
-    [InternalBufferCapacity(2)]
-    public struct UpgradeEffect : IBufferElementData
-    {
-        public int AppliesTo;
-        public StatModifier Modifier;
-    }
+/// <summary>One modifier an upgrade grants; <see cref="AppliesTo"/> is an entity type id, 0 for every type.</summary>
+[InternalBufferCapacity(2)]
+public struct UpgradeEffect : IBufferElementData
+{
+    public int AppliesTo;
+    public StatModifier Modifier;
 }

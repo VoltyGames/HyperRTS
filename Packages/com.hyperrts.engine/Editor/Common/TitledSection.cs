@@ -1,25 +1,24 @@
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Common
+namespace HyperRTS.Editor.Common;
+
+/// <summary>A titled block of editor controls; its children follow the title.</summary>
+[UxmlElement]
+public sealed partial class TitledSection : VisualElement
 {
-    /// <summary>A titled block of editor controls; its children follow the title.</summary>
-    [UxmlElement]
-    public sealed partial class TitledSection : VisualElement
+    private readonly Label _title = new();
+
+    public TitledSection()
     {
-        private readonly Label _title = new();
+        AddToClassList("hrts-section");
+        _title.AddToClassList("hrts-section__title");
+        hierarchy.Add(_title);
+    }
 
-        public TitledSection()
-        {
-            AddToClassList("hrts-section");
-            _title.AddToClassList("hrts-section__title");
-            hierarchy.Add(_title);
-        }
-
-        [UxmlAttribute]
-        public string Title
-        {
-            get => _title.text;
-            set => _title.text = value;
-        }
+    [UxmlAttribute]
+    public string Title
+    {
+        get => _title.text;
+        set => _title.text = value;
     }
 }

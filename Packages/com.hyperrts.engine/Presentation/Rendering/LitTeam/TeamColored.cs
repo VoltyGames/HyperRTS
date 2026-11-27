@@ -1,11 +1,10 @@
 using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 
-namespace HyperRTS.Presentation.Rendering.LitTeam
+namespace HyperRTS.Presentation.Rendering.LitTeam;
+
+/// <summary>Owner whose colour was last applied to this root; client-only bookkeeping.</summary>
+public struct TeamColored : IComponentData
 {
-    /// <summary>Owner whose colour was last applied to this root; client-only bookkeeping.</summary>
-    public struct TeamColored : IComponentData
-    {
-        public byte Owner;
-    }
+    public byte Owner;
 }

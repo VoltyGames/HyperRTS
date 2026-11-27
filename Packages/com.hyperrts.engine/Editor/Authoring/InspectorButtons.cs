@@ -11,118 +11,117 @@ using UnityEngine;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring;
+
+/// <summary>Builds an inspector's <see cref="InspectorButtonAttribute"/> buttons and runs a press on every selected component.</summary>
+internal sealed class InspectorButtons
 {
-    /// <summary>Builds an inspector's <see cref="InspectorButtonAttribute"/> buttons and runs a press on every selected component.</summary>
-    internal sealed class InspectorButtons
+    private readonly Object[] _targets;
+    private readonly HelpBox _error;
+
+    public InspectorButtons(Object[] targets, HelpBox error)
     {
-        private readonly Object[] _targets;
-        private readonly HelpBox _error;
+        _targets = targets;
+        _error = error;
+    }
 
-        public InspectorButtons(Object[] targets, HelpBox error)
+    public void Build(VisualElement buttons, Type type)
+    {
+        foreach (var (label, glyph, action) in Discover(type))
         {
-            _targets = targets;
-            _error = error;
+            buttons.Add(CreateButton(label, glyph, () => Press(label, action)));
         }
 
-        public void Build(VisualElement buttons, Type type)
+        buttons.SetHidden(buttons.childCount == 0);
+    }
+
+    private static Button CreateButton(string label, string glyph, Action click)
+    {
+        var button = new Button(click);
+        button.AddToClassList("hrts-glyph-button");
+        if (glyph.Length > 0)
         {
-            foreach (var (label, glyph, action) in Discover(type))
+            button.Add(GlyphElements.CreateGlyph(glyph));
+        }
+
+        button.Add(new Label(label));
+        return button;
+    }
+
+    /// <summary>The component's own [InspectorButton] methods, the static editor ones that take it, then its fill from model.</summary>
+    private static IEnumerable<(string Label, string Glyph, Action<Component> Action)> Discover(Type type)
+    {
+        foreach (var method in type.GetMethods(AuthoringEditor.Members))
+        {
+            var button = method.GetCustomAttribute<InspectorButtonAttribute>();
+            if (button == null)
             {
-                buttons.Add(CreateButton(label, glyph, () => Press(label, action)));
+                continue;
             }
 
-            buttons.SetHidden(buttons.childCount == 0);
-        }
-
-        private static Button CreateButton(string label, string glyph, Action click)
-        {
-            var button = new Button(click);
-            button.AddToClassList("hrts-glyph-button");
-            if (glyph.Length > 0)
+            if (method.GetParameters().Length > 0)
             {
-                button.Add(GlyphElements.CreateGlyph(glyph));
+                throw new InvalidOperationException($"[InspectorButton] {type.Name}.{method.Name} must take no parameters.");
             }
 
-            button.Add(new Label(label));
-            return button;
+            yield return (button.Label, button.Glyph, component => Call(method, component));
         }
 
-        /// <summary>The component's own [InspectorButton] methods, the static editor ones that take it, then its fill from model.</summary>
-        private static IEnumerable<(string Label, string Glyph, Action<Component> Action)> Discover(Type type)
+        foreach (var method in TypeCache.GetMethodsWithAttribute<InspectorButtonAttribute>())
         {
-            foreach (var method in type.GetMethods(AuthoringEditor.Members))
+            if (TakesComponent(method, type))
             {
                 var button = method.GetCustomAttribute<InspectorButtonAttribute>();
-                if (button == null)
-                {
-                    continue;
-                }
-
-                if (method.GetParameters().Length > 0)
-                {
-                    throw new InvalidOperationException($"[InspectorButton] {type.Name}.{method.Name} must take no parameters.");
-                }
-
                 yield return (button.Label, button.Glyph, component => Call(method, component));
             }
-
-            foreach (var method in TypeCache.GetMethodsWithAttribute<InspectorButtonAttribute>())
-            {
-                if (TakesComponent(method, type))
-                {
-                    var button = method.GetCustomAttribute<InspectorButtonAttribute>();
-                    yield return (button.Label, button.Glyph, component => Call(method, component));
-                }
-            }
-
-            if (ModelFillCommands.CanFill(type))
-            {
-                yield return (ModelFillCommands.Label, "wand-sparkles", ModelFillCommands.Fill);
-            }
         }
 
-        private static bool TakesComponent(MethodInfo method, Type type)
+        if (ModelFillCommands.CanFill(type))
         {
-            if (!method.IsStatic)
-            {
-                return false;
-            }
+            yield return (ModelFillCommands.Label, "wand-sparkles", ModelFillCommands.Fill);
+        }
+    }
 
-            var parameters = method.GetParameters();
-            return parameters.Length == 1 && parameters[0].ParameterType.IsAssignableFrom(type);
+    private static bool TakesComponent(MethodInfo method, Type type)
+    {
+        if (!method.IsStatic)
+        {
+            return false;
         }
 
-        // A method that throws InvalidOperationException names what is missing, so the inspector shows it.
-        private void Press(string label, Action<Component> action)
-        {
-            _error.SetHidden(true);
-            foreach (var selected in _targets)
-            {
-                var component = (Component)selected;
-                try
-                {
-                    EditorUndo.RecordHierarchy(component.gameObject, label, () => action(component));
-                }
-                catch (InvalidOperationException problem)
-                {
-                    _error.text = problem.Message;
-                    _error.SetHidden(false);
-                    return;
-                }
-            }
-        }
+        var parameters = method.GetParameters();
+        return parameters.Length == 1 && parameters[0].ParameterType.IsAssignableFrom(type);
+    }
 
-        private static void Call(MethodInfo method, Component component)
+    // A method that throws InvalidOperationException names what is missing, so the inspector shows it.
+    private void Press(string label, Action<Component> action)
+    {
+        _error.SetHidden(true);
+        foreach (var selected in _targets)
         {
+            var component = (Component)selected;
             try
             {
-                method.Invoke(method.IsStatic ? null : component, method.IsStatic ? new object[] { component } : null);
+                EditorUndo.RecordHierarchy(component.gameObject, label, () => action(component));
             }
-            catch (TargetInvocationException failure) when (failure.InnerException is InvalidOperationException problem)
+            catch (InvalidOperationException problem)
             {
-                throw problem;
+                _error.text = problem.Message;
+                _error.SetHidden(false);
+                return;
             }
+        }
+    }
+
+    private static void Call(MethodInfo method, Component component)
+    {
+        try
+        {
+            method.Invoke(method.IsStatic ? null : component, method.IsStatic ? new object[] { component } : null);
+        }
+        catch (TargetInvocationException failure) when (failure.InnerException is InvalidOperationException problem)
+        {
+            throw problem;
         }
     }
 }

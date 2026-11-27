@@ -5,53 +5,52 @@ using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Editor.Maps.Nav
+namespace HyperRTS.Editor.Maps.Nav;
+
+/// <summary>
+/// The runtime's A* (<see cref="GridAStar"/>) as <see cref="MapNavGrid.ToolsClass"/>, searching the whole map so
+/// lengths are the true shortest and match in-game pathing.
+/// </summary>
+public static class MapPathfinder
 {
-    /// <summary>
-    /// The runtime's A* (<see cref="GridAStar"/>) as <see cref="MapNavGrid.ToolsClass"/>, searching the whole map so
-    /// lengths are the true shortest and match in-game pathing.
-    /// </summary>
-    public static class MapPathfinder
+    /// <summary>The shortest walkable path, or null when the goal can't be reached.</summary>
+    public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) => Find(nav.Access, start, goal);
+
+    /// <summary><see cref="Find(MapNavGrid, int2, int2)"/> on a grid with its own cells, such as corridors closed.</summary>
+    internal static MapPath Find(in NavAccess access, int2 start, int2 goal)
     {
-        /// <summary>The shortest walkable path, or null when the goal can't be reached.</summary>
-        public static MapPath Find(MapNavGrid nav, int2 start, int2 goal) => Find(nav.Access, start, goal);
-
-        /// <summary><see cref="Find(MapNavGrid, int2, int2)"/> on a grid with its own cells, such as corridors closed.</summary>
-        internal static MapPath Find(in NavAccess access, int2 start, int2 goal)
+        var region = access.Region(start);
+        if (region == 0 || access.Region(goal) != region)
         {
-            var region = access.Region(start);
-            if (region == 0 || access.Region(goal) != region)
-            {
-                return null;
-            }
-
-            var corridor = NavCorridor.Whole(access.Grid.Field.Layout, Allocator.Persistent);
-            var search = new GridAStar(corridor, Allocator.Persistent);
-            var cells = new NativeList<int2>(256, Allocator.Persistent);
-            try
-            {
-                search.Search(access, start, goal, cells, out var expansions);
-                return Build(access.Grid, cells, expansions);
-            }
-            finally
-            {
-                cells.Dispose();
-                search.Dispose();
-                corridor.Dispose();
-            }
+            return null;
         }
 
-        private static MapPath Build(in NavGrid grid, NativeList<int2> cells, int expansions)
+        var corridor = NavCorridor.Whole(access.Grid.Field.Layout, Allocator.Persistent);
+        var search = new GridAStar(corridor, Allocator.Persistent);
+        var cells = new NativeList<int2>(256, Allocator.Persistent);
+        try
         {
-            var path = new List<int2>(cells.Length);
-            var length = 0f;
-            for (var i = 0; i < cells.Length; i++)
-            {
-                path.Add(cells[i]);
-                length += i > 0 ? GridAStar.StepCost(cells[i - 1], cells[i]) : 0f;
-            }
-
-            return new MapPath(path, length * grid.Grid.CellSize, expansions);
+            search.Search(access, start, goal, cells, out var expansions);
+            return Build(access.Grid, cells, expansions);
         }
+        finally
+        {
+            cells.Dispose();
+            search.Dispose();
+            corridor.Dispose();
+        }
+    }
+
+    private static MapPath Build(in NavGrid grid, NativeList<int2> cells, int expansions)
+    {
+        var path = new List<int2>(cells.Length);
+        var length = 0f;
+        for (var i = 0; i < cells.Length; i++)
+        {
+            path.Add(cells[i]);
+            length += i > 0 ? GridAStar.StepCost(cells[i - 1], cells[i]) : 0f;
+        }
+
+        return new MapPath(path, length * grid.Grid.CellSize, expansions);
     }
 }

@@ -1,11 +1,10 @@
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Sets;
 
-namespace HyperRTS.Editor.Validation
+namespace HyperRTS.Editor.Validation;
+
+/// <summary>A rule across the project's assets, run by the full validator after the prefab rules. Implementations are discovered.</summary>
+public interface IAssetRule
 {
-    /// <summary>A rule across the project's assets, run by the full validator after the prefab rules. Implementations are discovered.</summary>
-    public interface IAssetRule
-    {
-        void Check(AssetSet assets, ValidationIssues issues);
-    }
+    void Check(AssetSet assets, ValidationIssues issues);
 }

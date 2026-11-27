@@ -3,28 +3,27 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Vision.Detection
-{
-    /// <summary>Reveals hostile stealthed entities within a radius to this entity's team.</summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Vision/Detector")]
-    [Icon(HyperRTSIcons.DetectorAuthoring)]
-    [HelpURL(HyperRTSDocs.Vision)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
-    public class DetectorAuthoring : AuthoringBehaviour
-    {
-        [Tooltip("Detection radius, separate from the vision range.")]
-        [Unit("m")]
-        [Min(0f)]
-        public float radius = 10f;
+namespace HyperRTS.Simulation.Vision.Detection;
 
-        public class Baker : Baker<DetectorAuthoring>
+/// <summary>Reveals hostile stealthed entities within a radius to this entity's team.</summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Vision/Detector")]
+[Icon(HyperRTSIcons.DetectorAuthoring)]
+[HelpURL(HyperRTSDocs.Vision)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(GameEntityAuthoring), "a Unit or Building")]
+public class DetectorAuthoring : AuthoringBehaviour
+{
+    [Tooltip("Detection radius, separate from the vision range.")]
+    [Unit("m")]
+    [Min(0f)]
+    public float radius = 10f;
+
+    public class Baker : Baker<DetectorAuthoring>
+    {
+        public override void Bake(DetectorAuthoring authoring)
         {
-            public override void Bake(DetectorAuthoring authoring)
-            {
-                var writer = this.Writer();
-                StealthSetup.AddDetector(writer, authoring.radius);
-            }
+            var writer = this.Writer();
+            StealthSetup.AddDetector(writer, authoring.radius);
         }
     }
 }

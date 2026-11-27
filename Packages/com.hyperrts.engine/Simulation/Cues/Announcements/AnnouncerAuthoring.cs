@@ -1,52 +1,51 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues.Announcements
+namespace HyperRTS.Simulation.Cues.Announcements;
+
+/// <summary>
+/// The match's announcers: which <see cref="AnnouncerSet"/> each side's players hear for alerts such as unit lost,
+/// base under attack and low power. Place one in the match's subscene.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Scene + "Match/Announcer")]
+[Icon(HyperRTSIcons.AnnouncerAuthoring)]
+[HelpURL(HyperRTSDocs.Audio)]
+[DisallowMultipleComponent]
+public class AnnouncerAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// The match's announcers: which <see cref="AnnouncerSet"/> each side's players hear for alerts such as unit lost,
-    /// base under attack and low power. Place one in the match's subscene.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Scene + "Match/Announcer")]
-    [Icon(HyperRTSIcons.AnnouncerAuthoring)]
-    [HelpURL(HyperRTSDocs.Audio)]
-    [DisallowMultipleComponent]
-    public class AnnouncerAuthoring : AuthoringBehaviour
+    [Serializable]
+    public struct Entry
     {
-        [Serializable]
-        public struct Entry
+        [Tooltip("The game's army id (PlayerSide); 0 for players without a side.")]
+        public byte side;
+
+        [Tooltip("Lines this side's players hear.")]
+        public AnnouncerSet set;
+    }
+
+    [Tooltip("One announcer per side; a side without one hears no alerts.")]
+    public List<Entry> sides = new();
+
+    public static DynamicBuffer<AnnouncerVoice> Add(EntityWriter writer) =>
+        writer.AddBuffer<AnnouncerVoice>();
+
+    public class Baker : Baker<AnnouncerAuthoring>
+    {
+        public override void Bake(AnnouncerAuthoring authoring)
         {
-            [Tooltip("The game's army id (PlayerSide); 0 for players without a side.")]
-            public byte side;
-
-            [Tooltip("Lines this side's players hear.")]
-            public AnnouncerSet set;
-        }
-
-        [Tooltip("One announcer per side; a side without one hears no alerts.")]
-        public List<Entry> sides = new();
-
-        public static DynamicBuffer<AnnouncerVoice> Add(EntityWriter writer) =>
-            writer.AddBuffer<AnnouncerVoice>();
-
-        public class Baker : Baker<AnnouncerAuthoring>
-        {
-            public override void Bake(AnnouncerAuthoring authoring)
+            var writer = this.Writer(TransformUsageFlags.None);
+            var voices = AnnouncerAuthoring.Add(writer);
+            foreach (var entry in authoring.sides)
             {
-                var writer = this.Writer(TransformUsageFlags.None);
-                var voices = AnnouncerAuthoring.Add(writer);
-                foreach (var entry in authoring.sides)
+                if (entry.set == null)
                 {
-                    if (entry.set == null)
-                    {
-                        throw new InvalidOperationException($"{authoring.name}: side {entry.side} has no announcer set.");
-                    }
-
-                    voices.Add(new AnnouncerVoice { Side = entry.side, Set = entry.set });
+                    throw new InvalidOperationException($"{authoring.name}: side {entry.side} has no announcer set.");
                 }
+
+                voices.Add(new AnnouncerVoice { Side = entry.side, Set = entry.set });
             }
         }
     }

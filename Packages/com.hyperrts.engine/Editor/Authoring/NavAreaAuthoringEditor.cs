@@ -1,18 +1,17 @@
 using HyperRTS.Simulation.Navigation.Areas;
 using UnityEditor;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring;
+
+/// <summary>Draggable box for nav areas, coloured by kind.</summary>
+[CustomEditor(typeof(NavAreaAuthoring))]
+[CanEditMultipleObjects]
+public class NavAreaAuthoringEditor : AuthoringEditor
 {
-    /// <summary>Draggable box for nav areas, coloured by kind.</summary>
-    [CustomEditor(typeof(NavAreaAuthoring))]
-    [CanEditMultipleObjects]
-    public class NavAreaAuthoringEditor : AuthoringEditor
+    private void OnSceneGUI()
     {
-        private void OnSceneGUI()
-        {
-            var area = (NavAreaAuthoring)target;
-            GroundHandles.EditBox(area, area.transform.position, area.size, NavColors.Get(area.kind), "Resize Nav Area",
-                size => area.size = size);
-        }
+        var area = (NavAreaAuthoring)target;
+        GroundHandles.EditBox(area, area.transform.position, area.size, NavColors.Get(area.kind), "Resize Nav Area",
+            size => area.size = size);
     }
 }

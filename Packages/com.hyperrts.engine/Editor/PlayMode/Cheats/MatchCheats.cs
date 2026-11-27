@@ -15,147 +15,146 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Editor.PlayMode.Cheats
+namespace HyperRTS.Editor.PlayMode.Cheats;
+
+/// <summary>Play-mode cheats applied straight to the authoritative world; editor only, never part of the game.</summary>
+internal static class MatchCheats
 {
-    /// <summary>Play-mode cheats applied straight to the authoritative world; editor only, never part of the game.</summary>
-    internal static class MatchCheats
+    // Larger than any health, so one untyped hit kills through armour.
+    private const float LethalDamage = 1e9f;
+
+    /// <summary>Hands control of a player to you; its AI stops so the two don't fight over it. Single player only.</summary>
+    public static void MakeLocal(EntityManager entityManager, Entity player)
     {
-        // Larger than any health, so one untyped hit kills through armour.
-        private const float LethalDamage = 1e9f;
-
-        /// <summary>Hands control of a player to you; its AI stops so the two don't fight over it. Single player only.</summary>
-        public static void MakeLocal(EntityManager entityManager, Entity player)
+        foreach (var other in PlayWorld.Players(entityManager))
         {
-            foreach (var other in PlayWorld.Players(entityManager))
-            {
-                entityManager.RemoveComponent<LocalPlayer>(other);
-            }
-
-            entityManager.AddComponent<LocalPlayer>(player);
-            entityManager.RemoveComponent<AIPlayer>(player);
+            entityManager.RemoveComponent<LocalPlayer>(other);
         }
 
-        public static void AddResources(EntityManager entityManager, Entity player, int amount)
+        entityManager.AddComponent<LocalPlayer>(player);
+        entityManager.RemoveComponent<AIPlayer>(player);
+    }
+
+    public static void AddResources(EntityManager entityManager, Entity player, int amount)
+    {
+        var stock = new Stockpile(entityManager.GetBuffer<ResourceStock>(player));
+        foreach (var type in EditorAssets.FindAssets<ResourceType>())
         {
-            var stock = new Stockpile(entityManager.GetBuffer<ResourceStock>(player));
-            foreach (var type in EditorAssets.FindAssets<ResourceType>())
-            {
-                stock.Add(type, amount);
-            }
+            stock.Add(type, amount);
+        }
+    }
+
+    public static bool FogEnabled(EntityManager entityManager) =>
+        PlayWorld.TryGetSingleton(entityManager, out MapSettings map) && map.FogOfWar;
+
+    public static void SetFog(EntityManager entityManager, bool enabled)
+    {
+        using var query = entityManager.CreateEntityQuery(typeof(MapSettings));
+        if (!query.TryGetSingleton(out MapSettings map))
+        {
+            return;
         }
 
-        public static bool FogEnabled(EntityManager entityManager) =>
-            PlayWorld.TryGetSingleton(entityManager, out MapSettings map) && map.FogOfWar;
+        map.FogOfWar = enabled;
+        query.SetSingleton(map);
+    }
 
-        public static void SetFog(EntityManager entityManager, bool enabled)
+    public static bool StrategicAssetsEnabled(EntityManager entityManager) =>
+        PlayWorld.TryGetSingleton(entityManager, out MatchRules rules) && rules.StrategicAssets;
+
+    /// <summary>
+    /// Finishes every construction site and the current production of one owner, through the construction and
+    /// production systems next frame, so completion events, sounds and stats still happen.
+    /// </summary>
+    public static void InstantBuild(EntityManager entityManager, byte owner)
+    {
+        using var sites = entityManager.CreateEntityQuery(typeof(ConstructionProgress), typeof(Owner));
+        foreach (var site in sites.ToEntityArray(Allocator.Temp))
         {
-            using var query = entityManager.CreateEntityQuery(typeof(MapSettings));
-            if (!query.TryGetSingleton(out MapSettings map))
+            if (entityManager.GetComponentData<Owner>(site).Value == owner)
             {
-                return;
-            }
-
-            map.FogOfWar = enabled;
-            query.SetSingleton(map);
-        }
-
-        public static bool StrategicAssetsEnabled(EntityManager entityManager) =>
-            PlayWorld.TryGetSingleton(entityManager, out MatchRules rules) && rules.StrategicAssets;
-
-        /// <summary>
-        /// Finishes every construction site and the current production of one owner, through the construction and
-        /// production systems next frame, so completion events, sounds and stats still happen.
-        /// </summary>
-        public static void InstantBuild(EntityManager entityManager, byte owner)
-        {
-            using var sites = entityManager.CreateEntityQuery(typeof(ConstructionProgress), typeof(Owner));
-            foreach (var site in sites.ToEntityArray(Allocator.Temp))
-            {
-                if (entityManager.GetComponentData<Owner>(site).Value == owner)
-                {
-                    entityManager.SetComponentData(site, new ConstructionProgress { Value = 1f });
-                }
-            }
-
-            using var producers = entityManager.CreateEntityQuery(typeof(Producer), typeof(ProductionQueueItem), typeof(Owner));
-            foreach (var entity in producers.ToEntityArray(Allocator.Temp))
-            {
-                var owned = entityManager.GetComponentData<Owner>(entity).Value == owner;
-                if (!owned || entityManager.GetBuffer<ProductionQueueItem>(entity, true).Length == 0)
-                {
-                    continue;
-                }
-
-                var producer = entityManager.GetComponentData<Producer>(entity);
-                producer.Elapsed = float.MaxValue;
-                entityManager.SetComponentData(entity, producer);
+                entityManager.SetComponentData(site, new ConstructionProgress { Value = 1f });
             }
         }
 
-        /// <summary>
-        /// The local player's selected entities with health, or none when the selection lives in another world than
-        /// the cheats write to (a client of a dedicated server).
-        /// </summary>
-        public static NativeArray<Entity> Selection(EntityManager entityManager)
+        using var producers = entityManager.CreateEntityQuery(typeof(Producer), typeof(ProductionQueueItem), typeof(Owner));
+        foreach (var entity in producers.ToEntityArray(Allocator.Temp))
         {
-            var presented = PlayWorld.TryGetPresented(out var view) && view.World == entityManager.World;
-            if (!presented)
+            var owned = entityManager.GetComponentData<Owner>(entity).Value == owner;
+            if (!owned || entityManager.GetBuffer<ProductionQueueItem>(entity, true).Length == 0)
             {
-                return new NativeArray<Entity>(0, Allocator.Temp);
+                continue;
             }
 
-            using var query = entityManager.CreateEntityQuery(typeof(Selected), typeof(Health));
-            return query.ToEntityArray(Allocator.Temp);
+            var producer = entityManager.GetComponentData<Producer>(entity);
+            producer.Elapsed = float.MaxValue;
+            entityManager.SetComponentData(entity, producer);
+        }
+    }
+
+    /// <summary>
+    /// The local player's selected entities with health, or none when the selection lives in another world than
+    /// the cheats write to (a client of a dedicated server).
+    /// </summary>
+    public static NativeArray<Entity> Selection(EntityManager entityManager)
+    {
+        var presented = PlayWorld.TryGetPresented(out var view) && view.World == entityManager.World;
+        if (!presented)
+        {
+            return new NativeArray<Entity>(0, Allocator.Temp);
         }
 
-        /// <summary>Heals <paramref name="units"/> to full through the damage system, as a negative hit of full health.</summary>
-        public static void Repair(EntityManager entityManager, NativeArray<Entity> units) =>
-            Hit(entityManager, units, unit => -entityManager.GetComponentData<Health>(unit).Max);
+        using var query = entityManager.CreateEntityQuery(typeof(Selected), typeof(Health));
+        return query.ToEntityArray(Allocator.Temp);
+    }
 
-        /// <summary>Kills <paramref name="units"/> through the damage system, so deaths play out as in a fight.</summary>
-        public static void Destroy(EntityManager entityManager, NativeArray<Entity> units) =>
-            Damage(entityManager, units, LethalDamage);
+    /// <summary>Heals <paramref name="units"/> to full through the damage system, as a negative hit of full health.</summary>
+    public static void Repair(EntityManager entityManager, NativeArray<Entity> units) =>
+        Hit(entityManager, units, unit => -entityManager.GetComponentData<Health>(unit).Max);
 
-        /// <summary>Ends every ability cooldown of <paramref name="units"/>, a charging strategic asset's too.</summary>
-        public static void ReadyAbilities(EntityManager entityManager, NativeArray<Entity> units)
+    /// <summary>Kills <paramref name="units"/> through the damage system, so deaths play out as in a fight.</summary>
+    public static void Destroy(EntityManager entityManager, NativeArray<Entity> units) =>
+        Damage(entityManager, units, LethalDamage);
+
+    /// <summary>Ends every ability cooldown of <paramref name="units"/>, a charging strategic asset's too.</summary>
+    public static void ReadyAbilities(EntityManager entityManager, NativeArray<Entity> units)
+    {
+        foreach (var unit in units)
         {
-            foreach (var unit in units)
+            if (!entityManager.HasBuffer<AbilityCooldown>(unit))
             {
-                if (!entityManager.HasBuffer<AbilityCooldown>(unit))
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var cooldowns = entityManager.GetBuffer<AbilityCooldown>(unit);
-                for (var i = 0; i < cooldowns.Length; i++)
-                {
-                    cooldowns.ElementAt(i).Remaining = 0f;
-                }
+            var cooldowns = entityManager.GetBuffer<AbilityCooldown>(unit);
+            for (var i = 0; i < cooldowns.Length; i++)
+            {
+                cooldowns.ElementAt(i).Remaining = 0f;
             }
         }
+    }
 
-        /// <summary>
-        /// Hurts each of <paramref name="units"/> by <paramref name="amount"/> through the damage system, untyped. A
-        /// sectioned building takes it on every section, since one hit would break only the section it lands on.
-        /// </summary>
-        public static void Damage(EntityManager entityManager, NativeArray<Entity> units, float amount) =>
-            Hit(entityManager, units, _ => amount);
+    /// <summary>
+    /// Hurts each of <paramref name="units"/> by <paramref name="amount"/> through the damage system, untyped. A
+    /// sectioned building takes it on every section, since one hit would break only the section it lands on.
+    /// </summary>
+    public static void Damage(EntityManager entityManager, NativeArray<Entity> units, float amount) =>
+        Hit(entityManager, units, _ => amount);
 
-        private static void Hit(EntityManager entityManager, NativeArray<Entity> units, Func<Entity, float> amount)
+    private static void Hit(EntityManager entityManager, NativeArray<Entity> units, Func<Entity, float> amount)
+    {
+        using var queue = entityManager.CreateEntityQuery(typeof(DamageQueue));
+        if (!queue.TryGetSingletonEntity<DamageQueue>(out var events))
         {
-            using var queue = entityManager.CreateEntityQuery(typeof(DamageQueue));
-            if (!queue.TryGetSingletonEntity<DamageQueue>(out var events))
-            {
-                return;
-            }
+            return;
+        }
 
-            var hits = entityManager.GetBuffer<DamageEvent>(events);
-            foreach (var unit in units)
-            {
-                var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
-                var hit = DamageEvent.Direct(unit, position, Entity.Null, Owner.Neutral, amount(unit));
-                hits.Add(entityManager.HasBuffer<Section>(unit) ? hit.ReachingAllSections() : hit);
-            }
+        var hits = entityManager.GetBuffer<DamageEvent>(events);
+        foreach (var unit in units)
+        {
+            var position = entityManager.GetComponentData<LocalTransform>(unit).Position;
+            var hit = DamageEvent.Direct(unit, position, Entity.Null, Owner.Neutral, amount(unit));
+            hits.Add(entityManager.HasBuffer<Section>(unit) ? hit.ReachingAllSections() : hit);
         }
     }
 }

@@ -1,170 +1,169 @@
+using HyperRTS.Simulation.Movement;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Orders;
-using HyperRTS.Simulation.Movement;
 using NUnit.Framework;
 using Unity.Mathematics;
 using static HyperRTS.Simulation.Tests.TestVehicles;
 
-namespace HyperRTS.Simulation.Tests.Movement
+namespace HyperRTS.Simulation.Tests.Movement;
+
+/// <summary>
+/// Vehicle handling: turning radius, pivots, reversing, braking to the goal, no orbiting, and backing out when
+/// wedged. Infantry step at full speed at once.
+/// </summary>
+public class LocomotionTests : LocomotionFixture
 {
-    /// <summary>
-    /// Vehicle handling: turning radius, pivots, reversing, braking to the goal, no orbiting, and backing out when
-    /// wedged. Infantry step at full speed at once.
-    /// </summary>
-    public class LocomotionTests : LocomotionFixture
+    [Test]
+    public void TrackedTank_PivotsInPlace_ForAGoalFarBehind()
     {
-        [Test]
-        public void TrackedTank_PivotsInPlace_ForAGoalFarBehind()
+        var tank = SpawnTank(float3.zero);
+        Order(tank, new float3(-40f, 0f, -10f));
+        World.Run(1f);
+
+        Assert.Less(math.length(World.GetPosition(tank).xz), 0.3f, "turns standing");
+        Assert.Greater(TurnBetween(new float2(0f, 1f), Facing(tank)), math.radians(40f), "turned at its rate");
+        Assert.IsTrue(World.RunUntil(() => Arrived(tank), 20f), "then drives there");
+    }
+
+    [Test]
+    public void Tank_BacksUpToAGoalCloseBehind()
+    {
+        var tank = SpawnTank(float3.zero);
+        var goal = new float3(0f, 0f, -8f);
+        Order(tank, goal);
+
+        var slowest = 0f;
+        for (var t = 0f; t < 15f && !Arrived(tank); t += TestWorld.FrameTime)
         {
-            var tank = SpawnTank(float3.zero);
-            Order(tank, new float3(-40f, 0f, -10f));
-            World.Run(1f);
-
-            Assert.Less(math.length(World.GetPosition(tank).xz), 0.3f, "turns standing");
-            Assert.Greater(TurnBetween(new float2(0f, 1f), Facing(tank)), math.radians(40f), "turned at its rate");
-            Assert.IsTrue(World.RunUntil(() => Arrived(tank), 20f), "then drives there");
-        }
-
-        [Test]
-        public void Tank_BacksUpToAGoalCloseBehind()
-        {
-            var tank = SpawnTank(float3.zero);
-            var goal = new float3(0f, 0f, -8f);
-            Order(tank, goal);
-
-            var slowest = 0f;
-            for (var t = 0f; t < 15f && !Arrived(tank); t += TestWorld.FrameTime)
-            {
-                World.Tick();
-                slowest = math.min(slowest, Speed(tank));
-            }
-
-            Assert.IsTrue(Arrived(tank), "arrived");
-            Assert.Less(slowest, -2f, "reversed");
-            Assert.Greater(math.dot(Facing(tank), new float2(0f, 1f)), 0.98f, "never turned round");
-            Assert.Less(math.distance(World.GetPosition(tank).xz, goal.xz), NavTolerances.Arrive(TankRadius) + 0.1f);
-        }
-
-        [Test]
-        public void Tank_TurnsRound_ForAGoalWellBehind()
-        {
-            var tank = SpawnTank(float3.zero);
-            Order(tank, new float3(0f, 0f, -30f));
-
-            Assert.Greater(SlowestUntilArrived(tank, 20f), -0.1f, "never reversed");
-            Assert.Less(math.dot(Facing(tank), new float2(0f, 1f)), -0.9f, "turned round");
-        }
-
-        [Test]
-        public void Truck_Accelerates_ThenBrakesToStopAtTheGoal()
-        {
-            var truck = SpawnTruck(float3.zero);
-            var goal = new float3(0f, 0f, 40f);
-            Order(truck, goal);
-            World.Run(1f);
-            Assert.That(Speed(truck), Is.InRange(2.5f, 3.2f), "gains its acceleration each second");
-
-            Assert.IsTrue(World.RunUntil(() => Arrived(truck), 20f), "arrived");
-            World.Run(0.5f);
-            Assert.AreEqual(0f, Speed(truck), "stopped");
-            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
-        }
-
-        [Test]
-        public void StopOrder_BrakesAtTheBrakingRate_InsteadOfHalting()
-        {
-            var tank = SpawnTank(float3.zero);
-            Order(tank, new float3(0f, 0f, 200f));
-            World.Run(4f);
-            var cruising = Speed(tank);
-            Assert.Greater(cruising, 7f, "up to speed");
-
-            World.Command(1, new PlayerCommand { Type = CommandType.Stop, Unit = tank });
-            World.Run(0.3f);
-            Assert.That(Speed(tank), Is.InRange(cruising - 6f * 0.4f, cruising - 6f * 0.2f), "sheds its braking rate");
-
-            World.Run(2f);
-            Assert.AreEqual(0f, Speed(tank), "stopped");
-        }
-
-        [Test]
-        public void Truck_GoalInsideItsTurningCircle_MakesAThreePointTurnInsteadOfOrbiting()
-        {
-            var truck = SpawnTruck(float3.zero);
-            var goal = new float3(3f, 0f, 4f);
-            Order(truck, goal);
-
-            var turned = 0f;
-            var slowest = 0f;
-            for (var t = 0f; t < 30f && !Arrived(truck); t += TestWorld.FrameTime)
-            {
-                var facing = Facing(truck);
-                World.Tick();
-                turned += TurnBetween(facing, Facing(truck));
-                slowest = math.min(slowest, Speed(truck));
-            }
-
-            Assert.IsTrue(Arrived(truck), "arrived");
-            Assert.Less(slowest, 0f, "backed up to bring the goal out of its turning circle");
-            Assert.Less(turned, math.PI * 1.5f, "never circled");
-            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
-        }
-
-        [Test]
-        public void Truck_ThreePointTurnIntoAWall_DrivesTheOtherLegAndStillArrives()
-        {
-            World.SpawnObstacle(new float3(0f, 0f, -6f), new float2(16f, 1f));
             World.Tick();
-
-            var truck = SpawnTruck(float3.zero);
-            var goal = new float3(3f, 0f, 4f);
-            Order(truck, goal);
-
-            Assert.IsTrue(World.RunUntil(() => Arrived(truck), 30f), "arrived");
-            Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
+            slowest = math.min(slowest, Speed(tank));
         }
 
-        [Test]
-        public void Infantry_StepsAtFullSpeedAndFacesItsGoal_AtOnce()
+        Assert.IsTrue(Arrived(tank), "arrived");
+        Assert.Less(slowest, -2f, "reversed");
+        Assert.Greater(math.dot(Facing(tank), new float2(0f, 1f)), 0.98f, "never turned round");
+        Assert.Less(math.distance(World.GetPosition(tank).xz, goal.xz), NavTolerances.Arrive(TankRadius) + 0.1f);
+    }
+
+    [Test]
+    public void Tank_TurnsRound_ForAGoalWellBehind()
+    {
+        var tank = SpawnTank(float3.zero);
+        Order(tank, new float3(0f, 0f, -30f));
+
+        Assert.Greater(SlowestUntilArrived(tank, 20f), -0.1f, "never reversed");
+        Assert.Less(math.dot(Facing(tank), new float2(0f, 1f)), -0.9f, "turned round");
+    }
+
+    [Test]
+    public void Truck_Accelerates_ThenBrakesToStopAtTheGoal()
+    {
+        var truck = SpawnTruck(float3.zero);
+        var goal = new float3(0f, 0f, 40f);
+        Order(truck, goal);
+        World.Run(1f);
+        Assert.That(Speed(truck), Is.InRange(2.5f, 3.2f), "gains its acceleration each second");
+
+        Assert.IsTrue(World.RunUntil(() => Arrived(truck), 20f), "arrived");
+        World.Run(0.5f);
+        Assert.AreEqual(0f, Speed(truck), "stopped");
+        Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), NavTolerances.Arrive(TruckRadius) + 0.1f);
+    }
+
+    [Test]
+    public void StopOrder_BrakesAtTheBrakingRate_InsteadOfHalting()
+    {
+        var tank = SpawnTank(float3.zero);
+        Order(tank, new float3(0f, 0f, 200f));
+        World.Run(4f);
+        var cruising = Speed(tank);
+        Assert.Greater(cruising, 7f, "up to speed");
+
+        World.Command(1, new PlayerCommand { Type = CommandType.Stop, Unit = tank });
+        World.Run(0.3f);
+        Assert.That(Speed(tank), Is.InRange(cruising - 6f * 0.4f, cruising - 6f * 0.2f), "sheds its braking rate");
+
+        World.Run(2f);
+        Assert.AreEqual(0f, Speed(tank), "stopped");
+    }
+
+    [Test]
+    public void Truck_GoalInsideItsTurningCircle_MakesAThreePointTurnInsteadOfOrbiting()
+    {
+        var truck = SpawnTruck(float3.zero);
+        var goal = new float3(3f, 0f, 4f);
+        Order(truck, goal);
+
+        var turned = 0f;
+        var slowest = 0f;
+        for (var t = 0f; t < 30f && !Arrived(truck); t += TestWorld.FrameTime)
         {
-            var soldier = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 0.4f });
-            Order(soldier, new float3(10f, 0f, 0f));
-            World.Tick(TestWorld.FrameTime, 2);
-
-            var before = World.GetPosition(soldier).xz;
+            var facing = Facing(truck);
             World.Tick();
-
-            Assert.AreEqual(5f * TestWorld.FrameTime, math.distance(before, World.GetPosition(soldier).xz), 1e-4f);
-            Assert.AreEqual(1f, math.dot(Facing(soldier), new float2(1f, 0f)), 1e-4f);
-            Assert.IsFalse(World.EntityManager.HasComponent<LocomotionState>(soldier));
+            turned += TurnBetween(facing, Facing(truck));
+            slowest = math.min(slowest, Speed(truck));
         }
 
-        [Test]
-        public void TankPushedOutOfABuilding_InASlot_BacksOutAndArrives()
+        Assert.IsTrue(Arrived(truck), "arrived");
+        Assert.Less(slowest, 0f, "backed up to bring the goal out of its turning circle");
+        Assert.Less(turned, math.PI * 1.5f, "never circled");
+        Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
+    }
+
+    [Test]
+    public void Truck_ThreePointTurnIntoAWall_DrivesTheOtherLegAndStillArrives()
+    {
+        World.SpawnObstacle(new float3(0f, 0f, -6f), new float2(16f, 1f));
+        World.Tick();
+
+        var truck = SpawnTruck(float3.zero);
+        var goal = new float3(3f, 0f, 4f);
+        Order(truck, goal);
+
+        Assert.IsTrue(World.RunUntil(() => Arrived(truck), 30f), "arrived");
+        Assert.Less(math.distance(World.GetPosition(truck).xz, goal.xz), TruckRadius + 0.1f);
+    }
+
+    [Test]
+    public void Infantry_StepsAtFullSpeedAndFacesItsGoal_AtOnce()
+    {
+        var soldier = World.SpawnUnit(1, float3.zero, new TestUnit { Speed = 5f, Radius = 0.4f });
+        Order(soldier, new float3(10f, 0f, 0f));
+        World.Tick(TestWorld.FrameTime, 2);
+
+        var before = World.GetPosition(soldier).xz;
+        World.Tick();
+
+        Assert.AreEqual(5f * TestWorld.FrameTime, math.distance(before, World.GetPosition(soldier).xz), 1e-4f);
+        Assert.AreEqual(1f, math.dot(Facing(soldier), new float2(1f, 0f)), 1e-4f);
+        Assert.IsFalse(World.EntityManager.HasComponent<LocomotionState>(soldier));
+    }
+
+    [Test]
+    public void TankPushedOutOfABuilding_InASlot_BacksOutAndArrives()
+    {
+        var tank = SpawnTank(float3.zero);
+        World.Tick();
+        // A slot too narrow to pivot in, closed by a building that lands on the tank's nose.
+        World.SpawnObstacle(new float3(-4f, 0f, 1.5f), new float2(2f, 7f));
+        World.SpawnObstacle(new float3(4f, 0f, 1.5f), new float2(2f, 7f));
+        World.SpawnObstacle(new float3(0f, 0f, 4f), new float2(6f, 2f));
+        World.Tick();
+        var goal = new float3(-30f, 0f, -20f);
+        Order(tank, goal);
+
+        var backedOut = false;
+        var ended = World.RunUntil(() =>
         {
-            var tank = SpawnTank(float3.zero);
-            World.Tick();
-            // A slot too narrow to pivot in, closed by a building that lands on the tank's nose.
-            World.SpawnObstacle(new float3(-4f, 0f, 1.5f), new float2(2f, 7f));
-            World.SpawnObstacle(new float3(4f, 0f, 1.5f), new float2(2f, 7f));
-            World.SpawnObstacle(new float3(0f, 0f, 4f), new float2(6f, 2f));
-            World.Tick();
-            var goal = new float3(-30f, 0f, -20f);
-            Order(tank, goal);
+            backedOut |= Speed(tank) < -0.1f;
+            return Arrived(tank);
+        }, 40f);
 
-            var backedOut = false;
-            var ended = World.RunUntil(() =>
-            {
-                backedOut |= Speed(tank) < -0.1f;
-                return Arrived(tank);
-            }, 40f);
-
-            Assert.IsTrue(backedOut, "wedged, it backed out");
-            Assert.IsTrue(ended, "the move ended");
-            Assert.AreNotEqual(ArrivalReason.Stalled, World.Get<Arrival>(tank).Reason,
-                "by arriving, not by giving up");
-            Assert.Less(math.distance(World.GetPosition(tank).xz, goal.xz), 2f, "at the goal");
-        }
+        Assert.IsTrue(backedOut, "wedged, it backed out");
+        Assert.IsTrue(ended, "the move ended");
+        Assert.AreNotEqual(ArrivalReason.Stalled, World.Get<Arrival>(tank).Reason,
+            "by arriving, not by giving up");
+        Assert.Less(math.distance(World.GetPosition(tank).xz, goal.xz), 2f, "at the goal");
     }
 }

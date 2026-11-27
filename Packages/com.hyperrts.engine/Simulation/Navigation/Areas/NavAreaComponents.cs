@@ -2,75 +2,74 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Navigation.Areas
+namespace HyperRTS.Simulation.Navigation.Areas;
+
+/// <summary>Axis-aligned XZ box stamped over the grid's terrain surfaces, before <see cref="NavObstacle"/>s.</summary>
+public struct NavArea : IComponentData
 {
-    /// <summary>Axis-aligned XZ box stamped over the grid's terrain surfaces, before <see cref="NavObstacle"/>s.</summary>
-    public struct NavArea : IComponentData
+    public float2 Size;
+    public NavAreaKind Kind;
+}
+
+/// <summary>How a <see cref="NavArea"/> overrides the grid cells under it.</summary>
+public enum NavAreaKind : byte
+{
+    /// <summary>Water for every layer's purposes: naval agents pass, ground agents don't.</summary>
+    Water = 0,
+
+    /// <summary>Closed to every layer.</summary>
+    Blocked = 1,
+
+    /// <summary>Walkable at the area's height (a bridge); water below stays open to ships.</summary>
+    Deck = 2,
+}
+
+/// <summary>
+/// A piece of a <see cref="NavArea"/>, such as one span of a bridge deck, in its space. An area with parts stamps
+/// only the open ones, each no wider than the area, so a broken span returns its cells to what lay below.
+/// </summary>
+[InternalBufferCapacity(0)]
+public struct NavAreaPart : IBufferElementData
+{
+    public float2 Center;
+    public float2 Size;
+    public bool Open;
+
+    /// <summary>The part's box inside an area of <paramref name="areaSize"/>; false when it lies outside it.</summary>
+    public readonly bool TryBox(in LocalTransform transform, float2 areaSize, out NavBox box)
     {
-        public float2 Size;
-        public NavAreaKind Kind;
+        var low = math.max(Center - Size * 0.5f, areaSize * -0.5f);
+        var high = math.min(Center + Size * 0.5f, areaSize * 0.5f);
+        box = NavBox.FromPart(transform, (low + high) * 0.5f, high - low);
+        return math.all(high > low);
     }
+}
 
-    /// <summary>How a <see cref="NavArea"/> overrides the grid cells under it.</summary>
-    public enum NavAreaKind : byte
-    {
-        /// <summary>Water for every layer's purposes: naval agents pass, ground agents don't.</summary>
-        Water = 0,
-
-        /// <summary>Closed to every layer.</summary>
-        Blocked = 1,
-
-        /// <summary>Walkable at the area's height (a bridge); water below stays open to ships.</summary>
-        Deck = 2,
-    }
+/// <summary>XZ box, turned with its entity, that pathing and building placement treat as solid.</summary>
+public struct NavObstacle : IComponentData
+{
+    public float2 Size;
 
     /// <summary>
-    /// A piece of a <see cref="NavArea"/>, such as one span of a bridge deck, in its space. An area with parts stamps
-    /// only the open ones, each no wider than the area, so a broken span returns its cells to what lay below.
+    /// Not a wall: pathing ignores the box but placement keeps it clear. With a <c>Destructible</c> crush rating it
+    /// closes the box to units that cannot crush that much (tank traps); without, it closes nothing (a trench).
     /// </summary>
-    [InternalBufferCapacity(0)]
-    public struct NavAreaPart : IBufferElementData
-    {
-        public float2 Center;
-        public float2 Size;
-        public bool Open;
+    public bool Open;
 
-        /// <summary>The part's box inside an area of <paramref name="areaSize"/>; false when it lies outside it.</summary>
-        public readonly bool TryBox(in LocalTransform transform, float2 areaSize, out NavBox box)
-        {
-            var low = math.max(Center - Size * 0.5f, areaSize * -0.5f);
-            var high = math.min(Center + Size * 0.5f, areaSize * 0.5f);
-            box = NavBox.FromPart(transform, (low + high) * 0.5f, high - low);
-            return math.all(high > low);
-        }
-    }
+    /// <summary>A hash of the footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
+    public readonly ulong Hash(in LocalTransform transform) => NavBox.Hash(transform, this);
+}
 
-    /// <summary>XZ box, turned with its entity, that pathing and building placement treat as solid.</summary>
-    public struct NavObstacle : IComponentData
-    {
-        public float2 Size;
+/// <summary>
+/// A piece of a <see cref="NavObstacle"/>, such as one wall of a building, in its space. An obstacle with parts
+/// stamps only the closed ones, so a broken wall opens its cells; placement still uses the whole box.
+/// </summary>
+[InternalBufferCapacity(0)]
+public struct NavObstaclePart : IBufferElementData
+{
+    public float2 Center;
+    public float2 Size;
+    public bool Closed;
 
-        /// <summary>
-        /// Not a wall: pathing ignores the box but placement keeps it clear. With a <c>Destructible</c> crush rating it
-        /// closes the box to units that cannot crush that much (tank traps); without, it closes nothing (a trench).
-        /// </summary>
-        public bool Open;
-
-        /// <summary>A hash of the footprint stamped at <paramref name="transform"/>, to tell when it changed.</summary>
-        public readonly ulong Hash(in LocalTransform transform) => NavBox.Hash(transform, this);
-    }
-
-    /// <summary>
-    /// A piece of a <see cref="NavObstacle"/>, such as one wall of a building, in its space. An obstacle with parts
-    /// stamps only the closed ones, so a broken wall opens its cells; placement still uses the whole box.
-    /// </summary>
-    [InternalBufferCapacity(0)]
-    public struct NavObstaclePart : IBufferElementData
-    {
-        public float2 Center;
-        public float2 Size;
-        public bool Closed;
-
-        public readonly NavBox Box(in LocalTransform transform) => NavBox.FromPart(transform, Center, Size);
-    }
+    public readonly NavBox Box(in LocalTransform transform) => NavBox.FromPart(transform, Center, Size);
 }

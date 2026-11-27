@@ -1,12 +1,11 @@
-namespace HyperRTS.Simulation.Buildings.Placement
-{
-    /// <summary>What ground a building's footprint must cover.</summary>
-    public enum PlacementSurface : byte
-    {
-        Land = 0,
-        Water = 1,
+namespace HyperRTS.Simulation.Buildings.Placement;
 
-        /// <summary>Touches both open land and open water (a naval yard, a coastal battery).</summary>
-        Shoreline = 2,
-    }
+/// <summary>What ground a building's footprint must cover.</summary>
+public enum PlacementSurface : byte
+{
+    Land = 0,
+    Water = 1,
+
+    /// <summary>Touches both open land and open water (a naval yard, a coastal battery).</summary>
+    Shoreline = 2,
 }

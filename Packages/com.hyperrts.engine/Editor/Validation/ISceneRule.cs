@@ -1,11 +1,10 @@
 using HyperRTS.Editor.Validation.Issues;
 using HyperRTS.Editor.Validation.Sets;
 
-namespace HyperRTS.Editor.Validation
+namespace HyperRTS.Editor.Validation;
+
+/// <summary>A rule across the open scenes, run by the validator and on entering Play mode. Implementations are discovered.</summary>
+public interface ISceneRule
 {
-    /// <summary>A rule across the open scenes, run by the validator and on entering Play mode. Implementations are discovered.</summary>
-    public interface ISceneRule
-    {
-        void Check(SceneSet scenes, ValidationIssues issues);
-    }
+    void Check(SceneSet scenes, ValidationIssues issues);
 }

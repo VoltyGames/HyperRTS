@@ -1,40 +1,39 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using HyperRTS.Simulation.Buildings;
+using HyperRTS.Simulation.Common.Authoring;
 using NUnit.Framework;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Tests.Buildings
+namespace HyperRTS.Simulation.Tests.Buildings;
+
+/// <summary>Flag mounts drop the flag down the pole and reject poles out of range.</summary>
+public class FlagSetupTests
 {
-    /// <summary>Flag mounts drop the flag down the pole and reject poles out of range.</summary>
-    public class FlagSetupTests
+    private World _world;
+    private EntityManager _em;
+
+    [SetUp]
+    public void SetUp()
     {
-        private World _world;
-        private EntityManager _em;
+        _world = new World("Flag Setup Tests");
+        _em = _world.EntityManager;
+    }
 
-        [SetUp]
-        public void SetUp()
-        {
-            _world = new World("Flag Setup Tests");
-            _em = _world.EntityManager;
-        }
+    [TearDown]
+    public void TearDown() => _world.Dispose();
 
-        [TearDown]
-        public void TearDown() => _world.Dispose();
+    [TestCase(1.5f, TestName = "Pole shorter than two flag heights")]
+    [TestCase(11f, TestName = "Pole past the longest drop")]
+    public void Pole_OutOfRange_Throws(float poleHeight)
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() => Mount(1f, poleHeight));
+    }
 
-        [TestCase(1.5f, TestName = "Pole shorter than two flag heights")]
-        [TestCase(11f, TestName = "Pole past the longest drop")]
-        public void Pole_OutOfRange_Throws(float poleHeight)
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(() => Mount(1f, poleHeight));
-        }
-
-        private Entity Mount(float flagHeight, float poleHeight)
-        {
-            var building = _em.CreateEntity();
-            var writer = new EntityWriter(_em, building);
-            FlagMountAuthoring.AddFlagMount(writer, _em.CreateEntity(), flagHeight, poleHeight);
-            return building;
-        }
+    private Entity Mount(float flagHeight, float poleHeight)
+    {
+        var building = _em.CreateEntity();
+        var writer = new EntityWriter(_em, building);
+        FlagMountAuthoring.AddFlagMount(writer, _em.CreateEntity(), flagHeight, poleHeight);
+        return building;
     }
 }

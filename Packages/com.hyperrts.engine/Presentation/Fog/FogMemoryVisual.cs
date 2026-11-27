@@ -1,10 +1,9 @@
 using Unity.Entities;
 
-namespace HyperRTS.Presentation.Fog
+namespace HyperRTS.Presentation.Fog;
+
+/// <summary>The copy drawing a <c>FogMemory</c> memory; a cleanup component, so the copy goes with the memory.</summary>
+public struct FogMemoryVisual : ICleanupComponentData
 {
-    /// <summary>The copy drawing a <c>FogMemory</c> memory; a cleanup component, so the copy goes with the memory.</summary>
-    public struct FogMemoryVisual : ICleanupComponentData
-    {
-        public Entity Root;
-    }
+    public Entity Root;
 }

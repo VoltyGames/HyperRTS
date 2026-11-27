@@ -1,36 +1,35 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common.Geometry
+namespace HyperRTS.Simulation.Common.Geometry;
+
+/// <summary>Quaternion helpers the simulation shares.</summary>
+public static class Rotations
 {
-    /// <summary>Quaternion helpers the simulation shares.</summary>
-    public static class Rotations
+    /// <summary>The unit XZ direction a body with this rotation faces.</summary>
+    public static float2 Facing(quaternion rotation) =>
+        math.normalizesafe(math.mul(rotation, math.forward()).xz, new float2(0f, 1f));
+
+    /// <summary>The shortest rotation turning unit vector <paramref name="from"/> onto unit vector <paramref name="to"/>.</summary>
+    public static quaternion FromTo(float3 from, float3 to)
     {
-        /// <summary>The unit XZ direction a body with this rotation faces.</summary>
-        public static float2 Facing(quaternion rotation) =>
-            math.normalizesafe(math.mul(rotation, math.forward()).xz, new float2(0f, 1f));
-
-        /// <summary>The shortest rotation turning unit vector <paramref name="from"/> onto unit vector <paramref name="to"/>.</summary>
-        public static quaternion FromTo(float3 from, float3 to)
+        var dot = math.dot(from, to);
+        if (dot < -0.9999f)
         {
-            var dot = math.dot(from, to);
-            if (dot < -0.9999f)
-            {
-                return quaternion.AxisAngle(Perpendicular(from), math.PI);
-            }
-
-            return math.normalize(new quaternion(new float4(math.cross(from, to), 1f + dot)));
+            return quaternion.AxisAngle(Perpendicular(from), math.PI);
         }
 
-        /// <summary>Opposite vectors have no single shortest arc: turn about +X, or +Z when the vector lies along X.</summary>
-        private static float3 Perpendicular(float3 direction)
-        {
-            var right = math.right() - direction * direction.x;
-            if (math.lengthsq(right) > 1e-6f)
-            {
-                return math.normalize(right);
-            }
+        return math.normalize(new quaternion(new float4(math.cross(from, to), 1f + dot)));
+    }
 
-            return math.normalize(math.forward() - direction * direction.z);
+    /// <summary>Opposite vectors have no single shortest arc: turn about +X, or +Z when the vector lies along X.</summary>
+    private static float3 Perpendicular(float3 direction)
+    {
+        var right = math.right() - direction * direction.x;
+        if (math.lengthsq(right) > 1e-6f)
+        {
+            return math.normalize(right);
         }
+
+        return math.normalize(math.forward() - direction * direction.z);
     }
 }

@@ -10,6 +10,7 @@ using HyperRTS.Presentation.Environment.Vegetation.Grass;
 using HyperRTS.Presentation.Environment.Vegetation.RowCrops;
 using HyperRTS.Presentation.Environment.Water;
 using HyperRTS.Presentation.Environment.Weather;
+using HyperRTS.Presentation.HUD.Map;
 using HyperRTS.Presentation.Rendering.LightTransport;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -18,249 +19,247 @@ using HyperRTS.Simulation.Vision.Sight;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
-using HyperRTS.Presentation.HUD.Map;
 
-namespace HyperRTS.Editor.Maps.Scenes
+namespace HyperRTS.Editor.Maps.Scenes;
+
+/// <summary>Writes the map's world around the gameplay: terrain, ground colour, row crops, grass, rivers, sky, ford decks and minimap.</summary>
+public static class MapEnvironmentWriter
 {
-    /// <summary>Writes the map's world around the gameplay: terrain, ground colour, row crops, grass, rivers, sky, ford decks and minimap.</summary>
-    public static class MapEnvironmentWriter
+    private const string RowCropsCompute =
+        "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCrops.compute";
+
+    private const string GrassCompute = "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/Grass.compute";
+
+    /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
+    public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
+        TerrainData data)
     {
-        private const string RowCropsCompute =
-            "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/RowCrops/RowCrops.compute";
-
-        private const string GrassCompute = "Packages/com.hyperrts.engine/Presentation/Environment/Vegetation/Grass/Grass.compute";
-
-        /// <summary>Written before the map's scene opens, since opening it unloads the climate the textures come from.</summary>
-        public static (Material Material, Texture2D Picture) WriteGround(MapGeneration generation,
-            TerrainData data)
+        var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
+        var groundTint = MapGroundTintPainter.Write(paths.GroundTint, generation.Layout.TerrainBounds,
+            new MapGroundTint(generation.Layout, generation.Land, generation.Edges, generation.Shapes, generation.Heights,
+                climate.groundTint));
+        var rows = MapRowPainter.Write(paths.RowMap, generation.Land, generation.Layout.Symmetry);
+        var picture = MapGroundColor.Write(paths.Ground, generation.TextureWeights, climate, groundTint);
+        var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, groundTint, picture, rows);
+        MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
+        if (!generation.Crops.IsEmpty)
         {
-            var (climate, paths) = (generation.Project.Climate, generation.Project.Paths);
-            var groundTint = MapGroundTintPainter.Write(paths.GroundTint, generation.Layout.TerrainBounds,
-                new MapGroundTint(generation.Layout, generation.Land, generation.Edges, generation.Shapes, generation.Heights,
-                    climate.groundTint));
-            var rows = MapRowPainter.Write(paths.RowMap, generation.Land, generation.Layout.Symmetry);
-            var picture = MapGroundColor.Write(paths.Ground, generation.TextureWeights, climate, groundTint);
-            var material = MapTerrainMaterial.Write(paths.TerrainMaterial, climate, data, groundTint, picture, rows);
-            MapCropWriter.Write(paths.RowCrops, paths.RowCropIds, generation.Crops);
-            if (!generation.Crops.IsEmpty)
+            MapCropCoverPainter.Write(paths.CropCover, generation.Crops);
+        }
+
+        MapGrassWriter.Write(paths.Grass, paths.GrassCoverage, generation.Grass, climate.plants);
+        MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, climate);
+        return (material, picture);
+    }
+
+    public static void Write(MapScene scene, MapGeneration generation, TerrainData data,
+        (Material Material, Texture2D Picture) ground)
+    {
+        var (layout, climate) = (generation.Layout, generation.Project.Climate);
+        var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
+        CreateGroundBounce(scene, generation, terrain, ground.Material);
+        CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
+        CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
+        CreateGrass(scene, generation.Project.Paths.Grass, terrain);
+        var height = scene.CreateEntityObject("Terrain Height");
+        height.transform.position = layout.TerrainOrigin;
+        height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
+        CreateGroundMaterials(scene, generation);
+        CreateCropCover(scene, generation);
+        CreateWater(scene, generation);
+        CreateWeather(scene, climate, generation.Project.Spec.weather);
+        CreateDecks(scene, generation.Shapes, layout.GroundLevel);
+    }
+
+    // Loaded by path because opening the scene unloads the grid WriteGround saved.
+    private static void CreateGroundMaterials(MapScene scene, MapGeneration generation)
+    {
+        var path = generation.Project.Paths.GroundMaterials;
+        var map = Load<GroundMaterialMap>(path, "ground material map");
+        var land = generation.Land.Bounds;
+        var go = scene.CreateEntityObject("Ground Materials");
+        go.transform.position = new Vector3(land.xMin, 0f, land.yMin);
+        var materials = go.AddComponent<GroundMaterialsAuthoring>();
+        materials.map = map;
+    }
+
+    // Loaded by path because opening the scene unloads the cover WriteGround saved.
+    private static void CreateCropCover(MapScene scene, MapGeneration generation)
+    {
+        if (generation.Crops.IsEmpty)
+        {
+            return;
+        }
+
+        var path = generation.Project.Paths.CropCover;
+        var map = Load<CropCoverMap>(path, "crop cover map");
+        var area = generation.Crops.Area;
+        var go = scene.CreateEntityObject("Crop Cover");
+        go.transform.position = new Vector3(area.xMin, 0f, area.yMin);
+        go.AddComponent<CropCoverAuthoring>().map = map;
+    }
+
+    /// <summary>Points the scene's minimap at a picture of the map.</summary>
+    public static void SetMinimap(MapScene scene, Texture2D image)
+    {
+        var minimap = scene.Root.GetComponentInChildren<MinimapImage>();
+        if (minimap == null)
+        {
+            minimap = scene.CreateChild("Minimap Image").gameObject.AddComponent<MinimapImage>();
+        }
+
+        minimap.image = image;
+        EditorUtility.SetDirty(minimap);
+    }
+
+    /// <summary>Publishes the ground picture to the foliage shaders.</summary>
+    private static void CreateGroundColor(MapScene scene, Texture2D picture, Rect area)
+    {
+        CreateActivated<GroundColor>(scene, "Ground Color", ground =>
+        {
+            ground.picture = picture;
+            ground.area = area;
+        });
+    }
+
+    // Loaded by path because opening the scene unloads the fields WriteGround saved.
+    private static void CreateRowCrops(MapScene scene, string fieldsPath, Terrain terrain)
+    {
+        var fields = AssetDatabase.LoadAssetAtPath<RowCropFields>(fieldsPath);
+        if (fields == null)
+        {
+            return;
+        }
+
+        var compute = Load<ComputeShader>(RowCropsCompute, "row crop compute shader");
+        CreateActivated<RowCropRenderer>(scene, "Row Crops", renderer =>
+        {
+            renderer.fields = fields;
+            renderer.compute = compute;
+            renderer.terrain = terrain;
+        });
+    }
+
+    // Loaded by path because opening the scene unloads the field WriteGround saved.
+    private static void CreateGrass(MapScene scene, string fieldPath, Terrain terrain)
+    {
+        var field = AssetDatabase.LoadAssetAtPath<GrassField>(fieldPath);
+        if (field == null)
+        {
+            return;
+        }
+
+        CreateActivated<GrassRenderer>(scene, "Grass", renderer =>
+        {
+            renderer.field = field;
+            renderer.compute = Load<ComputeShader>(GrassCompute, "grass compute shader");
+            renderer.terrain = terrain;
+        });
+    }
+
+    // Inactive while configured so the component's first enable sees its fields.
+    private static void CreateActivated<T>(MapScene scene, string name, System.Action<T> configure)
+        where T : Component
+    {
+        var go = new GameObject(name);
+        go.SetActive(false);
+        go.transform.SetParent(scene.Root, false);
+        configure(go.AddComponent<T>());
+        go.SetActive(true);
+    }
+
+    private static T Load<T>(string path, string what) where T : Object =>
+        AssetDatabase.LoadAssetAtPath<T>(path)
+        ?? throw new System.InvalidOperationException($"HyperRTS: the {what} '{path}' is missing.");
+
+    private static Terrain CreateTerrain(MapScene scene, TerrainData data, Material material, MapClimate climate,
+        Vector3 origin)
+    {
+        var go = Terrain.CreateTerrainGameObject(data);
+        go.name = "Terrain";
+        go.transform.SetParent(scene.Root, false);
+        go.transform.position = origin;
+        var terrain = go.GetComponent<Terrain>();
+        terrain.materialTemplate = material;
+        terrain.drawInstanced = true;
+        terrain.heightmapPixelError = 3f;
+        terrain.basemapDistance = 1000f;
+        terrain.treeDistance = climate.treeDistance;
+        terrain.treeBillboardDistance = climate.treeDistance;
+        terrain.allowAutoConnect = false;
+        return terrain;
+    }
+
+    // Light transport leaves the terrain out, so this fixed copy of it bounces the light, never drawn.
+    private static void CreateGroundBounce(MapScene scene, MapGeneration generation, Terrain terrain, Material material)
+    {
+        var path = generation.Project.Paths.GroundBounce;
+        var mesh = MapGroundBounceMesh.Build(terrain.terrainData);
+        AssetDatabase.DeleteAsset(path);
+        AssetDatabase.CreateAsset(mesh, path);
+        var ground = scene.CreateChild("Ground Bounce").gameObject;
+        ground.transform.position = terrain.transform.position;
+        ground.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = ground.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = material;
+        renderer.renderingLayerMask = LightTransportLayer.Mask;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+        ground.AddComponent<GroundBounce>();
+    }
+
+    private static void CreateWater(MapScene scene, MapGeneration generation)
+    {
+        var (layout, shapes) = (generation.Layout, generation.Shapes);
+        if (shapes.Rivers.Count == 0 && shapes.Ponds.Count == 0)
+        {
+            return;
+        }
+
+        var path = generation.Project.Paths.Water;
+        var mesh = MapWaterMesh.Build(shapes, generation.Project.Climate, layout.WaterHeight, layout.TerrainBounds);
+        AssetDatabase.DeleteAsset(path);
+        AssetDatabase.CreateAsset(mesh, path);
+        var water = scene.CreateChild("Water").gameObject;
+        water.AddComponent<MeshFilter>().sharedMesh = mesh;
+        var renderer = water.AddComponent<MeshRenderer>();
+        renderer.sharedMaterial = generation.Project.Climate.water;
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        water.AddComponent<WaterPiers>().points = shapes.Crossings.Where(c => c.IsBridge).SelectMany(c => c.Piers).ToArray();
+    }
+
+    /// <summary>The climate's weathers on a <see cref="WeatherSet"/>, the spec's instanced under it to light the bake.</summary>
+    private static void CreateWeather(MapScene scene, MapClimate climate, string key)
+    {
+        var go = scene.CreateChild("Weather").gameObject;
+        var set = go.AddComponent<WeatherSet>();
+        set.defaultKey = key;
+        foreach (var weather in climate.weathers)
+        {
+            set.atmospheres.Add(weather.key, weather.atmosphere);
+        }
+
+        PrefabUtility.InstantiatePrefab(climate.Weather(key).atmosphere, go.transform);
+    }
+
+    /// <summary>A deck nav area over each ford at the height units wade. Bridges carry their own.</summary>
+    private static void CreateDecks(MapScene scene, MapShapes shapes, float groundLevel)
+    {
+        for (var i = 0; i < shapes.Crossings.Count; i++)
+        {
+            var crossing = shapes.Crossings[i];
+            if (crossing.IsBridge)
             {
-                MapCropCoverPainter.Write(paths.CropCover, generation.Crops);
+                continue;
             }
 
-            MapGrassWriter.Write(paths.Grass, paths.GrassCoverage, generation.Grass, climate.plants);
-            MapGroundMaterialPainter.Write(paths.GroundMaterials, generation.Land, climate);
-            return (material, picture);
-        }
-
-        public static void Write(MapScene scene, MapGeneration generation, TerrainData data,
-            (Material Material, Texture2D Picture) ground)
-        {
-            var (layout, climate) = (generation.Layout, generation.Project.Climate);
-            var terrain = CreateTerrain(scene, data, ground.Material, climate, layout.TerrainOrigin);
-            CreateGroundBounce(scene, generation, terrain, ground.Material);
-            CreateGroundColor(scene, ground.Picture, layout.TerrainBounds);
-            CreateRowCrops(scene, generation.Project.Paths.RowCrops, terrain);
-            CreateGrass(scene, generation.Project.Paths.Grass, terrain);
-            var height = scene.CreateEntityObject("Terrain Height");
-            height.transform.position = layout.TerrainOrigin;
-            height.AddComponent<TerrainHeightAuthoring>().terrainData = data;
-            CreateGroundMaterials(scene, generation);
-            CreateCropCover(scene, generation);
-            CreateWater(scene, generation);
-            CreateWeather(scene, climate, generation.Project.Spec.weather);
-            CreateDecks(scene, generation.Shapes, layout.GroundLevel);
-        }
-
-        // Loaded by path because opening the scene unloads the grid WriteGround saved.
-        private static void CreateGroundMaterials(MapScene scene, MapGeneration generation)
-        {
-            var path = generation.Project.Paths.GroundMaterials;
-            var map = Load<GroundMaterialMap>(path, "ground material map");
-            var land = generation.Land.Bounds;
-            var go = scene.CreateEntityObject("Ground Materials");
-            go.transform.position = new Vector3(land.xMin, 0f, land.yMin);
-            var materials = go.AddComponent<GroundMaterialsAuthoring>();
-            materials.map = map;
-        }
-
-        // Loaded by path because opening the scene unloads the cover WriteGround saved.
-        private static void CreateCropCover(MapScene scene, MapGeneration generation)
-        {
-            if (generation.Crops.IsEmpty)
-            {
-                return;
-            }
-
-            var path = generation.Project.Paths.CropCover;
-            var map = Load<CropCoverMap>(path, "crop cover map");
-            var area = generation.Crops.Area;
-            var go = scene.CreateEntityObject("Crop Cover");
-            go.transform.position = new Vector3(area.xMin, 0f, area.yMin);
-            go.AddComponent<CropCoverAuthoring>().map = map;
-        }
-
-        /// <summary>Points the scene's minimap at a picture of the map.</summary>
-        public static void SetMinimap(MapScene scene, Texture2D image)
-        {
-            var minimap = scene.Root.GetComponentInChildren<MinimapImage>();
-            if (minimap == null)
-            {
-                minimap = scene.CreateChild("Minimap Image").gameObject.AddComponent<MinimapImage>();
-            }
-
-            minimap.image = image;
-            EditorUtility.SetDirty(minimap);
-        }
-
-        /// <summary>Publishes the ground picture to the foliage shaders.</summary>
-        private static void CreateGroundColor(MapScene scene, Texture2D picture, Rect area)
-        {
-            CreateActivated<GroundColor>(scene, "Ground Color", ground =>
-            {
-                ground.picture = picture;
-                ground.area = area;
-            });
-        }
-
-        // Loaded by path because opening the scene unloads the fields WriteGround saved.
-        private static void CreateRowCrops(MapScene scene, string fieldsPath, Terrain terrain)
-        {
-            var fields = AssetDatabase.LoadAssetAtPath<RowCropFields>(fieldsPath);
-            if (fields == null)
-            {
-                return;
-            }
-
-            var compute = Load<ComputeShader>(RowCropsCompute, "row crop compute shader");
-            CreateActivated<RowCropRenderer>(scene, "Row Crops", renderer =>
-            {
-                renderer.fields = fields;
-                renderer.compute = compute;
-                renderer.terrain = terrain;
-            });
-        }
-
-        // Loaded by path because opening the scene unloads the field WriteGround saved.
-        private static void CreateGrass(MapScene scene, string fieldPath, Terrain terrain)
-        {
-            var field = AssetDatabase.LoadAssetAtPath<GrassField>(fieldPath);
-            if (field == null)
-            {
-                return;
-            }
-
-            CreateActivated<GrassRenderer>(scene, "Grass", renderer =>
-            {
-                renderer.field = field;
-                renderer.compute = Load<ComputeShader>(GrassCompute, "grass compute shader");
-                renderer.terrain = terrain;
-            });
-        }
-
-        // Inactive while configured so the component's first enable sees its fields.
-        private static void CreateActivated<T>(MapScene scene, string name, System.Action<T> configure)
-            where T : Component
-        {
-            var go = new GameObject(name);
-            go.SetActive(false);
-            go.transform.SetParent(scene.Root, false);
-            configure(go.AddComponent<T>());
-            go.SetActive(true);
-        }
-
-        private static T Load<T>(string path, string what) where T : Object =>
-            AssetDatabase.LoadAssetAtPath<T>(path)
-            ?? throw new System.InvalidOperationException($"HyperRTS: the {what} '{path}' is missing.");
-
-        private static Terrain CreateTerrain(MapScene scene, TerrainData data, Material material, MapClimate climate,
-            Vector3 origin)
-        {
-            var go = Terrain.CreateTerrainGameObject(data);
-            go.name = "Terrain";
-            go.transform.SetParent(scene.Root, false);
-            go.transform.position = origin;
-            var terrain = go.GetComponent<Terrain>();
-            terrain.materialTemplate = material;
-            terrain.drawInstanced = true;
-            terrain.heightmapPixelError = 3f;
-            terrain.basemapDistance = 1000f;
-            terrain.treeDistance = climate.treeDistance;
-            terrain.treeBillboardDistance = climate.treeDistance;
-            terrain.allowAutoConnect = false;
-            return terrain;
-        }
-
-        // Light transport leaves the terrain out, so this fixed copy of it bounces the light, never drawn.
-        private static void CreateGroundBounce(MapScene scene, MapGeneration generation, Terrain terrain, Material material)
-        {
-            var path = generation.Project.Paths.GroundBounce;
-            var mesh = MapGroundBounceMesh.Build(terrain.terrainData);
-            AssetDatabase.DeleteAsset(path);
-            AssetDatabase.CreateAsset(mesh, path);
-            var ground = scene.CreateChild("Ground Bounce").gameObject;
-            ground.transform.position = terrain.transform.position;
-            ground.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var renderer = ground.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.renderingLayerMask = LightTransportLayer.Mask;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            ground.AddComponent<GroundBounce>();
-        }
-
-        private static void CreateWater(MapScene scene, MapGeneration generation)
-        {
-            var (layout, shapes) = (generation.Layout, generation.Shapes);
-            if (shapes.Rivers.Count == 0 && shapes.Ponds.Count == 0)
-            {
-                return;
-            }
-
-            var path = generation.Project.Paths.Water;
-            var mesh = MapWaterMesh.Build(shapes, generation.Project.Climate, layout.WaterHeight, layout.TerrainBounds);
-            AssetDatabase.DeleteAsset(path);
-            AssetDatabase.CreateAsset(mesh, path);
-            var water = scene.CreateChild("Water").gameObject;
-            water.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var renderer = water.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = generation.Project.Climate.water;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            water.AddComponent<WaterPiers>().points = shapes.Crossings.Where(c => c.IsBridge).SelectMany(c => c.Piers).ToArray();
-        }
-
-        /// <summary>The climate's weathers on a <see cref="WeatherSet"/>, the spec's instanced under it to light the bake.</summary>
-        private static void CreateWeather(MapScene scene, MapClimate climate, string key)
-        {
-            var go = scene.CreateChild("Weather").gameObject;
-            var set = go.AddComponent<WeatherSet>();
-            set.defaultKey = key;
-            foreach (var weather in climate.weathers)
-            {
-                set.atmospheres.Add(weather.key, weather.atmosphere);
-            }
-
-            PrefabUtility.InstantiatePrefab(climate.Weather(key).atmosphere, go.transform);
-        }
-
-        /// <summary>A deck nav area over each ford at the height units wade. Bridges carry their own.</summary>
-        private static void CreateDecks(MapScene scene, MapShapes shapes, float groundLevel)
-        {
-            for (var i = 0; i < shapes.Crossings.Count; i++)
-            {
-                var crossing = shapes.Crossings[i];
-                if (crossing.IsBridge)
-                {
-                    continue;
-                }
-
-                var deck = scene.CreateEntityObject($"{crossing.Kind} {i + 1}");
-                deck.transform.SetPositionAndRotation(
-                    new Vector3(crossing.Position.x, crossing.Height - groundLevel, crossing.Position.y),
-                    Quaternion.Euler(0f, crossing.Yaw, 0f));
-                var area = deck.AddComponent<NavAreaAuthoring>();
-                area.kind = NavAreaKind.Deck;
-                area.size = new Vector2(crossing.Width, crossing.Span + 2f);
-            }
+            var deck = scene.CreateEntityObject($"{crossing.Kind} {i + 1}");
+            deck.transform.SetPositionAndRotation(
+                new Vector3(crossing.Position.x, crossing.Height - groundLevel, crossing.Position.y),
+                Quaternion.Euler(0f, crossing.Yaw, 0f));
+            var area = deck.AddComponent<NavAreaAuthoring>();
+            area.kind = NavAreaKind.Deck;
+            area.size = new Vector2(crossing.Width, crossing.Span + 2f);
         }
     }
 }

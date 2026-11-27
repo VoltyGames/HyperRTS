@@ -1,243 +1,242 @@
-using HyperRTS.Editor.Maps.Common;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Maps.Build;
+using HyperRTS.Editor.Maps.Checks;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Nav;
 using HyperRTS.Editor.Maps.Palette;
 using HyperRTS.Editor.Maps.Placement;
-using HyperRTS.Editor.Maps.Checks;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Report
+namespace HyperRTS.Editor.Maps.Report;
+
+/// <summary>
+/// Measures a built map against the rules: rush times to the nearest enemy, attack paths, reachability of every
+/// placed object, buildable ground and resources per base.
+/// </summary>
+public sealed class MapMeasurer
 {
-    /// <summary>
-    /// Measures a built map against the rules: rush times to the nearest enemy, attack paths, reachability of every
-    /// placed object, buildable ground and resources per base.
-    /// </summary>
-    public sealed class MapMeasurer
+    private const float FairnessTolerance = 0.03f;
+    private const float FieldReach = 2.5f;
+    private readonly MapLayout _layout;
+    private readonly MapNavGrid _nav;
+    private readonly MapPalette _palette;
+    private readonly MapRules _rules;
+    private readonly MapIssues _issues;
+    private readonly List<int2> _spawnCells = new();
+
+    private MapMeasurer(MapLayout layout, MapNavGrid nav, MapPalette palette, MapRules rules, MapIssues issues)
     {
-        private const float FairnessTolerance = 0.03f;
-        private const float FieldReach = 2.5f;
-        private readonly MapLayout _layout;
-        private readonly MapNavGrid _nav;
-        private readonly MapPalette _palette;
-        private readonly MapRules _rules;
-        private readonly MapIssues _issues;
-        private readonly List<int2> _spawnCells = new();
+        _layout = layout;
+        _nav = nav;
+        _palette = palette;
+        _rules = rules;
+        _issues = issues;
+    }
 
-        private MapMeasurer(MapLayout layout, MapNavGrid nav, MapPalette palette, MapRules rules, MapIssues issues)
+    /// <summary>The attack paths found between slots 1 and 2, for the overview image.</summary>
+    public List<MapPath> Paths { get; private set; } = new();
+
+    public MapMetrics Metrics { get; } = new();
+
+    public static MapMeasurer Measure(MapGeneration generation, MapNavGrid nav, MapIssues issues)
+    {
+        var project = generation.Project;
+        var placements = generation.Placements;
+        var measurer = new MapMeasurer(generation.Layout, nav, project.Palette, project.Rules, issues);
+        if (measurer.FindSpawnCells())
         {
-            _layout = layout;
-            _nav = nav;
-            _palette = palette;
-            _rules = rules;
-            _issues = issues;
+            measurer.MeasureRushes();
+            measurer.CountPaths();
+            measurer.CheckReach(placements.All);
+            measurer.MeasureBases(placements.All);
         }
 
-        /// <summary>The attack paths found between slots 1 and 2, for the overview image.</summary>
-        public List<MapPath> Paths { get; private set; } = new();
+        return measurer;
+    }
 
-        public MapMetrics Metrics { get; } = new();
-
-        public static MapMeasurer Measure(MapGeneration generation, MapNavGrid nav, MapIssues issues)
+    private bool FindSpawnCells()
+    {
+        foreach (var spawn in _layout.Spawns)
         {
-            var project = generation.Project;
-            var placements = generation.Placements;
-            var measurer = new MapMeasurer(generation.Layout, nav, project.Palette, project.Rules, issues);
-            if (measurer.FindSpawnCells())
+            if (!_nav.TryFindWalkable(spawn.Position, _palette.baseRadius, out var cell))
             {
-                measurer.MeasureRushes();
-                measurer.CountPaths();
-                measurer.CheckReach(placements.All);
-                measurer.MeasureBases(placements.All);
+                _issues.Error($"Slot {spawn.Slot}'s base at {spawn.Position} has no walkable ground.");
+                return false;
             }
 
-            return measurer;
+            _spawnCells.Add(cell);
+            Metrics.spawns.Add(new MapSpawnMetrics { slot = spawn.Slot, team = spawn.Team, rush = float.MaxValue });
         }
 
-        private bool FindSpawnCells()
+        return true;
+    }
+
+    private void MeasureRushes()
+    {
+        var spawns = _layout.Spawns;
+        for (var a = 0; a < spawns.Count; a++)
         {
-            foreach (var spawn in _layout.Spawns)
+            for (var b = a + 1; b < spawns.Count; b++)
             {
-                if (!_nav.TryFindWalkable(spawn.Position, _palette.baseRadius, out var cell))
+                if (spawns[a].Team == spawns[b].Team)
                 {
-                    _issues.Error($"Slot {spawn.Slot}'s base at {spawn.Position} has no walkable ground.");
-                    return false;
+                    continue;
                 }
 
-                _spawnCells.Add(cell);
-                Metrics.spawns.Add(new MapSpawnMetrics { slot = spawn.Slot, team = spawn.Team, rush = float.MaxValue });
-            }
-
-            return true;
-        }
-
-        private void MeasureRushes()
-        {
-            var spawns = _layout.Spawns;
-            for (var a = 0; a < spawns.Count; a++)
-            {
-                for (var b = a + 1; b < spawns.Count; b++)
+                var path = MapPathfinder.Find(_nav, _spawnCells[a], _spawnCells[b]);
+                if (path == null)
                 {
-                    if (spawns[a].Team == spawns[b].Team)
-                    {
-                        continue;
-                    }
-
-                    var path = MapPathfinder.Find(_nav, _spawnCells[a], _spawnCells[b]);
-                    if (path == null)
-                    {
-                        _issues.Error($"No ground path from slot {spawns[a].Slot} to slot {spawns[b].Slot}.");
-                        continue;
-                    }
-
-                    var seconds = path.Length / _rules.vehicleSpeed;
-                    Metrics.spawns[a].rush = Mathf.Min(Metrics.spawns[a].rush, seconds);
-                    Metrics.spawns[b].rush = Mathf.Min(Metrics.spawns[b].rush, seconds);
-                    Metrics.maxExpansions = Mathf.Max(Metrics.maxExpansions, path.Expansions);
-                }
-            }
-
-            Metrics.minRush = Metrics.spawns.Min(s => s.rush);
-            Metrics.maxRush = Metrics.spawns.Max(s => s.rush);
-            CheckRushes();
-        }
-
-        private void CheckRushes()
-        {
-            var mode = _rules.Mode(_layout.Spec.mode);
-            foreach (var spawn in Metrics.spawns.Where(s => s.rush < mode.rushMin || s.rush > mode.rushMax))
-            {
-                ReportMissedModeRule($"Slot {spawn.slot} reaches its nearest enemy in {spawn.rush:0} s; {_layout.Spec.mode} wants {mode.rushMin:0} to {mode.rushMax:0} s.");
-            }
-
-            var copies = _layout.Symmetry.Copies.Count;
-            for (var i = 0; i < Metrics.spawns.Count; i += copies)
-            {
-                var group = Metrics.spawns.Skip(i).Take(copies).Select(s => s.rush).ToList();
-                if (group.Max() > group.Min() * (1f + FairnessTolerance))
-                {
-                    ReportMissedModeRule($"Symmetric slots {i + 1} to {i + copies} differ in rush time ({group.Min():0} to {group.Max():0} s).");
-                }
-            }
-        }
-
-        private void CountPaths()
-        {
-            if (_spawnCells.Count < 2)
-            {
-                return;
-            }
-
-            var mode = _rules.Mode(_layout.Spec.mode);
-
-            Paths = MapPathCounter.Count(_nav, _spawnCells[0], _spawnCells[1], _rules.corridorWidth,
-                _palette.baseRadius, mode.minPaths + 3);
-            Metrics.paths = Paths.Count;
-            if (Paths.Count < mode.minPaths)
-            {
-                ReportMissedModeRule($"Slots 1 and 2 have {Paths.Count} separate attack paths; {_layout.Spec.mode} wants {mode.minPaths}.");
-            }
-        }
-
-        private void CheckReach(List<MapPlacement> placements)
-        {
-            var reachable = MapPathCounter.Flood(_nav, _spawnCells[0]);
-            foreach (var placement in placements.Where(p => p.Entry.IsGameplay))
-            {
-                if (!_nav.AnyReachable(placement.Position, placement.Radius + 4f, reachable))
-                {
-                    _issues.Error($"'{placement.Entry.key}' at {placement.Position} can't be reached by ground from slot 1.");
-                }
-            }
-        }
-
-        private void MeasureBases(List<MapPlacement> placements)
-        {
-            var radius = _palette.baseRadius;
-            for (var i = 0; i < _layout.Spawns.Count; i++)
-            {
-                var spawn = _layout.Spawns[i];
-                var metrics = Metrics.spawns[i];
-                metrics.buildable = BuildableShare(spawn.Position, radius);
-                if (metrics.buildable < _rules.minBuildableShare)
-                {
-                    _issues.Error($"Only {metrics.buildable:P0} of slot {spawn.Slot}'s base can be built on; the rules want {_rules.minBuildableShare:P0}.");
+                    _issues.Error($"No ground path from slot {spawns[a].Slot} to slot {spawns[b].Slot}.");
+                    continue;
                 }
 
-                var reach = radius * FieldReach;
-                foreach (var node in placements.Where(p => (p.Position - spawn.Position).magnitude < reach && p.Entry.IsResource))
+                var seconds = path.Length / _rules.vehicleSpeed;
+                Metrics.spawns[a].rush = Mathf.Min(Metrics.spawns[a].rush, seconds);
+                Metrics.spawns[b].rush = Mathf.Min(Metrics.spawns[b].rush, seconds);
+                Metrics.maxExpansions = Mathf.Max(Metrics.maxExpansions, path.Expansions);
+            }
+        }
+
+        Metrics.minRush = Metrics.spawns.Min(s => s.rush);
+        Metrics.maxRush = Metrics.spawns.Max(s => s.rush);
+        CheckRushes();
+    }
+
+    private void CheckRushes()
+    {
+        var mode = _rules.Mode(_layout.Spec.mode);
+        foreach (var spawn in Metrics.spawns.Where(s => s.rush < mode.rushMin || s.rush > mode.rushMax))
+        {
+            ReportMissedModeRule($"Slot {spawn.slot} reaches its nearest enemy in {spawn.rush:0} s; {_layout.Spec.mode} wants {mode.rushMin:0} to {mode.rushMax:0} s.");
+        }
+
+        var copies = _layout.Symmetry.Copies.Count;
+        for (var i = 0; i < Metrics.spawns.Count; i += copies)
+        {
+            var group = Metrics.spawns.Skip(i).Take(copies).Select(s => s.rush).ToList();
+            if (group.Max() > group.Min() * (1f + FairnessTolerance))
+            {
+                ReportMissedModeRule($"Symmetric slots {i + 1} to {i + copies} differ in rush time ({group.Min():0} to {group.Max():0} s).");
+            }
+        }
+    }
+
+    private void CountPaths()
+    {
+        if (_spawnCells.Count < 2)
+        {
+            return;
+        }
+
+        var mode = _rules.Mode(_layout.Spec.mode);
+
+        Paths = MapPathCounter.Count(_nav, _spawnCells[0], _spawnCells[1], _rules.corridorWidth,
+            _palette.baseRadius, mode.minPaths + 3);
+        Metrics.paths = Paths.Count;
+        if (Paths.Count < mode.minPaths)
+        {
+            ReportMissedModeRule($"Slots 1 and 2 have {Paths.Count} separate attack paths; {_layout.Spec.mode} wants {mode.minPaths}.");
+        }
+    }
+
+    private void CheckReach(List<MapPlacement> placements)
+    {
+        var reachable = MapPathCounter.Flood(_nav, _spawnCells[0]);
+        foreach (var placement in placements.Where(p => p.Entry.IsGameplay))
+        {
+            if (!_nav.AnyReachable(placement.Position, placement.Radius + 4f, reachable))
+            {
+                _issues.Error($"'{placement.Entry.key}' at {placement.Position} can't be reached by ground from slot 1.");
+            }
+        }
+    }
+
+    private void MeasureBases(List<MapPlacement> placements)
+    {
+        var radius = _palette.baseRadius;
+        for (var i = 0; i < _layout.Spawns.Count; i++)
+        {
+            var spawn = _layout.Spawns[i];
+            var metrics = Metrics.spawns[i];
+            metrics.buildable = BuildableShare(spawn.Position, radius);
+            if (metrics.buildable < _rules.minBuildableShare)
+            {
+                _issues.Error($"Only {metrics.buildable:P0} of slot {spawn.Slot}'s base can be built on; the rules want {_rules.minBuildableShare:P0}.");
+            }
+
+            var reach = radius * FieldReach;
+            foreach (var node in placements.Where(p => (p.Position - spawn.Position).magnitude < reach && p.Entry.IsResource))
+            {
+                CountNode(spawn.Slot, metrics, node, reach);
+            }
+        }
+
+        CheckRenewableFields(placements);
+    }
+
+    private void CountNode(int slot, MapSpawnMetrics metrics, MapPlacement node, float reach)
+    {
+        if (!node.Entry.IsRenewable)
+        {
+            metrics.finiteFields++;
+            metrics.finiteSupply += node.Amount;
+            return;
+        }
+
+        metrics.renewableFields++;
+        metrics.renewableSupply += node.Amount;
+        _issues.Error($"Renewable '{node.Entry.key}' at {node.Position} is within {reach:0} m of slot {slot}'s base; main and natural fields must be finite.");
+    }
+
+    private void CheckRenewableFields(List<MapPlacement> placements)
+    {
+        var stacks = placements.Where(p => p.Entry.IsRenewable).Select(p => p.Position).ToList();
+        var fields = MapResourceFields.Count(stacks);
+        var players = _layout.Spawns.Count;
+        Metrics.renewableFieldsPerPlayer = (float)fields / players;
+        var mode = _rules.Mode(_layout.Spec.mode);
+        if (fields < mode.minRenewableFields * players)
+        {
+            ReportMissedModeRule($"The map has {fields} renewable fields for {players} players ({Metrics.renewableFieldsPerPlayer:0.#} each); {_layout.Spec.mode} wants {mode.minRenewableFields} each.");
+        }
+    }
+
+    // A mode's thresholds make matches fair; an unlisted map hosts no match players pick, so it only notes them.
+    private void ReportMissedModeRule(string message)
+    {
+        if (_layout.Spec.listed)
+        {
+            _issues.Error(message);
+            return;
+        }
+
+        _issues.Warn(message);
+    }
+
+    private float BuildableShare(Vector2 center, float radius)
+    {
+        var open = 0;
+        var total = 0;
+        var reach = Mathf.CeilToInt(radius / _nav.Grid.Grid.CellSize);
+        var middle = _nav.Cell(center);
+        for (var y = -reach; y <= reach; y++)
+        {
+            for (var x = -reach; x <= reach; x++)
+            {
+                var cell = middle + new int2(x, y);
+                if (math.length(new float2(x, y)) * _nav.Grid.Grid.CellSize > radius || !_nav.Grid.Grid.Contains(cell))
                 {
-                    CountNode(spawn.Slot, metrics, node, reach);
+                    continue;
                 }
-            }
 
-            CheckRenewableFields(placements);
-        }
-
-        private void CountNode(int slot, MapSpawnMetrics metrics, MapPlacement node, float reach)
-        {
-            if (!node.Entry.IsRenewable)
-            {
-                metrics.finiteFields++;
-                metrics.finiteSupply += node.Amount;
-                return;
-            }
-
-            metrics.renewableFields++;
-            metrics.renewableSupply += node.Amount;
-            _issues.Error($"Renewable '{node.Entry.key}' at {node.Position} is within {reach:0} m of slot {slot}'s base; main and natural fields must be finite.");
-        }
-
-        private void CheckRenewableFields(List<MapPlacement> placements)
-        {
-            var stacks = placements.Where(p => p.Entry.IsRenewable).Select(p => p.Position).ToList();
-            var fields = MapResourceFields.Count(stacks);
-            var players = _layout.Spawns.Count;
-            Metrics.renewableFieldsPerPlayer = (float)fields / players;
-            var mode = _rules.Mode(_layout.Spec.mode);
-            if (fields < mode.minRenewableFields * players)
-            {
-                ReportMissedModeRule($"The map has {fields} renewable fields for {players} players ({Metrics.renewableFieldsPerPlayer:0.#} each); {_layout.Spec.mode} wants {mode.minRenewableFields} each.");
+                total++;
+                open += _nav.IsWalkable(cell) ? 1 : 0;
             }
         }
 
-        // A mode's thresholds make matches fair; an unlisted map hosts no match players pick, so it only notes them.
-        private void ReportMissedModeRule(string message)
-        {
-            if (_layout.Spec.listed)
-            {
-                _issues.Error(message);
-                return;
-            }
-
-            _issues.Warn(message);
-        }
-
-        private float BuildableShare(Vector2 center, float radius)
-        {
-            var open = 0;
-            var total = 0;
-            var reach = Mathf.CeilToInt(radius / _nav.Grid.Grid.CellSize);
-            var middle = _nav.Cell(center);
-            for (var y = -reach; y <= reach; y++)
-            {
-                for (var x = -reach; x <= reach; x++)
-                {
-                    var cell = middle + new int2(x, y);
-                    if (math.length(new float2(x, y)) * _nav.Grid.Grid.CellSize > radius || !_nav.Grid.Grid.Contains(cell))
-                    {
-                        continue;
-                    }
-
-                    total++;
-                    open += _nav.IsWalkable(cell) ? 1 : 0;
-                }
-            }
-
-            return total > 0 ? (float)open / total : 0f;
-        }
+        return total > 0 ? (float)open / total : 0f;
     }
 }

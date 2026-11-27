@@ -6,61 +6,60 @@ using HyperRTS.Presentation.Environment.Weather;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Editor.Maps.Scenes
+namespace HyperRTS.Editor.Maps.Scenes;
+
+/// <summary>Ground decals as URP decal projectors on the finished ground, projecting along its normal; wet-only ones
+/// under a Wet Decals group that shows them after rain.</summary>
+public static class MapDecalWriter
 {
-    /// <summary>Ground decals as URP decal projectors on the finished ground, projecting along its normal; wet-only ones
-    /// under a Wet Decals group that shows them after rain.</summary>
-    public static class MapDecalWriter
+    public static void Write(MapScene scene, MapGeneration generation)
     {
-        public static void Write(MapScene scene, MapGeneration generation)
+        WriteGroup(scene.CreateChild("Decals"), generation.Decals, generation);
+        if (generation.WetDecals.Count == 0)
         {
-            WriteGroup(scene.CreateChild("Decals"), generation.Decals, generation);
-            if (generation.WetDecals.Count == 0)
-            {
-                return;
-            }
-
-            var wet = scene.CreateChild("Wet Decals");
-            WriteGroup(wet, generation.WetDecals, generation);
-            wet.gameObject.AddComponent<WetnessGroup>();
+            return;
         }
 
-        private static void WriteGroup(Transform root, List<MapDecal> decals, MapGeneration generation)
-        {
-            var counts = new Dictionary<string, int>();
-            foreach (var decal in decals)
-            {
-                var key = decal.Kind.key;
-                counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 1;
-                Create(root, $"{key} {counts[key]}", decal, generation);
-            }
-        }
+        var wet = scene.CreateChild("Wet Decals");
+        WriteGroup(wet, generation.WetDecals, generation);
+        wet.gameObject.AddComponent<WetnessGroup>();
+    }
 
-        private static void Create(Transform root, string name, MapDecal decal, MapGeneration generation)
+    private static void WriteGroup(Transform root, List<MapDecal> decals, MapGeneration generation)
+    {
+        var counts = new Dictionary<string, int>();
+        foreach (var decal in decals)
         {
-            var go = new GameObject(name);
-            go.transform.SetParent(root, false);
-            var heights = generation.Heights;
-            var point = decal.Position;
-            var y = heights.Height(point) - generation.Layout.GroundLevel;
-            var normal = heights.Normal(point, decal.Diameter * 0.5f);
-            go.transform.SetPositionAndRotation(new Vector3(point.x, y, point.y), Facing(normal, decal.Yaw));
-            var projector = go.AddComponent<DecalProjector>();
-            projector.material = decal.Kind.material;
-            projector.pivot = Vector3.zero;
-            projector.size = new Vector3(decal.Diameter, decal.Diameter, decal.Kind.depth);
-            projector.startAngleFade = ImpactMarkDecals.StartAngleFade;
-            projector.endAngleFade = ImpactMarkDecals.EndAngleFade;
-            projector.uvScale = new Vector2(decal.Mirrored ? -1f : 1f, 1f);
-            projector.uvBias = new Vector2(decal.Mirrored ? 1f : 0f, 0f);
+            var key = decal.Kind.key;
+            counts[key] = counts.TryGetValue(key, out var count) ? count + 1 : 1;
+            Create(root, $"{key} {counts[key]}", decal, generation);
         }
+    }
 
-        /// <summary>Projecting down the normal, the texture's top turned <paramref name="yaw"/> degrees clockwise from north.</summary>
-        private static Quaternion Facing(Vector3 normal, float yaw)
-        {
-            var north = Vector3.Cross(Vector3.right, normal).normalized;
-            var up = Quaternion.AngleAxis(yaw, normal) * north;
-            return Quaternion.LookRotation(-normal, up);
-        }
+    private static void Create(Transform root, string name, MapDecal decal, MapGeneration generation)
+    {
+        var go = new GameObject(name);
+        go.transform.SetParent(root, false);
+        var heights = generation.Heights;
+        var point = decal.Position;
+        var y = heights.Height(point) - generation.Layout.GroundLevel;
+        var normal = heights.Normal(point, decal.Diameter * 0.5f);
+        go.transform.SetPositionAndRotation(new Vector3(point.x, y, point.y), Facing(normal, decal.Yaw));
+        var projector = go.AddComponent<DecalProjector>();
+        projector.material = decal.Kind.material;
+        projector.pivot = Vector3.zero;
+        projector.size = new Vector3(decal.Diameter, decal.Diameter, decal.Kind.depth);
+        projector.startAngleFade = ImpactMarkDecals.StartAngleFade;
+        projector.endAngleFade = ImpactMarkDecals.EndAngleFade;
+        projector.uvScale = new Vector2(decal.Mirrored ? -1f : 1f, 1f);
+        projector.uvBias = new Vector2(decal.Mirrored ? 1f : 0f, 0f);
+    }
+
+    /// <summary>Projecting down the normal, the texture's top turned <paramref name="yaw"/> degrees clockwise from north.</summary>
+    private static Quaternion Facing(Vector3 normal, float yaw)
+    {
+        var north = Vector3.Cross(Vector3.right, normal).normalized;
+        var up = Quaternion.AngleAxis(yaw, normal) * north;
+        return Quaternion.LookRotation(-normal, up);
     }
 }

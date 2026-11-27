@@ -7,122 +7,121 @@ using HyperRTS.Simulation.GameEntities;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Strikes
+namespace HyperRTS.Simulation.Strikes;
+
+/// <summary>
+/// Turns one of this structure's abilities into a bomber strike: firing it sends a bomber in from the owner's map
+/// edge to drop guided bombs on the target zone.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Combat/Bomber Strike")]
+[Icon(HyperRTSIcons.BomberStrikeAuthoring)]
+[HelpURL(HyperRTSDocs.StrategicAssets)]
+[DisallowMultipleComponent]
+[RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
+[RequiresAuthoring(typeof(AbilityAuthoring), "an Ability")]
+public class BomberStrikeAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Turns one of this structure's abilities into a bomber strike: firing it sends a bomber in from the owner's map
-    /// edge to drop guided bombs on the target zone.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Combat/Bomber Strike")]
-    [Icon(HyperRTSIcons.BomberStrikeAuthoring)]
-    [HelpURL(HyperRTSDocs.StrategicAssets)]
-    [DisallowMultipleComponent]
-    [RequiresAuthoring(typeof(BuildingAuthoring), "a Building")]
-    [RequiresAuthoring(typeof(AbilityAuthoring), "an Ability")]
-    public class BomberStrikeAuthoring : AuthoringBehaviour
+    [Tooltip("Name of the point-targeted Ability entry that fires the strike; it starts on cooldown.")]
+    public string ability = "Strategic Strike";
+
+    [Tooltip("The ability's cooldown is the owner's strategic asset charge, shown to every player.")]
+    public bool strategic = true;
+
+    [Tooltip("Aircraft prefab with Flight and Stealth that flies the strike; air defence can engage it once revealed.")]
+    [PrefabAsset("Aircraft")]
+    public UnitAuthoring aircraft;
+
+    [Tooltip("Cruise height of the aircraft above the target.")]
+    [Min(1f)]
+    public float altitude = 60f;
+
+    [Tooltip("Seconds before the drop at which the aircraft becomes detectable and the strike warning shows.")]
+    [Min(0f)]
+    public float revealSeconds = 5f;
+
+    [Header("Bombs")]
+    [Tooltip("Projectile prefab each guided bomb flies as.")]
+    [PrefabAsset("Bomb")]
+    public GameObject bomb;
+
+    [Tooltip("Bombs in the stick before air defence removes any.")]
+    [Min(1)]
+    public int count = 8;
+
+    [Tooltip("What each bomb deals at its centre and round it.")]
+    public DamageSettings hit = new() { damage = 800f, splashRadius = 6f };
+
+    [Tooltip("How fast each bomb falls toward its aim.")]
+    [Unit("m/s")]
+    [Min(1f)]
+    public float speed = 40f;
+
+    [Tooltip("Radius round the aim point whose enemy structures the bombs seek; 0 drops them all on the point.")]
+    [Min(0f)]
+    public float zoneRadius = 25f;
+
+    [Tooltip("Prefab left where each bomb lands, such as a burning crater whose smoke hangs over the ground; none leaves nothing.")]
+    [PrefabAsset("Remains")]
+    public GameObject remains;
+
+    [Tooltip("Share of the bombs enemy air defence over the zone can remove at most, one bomb per weapon.")]
+    [Range(0f, 1f)]
+    public float maxReduction = 0.5f;
+
+    /// <summary>The strike's entry in the structure's <see cref="StrikeAbility"/> list.</summary>
+    public StrikeAbility Entry() => new()
     {
-        [Tooltip("Name of the point-targeted Ability entry that fires the strike; it starts on cooldown.")]
-        public string ability = "Strategic Strike";
+        AbilityId = EntityInfo.TypeIdFromName(ability),
+        Reach = hit.Bake().SplashRadius + zoneRadius,
+        Kind = StrikeKind.Bomber,
+    };
 
-        [Tooltip("The ability's cooldown is the owner's strategic asset charge, shown to every player.")]
-        public bool strategic = true;
-
-        [Tooltip("Aircraft prefab with Flight and Stealth that flies the strike; air defence can engage it once revealed.")]
-        [PrefabAsset("Aircraft")]
-        public UnitAuthoring aircraft;
-
-        [Tooltip("Cruise height of the aircraft above the target.")]
-        [Min(1f)]
-        public float altitude = 60f;
-
-        [Tooltip("Seconds before the drop at which the aircraft becomes detectable and the strike warning shows.")]
-        [Min(0f)]
-        public float revealSeconds = 5f;
-
-        [Header("Bombs")]
-        [Tooltip("Projectile prefab each guided bomb flies as.")]
-        [PrefabAsset("Bomb")]
-        public GameObject bomb;
-
-        [Tooltip("Bombs in the stick before air defence removes any.")]
-        [Min(1)]
-        public int count = 8;
-
-        [Tooltip("What each bomb deals at its centre and round it.")]
-        public DamageSettings hit = new() { damage = 800f, splashRadius = 6f };
-
-        [Tooltip("How fast each bomb falls toward its aim.")]
-        [Unit("m/s")]
-        [Min(1f)]
-        public float speed = 40f;
-
-        [Tooltip("Radius round the aim point whose enemy structures the bombs seek; 0 drops them all on the point.")]
-        [Min(0f)]
-        public float zoneRadius = 25f;
-
-        [Tooltip("Prefab left where each bomb lands, such as a burning crater whose smoke hangs over the ground; none leaves nothing.")]
-        [PrefabAsset("Remains")]
-        public GameObject remains;
-
-        [Tooltip("Share of the bombs enemy air defence over the zone can remove at most, one bomb per weapon.")]
-        [Range(0f, 1f)]
-        public float maxReduction = 0.5f;
-
-        /// <summary>The strike's entry in the structure's <see cref="StrikeAbility"/> list.</summary>
-        public StrikeAbility Entry() => new()
+    /// <summary>Adds the strike, and the strategic asset on its ability when <paramref name="strategic"/>.</summary>
+    public static void Add(EntityWriter writer, int abilityId, in BomberStrike strike, bool strategic)
+    {
+        writer.Add(strike);
+        if (strategic)
         {
-            AbilityId = EntityInfo.TypeIdFromName(ability),
-            Reach = hit.Bake().SplashRadius + zoneRadius,
-            Kind = StrikeKind.Bomber,
-        };
-
-        /// <summary>Adds the strike, and the strategic asset on its ability when <paramref name="strategic"/>.</summary>
-        public static void Add(EntityWriter writer, int abilityId, in BomberStrike strike, bool strategic)
-        {
-            writer.Add(strike);
-            if (strategic)
-            {
-                writer.Add(new StrategicAsset { AbilityId = abilityId });
-            }
+            writer.Add(new StrategicAsset { AbilityId = abilityId });
         }
+    }
 
-        public class Baker : Baker<BomberStrikeAuthoring>
+    public class Baker : Baker<BomberStrikeAuthoring>
+    {
+        private Entity RemainsEntity(GameObject prefab) =>
+            prefab == null ? Entity.Null : GetEntity(prefab, TransformUsageFlags.Dynamic);
+
+        public override void Bake(BomberStrikeAuthoring authoring)
         {
-            private Entity RemainsEntity(GameObject prefab) =>
-                prefab == null ? Entity.Null : GetEntity(prefab, TransformUsageFlags.Dynamic);
-
-            public override void Bake(BomberStrikeAuthoring authoring)
+            // BomberStrikeRule reports a missing aircraft, bomb or ability entry.
+            if (authoring.aircraft == null || authoring.bomb == null)
             {
-                // BomberStrikeRule reports a missing aircraft, bomb or ability entry.
-                if (authoring.aircraft == null || authoring.bomb == null)
-                {
-                    return;
-                }
-
-                var writer = this.Writer();
-                var id = EntityInfo.TypeIdFromName(authoring.ability);
-                // This baker writes the list for a structure with both strikes, since two bakers can't add one buffer.
-                var missile = GetComponent<MissileStrikeAuthoring>();
-                writer.AddBuffer(missile == null
-                    ? new[] { authoring.Entry() }
-                    : new[] { authoring.Entry(), missile.Entry() });
-                Add(writer, id, new BomberStrike
-                {
-                    Aircraft = GetEntity(authoring.aircraft, TransformUsageFlags.Dynamic),
-                    Altitude = authoring.altitude,
-                    RevealSeconds = authoring.revealSeconds,
-                    Bombs = new BombLoad
-                    {
-                        Prefab = GetEntity(authoring.bomb, TransformUsageFlags.Dynamic),
-                        Count = authoring.count,
-                        Damage = authoring.hit.Bake(),
-                        Speed = authoring.speed,
-                        ZoneRadius = authoring.zoneRadius,
-                        MaxReduction = authoring.maxReduction,
-                        Remains = RemainsEntity(authoring.remains),
-                    },
-                }, authoring.strategic);
+                return;
             }
+
+            var writer = this.Writer();
+            var id = EntityInfo.TypeIdFromName(authoring.ability);
+            // This baker writes the list for a structure with both strikes, since two bakers can't add one buffer.
+            var missile = GetComponent<MissileStrikeAuthoring>();
+            writer.AddBuffer(missile == null
+                ? new[] { authoring.Entry() }
+                : new[] { authoring.Entry(), missile.Entry() });
+            Add(writer, id, new BomberStrike
+            {
+                Aircraft = GetEntity(authoring.aircraft, TransformUsageFlags.Dynamic),
+                Altitude = authoring.altitude,
+                RevealSeconds = authoring.revealSeconds,
+                Bombs = new BombLoad
+                {
+                    Prefab = GetEntity(authoring.bomb, TransformUsageFlags.Dynamic),
+                    Count = authoring.count,
+                    Damage = authoring.hit.Bake(),
+                    Speed = authoring.speed,
+                    ZoneRadius = authoring.zoneRadius,
+                    MaxReduction = authoring.maxReduction,
+                    Remains = RemainsEntity(authoring.remains),
+                },
+            }, authoring.strategic);
         }
     }
 }

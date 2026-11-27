@@ -8,64 +8,63 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using Object = UnityEngine.Object;
 
-namespace HyperRTS.Presentation.Tests.HUD
+namespace HyperRTS.Presentation.Tests.HUD;
+
+/// <summary>Specs, catalogs and kits made in code for the command card tests; <see cref="Destroy"/> frees them.</summary>
+internal static partial class CommandTestKit
 {
-    /// <summary>Specs, catalogs and kits made in code for the command card tests; <see cref="Destroy"/> frees them.</summary>
-    internal static partial class CommandTestKit
+    [AutoStaticsCleanup]
+    private static readonly List<Object> Made = new();
+
+    /// <summary>A kit with one prefab spec per name, in the first slots.</summary>
+    public static CommandKit Prefabs(params string[] names) => Kit(names.Select((name, slot) =>
     {
-        [AutoStaticsCleanup]
-        private static readonly List<Object> Made = new();
-
-        /// <summary>A kit with one prefab spec per name, in the first slots.</summary>
-        public static CommandKit Prefabs(params string[] names) => Kit(names.Select((name, slot) =>
+        var producible = new GameObject(name).AddComponent<UpgradeAuthoring>();
+        Made.Add(producible.gameObject);
+        return CommandSpec.Create(CommandTarget.Prefab, new CommandSpecSettings
         {
-            var producible = new GameObject(name).AddComponent<UpgradeAuthoring>();
-            Made.Add(producible.gameObject);
-            return CommandSpec.Create(CommandTarget.Prefab, new CommandSpecSettings
-            {
-                Slot = slot,
-                Prefab = producible,
-            });
-        }).ToArray());
+            Slot = slot,
+            Prefab = producible,
+        });
+    }).ToArray());
 
-        /// <summary>A kit with an order spec for each type; Retreat and Reinforce get R and T.</summary>
-        public static CommandKit Orders(params CommandType[] orders) => Kit(orders.Select(order =>
+    /// <summary>A kit with an order spec for each type; Retreat and Reinforce get R and T.</summary>
+    public static CommandKit Orders(params CommandType[] orders) => Kit(orders.Select(order =>
+    {
+        return CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
         {
-            return CommandSpec.Create(CommandTarget.Order, new CommandSpecSettings
-            {
-                Hotkey = Hotkey(order),
-                LabelKey = $"command.{order.ToString().ToLowerInvariant()}",
-                Order = order,
-            });
-        }).ToArray());
+            Hotkey = Hotkey(order),
+            LabelKey = $"command.{order.ToString().ToLowerInvariant()}",
+            Order = order,
+        });
+    }).ToArray());
 
-        private static Key Hotkey(CommandType order) => order switch
-        {
-            CommandType.Retreat => Key.R,
-            CommandType.Reinforce => Key.T,
-            _ => Key.None,
-        };
+    private static Key Hotkey(CommandType order) => order switch
+    {
+        CommandType.Retreat => Key.R,
+        CommandType.Reinforce => Key.T,
+        _ => Key.None,
+    };
 
-        public static CommandKit Kit(params CommandSpec[] specs)
+    public static CommandKit Kit(params CommandSpec[] specs)
+    {
+        Made.AddRange(specs);
+        var catalog = CommandCatalog.Create(specs);
+        Made.Add(catalog);
+        return new CommandKit(HUDPanelTests.Layouts.CommandButton, catalog);
+    }
+
+    /// <summary>A caption button of its own.</summary>
+    public static CommandButton Button(string label) =>
+        new(HUDPanelTests.Layouts.CommandButton, CommandLook.Text, label, null, "", () => { });
+
+    public static void Destroy()
+    {
+        foreach (var made in Made)
         {
-            Made.AddRange(specs);
-            var catalog = CommandCatalog.Create(specs);
-            Made.Add(catalog);
-            return new CommandKit(HUDPanelTests.Layouts.CommandButton, catalog);
+            Object.DestroyImmediate(made);
         }
 
-        /// <summary>A caption button of its own.</summary>
-        public static CommandButton Button(string label) =>
-            new(HUDPanelTests.Layouts.CommandButton, CommandLook.Text, label, null, "", () => { });
-
-        public static void Destroy()
-        {
-            foreach (var made in Made)
-            {
-                Object.DestroyImmediate(made);
-            }
-
-            Made.Clear();
-        }
+        Made.Clear();
     }
 }

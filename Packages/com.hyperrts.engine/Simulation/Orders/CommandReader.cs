@@ -2,110 +2,109 @@ using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Orders
+namespace HyperRTS.Simulation.Orders;
+
+/// <summary>
+/// Reads this frame's <see cref="PlayerCommand"/>s of some types from players still in the match, and the owned
+/// entities each one addresses. Defeated players' commands are dropped here, so every command system agrees.
+/// </summary>
+public struct CommandReader
 {
-    /// <summary>
-    /// Reads this frame's <see cref="PlayerCommand"/>s of some types from players still in the match, and the owned
-    /// entities each one addresses. Defeated players' commands are dropped here, so every command system agrees.
-    /// </summary>
-    public struct CommandReader
+    private TypeSet _types;
+    private EntityQuery _players;
+    private EntityQuery _selected;
+    private ComponentLookup<Owner> _owners;
+
+    /// <summary><paramref name="selected"/> matches what a command without its own subjects addresses.</summary>
+    public CommandReader(ref SystemState state, in TypeSet types, EntityQuery selected)
+        : this(ref state, types)
     {
-        private TypeSet _types;
-        private EntityQuery _players;
-        private EntityQuery _selected;
-        private ComponentLookup<Owner> _owners;
+        _selected = selected;
+    }
 
-        /// <summary><paramref name="selected"/> matches what a command without its own subjects addresses.</summary>
-        public CommandReader(ref SystemState state, in TypeSet types, EntityQuery selected)
-            : this(ref state, types)
+    /// <summary>For player-level commands, which address no entities.</summary>
+    public CommandReader(ref SystemState state, in TypeSet types)
+    {
+        _types = types;
+        _selected = default;
+        _owners = state.GetComponentLookup<Owner>(true);
+        _players = new EntityQueryBuilder(Allocator.Temp)
+            .WithAll<Player, PlayerCommand, PlayerCommandSubject>().WithNone<Defeated>().Build(ref state);
+    }
+
+    /// <summary>
+    /// This frame's commands of the reader's types, player by player in issue order. Reads only the command
+    /// buffers, so callers can skip their job sync when it comes back empty.
+    /// </summary>
+    public NativeList<IssuedCommand> Read(ref SystemState state)
+    {
+        var issued = new NativeList<IssuedCommand>(Allocator.Temp);
+        _owners.Update(ref state);
+        foreach (var player in _players.ToEntityArray(Allocator.Temp))
         {
-            _selected = selected;
+            Append(state.EntityManager, player, issued);
         }
 
-        /// <summary>For player-level commands, which address no entities.</summary>
-        public CommandReader(ref SystemState state, in TypeSet types)
+        return issued;
+    }
+
+    /// <summary>This frame's commands of the reader's types from <paramref name="player"/> alone.</summary>
+    public NativeList<IssuedCommand> Read(ref SystemState state, Entity player)
+    {
+        var issued = new NativeList<IssuedCommand>(Allocator.Temp);
+        _owners.Update(ref state);
+        if (_players.Matches(player))
         {
-            _types = types;
-            _selected = default;
-            _owners = state.GetComponentLookup<Owner>(true);
-            _players = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<Player, PlayerCommand, PlayerCommandSubject>().WithNone<Defeated>().Build(ref state);
+            Append(state.EntityManager, player, issued);
         }
 
-        /// <summary>
-        /// This frame's commands of the reader's types, player by player in issue order. Reads only the command
-        /// buffers, so callers can skip their job sync when it comes back empty.
-        /// </summary>
-        public NativeList<IssuedCommand> Read(ref SystemState state)
+        return issued;
+    }
+
+    /// <summary>The entities the command addresses that its player owns, in the order it lists them.</summary>
+    public NativeList<Entity> Subjects(ref SystemState state, in IssuedCommand issued)
+    {
+        var subjects = new NativeList<Entity>(Allocator.Temp);
+        Subjects(ref state, issued, subjects, new Everyone());
+        return subjects;
+    }
+
+    /// <summary>Fills <paramref name="subjects"/> with the owned ones that <paramref name="filter"/> keeps.</summary>
+    public void Subjects<TFilter>(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects,
+        in TFilter filter) where TFilter : struct, ISubjectFilter
+    {
+        var listed = state.EntityManager.GetBuffer<PlayerCommandSubject>(issued.Player, true);
+        PlayerCommands.Collect(issued.Command, listed, _selected, subjects);
+        var kept = 0;
+        for (var i = 0; i < subjects.Length; i++)
         {
-            var issued = new NativeList<IssuedCommand>(Allocator.Temp);
-            _owners.Update(ref state);
-            foreach (var player in _players.ToEntityArray(Allocator.Temp))
+            var entity = subjects[i];
+            if (IsOwned(entity, issued.Owner) && filter.Keeps(entity))
             {
-                Append(state.EntityManager, player, issued);
-            }
-
-            return issued;
-        }
-
-        /// <summary>This frame's commands of the reader's types from <paramref name="player"/> alone.</summary>
-        public NativeList<IssuedCommand> Read(ref SystemState state, Entity player)
-        {
-            var issued = new NativeList<IssuedCommand>(Allocator.Temp);
-            _owners.Update(ref state);
-            if (_players.Matches(player))
-            {
-                Append(state.EntityManager, player, issued);
-            }
-
-            return issued;
-        }
-
-        /// <summary>The entities the command addresses that its player owns, in the order it lists them.</summary>
-        public NativeList<Entity> Subjects(ref SystemState state, in IssuedCommand issued)
-        {
-            var subjects = new NativeList<Entity>(Allocator.Temp);
-            Subjects(ref state, issued, subjects, new Everyone());
-            return subjects;
-        }
-
-        /// <summary>Fills <paramref name="subjects"/> with the owned ones that <paramref name="filter"/> keeps.</summary>
-        public void Subjects<TFilter>(ref SystemState state, in IssuedCommand issued, NativeList<Entity> subjects,
-            in TFilter filter) where TFilter : struct, ISubjectFilter
-        {
-            var listed = state.EntityManager.GetBuffer<PlayerCommandSubject>(issued.Player, true);
-            PlayerCommands.Collect(issued.Command, listed, _selected, subjects);
-            var kept = 0;
-            for (var i = 0; i < subjects.Length; i++)
-            {
-                var entity = subjects[i];
-                if (IsOwned(entity, issued.Owner) && filter.Keeps(entity))
-                {
-                    subjects[kept++] = entity;
-                }
-            }
-
-            subjects.Length = kept;
-        }
-
-        private readonly void Append(EntityManager entityManager, Entity player, NativeList<IssuedCommand> issued)
-        {
-            var owner = entityManager.GetComponentData<Player>(player).Owner;
-            foreach (var command in entityManager.GetBuffer<PlayerCommand>(player, true))
-            {
-                if (_types.Contains(command.Type))
-                {
-                    issued.Add(new IssuedCommand { Player = player, Owner = owner, Command = command });
-                }
+                subjects[kept++] = entity;
             }
         }
 
-        private readonly bool IsOwned(Entity entity, byte owner) =>
-            _owners.TryGetComponent(entity, out var entityOwner) && entityOwner.Value == owner;
+        subjects.Length = kept;
+    }
 
-        private struct Everyone : ISubjectFilter
+    private readonly void Append(EntityManager entityManager, Entity player, NativeList<IssuedCommand> issued)
+    {
+        var owner = entityManager.GetComponentData<Player>(player).Owner;
+        foreach (var command in entityManager.GetBuffer<PlayerCommand>(player, true))
         {
-            public readonly bool Keeps(Entity subject) => true;
+            if (_types.Contains(command.Type))
+            {
+                issued.Add(new IssuedCommand { Player = player, Owner = owner, Command = command });
+            }
         }
+    }
+
+    private readonly bool IsOwned(Entity entity, byte owner) =>
+        _owners.TryGetComponent(entity, out var entityOwner) && entityOwner.Value == owner;
+
+    private struct Everyone : ISubjectFilter
+    {
+        public readonly bool Keeps(Entity subject) => true;
     }
 }

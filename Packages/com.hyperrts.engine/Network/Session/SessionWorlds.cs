@@ -11,262 +11,261 @@ using Unity.Physics.Systems;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
-namespace HyperRTS.Network.Session
+namespace HyperRTS.Network.Session;
+
+/// <summary>Creates the worlds <see cref="NetworkSession"/> runs, with their settings, and opens their connections.</summary>
+internal static class SessionWorlds
 {
-    /// <summary>Creates the worlds <see cref="NetworkSession"/> runs, with their settings, and opens their connections.</summary>
-    internal static class SessionWorlds
+    /// <summary>Every world made here and not yet disposed, so none outlives its session when Netcode forgets it.</summary>
+    [NoAutoStaticsCleanup]
+    public static readonly HashSet<World> Created = new();
+
+    /// <summary>Every server, client and presentation system but the <see cref="RemoteClientOnlyAttribute"/> ones.</summary>
+    public static NativeList<SystemTypeIndex> HostSystems()
     {
-        /// <summary>Every world made here and not yet disposed, so none outlives its session when Netcode forgets it.</summary>
-        [NoAutoStaticsCleanup]
-        public static readonly HashSet<World> Created = new();
+        var systems = DefaultWorldInitialization.GetAllSystemTypeIndices(WorldSystemFilterFlags.ServerSimulation |
+            WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.Presentation);
 
-        /// <summary>Every server, client and presentation system but the <see cref="RemoteClientOnlyAttribute"/> ones.</summary>
-        public static NativeList<SystemTypeIndex> HostSystems()
+        // Removed in place: systems are created in this order, and some look up others in OnCreate.
+        for (var i = systems.Length - 1; i >= 0; i--)
         {
-            var systems = DefaultWorldInitialization.GetAllSystemTypeIndices(WorldSystemFilterFlags.ServerSimulation |
-                WorldSystemFilterFlags.ClientSimulation | WorldSystemFilterFlags.Presentation);
-
-            // Removed in place: systems are created in this order, and some look up others in OnCreate.
-            for (var i = systems.Length - 1; i >= 0; i--)
+            if (Attribute.IsDefined(TypeManager.GetSystemType(systems[i]), typeof(RemoteClientOnlyAttribute)))
             {
-                if (Attribute.IsDefined(TypeManager.GetSystemType(systems[i]), typeof(RemoteClientOnlyAttribute)))
-                {
-                    systems.RemoveAt(i);
-                }
+                systems.RemoveAt(i);
             }
-
-            return systems;
         }
 
-        public static NativeList<SystemTypeIndex> ClientSystems() =>
-            DefaultWorldInitialization.GetAllSystemTypeIndices(WorldSystemFilterFlags.ClientSimulation |
-                WorldSystemFilterFlags.Presentation);
+        return systems;
+    }
 
-        /// <summary>One world that serves remote clients and is the local player's client, with this player's join.</summary>
-        public static NetcodeWorld CreateHost(NativeList<SystemTypeIndex> systems)
+    public static NativeList<SystemTypeIndex> ClientSystems() =>
+        DefaultWorldInitialization.GetAllSystemTypeIndices(WorldSystemFilterFlags.ClientSimulation |
+            WorldSystemFilterFlags.Presentation);
+
+    /// <summary>One world that serves remote clients and is the local player's client, with this player's join.</summary>
+    public static NetcodeWorld CreateHost(NativeList<SystemTypeIndex> systems)
+    {
+        Prepare();
+        var world = ClientServerBootstrap.CreateSingleWorldHost("HostWorld", systems);
+        SetSingleton(world, ServerTickRate());
+        AddJoin(world);
+        Created.Add(world);
+        return world;
+    }
+
+    public static NetcodeWorld CreateServer()
+    {
+        Prepare();
+        var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
+        // Gameplay has no physics and a server shows nothing.
+        world.GetExistingSystemManaged<PhysicsSystemGroup>().Enabled = false;
+        SetSingleton(world, ServerTickRate());
+        Created.Add(world);
+        return world;
+    }
+
+    public static NetcodeWorld CreateClient(NativeList<SystemTypeIndex> systems)
+    {
+        Prepare();
+        var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
+        AddJoin(world);
+        Created.Add(world);
+        return world;
+    }
+
+    /// <summary>
+    /// The join systems put a connection in game once it is seated, so Netcode must not do it on connect: the
+    /// global <see cref="NetcodeConfig"/> needs Automatic State Replication off. Gameplay has no physics, so
+    /// Netcode must not step it in the prediction loop: Physics Run Mode is User Controlled. Sessions listen and
+    /// connect themselves, on the port and drivers they were given, so Netcode does not auto-connect.
+    /// </summary>
+    private static void Prepare()
+    {
+        var config = NetcodeConfig.Global;
+        if (config == null || config.AutomaticStateReplication)
         {
-            Prepare();
-            var world = ClientServerBootstrap.CreateSingleWorldHost("HostWorld", systems);
-            SetSingleton(world, ServerTickRate());
-            AddJoin(world);
-            Created.Add(world);
-            return world;
+            throw new InvalidOperationException("[HyperRTS] Turn Automatic State Replication off on the global " +
+                                                "NetcodeConfig asset: joins put connections in game themselves.");
         }
 
-        public static NetcodeWorld CreateServer()
+        if (config.PhysicsRunMode != PhysicGroupRunMode.UserControlled)
         {
-            Prepare();
-            var world = ClientServerBootstrap.CreateServerWorld("ServerWorld");
-            // Gameplay has no physics and a server shows nothing.
-            world.GetExistingSystemManaged<PhysicsSystemGroup>().Enabled = false;
-            SetSingleton(world, ServerTickRate());
-            Created.Add(world);
-            return world;
+            throw new InvalidOperationException("[HyperRTS] Set Physics Run Mode to User Controlled on the global " +
+                                                "NetcodeConfig asset: gameplay has no physics.");
         }
 
-        public static NetcodeWorld CreateClient(NativeList<SystemTypeIndex> systems)
+        ClientServerBootstrap.AutoConnectPort = 0;
+    }
+
+    /// <summary>Opens the port on <paramref name="world"/>; on failure the world is disposed and false returned.</summary>
+    public static bool TryListen(NetcodeWorld world, ushort port, INetworkStreamDriverConstructor drivers)
+    {
+        bool listening;
+        using (var query = DriverQuery(world))
         {
-            Prepare();
-            var world = ClientServerBootstrap.CreateClientWorld("ClientWorld", systems);
-            AddJoin(world);
-            Created.Add(world);
-            return world;
-        }
-
-        /// <summary>
-        /// The join systems put a connection in game once it is seated, so Netcode must not do it on connect: the
-        /// global <see cref="NetcodeConfig"/> needs Automatic State Replication off. Gameplay has no physics, so
-        /// Netcode must not step it in the prediction loop: Physics Run Mode is User Controlled. Sessions listen and
-        /// connect themselves, on the port and drivers they were given, so Netcode does not auto-connect.
-        /// </summary>
-        private static void Prepare()
-        {
-            var config = NetcodeConfig.Global;
-            if (config == null || config.AutomaticStateReplication)
-            {
-                throw new InvalidOperationException("[HyperRTS] Turn Automatic State Replication off on the global " +
-                                                    "NetcodeConfig asset: joins put connections in game themselves.");
-            }
-
-            if (config.PhysicsRunMode != PhysicGroupRunMode.UserControlled)
-            {
-                throw new InvalidOperationException("[HyperRTS] Set Physics Run Mode to User Controlled on the global " +
-                                                    "NetcodeConfig asset: gameplay has no physics.");
-            }
-
-            ClientServerBootstrap.AutoConnectPort = 0;
-        }
-
-        /// <summary>Opens the port on <paramref name="world"/>; on failure the world is disposed and false returned.</summary>
-        public static bool TryListen(NetcodeWorld world, ushort port, INetworkStreamDriverConstructor drivers)
-        {
-            bool listening;
-            using (var query = DriverQuery(world))
-            {
-                ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
-                UseDrivers(world, ref driver, drivers);
-                listening = driver.Listen(NetworkEndpoint.AnyIpv4.WithPort(port));
-            }
-
-            if (!listening)
-            {
-                Debug.LogError($"[HyperRTS] Could not listen on port {port}.");
-                world.Dispose();
-            }
-
-            return listening;
-        }
-
-        public static void Connect(NetcodeWorld world, NetworkEndpoint server, INetworkStreamDriverConstructor drivers)
-        {
-            using var query = DriverQuery(world);
             ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
             UseDrivers(world, ref driver, drivers);
-            driver.Connect(world.EntityManager, server);
+            listening = driver.Listen(NetworkEndpoint.AnyIpv4.WithPort(port));
         }
 
-        /// <summary>Gives every world of the session the match setup: the single-player world when none was created here.</summary>
-        public static void PutSetup(in MatchSetup setup)
+        if (!listening)
         {
-            if (Created.Count == 0)
-            {
-                PutSetup(World.DefaultGameObjectInjectionWorld, setup);
-                return;
-            }
-
-            foreach (var world in Created)
-            {
-                if (world.IsCreated)
-                {
-                    PutSetup(world, setup);
-                }
-            }
+            Debug.LogError($"[HyperRTS] Could not listen on port {port}.");
+            world.Dispose();
         }
 
-        private static void PutSetup(World world, in MatchSetup setup)
+        return listening;
+    }
+
+    public static void Connect(NetcodeWorld world, NetworkEndpoint server, INetworkStreamDriverConstructor drivers)
+    {
+        using var query = DriverQuery(world);
+        ref var driver = ref query.GetSingletonRW<NetworkStreamDriver>().ValueRW;
+        UseDrivers(world, ref driver, drivers);
+        driver.Connect(world.EntityManager, server);
+    }
+
+    /// <summary>Gives every world of the session the match setup: the single-player world when none was created here.</summary>
+    public static void PutSetup(in MatchSetup setup)
+    {
+        if (Created.Count == 0)
         {
-            var entityManager = world.EntityManager;
-            using var query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<MatchSetup>());
-            if (query.TryGetSingletonEntity<MatchSetup>(out var existing))
-            {
-                entityManager.SetComponentData(existing, setup);
-                return;
-            }
-
-            entityManager.CreateSingleton(setup, "MatchSetup");
+            PutSetup(World.DefaultGameObjectInjectionWorld, setup);
+            return;
         }
 
-        // Netcode seeds its tick rate singletons from NetcodeConfig as it creates a world.
-        private static void SetSingleton<T>(World world, T value) where T : unmanaged, IComponentData
+        foreach (var world in Created)
         {
-            using var query = world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
-            query.SetSingleton(value);
+            if (world.IsCreated)
+            {
+                PutSetup(world, setup);
+            }
         }
+    }
 
-        private static void AddJoin(World world)
+    private static void PutSetup(World world, in MatchSetup setup)
+    {
+        var entityManager = world.EntityManager;
+        using var query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<MatchSetup>());
+        if (query.TryGetSingletonEntity<MatchSetup>(out var existing))
         {
-            world.EntityManager.CreateSingleton(NetworkSession.Preference);
-            world.EntityManager.CreateSingleton(new JoinToken { Value = NetworkSession.Token });
+            entityManager.SetComponentData(existing, setup);
+            return;
         }
 
-        // Interpolated units look the same at 20 Hz as at 60, for a third of the bandwidth (docs/networking.md#bandwidth).
-        public static ClientServerTickRate ServerTickRate()
+        entityManager.CreateSingleton(setup, "MatchSetup");
+    }
+
+    // Netcode seeds its tick rate singletons from NetcodeConfig as it creates a world.
+    private static void SetSingleton<T>(World world, T value) where T : unmanaged, IComponentData
+    {
+        using var query = world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
+        query.SetSingleton(value);
+    }
+
+    private static void AddJoin(World world)
+    {
+        world.EntityManager.CreateSingleton(NetworkSession.Preference);
+        world.EntityManager.CreateSingleton(new JoinToken { Value = NetworkSession.Token });
+    }
+
+    // Interpolated units look the same at 20 Hz as at 60, for a third of the bandwidth (docs/networking.md#bandwidth).
+    public static ClientServerTickRate ServerTickRate()
+    {
+        var rate = new ClientServerTickRate();
+        rate.ResolveDefaults();
+        rate.NetworkTickRate = NetworkSession.SnapshotRate;
+        return rate;
+    }
+
+    private static EntityQuery DriverQuery(World world) =>
+        world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
+
+    // Netcode builds its default drivers with the world; a relay session swaps them before listening or connecting.
+    private static void UseDrivers(NetcodeWorld world, ref NetworkStreamDriver driver,
+        INetworkStreamDriverConstructor drivers)
+    {
+        if (drivers == null)
         {
-            var rate = new ClientServerTickRate();
-            rate.ResolveDefaults();
-            rate.NetworkTickRate = NetworkSession.SnapshotRate;
-            return rate;
+            return;
         }
 
-        private static EntityQuery DriverQuery(World world) =>
-            world.EntityManager.CreateEntityQuery(ComponentType.ReadWrite<NetworkStreamDriver>());
-
-        // Netcode builds its default drivers with the world; a relay session swaps them before listening or connecting.
-        private static void UseDrivers(NetcodeWorld world, ref NetworkStreamDriver driver,
-            INetworkStreamDriverConstructor drivers)
+        using var netDebugQuery = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<NetDebug>());
+        var netDebug = netDebugQuery.GetSingleton<NetDebug>();
+        var store = new NetworkDriverStore();
+        if (world.IsServer())
         {
-            if (drivers == null)
-            {
-                return;
-            }
-
-            using var netDebugQuery = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<NetDebug>());
-            var netDebug = netDebugQuery.GetSingleton<NetDebug>();
-            var store = new NetworkDriverStore();
-            if (world.IsServer())
-            {
-                drivers.CreateServerDriver(world, ref store, netDebug);
-            }
-            else
-            {
-                drivers.CreateClientDriver(world, ref store, netDebug);
-            }
-
-            driver.ResetDriverStore(world.Unmanaged, ref store);
+            drivers.CreateServerDriver(world, ref store, netDebug);
         }
-
-        /// <summary>The emptied world at the bottom of Unity's active world stack; see <see cref="Empty"/>.</summary>
-        [NoAutoStaticsCleanup]
-        private static World _base;
-
-        public static void ResetBase() => _base = null;
-
-        /// <summary>Disposes every simulation world but <paramref name="keep"/>.</summary>
-        public static void DisposeAllBut(World keep)
+        else
         {
-            var worlds = new HashSet<World> { World.DefaultGameObjectInjectionWorld };
-            worlds.UnionWith(ClientServerBootstrap.ServerWorlds);
-            worlds.UnionWith(ClientServerBootstrap.ClientWorlds);
-            worlds.UnionWith(ClientServerBootstrap.ThinClientWorlds);
-
-            // Netcode forgets its tracked worlds when Play starts, so a session that outlived Play is found here.
-            worlds.UnionWith(Created);
-            worlds.RemoveWhere(world => world == null || world == keep || world == _base || !world.IsCreated);
-
-            // Unity disposes only worlds off its active world stack, which pops from the top down.
-            while (worlds.Contains(World.PeekWorldStack()))
-            {
-                var top = World.PeekWorldStack();
-                if (!TryPop(top))
-                {
-                    Empty(top);
-                    worlds.Remove(top);
-                    break;
-                }
-            }
-
-            foreach (var world in worlds)
-            {
-                world.Dispose();
-            }
-
-            Created.Clear();
+            drivers.CreateClientDriver(world, ref store, netDebug);
         }
 
-        private static bool TryPop(World world)
+        driver.ResetDriverStore(world.Unmanaged, ref store);
+    }
+
+    /// <summary>The emptied world at the bottom of Unity's active world stack; see <see cref="Empty"/>.</summary>
+    [NoAutoStaticsCleanup]
+    private static World _base;
+
+    public static void ResetBase() => _base = null;
+
+    /// <summary>Disposes every simulation world but <paramref name="keep"/>.</summary>
+    public static void DisposeAllBut(World keep)
+    {
+        var worlds = new HashSet<World> { World.DefaultGameObjectInjectionWorld };
+        worlds.UnionWith(ClientServerBootstrap.ServerWorlds);
+        worlds.UnionWith(ClientServerBootstrap.ClientWorlds);
+        worlds.UnionWith(ClientServerBootstrap.ThinClientWorlds);
+
+        // Netcode forgets its tracked worlds when Play starts, so a session that outlived Play is found here.
+        worlds.UnionWith(Created);
+        worlds.RemoveWhere(world => world == null || world == keep || world == _base || !world.IsCreated);
+
+        // Unity disposes only worlds off its active world stack, which pops from the top down.
+        while (worlds.Contains(World.PeekWorldStack()))
         {
-            try
+            var top = World.PeekWorldStack();
+            if (!TryPop(top))
             {
-                World.PopWorldStack(world);
-                return true;
-            }
-            catch (InvalidOperationException)
-            {
-                // The world at the bottom of the stack never pops.
-                return false;
+                Empty(top);
+                worlds.Remove(top);
+                break;
             }
         }
 
-        /// <summary>
-        /// Stops and clears the world Unity keeps at the bottom of its active world stack, which can be neither
-        /// popped nor disposed, and keeps it as the empty base the session's worlds stack on.
-        /// </summary>
-        private static void Empty(World world)
+        foreach (var world in worlds)
         {
-            ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
-            world.DestroyAllSystemsAndLogException(out _);
-            world.EntityManager.DestroyEntity(SimulationEntities.Query(world.EntityManager));
-            _base = world;
+            world.Dispose();
         }
+
+        Created.Clear();
+    }
+
+    private static bool TryPop(World world)
+    {
+        try
+        {
+            World.PopWorldStack(world);
+            return true;
+        }
+        catch (InvalidOperationException)
+        {
+            // The world at the bottom of the stack never pops.
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Stops and clears the world Unity keeps at the bottom of its active world stack, which can be neither
+    /// popped nor disposed, and keeps it as the empty base the session's worlds stack on.
+    /// </summary>
+    private static void Empty(World world)
+    {
+        ScriptBehaviourUpdateOrder.RemoveWorldFromCurrentPlayerLoop(world);
+        world.DestroyAllSystemsAndLogException(out _);
+        world.EntityManager.DestroyEntity(SimulationEntities.Query(world.EntityManager));
+        _base = world;
     }
 }

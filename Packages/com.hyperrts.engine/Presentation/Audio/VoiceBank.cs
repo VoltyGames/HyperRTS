@@ -1,108 +1,107 @@
-using HyperRTS.Simulation.Cues.Sounds;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Cues.Sounds;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Presentation.Audio
+namespace HyperRTS.Presentation.Audio;
+
+/// <summary>
+/// A fixed set of audio sources under one DontSave root, made on first use, each shaping a 3D cue by distance with
+/// its <see cref="DistanceCurves"/>. The root outlives scene reloads, so its owner disposes it with the world.
+/// </summary>
+public sealed class VoiceBank : IDisposable
 {
-    /// <summary>
-    /// A fixed set of audio sources under one DontSave root, made on first use, each shaping a 3D cue by distance with
-    /// its <see cref="DistanceCurves"/>. The root outlives scene reloads, so its owner disposes it with the world.
-    /// </summary>
-    public sealed class VoiceBank : IDisposable
+    private readonly string _name;
+    private readonly int _count;
+    private readonly bool _loop;
+    private readonly Dictionary<SoundCue, DistanceCurves> _curves = new();
+    private GameObject _root;
+    private AudioSource[] _sources;
+    private AudioLowPassFilter[] _filters;
+    private DistanceCurves[] _shaped;
+
+    public VoiceBank(string name, int count, bool loop = false)
     {
-        private readonly string _name;
-        private readonly int _count;
-        private readonly bool _loop;
-        private readonly Dictionary<SoundCue, DistanceCurves> _curves = new();
-        private GameObject _root;
-        private AudioSource[] _sources;
-        private AudioLowPassFilter[] _filters;
-        private DistanceCurves[] _shaped;
+        _name = name;
+        _count = count;
+        _loop = loop;
+    }
 
-        public VoiceBank(string name, int count, bool loop = false)
+    public AudioSource this[int voice] => Sources()[voice];
+
+    /// <summary>False before the first voice is made, without making it.</summary>
+    public bool IsPlaying(int voice) => _root != null && _sources[voice].isPlaying;
+
+    /// <summary>Stops the voice and sets it up for the cue with the clip, pitch and volume the caller drew.</summary>
+    public AudioSource Load(int voice, SoundCue cue, AudioClip clip, float pitch, float volume)
+    {
+        var source = this[voice];
+        source.Stop();
+        source.clip = clip;
+        source.pitch = pitch;
+        source.volume = volume;
+        source.priority = cue.priority;
+        source.outputAudioMixerGroup = cue.mixerGroup;
+        source.spatialBlend = cue.spatial ? 1f : 0f;
+        _filters[voice].enabled = cue.spatial;
+        if (cue.spatial)
         {
-            _name = name;
-            _count = count;
-            _loop = loop;
+            Shape(voice, cue);
         }
 
-        public AudioSource this[int voice] => Sources()[voice];
+        return source;
+    }
 
-        /// <summary>False before the first voice is made, without making it.</summary>
-        public bool IsPlaying(int voice) => _root != null && _sources[voice].isPlaying;
+    public void Dispose() => CoreUtils.Destroy(_root);
 
-        /// <summary>Stops the voice and sets it up for the cue with the clip, pitch and volume the caller drew.</summary>
-        public AudioSource Load(int voice, SoundCue cue, AudioClip clip, float pitch, float volume)
+    private void Shape(int voice, SoundCue cue)
+    {
+        if (!_curves.TryGetValue(cue, out var curves) || !curves.Fits(cue))
         {
-            var source = this[voice];
-            source.Stop();
-            source.clip = clip;
-            source.pitch = pitch;
-            source.volume = volume;
-            source.priority = cue.priority;
-            source.outputAudioMixerGroup = cue.mixerGroup;
-            source.spatialBlend = cue.spatial ? 1f : 0f;
-            _filters[voice].enabled = cue.spatial;
-            if (cue.spatial)
-            {
-                Shape(voice, cue);
-            }
-
-            return source;
+            curves = new DistanceCurves(cue);
+            _curves[cue] = curves;
         }
 
-        public void Dispose() => CoreUtils.Destroy(_root);
-
-        private void Shape(int voice, SoundCue cue)
+        var source = _sources[voice];
+        source.spread = cue.spread;
+        // Copying the curves into the native source costs more than comparing: skip a voice already shaped this way.
+        if (_shaped[voice] == curves)
         {
-            if (!_curves.TryGetValue(cue, out var curves) || !curves.Fits(cue))
-            {
-                curves = new DistanceCurves(cue);
-                _curves[cue] = curves;
-            }
-
-            var source = _sources[voice];
-            source.spread = cue.spread;
-            // Copying the curves into the native source costs more than comparing: skip a voice already shaped this way.
-            if (_shaped[voice] == curves)
-            {
-                return;
-            }
-
-            _shaped[voice] = curves;
-            source.minDistance = cue.minDistance;
-            source.maxDistance = cue.maxDistance;
-            source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curves.Rolloff);
-            _filters[voice].customCutoffCurve = curves.Cutoff;
+            return;
         }
 
-        private AudioSource[] Sources()
+        _shaped[voice] = curves;
+        source.minDistance = cue.minDistance;
+        source.maxDistance = cue.maxDistance;
+        source.SetCustomCurve(AudioSourceCurveType.CustomRolloff, curves.Rolloff);
+        _filters[voice].customCutoffCurve = curves.Cutoff;
+    }
+
+    private AudioSource[] Sources()
+    {
+        if (_root != null)
         {
-            if (_root != null)
-            {
-                return _sources;
-            }
-
-            _root = new GameObject(_name) { hideFlags = HideFlags.DontSave };
-            _sources = new AudioSource[_count];
-            _filters = new AudioLowPassFilter[_count];
-            _shaped = new DistanceCurves[_count];
-            for (var i = 0; i < _sources.Length; i++)
-            {
-                var voice = new GameObject($"Voice {i}") { hideFlags = HideFlags.DontSave };
-                voice.transform.SetParent(_root.transform);
-                _sources[i] = voice.AddComponent<AudioSource>();
-                _sources[i].playOnAwake = false;
-                _sources[i].loop = _loop;
-                _sources[i].rolloffMode = AudioRolloffMode.Custom;
-                // Pooled sources jump between positions and the listener pans with the camera: both would bend pitch.
-                _sources[i].dopplerLevel = 0f;
-                _filters[i] = voice.AddComponent<AudioLowPassFilter>();
-            }
-
             return _sources;
         }
+
+        _root = new GameObject(_name) { hideFlags = HideFlags.DontSave };
+        _sources = new AudioSource[_count];
+        _filters = new AudioLowPassFilter[_count];
+        _shaped = new DistanceCurves[_count];
+        for (var i = 0; i < _sources.Length; i++)
+        {
+            var voice = new GameObject($"Voice {i}") { hideFlags = HideFlags.DontSave };
+            voice.transform.SetParent(_root.transform);
+            _sources[i] = voice.AddComponent<AudioSource>();
+            _sources[i].playOnAwake = false;
+            _sources[i].loop = _loop;
+            _sources[i].rolloffMode = AudioRolloffMode.Custom;
+            // Pooled sources jump between positions and the listener pans with the camera: both would bend pitch.
+            _sources[i].dopplerLevel = 0f;
+            _filters[i] = voice.AddComponent<AudioLowPassFilter>();
+        }
+
+        return _sources;
     }
 }

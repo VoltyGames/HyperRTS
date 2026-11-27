@@ -1,17 +1,16 @@
-namespace HyperRTS.Simulation.Stats
+namespace HyperRTS.Simulation.Stats;
+
+/// <summary>What added a <see cref="StatModifier"/>; ids only need to be unique within one kind.</summary>
+public enum StatSourceKind : byte
 {
-    /// <summary>What added a <see cref="StatModifier"/>; ids only need to be unique within one kind.</summary>
-    public enum StatSourceKind : byte
-    {
-        None = 0,
-        Upgrade = 1,
-        Veterancy = 2,
-        Aura = 3,
+    None = 0,
+    Upgrade = 1,
+    Veterancy = 2,
+    Aura = 3,
 
-        /// <summary>An AI difficulty's handicap or bonus, on the AI player.</summary>
-        Difficulty = 4,
+    /// <summary>An AI difficulty's handicap or bonus, on the AI player.</summary>
+    Difficulty = 4,
 
-        /// <summary>A timed status effect; the id is the effect's type id.</summary>
-        Status = 5,
-    }
+    /// <summary>A timed status effect; the id is the effect's type id.</summary>
+    Status = 5,
 }

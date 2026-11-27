@@ -6,98 +6,97 @@ using NUnit.Framework;
 using UnityEngine;
 using Random = Unity.Mathematics.Random;
 
-namespace HyperRTS.Editor.Tests.Environment
+namespace HyperRTS.Editor.Tests.Environment;
+
+/// <summary>Generated environment textures tile and stay balanced.</summary>
+public class EnvironmentTexturesTests
 {
-    /// <summary>Generated environment textures tile and stay balanced.</summary>
-    public class EnvironmentTexturesTests
+    private Vector3[] _terrain;
+    private Vector3[] _ripples;
+    private Color[] _micro;
+
+    [OneTimeSetUp]
+    public void Bake()
     {
-        private Vector3[] _terrain;
-        private Vector3[] _ripples;
-        private Color[] _micro;
+        _terrain = EnvironmentTextures.TerrainNoise();
+        _ripples = EnvironmentTextures.RippleNormals();
+        _micro = TerrainMicroTexture.Texels();
+    }
 
-        [OneTimeSetUp]
-        public void Bake()
+    [Test]
+    public void LowpassIsStandardised()
+    {
+        var random = new Random(1u);
+        var field = TileableNoise.Lowpass(64, 4f, ref random);
+        var mean = field.Average();
+        var std = Math.Sqrt(field.Average(v => (v - mean) * (v - mean)));
+
+        Assert.That(mean, Is.EqualTo(0f).Within(1e-4f));
+        Assert.That(std, Is.EqualTo(1.0).Within(1e-3));
+    }
+
+    [Test]
+    public void FbmRepeatsAtItsPeriod()
+    {
+        var point = new Vector2(0.37f, 1.21f);
+
+        Assert.That(TileableNoise.Fbm(point + Vector2.right * 4f, 4, 4, 3), Is.EqualTo(TileableNoise.Fbm(point, 4, 4, 3)).Within(1e-4f));
+        Assert.That(TileableNoise.Fbm(point + Vector2.up * 4f, 4, 4, 3), Is.EqualTo(TileableNoise.Fbm(point, 4, 4, 3)).Within(1e-4f));
+    }
+
+    [Test]
+    public void TerrainSelectorIsUniform_AndBrightnessCentresOnHalf()
+    {
+        var below = _terrain.Count(t => t.x < 0.25f) / (float)_terrain.Length;
+
+        Assert.That(_terrain.Average(t => t.x), Is.EqualTo(0.5f).Within(1e-3f));
+        Assert.That(below, Is.EqualTo(0.25f).Within(1e-3f));
+        Assert.That(_terrain.Average(t => t.y), Is.EqualTo(0.5f).Within(0.02f));
+        Assert.That(_terrain.Average(t => t.z), Is.EqualTo(0.5f).Within(0.02f));
+    }
+
+    [Test]
+    public void MicroNormalsTiltModestly_AndDarkenOnlyTheirGaps()
+    {
+        var tilt = _micro.Average(t => new Vector2(t.r * 2f - 1f, t.g * 2f - 1f).magnitude);
+        var open = _micro.Count(t => t.b > 0.999f) / (float)_micro.Length;
+
+        Assert.That(tilt, Is.InRange(0.15f, 0.6f), "a grain, not a flat or a jagged surface");
+        Assert.That(open, Is.InRange(0.3f, 0.8f), "crests stay unshadowed");
+    }
+
+    [TestCaseSource(nameof(Channels))]
+    public void TexturesTile(string texture, int channel)
+    {
+        switch (texture)
         {
-            _terrain = EnvironmentTextures.TerrainNoise();
-            _ripples = EnvironmentTextures.RippleNormals();
-            _micro = TerrainMicroTexture.Texels();
+            case "Terrain":
+                AssertTiles(_terrain.Select(t => t[channel]).ToArray(), EnvironmentTextures.TerrainSize);
+                break;
+            case "Ripples":
+                AssertTiles(_ripples.Select(n => n[channel]).ToArray(), EnvironmentTextures.RippleSize);
+                break;
+            default:
+                AssertTiles(_micro.Select(t => t[channel]).ToArray(), TerrainMicroTexture.Size);
+                break;
         }
+    }
 
-        [Test]
-        public void LowpassIsStandardised()
-        {
-            var random = new Random(1u);
-            var field = TileableNoise.Lowpass(64, 4f, ref random);
-            var mean = field.Average();
-            var std = Math.Sqrt(field.Average(v => (v - mean) * (v - mean)));
+    private static IEnumerable<TestCaseData> Channels() =>
+        new[] { ("Terrain", 3), ("Ripples", 2), ("Micro", 4) }.SelectMany(texture =>
+            Enumerable.Range(0, texture.Item2).Select(channel => new TestCaseData(texture.Item1, channel)));
 
-            Assert.That(mean, Is.EqualTo(0f).Within(1e-4f));
-            Assert.That(std, Is.EqualTo(1.0).Within(1e-3));
-        }
+    /// <summary>The step across each wrap edge is no bigger than a typical step between neighbours inside.</summary>
+    private static void AssertTiles(float[] values, int size)
+    {
+        float Step(int x0, int y0, int x1, int y1) => Mathf.Abs(values[y0 * size + x0] - values[y1 * size + x1]);
+        var rows = Enumerable.Range(0, size).ToArray();
+        var insideU = rows.SelectMany(y => rows.Skip(1).Select(x => Step(x - 1, y, x, y))).Average();
+        var insideV = rows.SelectMany(x => rows.Skip(1).Select(y => Step(x, y - 1, x, y))).Average();
+        var acrossU = rows.Average(y => Step(size - 1, y, 0, y));
+        var acrossV = rows.Average(x => Step(x, size - 1, x, 0));
 
-        [Test]
-        public void FbmRepeatsAtItsPeriod()
-        {
-            var point = new Vector2(0.37f, 1.21f);
-
-            Assert.That(TileableNoise.Fbm(point + Vector2.right * 4f, 4, 4, 3), Is.EqualTo(TileableNoise.Fbm(point, 4, 4, 3)).Within(1e-4f));
-            Assert.That(TileableNoise.Fbm(point + Vector2.up * 4f, 4, 4, 3), Is.EqualTo(TileableNoise.Fbm(point, 4, 4, 3)).Within(1e-4f));
-        }
-
-        [Test]
-        public void TerrainSelectorIsUniform_AndBrightnessCentresOnHalf()
-        {
-            var below = _terrain.Count(t => t.x < 0.25f) / (float)_terrain.Length;
-
-            Assert.That(_terrain.Average(t => t.x), Is.EqualTo(0.5f).Within(1e-3f));
-            Assert.That(below, Is.EqualTo(0.25f).Within(1e-3f));
-            Assert.That(_terrain.Average(t => t.y), Is.EqualTo(0.5f).Within(0.02f));
-            Assert.That(_terrain.Average(t => t.z), Is.EqualTo(0.5f).Within(0.02f));
-        }
-
-        [Test]
-        public void MicroNormalsTiltModestly_AndDarkenOnlyTheirGaps()
-        {
-            var tilt = _micro.Average(t => new Vector2(t.r * 2f - 1f, t.g * 2f - 1f).magnitude);
-            var open = _micro.Count(t => t.b > 0.999f) / (float)_micro.Length;
-
-            Assert.That(tilt, Is.InRange(0.15f, 0.6f), "a grain, not a flat or a jagged surface");
-            Assert.That(open, Is.InRange(0.3f, 0.8f), "crests stay unshadowed");
-        }
-
-        [TestCaseSource(nameof(Channels))]
-        public void TexturesTile(string texture, int channel)
-        {
-            switch (texture)
-            {
-                case "Terrain":
-                    AssertTiles(_terrain.Select(t => t[channel]).ToArray(), EnvironmentTextures.TerrainSize);
-                    break;
-                case "Ripples":
-                    AssertTiles(_ripples.Select(n => n[channel]).ToArray(), EnvironmentTextures.RippleSize);
-                    break;
-                default:
-                    AssertTiles(_micro.Select(t => t[channel]).ToArray(), TerrainMicroTexture.Size);
-                    break;
-            }
-        }
-
-        private static IEnumerable<TestCaseData> Channels() =>
-            new[] { ("Terrain", 3), ("Ripples", 2), ("Micro", 4) }.SelectMany(texture =>
-                Enumerable.Range(0, texture.Item2).Select(channel => new TestCaseData(texture.Item1, channel)));
-
-        /// <summary>The step across each wrap edge is no bigger than a typical step between neighbours inside.</summary>
-        private static void AssertTiles(float[] values, int size)
-        {
-            float Step(int x0, int y0, int x1, int y1) => Mathf.Abs(values[y0 * size + x0] - values[y1 * size + x1]);
-            var rows = Enumerable.Range(0, size).ToArray();
-            var insideU = rows.SelectMany(y => rows.Skip(1).Select(x => Step(x - 1, y, x, y))).Average();
-            var insideV = rows.SelectMany(x => rows.Skip(1).Select(y => Step(x, y - 1, x, y))).Average();
-            var acrossU = rows.Average(y => Step(size - 1, y, 0, y));
-            var acrossV = rows.Average(x => Step(x, size - 1, x, 0));
-
-            Assert.That(acrossU, Is.LessThan(insideU * 1.5f));
-            Assert.That(acrossV, Is.LessThan(insideV * 1.5f));
-        }
+        Assert.That(acrossU, Is.LessThan(insideU * 1.5f));
+        Assert.That(acrossV, Is.LessThan(insideV * 1.5f));
     }
 }

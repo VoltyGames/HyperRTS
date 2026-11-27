@@ -5,45 +5,44 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.AI
+namespace HyperRTS.Simulation.AI;
+
+/// <summary>Entities, owners and positions copied from one query for the AI's searches.</summary>
+public struct AIGroup
 {
-    /// <summary>Entities, owners and positions copied from one query for the AI's searches.</summary>
-    public struct AIGroup
+    public NativeArray<Entity> Entities;
+    public NativeArray<Owner> Owners;
+    public NativeArray<LocalTransform> Transforms;
+
+    public readonly int Length => Entities.Length;
+
+    /// <summary><paramref name="query"/> must include <see cref="Owner"/> and <see cref="LocalTransform"/>.</summary>
+    public static AIGroup From(EntityQuery query) => new()
     {
-        public NativeArray<Entity> Entities;
-        public NativeArray<Owner> Owners;
-        public NativeArray<LocalTransform> Transforms;
+        Entities = query.ToEntityArray(Allocator.Temp),
+        Owners = query.ToComponentDataArray<Owner>(Allocator.Temp),
+        Transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp),
+    };
 
-        public readonly int Length => Entities.Length;
+    public readonly float3 Position(int index) => Transforms[index].Position;
 
-        /// <summary><paramref name="query"/> must include <see cref="Owner"/> and <see cref="LocalTransform"/>.</summary>
-        public static AIGroup From(EntityQuery query) => new()
+    public readonly bool IsOwnedBy(int index, byte owner) => Owners[index].Value == owner;
+
+    /// <summary>Squared distance on the ground plane, the measure every AI search ranks by.</summary>
+    public readonly float DistanceSq(int index, float3 from) => math.distancesq(Position(index).xz, from.xz);
+
+    /// <summary>Index of the entity owned by <paramref name="owner"/> nearest to a point, or -1.</summary>
+    public readonly int NearestOwned(byte owner, float3 from)
+    {
+        var closest = Closest.None;
+        for (var i = 0; i < Length; i++)
         {
-            Entities = query.ToEntityArray(Allocator.Temp),
-            Owners = query.ToComponentDataArray<Owner>(Allocator.Temp),
-            Transforms = query.ToComponentDataArray<LocalTransform>(Allocator.Temp),
-        };
-
-        public readonly float3 Position(int index) => Transforms[index].Position;
-
-        public readonly bool IsOwnedBy(int index, byte owner) => Owners[index].Value == owner;
-
-        /// <summary>Squared distance on the ground plane, the measure every AI search ranks by.</summary>
-        public readonly float DistanceSq(int index, float3 from) => math.distancesq(Position(index).xz, from.xz);
-
-        /// <summary>Index of the entity owned by <paramref name="owner"/> nearest to a point, or -1.</summary>
-        public readonly int NearestOwned(byte owner, float3 from)
-        {
-            var closest = Closest.None;
-            for (var i = 0; i < Length; i++)
+            if (IsOwnedBy(i, owner))
             {
-                if (IsOwnedBy(i, owner))
-                {
-                    closest.Consider(i, Entities[i], DistanceSq(i, from));
-                }
+                closest.Consider(i, Entities[i], DistanceSq(i, from));
             }
-
-            return closest.Index;
         }
+
+        return closest.Index;
     }
 }

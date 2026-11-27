@@ -2,19 +2,18 @@ using System;
 using HyperRTS.Editor.Maps.Library;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Climate
+namespace HyperRTS.Editor.Maps.Climate;
+
+/// <summary>How many of one decal a surface lays per hectare (puddles on tracks, leaf litter in woods).</summary>
+[Serializable]
+public sealed class MapDecalDensity
 {
-    /// <summary>How many of one decal a surface lays per hectare (puddles on tracks, leaf litter in woods).</summary>
-    [Serializable]
-    public sealed class MapDecalDensity
-    {
-        [MapKey(typeof(MapClimateDecal))]
-        public string decal;
+    [MapKey(typeof(MapClimateDecal))]
+    public string decal;
 
-        [Min(0f)]
-        public float perHectare = 1f;
+    [Min(0f)]
+    public float perHectare = 1f;
 
-        [Tooltip("Laid under the scene's Wet Decals group, shown only after rain (puddles).")]
-        public bool wet;
-    }
+    [Tooltip("Laid under the scene's Wet Decals group, shown only after rain (puddles).")]
+    public bool wet;
 }

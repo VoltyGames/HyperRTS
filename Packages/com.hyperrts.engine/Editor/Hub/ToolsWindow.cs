@@ -6,136 +6,135 @@ using HyperRTS.Presentation.HUD;
 using UnityEditor;
 using UnityEngine.UIElements;
 
-namespace HyperRTS.Editor.Hub
+namespace HyperRTS.Editor.Hub;
+
+/// <summary>HyperRTS ▸ Tools: one dockable window with a sidebar of every <see cref="HubPage"/>.</summary>
+public class ToolsWindow : EditorWindow
 {
-    /// <summary>HyperRTS ▸ Tools: one dockable window with a sidebar of every <see cref="HubPage"/>.</summary>
-    public class ToolsWindow : EditorWindow
+    private const string WindowTitle = "HyperRTS";
+
+    private const long BadgeMilliseconds = 2000;
+
+    private HubPage[] _pages = Array.Empty<HubPage>();
+    private PageBadge[] _badges = Array.Empty<PageBadge>();
+    private HubPage _current;
+    private ListView _sidebar;
+    private VisualElement _content;
+
+    [MenuItem(EditorMenu.Tools, false, EditorMenu.ToolsPriority)]
+    public static void Open() => GetWindow<ToolsWindow>(WindowTitle);
+
+    /// <summary>Opens or focuses the window on the page of type <typeparamref name="TPage"/>.</summary>
+    public static void Show<TPage>() where TPage : HubPage
     {
-        private const string WindowTitle = "HyperRTS";
+        RememberPage(typeof(TPage));
+        var window = GetWindow<ToolsWindow>(WindowTitle);
+        window.SelectSaved();
+    }
 
-        private const long BadgeMilliseconds = 2000;
+    public void CreateGUI()
+    {
+        var root = rootVisualElement;
+        EditorAssets.Layout(typeof(ToolsWindow)).CloneTree(root);
+        _pages = TypeDiscovery.Instances<HubPage>().OrderBy(page => page.Order).ToArray();
+        _badges = new PageBadge[_pages.Length];
 
-        private HubPage[] _pages = Array.Empty<HubPage>();
-        private PageBadge[] _badges = Array.Empty<PageBadge>();
-        private HubPage _current;
-        private ListView _sidebar;
-        private VisualElement _content;
+        _sidebar = root.Require<ListView>("sidebar");
+        var item = EditorAssets.Layout(typeof(ToolsWindow), "SidebarItem");
+        _sidebar.makeItem = item.CloneRoot;
+        _sidebar.bindItem = BindSidebarItem;
+        _sidebar.itemsSource = _pages;
+        _sidebar.selectedIndicesChanged += _ => ShowSelected();
+        _content = root.Require<VisualElement>("content");
 
-        [MenuItem(EditorMenu.Tools, false, EditorMenu.ToolsPriority)]
-        public static void Open() => GetWindow<ToolsWindow>(WindowTitle);
+        // A poll, since the badge is session state a validation run writes, which raises no change event.
+        root.schedule.Execute(RefreshBadges).Every(BadgeMilliseconds);
+        SelectSaved();
+    }
 
-        /// <summary>Opens or focuses the window on the page of type <typeparamref name="TPage"/>.</summary>
-        public static void Show<TPage>() where TPage : HubPage
+    private void OnDisable() => ReleaseCurrent();
+
+    private void SelectSaved()
+    {
+        if (_sidebar == null || _pages.Length == 0)
         {
-            RememberPage(typeof(TPage));
-            var window = GetWindow<ToolsWindow>(WindowTitle);
-            window.SelectSaved();
+            return;
         }
 
-        public void CreateGUI()
+        var saved = HubSettings.instance.toolsPage;
+        var index = Array.FindIndex(_pages, page => page.GetType().FullName == saved);
+        _sidebar.SetSelection(Math.Max(index, 0));
+    }
+
+    private void ShowSelected()
+    {
+        var index = _sidebar.selectedIndex;
+        if (index < 0 || _pages[index] == _current)
         {
-            var root = rootVisualElement;
-            EditorAssets.Layout(typeof(ToolsWindow)).CloneTree(root);
-            _pages = TypeDiscovery.Instances<HubPage>().OrderBy(page => page.Order).ToArray();
-            _badges = new PageBadge[_pages.Length];
-
-            _sidebar = root.Require<ListView>("sidebar");
-            var item = EditorAssets.Layout(typeof(ToolsWindow), "SidebarItem");
-            _sidebar.makeItem = item.CloneRoot;
-            _sidebar.bindItem = BindSidebarItem;
-            _sidebar.itemsSource = _pages;
-            _sidebar.selectedIndicesChanged += _ => ShowSelected();
-            _content = root.Require<VisualElement>("content");
-
-            // A poll, since the badge is session state a validation run writes, which raises no change event.
-            root.schedule.Execute(RefreshBadges).Every(BadgeMilliseconds);
-            SelectSaved();
+            return;
         }
 
-        private void OnDisable() => ReleaseCurrent();
+        ReleaseCurrent();
+        _current = _pages[index];
+        RememberPage(_current.GetType());
 
-        private void SelectSaved()
+        var page = _current.Build();
+        page.AddToClassList("hrts-page");
+        _content.Add(page);
+        RefreshBadges();
+    }
+
+    private void BindSidebarItem(VisualElement item, int index)
+    {
+        var page = _pages[index];
+        item.Require<Label>("title").text = page.Title;
+        item.Require<VisualElement>("glyph").SetGlyph(page.Glyph);
+        var badge = item.Require<Label>("badge");
+        badge.text = _badges[index].Count.ToString();
+        badge.EnableInClassList("hrts-badge--error", _badges[index].HasErrors);
+        badge.SetHidden(_badges[index].IsNone);
+    }
+
+    private static void RememberPage(Type page)
+    {
+        HubSettings.instance.toolsPage = page.FullName;
+        HubSettings.instance.Save();
+    }
+
+    // Clearing detaches the page, which drops its callbacks and polling.
+    private void ReleaseCurrent()
+    {
+        if (_current == null)
         {
-            if (_sidebar == null || _pages.Length == 0)
+            return;
+        }
+
+        _current = null;
+        _content?.Clear();
+    }
+
+    // Rebinding only on a real change keeps the sidebar's hover and selection steady.
+    private void RefreshBadges()
+    {
+        if (_sidebar == null)
+        {
+            return;
+        }
+
+        var changed = false;
+        for (var i = 0; i < _pages.Length; i++)
+        {
+            var badge = _pages[i].Badge;
+            if (!badge.Equals(_badges[i]))
             {
-                return;
+                _badges[i] = badge;
+                changed = true;
             }
-
-            var saved = HubSettings.instance.toolsPage;
-            var index = Array.FindIndex(_pages, page => page.GetType().FullName == saved);
-            _sidebar.SetSelection(Math.Max(index, 0));
         }
 
-        private void ShowSelected()
+        if (changed)
         {
-            var index = _sidebar.selectedIndex;
-            if (index < 0 || _pages[index] == _current)
-            {
-                return;
-            }
-
-            ReleaseCurrent();
-            _current = _pages[index];
-            RememberPage(_current.GetType());
-
-            var page = _current.Build();
-            page.AddToClassList("hrts-page");
-            _content.Add(page);
-            RefreshBadges();
-        }
-
-        private void BindSidebarItem(VisualElement item, int index)
-        {
-            var page = _pages[index];
-            item.Require<Label>("title").text = page.Title;
-            item.Require<VisualElement>("glyph").SetGlyph(page.Glyph);
-            var badge = item.Require<Label>("badge");
-            badge.text = _badges[index].Count.ToString();
-            badge.EnableInClassList("hrts-badge--error", _badges[index].HasErrors);
-            badge.SetHidden(_badges[index].IsNone);
-        }
-
-        private static void RememberPage(Type page)
-        {
-            HubSettings.instance.toolsPage = page.FullName;
-            HubSettings.instance.Save();
-        }
-
-        // Clearing detaches the page, which drops its callbacks and polling.
-        private void ReleaseCurrent()
-        {
-            if (_current == null)
-            {
-                return;
-            }
-
-            _current = null;
-            _content?.Clear();
-        }
-
-        // Rebinding only on a real change keeps the sidebar's hover and selection steady.
-        private void RefreshBadges()
-        {
-            if (_sidebar == null)
-            {
-                return;
-            }
-
-            var changed = false;
-            for (var i = 0; i < _pages.Length; i++)
-            {
-                var badge = _pages[i].Badge;
-                if (!badge.Equals(_badges[i]))
-                {
-                    _badges[i] = badge;
-                    changed = true;
-                }
-            }
-
-            if (changed)
-            {
-                _sidebar.RefreshItems();
-            }
+            _sidebar.RefreshItems();
         }
     }
 }

@@ -1,71 +1,70 @@
 using HyperRTS.Presentation.Common;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Buildings.Placement;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using UnityEngine;
-using HyperRTS.Presentation.HUD;
 
-namespace HyperRTS.Presentation.HUD.Commands
+namespace HyperRTS.Presentation.HUD.Commands;
+
+/// <summary>
+/// The cost of the wall leg being drawn above and right of its end, in the short colour while the player can't pay
+/// it.
+/// </summary>
+public sealed class LineCost : HUDPanel
 {
-    /// <summary>
-    /// The cost of the wall leg being drawn above and right of its end, in the short colour while the player can't pay
-    /// it.
-    /// </summary>
-    public sealed class LineCost : HUDPanel
+    private readonly CostRow _costs;
+    private Entity _prefab;
+    private int _segments;
+
+    public LineCost(CostRow costs)
+        : base(costs)
     {
-        private readonly CostRow _costs;
-        private Entity _prefab;
-        private int _segments;
+        _costs = costs;
+        Root.SetHidden(true);
+    }
 
-        public LineCost(CostRow costs)
-            : base(costs)
+    public override bool BlocksPointer => false;
+
+    public override void Refresh(HUDContext context)
+    {
+        var placement = context.Placement;
+        var segments = IsDrawingWall(context.EntityManager, placement) ? CountValid(context) : 0;
+        Root.SetHidden(segments == 0);
+        if (segments == 0)
         {
-            _costs = costs;
-            Root.SetHidden(true);
+            return;
         }
 
-        public override bool BlocksPointer => false;
-
-        public override void Refresh(HUDContext context)
+        var costs = context.EntityManager.GetBuffer<ResourceCost>(placement.Prefab, true);
+        if (placement.Prefab != _prefab || segments != _segments)
         {
-            var placement = context.Placement;
-            var segments = IsDrawingWall(context.EntityManager, placement) ? CountValid(context) : 0;
-            Root.SetHidden(segments == 0);
-            if (segments == 0)
-            {
-                return;
-            }
-
-            var costs = context.EntityManager.GetBuffer<ResourceCost>(placement.Prefab, true);
-            if (placement.Prefab != _prefab || segments != _segments)
-            {
-                _prefab = placement.Prefab;
-                _segments = segments;
-                _costs.Bind(costs, _segments);
-            }
-
-            _costs.MarkShort(!new Stockpile(context.Stock).CanAfford(costs, _segments));
-            // The leg's end sits under the cursor, so the row follows it without reading device input, lifted by
-            // its own height to sit above the point.
-            PlaceBeside(placement.Position, new Vector2(0f, -Root.resolvedStyle.height));
+            _prefab = placement.Prefab;
+            _segments = segments;
+            _costs.Bind(costs, _segments);
         }
 
-        // Before a wall starts, the buffer holds the one segment under the cursor.
-        private static bool IsDrawingWall(EntityManager entityManager, in PlacementState placement)
-        {
-            if (!placement.Active || !placement.Drawing)
-            {
-                return false;
-            }
+        _costs.MarkShort(!new Stockpile(context.Stock).CanAfford(costs, _segments));
+        // The leg's end sits under the cursor, so the row follows it without reading device input, lifted by
+        // its own height to sit above the point.
+        PlaceBeside(placement.Position, new Vector2(0f, -Root.resolvedStyle.height));
+    }
 
-            return entityManager.HasComponent<LinePlacement>(placement.Prefab);
+    // Before a wall starts, the buffer holds the one segment under the cursor.
+    private static bool IsDrawingWall(EntityManager entityManager, in PlacementState placement)
+    {
+        if (!placement.Active || !placement.Drawing)
+        {
+            return false;
         }
 
-        private static int CountValid(HUDContext context)
-        {
-            var segments = context.EntityManager.GetBuffer<PlacementSegment>(context.View.PlacementEntity, true);
-            return PlacementSegment.CountValid(segments);
-        }
+        return entityManager.HasComponent<LinePlacement>(placement.Prefab);
+    }
+
+    private static int CountValid(HUDContext context)
+    {
+        var segments = context.EntityManager.GetBuffer<PlacementSegment>(context.View.PlacementEntity, true);
+        return PlacementSegment.CountValid(segments);
     }
 }

@@ -1,55 +1,54 @@
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Common
+namespace HyperRTS.Presentation.Common;
+
+/// <summary>
+/// Base of every presentation and input MonoBehaviour: it switches itself off in Awake without a graphics device.
+/// Override <see cref="OnAwake"/>, <see cref="OnDisabled"/> and <see cref="OnDestroyed"/> instead of the Unity methods.
+/// </summary>
+public abstract class PresentationBehaviour : MonoBehaviour
 {
-    /// <summary>
-    /// Base of every presentation and input MonoBehaviour: it switches itself off in Awake without a graphics device.
-    /// Override <see cref="OnAwake"/>, <see cref="OnDisabled"/> and <see cref="OnDestroyed"/> instead of the Unity methods.
-    /// </summary>
-    public abstract class PresentationBehaviour : MonoBehaviour
+    protected void Awake()
     {
-        protected void Awake()
+        if (!GraphicsSupport.Available)
         {
-            if (!GraphicsSupport.Available)
-            {
-                enabled = false;
-                return;
-            }
-
-            OnAwake();
+            enabled = false;
+            return;
         }
 
-        // Switching off in Awake still calls OnDisable.
-        protected void OnDisable()
-        {
-            if (!GraphicsSupport.Available)
-            {
-                return;
-            }
+        OnAwake();
+    }
 
-            OnDisabled();
+    // Switching off in Awake still calls OnDisable.
+    protected void OnDisable()
+    {
+        if (!GraphicsSupport.Available)
+        {
+            return;
         }
 
-        protected void OnDestroy()
-        {
-            if (!GraphicsSupport.Available)
-            {
-                return;
-            }
+        OnDisabled();
+    }
 
-            OnDestroyed();
+    protected void OnDestroy()
+    {
+        if (!GraphicsSupport.Available)
+        {
+            return;
         }
 
-        protected virtual void OnAwake()
-        {
-        }
+        OnDestroyed();
+    }
 
-        protected virtual void OnDisabled()
-        {
-        }
+    protected virtual void OnAwake()
+    {
+    }
 
-        protected virtual void OnDestroyed()
-        {
-        }
+    protected virtual void OnDisabled()
+    {
+    }
+
+    protected virtual void OnDestroyed()
+    {
     }
 }

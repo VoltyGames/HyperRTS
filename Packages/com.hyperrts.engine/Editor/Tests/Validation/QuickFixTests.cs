@@ -17,146 +17,145 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Tests.Validation
+namespace HyperRTS.Editor.Tests.Validation;
+
+/// <summary>Each validation quick fix repairs what its issue reports.</summary>
+public class QuickFixTests : TemplateFixture
 {
-    /// <summary>Each validation quick fix repairs what its issue reports.</summary>
-    public class QuickFixTests : TemplateFixture
+    private const string Folder = "Assets/_QuickFixTests";
+
+    [TearDown]
+    public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
+
+    [Test]
+    public void FitPickBoxWrapsTheModel()
     {
-        private const string Folder = "Assets/_QuickFixTests";
+        var unit = Track(TemplateObjects.Unit());
+        Object.DestroyImmediate(unit.GetComponent<PickBoxAuthoring>());
 
-        [TearDown]
-        public void DeleteFolder() => AssetDatabase.DeleteAsset(Folder);
+        Fix(unit.GetComponent<UnitAuthoring>(), "Fit Pick Box");
 
-        [Test]
-        public void FitPickBoxWrapsTheModel()
-        {
-            var unit = Track(TemplateObjects.Unit());
-            Object.DestroyImmediate(unit.GetComponent<PickBoxAuthoring>());
-
-            Fix(unit.GetComponent<UnitAuthoring>(), "Fit Pick Box");
-
-            var box = unit.GetComponent<PickBoxAuthoring>();
-            Assert.IsNotNull(box);
-            Assert.AreEqual(1.8f, box.size.y, 0.01f);
-        }
-
-        [Test]
-        public void MoveOutsidePutsTheSpawnPointBeyondTheFootprint()
-        {
-            var producer = Template<ProducerAuthoring>(TemplateObjects.Producer());
-            producer.spawnOffset = Vector3.zero;
-
-            Fix(producer, "Move Outside");
-
-            Assert.AreEqual(-3.5f, producer.spawnOffset.z, 0.01f);
-        }
-
-        [Test]
-        public void UsePrefabSwapsTheSceneInstanceForItsAsset()
-        {
-            AssetDatabase.CreateFolder("Assets", "_QuickFixTests");
-            var asset = PrefabUtility.SaveAsPrefabAsset(Track(TemplateObjects.Unit()), Folder + "/Unit.prefab");
-            var instance = Track((GameObject)PrefabUtility.InstantiatePrefab(asset)).GetComponent<UnitAuthoring>();
-            var producer = Template<ProducerAuthoring>(TemplateObjects.Producer());
-            producer.productionOptions.Add(instance);
-            producer.productionOptions.Add(null);
-
-            Fix(producer, "Use Prefab");
-            Fix(producer, "Remove Empty");
-
-            CollectionAssert.AreEqual(new[] { asset.GetComponent<UnitAuthoring>() }, producer.productionOptions);
-        }
-
-        [Test]
-        public void AddFlightTurnsAnAirLayerUnitIntoAnAircraft()
-        {
-            var unit = Template<UnitAuthoring>(TemplateObjects.Unit());
-            unit.navLayer = NavLayer.Air;
-
-            Fix(unit, "Add Flight");
-
-            Assert.IsTrue(unit.TryGetComponent<FlightAuthoring>(out _));
-            Assert.IsFalse(ProjectValidator.Check(unit).Any(issue => issue.FixLabel == "Add Flight"));
-        }
-
-        [Test]
-        public void AddRequiredPutsTheMissingAuthoringOnTheObject()
-        {
-            var producer = Make("Producer").AddComponent<ProducerAuthoring>();
-
-            Fix(producer, "Add Building");
-
-            Assert.IsTrue(producer.TryGetComponent<BuildingAuthoring>(out _));
-        }
-
-        [Test]
-        public void RemoveEmptyDropsArmorEntriesWithoutADamageType()
-        {
-            var armor = Add<ArmorAuthoring>(TemplateObjects.Unit());
-            armor.modifiers.Add(new DamageFactor { multiplier = 2f });
-
-            Fix(armor, "Remove Empty");
-
-            Assert.IsEmpty(armor.modifiers);
-        }
-
-        [Test]
-        public void ClampOversizedPassengerLimitToCapacity()
-        {
-            var container = Add<ContainerAuthoring>(TemplateObjects.Building());
-            container.capacity = 2;
-            container.maxPassengerSize = 4;
-
-            Fix(container, "Clamp");
-
-            Assert.AreEqual(2, container.maxPassengerSize);
-        }
-
-        [Test]
-        public void AddSightBlockFitsTheGarrisonedBuilding()
-        {
-            var container = Add<ContainerAuthoring>(TemplateObjects.Building());
-
-            Fix(container, "Add Sight Block");
-
-            var block = container.GetComponent<SightBlockAuthoring>();
-            Assert.IsNotNull(block);
-            Assert.AreEqual(4f, block.size.x, 0.01f);
-            Assert.AreEqual(4f, block.size.y, 0.01f);
-            Assert.AreEqual(2.5f, block.height, 0.01f);
-        }
-
-        [Test]
-        public void FillFromModelMovesGrimeToTheWheelAndHullTops_AndTheCheckLeavesItAsItWas()
-        {
-            var truck = Make("Truck");
-            var hull = Part("Hull", truck.transform, new Vector3(2.5f, 1.2f, 6f), 1.4f);
-            Part("Wheel_L01", hull, new Vector3(0.3f, 1f, 1f), -0.9f);
-            var grime = truck.AddComponent<GrimeAuthoring>();
-            grime.mudHeight = 0.3f;
-
-            Assert.IsTrue(ProjectValidator.Check(grime).Any(issue => issue.Message.Contains("Mud Height") && issue.FixLabel == "Fill From Model"));
-            Assert.AreEqual(0.3f, grime.mudHeight, "checking fills a copy of the values and puts them back");
-
-            // The fix's hierarchy undo would outlive the fixture's objects, and the test runner's revert brings them back.
-            ModelFillCommands.Fill(grime);
-
-            Assert.AreEqual(1f, grime.mudHeight, 1e-4f, "the wheel's top");
-            Assert.AreEqual(2f, grime.dustHeight, 1e-4f, "the hull's top");
-            Assert.IsFalse(ProjectValidator.Check(grime).Any(issue => issue.FixLabel == "Fill From Model"));
-        }
-
-        // A part carrying a box mesh of the given size, its centre the given height above its parent.
-        private static Transform Part(string name, Transform parent, Vector3 size, float height)
-        {
-            var part = new GameObject(name).transform;
-            part.SetParent(parent, false);
-            part.localPosition = new Vector3(0f, height, 0f);
-            part.gameObject.AddComponent<MeshFilter>().sharedMesh = new Mesh { bounds = new Bounds(Vector3.zero, size) };
-            return part;
-        }
-
-        private static void Fix(Component component, string label) =>
-            ProjectValidator.Check(component).First(issue => issue.FixLabel == label).Fix();
+        var box = unit.GetComponent<PickBoxAuthoring>();
+        Assert.IsNotNull(box);
+        Assert.AreEqual(1.8f, box.size.y, 0.01f);
     }
+
+    [Test]
+    public void MoveOutsidePutsTheSpawnPointBeyondTheFootprint()
+    {
+        var producer = Template<ProducerAuthoring>(TemplateObjects.Producer());
+        producer.spawnOffset = Vector3.zero;
+
+        Fix(producer, "Move Outside");
+
+        Assert.AreEqual(-3.5f, producer.spawnOffset.z, 0.01f);
+    }
+
+    [Test]
+    public void UsePrefabSwapsTheSceneInstanceForItsAsset()
+    {
+        AssetDatabase.CreateFolder("Assets", "_QuickFixTests");
+        var asset = PrefabUtility.SaveAsPrefabAsset(Track(TemplateObjects.Unit()), Folder + "/Unit.prefab");
+        var instance = Track((GameObject)PrefabUtility.InstantiatePrefab(asset)).GetComponent<UnitAuthoring>();
+        var producer = Template<ProducerAuthoring>(TemplateObjects.Producer());
+        producer.productionOptions.Add(instance);
+        producer.productionOptions.Add(null);
+
+        Fix(producer, "Use Prefab");
+        Fix(producer, "Remove Empty");
+
+        CollectionAssert.AreEqual(new[] { asset.GetComponent<UnitAuthoring>() }, producer.productionOptions);
+    }
+
+    [Test]
+    public void AddFlightTurnsAnAirLayerUnitIntoAnAircraft()
+    {
+        var unit = Template<UnitAuthoring>(TemplateObjects.Unit());
+        unit.navLayer = NavLayer.Air;
+
+        Fix(unit, "Add Flight");
+
+        Assert.IsTrue(unit.TryGetComponent<FlightAuthoring>(out _));
+        Assert.IsFalse(ProjectValidator.Check(unit).Any(issue => issue.FixLabel == "Add Flight"));
+    }
+
+    [Test]
+    public void AddRequiredPutsTheMissingAuthoringOnTheObject()
+    {
+        var producer = Make("Producer").AddComponent<ProducerAuthoring>();
+
+        Fix(producer, "Add Building");
+
+        Assert.IsTrue(producer.TryGetComponent<BuildingAuthoring>(out _));
+    }
+
+    [Test]
+    public void RemoveEmptyDropsArmorEntriesWithoutADamageType()
+    {
+        var armor = Add<ArmorAuthoring>(TemplateObjects.Unit());
+        armor.modifiers.Add(new DamageFactor { multiplier = 2f });
+
+        Fix(armor, "Remove Empty");
+
+        Assert.IsEmpty(armor.modifiers);
+    }
+
+    [Test]
+    public void ClampOversizedPassengerLimitToCapacity()
+    {
+        var container = Add<ContainerAuthoring>(TemplateObjects.Building());
+        container.capacity = 2;
+        container.maxPassengerSize = 4;
+
+        Fix(container, "Clamp");
+
+        Assert.AreEqual(2, container.maxPassengerSize);
+    }
+
+    [Test]
+    public void AddSightBlockFitsTheGarrisonedBuilding()
+    {
+        var container = Add<ContainerAuthoring>(TemplateObjects.Building());
+
+        Fix(container, "Add Sight Block");
+
+        var block = container.GetComponent<SightBlockAuthoring>();
+        Assert.IsNotNull(block);
+        Assert.AreEqual(4f, block.size.x, 0.01f);
+        Assert.AreEqual(4f, block.size.y, 0.01f);
+        Assert.AreEqual(2.5f, block.height, 0.01f);
+    }
+
+    [Test]
+    public void FillFromModelMovesGrimeToTheWheelAndHullTops_AndTheCheckLeavesItAsItWas()
+    {
+        var truck = Make("Truck");
+        var hull = Part("Hull", truck.transform, new Vector3(2.5f, 1.2f, 6f), 1.4f);
+        Part("Wheel_L01", hull, new Vector3(0.3f, 1f, 1f), -0.9f);
+        var grime = truck.AddComponent<GrimeAuthoring>();
+        grime.mudHeight = 0.3f;
+
+        Assert.IsTrue(ProjectValidator.Check(grime).Any(issue => issue.Message.Contains("Mud Height") && issue.FixLabel == "Fill From Model"));
+        Assert.AreEqual(0.3f, grime.mudHeight, "checking fills a copy of the values and puts them back");
+
+        // The fix's hierarchy undo would outlive the fixture's objects, and the test runner's revert brings them back.
+        ModelFillCommands.Fill(grime);
+
+        Assert.AreEqual(1f, grime.mudHeight, 1e-4f, "the wheel's top");
+        Assert.AreEqual(2f, grime.dustHeight, 1e-4f, "the hull's top");
+        Assert.IsFalse(ProjectValidator.Check(grime).Any(issue => issue.FixLabel == "Fill From Model"));
+    }
+
+    // A part carrying a box mesh of the given size, its centre the given height above its parent.
+    private static Transform Part(string name, Transform parent, Vector3 size, float height)
+    {
+        var part = new GameObject(name).transform;
+        part.SetParent(parent, false);
+        part.localPosition = new Vector3(0f, height, 0f);
+        part.gameObject.AddComponent<MeshFilter>().sharedMesh = new Mesh { bounds = new Bounds(Vector3.zero, size) };
+        return part;
+    }
+
+    private static void Fix(Component component, string label) =>
+        ProjectValidator.Check(component).First(issue => issue.FixLabel == label).Fix();
 }

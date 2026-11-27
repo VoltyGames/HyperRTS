@@ -1,13 +1,12 @@
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Interaction
+namespace HyperRTS.Presentation.Interaction;
+
+/// <summary>Drag-box state in screen pixels (bottom-left). Written by input, read by the marquee UI.</summary>
+public struct SelectionDragState : IComponentData
 {
-    /// <summary>Drag-box state in screen pixels (bottom-left). Written by input, read by the marquee UI.</summary>
-    public struct SelectionDragState : IComponentData
-    {
-        public bool IsDragging;
-        public float2 StartScreen;
-        public float2 CurrentScreen;
-    }
+    public bool IsDragging;
+    public float2 StartScreen;
+    public float2 CurrentScreen;
 }

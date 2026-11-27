@@ -1,53 +1,52 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
+using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Cues.Effects;
 using Unity.Entities;
 using UnityEngine;
-using HyperRTS.Simulation.Cues.Effects;
 
-namespace HyperRTS.Presentation.Destruction
+namespace HyperRTS.Presentation.Destruction;
+
+/// <summary>Throws client-side debris pieces when this ruin appears or when this building's parts break.</summary>
+[AddComponentMenu(HyperRTSMenu.Look + "Effects/Debris")]
+[Icon(HyperRTSIcons.DebrisAuthoring)]
+[HelpURL(HyperRTSDocs.Effects)]
+[DisallowMultipleComponent]
+public class DebrisAuthoring : AuthoringBehaviour
 {
-    /// <summary>Throws client-side debris pieces when this ruin appears or when this building's parts break.</summary>
-    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Debris")]
-    [Icon(HyperRTSIcons.DebrisAuthoring)]
-    [HelpURL(HyperRTSDocs.Effects)]
-    [DisallowMultipleComponent]
-    public class DebrisAuthoring : AuthoringBehaviour
+    [Tooltip("The pieces thrown.")]
+    public DebrisSet set;
+
+    [Tooltip("Metres from the centre the pieces start within.")]
+    [Min(0f)]
+    public float radius = 1f;
+
+    [Tooltip("Throw once when it first appears, for ruins. Off throws from each breakable part as it breaks.")]
+    public bool onAppear = true;
+
+    public static void AddDebris(EntityWriter writer, DebrisSet set, float radius, bool onAppear)
     {
-        [Tooltip("The pieces thrown.")]
-        public DebrisSet set;
+        writer.Add(new Debris { Set = set, Radius = radius });
+        writer.SetEnabled<Debris>(onAppear);
+    }
 
-        [Tooltip("Metres from the centre the pieces start within.")]
-        [Min(0f)]
-        public float radius = 1f;
-
-        [Tooltip("Throw once when it first appears, for ruins. Off throws from each breakable part as it breaks.")]
-        public bool onAppear = true;
-
-        public static void AddDebris(EntityWriter writer, DebrisSet set, float radius, bool onAppear)
+    public class Baker : Baker<DebrisAuthoring>
+    {
+        public override void Bake(DebrisAuthoring authoring)
         {
-            writer.Add(new Debris { Set = set, Radius = radius });
-            writer.SetEnabled<Debris>(onAppear);
-        }
-
-        public class Baker : Baker<DebrisAuthoring>
-        {
-            public override void Bake(DebrisAuthoring authoring)
+            if (authoring.set == null)
             {
-                if (authoring.set == null)
-                {
-                    throw new InvalidOperationException($"Debris on '{authoring.name}' has no 'set'.");
-                }
-
-                var problem = authoring.set.Problem();
-                if (problem != null)
-                {
-                    throw new InvalidOperationException(problem);
-                }
-
-                DependsOn(authoring.set);
-                var writer = this.Writer();
-                AddDebris(writer, authoring.set, authoring.radius, authoring.onAppear);
+                throw new InvalidOperationException($"Debris on '{authoring.name}' has no 'set'.");
             }
+
+            var problem = authoring.set.Problem();
+            if (problem != null)
+            {
+                throw new InvalidOperationException(problem);
+            }
+
+            DependsOn(authoring.set);
+            var writer = this.Writer();
+            AddDebris(writer, authoring.set, authoring.radius, authoring.onAppear);
         }
     }
 }

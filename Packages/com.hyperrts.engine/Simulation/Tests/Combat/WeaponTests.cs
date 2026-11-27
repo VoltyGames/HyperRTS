@@ -1,9 +1,9 @@
+using System.Collections.Generic;
+using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Combat.Damage;
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Authoring;
-using System.Collections.Generic;
-using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
@@ -15,277 +15,276 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Tests.Combat
+namespace HyperRTS.Simulation.Tests.Combat;
+
+/// <summary>Extra weapon mounts, salvos, muzzles in turn, spread and ammo, fired through the systems.</summary>
+public class WeaponTests : SimulationFixture
 {
-    /// <summary>Extra weapon mounts, salvos, muzzles in turn, spread and ammo, fired through the systems.</summary>
-    public class WeaponTests : SimulationFixture
+    private const int Research = 4242;
+
+    /// <summary>One yaw step.</summary>
+    private const float YawTolerance = 2f * math.PI / HeadingByte.Steps;
+
+    [Test]
+    public void BothWeapons_FireAtOneTarget()
     {
-        private const int Research = 4242;
-
-        /// <summary>One yaw step.</summary>
-        private const float YawTolerance = 2f * math.PI / HeadingByte.Steps;
-
-        [Test]
-        public void BothWeapons_FireAtOneTarget()
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 100f,
-            });
-            World.AddMount(gun, new TestMount { Range = 6f, Damage = 5f, Cooldown = 100f });
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 100f,
+        });
+        World.AddMount(gun, new TestMount { Range = 6f, Damage = 5f, Cooldown = 100f });
+        var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f));
 
-            World.Run(1f);
+        World.Run(1f);
 
-            Assert.AreEqual(85f, World.GetHealth(enemy), "one shot from each weapon");
+        Assert.AreEqual(85f, World.GetHealth(enemy), "one shot from each weapon");
+    }
+
+    [Test]
+    public void LongerRangedMount_HaltsTheUnitAtItsReach_WhileThePrimaryHoldsFire()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 4f,
+            Damage = 10f,
+            Cooldown = 100f,
+        });
+        World.AddMount(gun, new TestMount { Range = 12f, Damage = 5f, Cooldown = 100f });
+        var enemy = World.SpawnUnit(2, new float3(30f, 0f, 0f), new TestUnit { Speed = 0f });
+        World.Issue(gun, new Order { Type = OrderType.Attack, Target = enemy });
+
+        Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 15f), "the mount fired");
+        World.Run(1f);
+
+        Assert.AreEqual(95f, World.GetHealth(enemy), "only the mount fired");
+        Assert.Greater(World.Get<AttackTarget>(gun).Gap, 4f, "it stopped beyond the primary's range");
+    }
+
+    [Test]
+    public void MinEffect_MountSkipsTargetsItsDamageBarelyHurts()
+    {
+        var missile = World.Own(ScriptableObject.CreateInstance<DamageType>());
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 100f,
+        });
+        World.AddMount(gun, new TestMount
+        {
+            Range = 6f,
+            Damage = 50f,
+            Cooldown = 100f,
+            MinEffect = 0.5f,
+            DamageType = missile,
+        });
+        var soldier = World.SpawnUnit(2, new float3(4f, 0f, 0f));
+        var writer = World.Writer(soldier);
+        writer.AddBuffer(new[] { new ArmorModifier { DamageType = missile, Multiplier = 0.1f } });
+
+        World.Run(1f);
+
+        Assert.AreEqual(90f, World.GetHealth(soldier), "only the primary fired");
+        Assert.AreEqual(Entity.Null, World.Mount(gun).Target);
+    }
+
+    [Test]
+    public void IndependentAirMount_EngagesAndAimsAtAircraft_WhileThePrimaryShootsGround()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 100f,
+            Turreted = true,
+        });
+        World.AddMount(gun, new TestMount
+        {
+            Range = 6f,
+            Damage = 20f,
+            Cooldown = 100f,
+            Targets = WeaponTargets.Air,
+            Independent = true,
+        });
+        var tank = World.SpawnUnit(2, new float3(-3f, 0f, 0f));
+        var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
+
+        World.Run(2f);
+
+        Assert.AreEqual(tank, World.Get<AttackTarget>(gun).Value, "the primary keeps the ground target");
+        Assert.AreEqual(90f, World.GetHealth(tank));
+        Assert.AreEqual(80f, World.GetHealth(aircraft), "the mount picked the aircraft itself");
+        var poses = World.Buffer<WeaponPose>(gun);
+        Assert.AreEqual(-0.5f * math.PI, poses[0].YawRadians, YawTolerance, "the primary looks left");
+        Assert.AreEqual(0f, poses[0].PitchRadians, 0.02f, "level with a ground target");
+        Assert.AreEqual(0.5f * math.PI, poses[1].YawRadians, YawTolerance, "the mount looks right");
+    }
+
+    [Test]
+    public void ResearchGatedMount_HoldsFireUntilTheResearchIsDone()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 100f,
+        });
+        World.AddMount(gun, new TestMount
+        {
+            Range = 6f,
+            Damage = 5f,
+            Cooldown = 0.5f,
+            RequiredResearchTypeId = Research,
+        });
+        var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
+
+        World.Run(1f);
+        Assert.AreEqual(990f, World.GetHealth(enemy), "locked mount stayed silent");
+
+        World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
+            .Add(new CompletedResearch { TypeId = Research });
+        World.Run(1f);
+
+        Assert.IsTrue(World.Mount(gun).Unlocked);
+        Assert.Less(World.GetHealth(enemy), 990f, "the unlocked mount opened fire");
+    }
+
+    [Test]
+    public void ResearchGatedMount_Relocks_WhenTheResearchIsGone()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Damage = 0f,
+            Cooldown = 100f,
+        });
+        World.AddMount(gun, new TestMount
+        {
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 100f,
+            RequiredResearchTypeId = Research,
+        });
+        World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
+            .Add(new CompletedResearch { TypeId = Research });
+        World.Tick();
+        Assert.IsTrue(World.Mount(gun).Unlocked);
+
+        World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1)).Clear();
+        World.Tick();
+
+        Assert.IsFalse(World.Mount(gun).Unlocked);
+    }
+
+    [Test]
+    public void Salvo_FiresEachShotAtTheInterval_ThenCoolsDown()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 5f,
+        });
+        World.SetSalvo(gun, 3, 0.5f);
+        var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
+
+        Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f), "the first shot");
+        Assert.AreEqual(90f, World.GetHealth(enemy));
+        World.Run(0.3f);
+        Assert.AreEqual(90f, World.GetHealth(enemy), "waits the interval");
+        World.Run(0.3f);
+        Assert.AreEqual(80f, World.GetHealth(enemy), "the second shot");
+        World.Run(0.5f);
+        Assert.AreEqual(70f, World.GetHealth(enemy), "the third shot");
+        World.Run(4.6f);
+        Assert.AreEqual(70f, World.GetHealth(enemy), "the cooldown runs after the salvo");
+        World.Run(0.6f);
+        Assert.AreEqual(60f, World.GetHealth(enemy), "the next salvo");
+    }
+
+    [Test]
+    public void Salvo_StopsWhenItsTargetDies()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Damage = 10f,
+            Cooldown = 5f,
+        });
+        World.SetSalvo(gun, 3, 0.5f);
+        var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
+        Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f));
+
+        World.Kill(enemy);
+        World.Run(0.2f);
+
+        var cycle = World.Buffer<WeaponMount>(gun)[WeaponMounts.PrimaryIndex].Cycle;
+        Assert.AreEqual(0, cycle.SalvoShot);
+        Assert.Greater(cycle.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {cycle.CooldownRemaining}");
+    }
+
+    [Test]
+    public void Salvo_FiresFromEachMuzzleInTurn()
+    {
+        var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+        {
+            Range = 6f,
+            Cooldown = 100f,
+            Projectile = World.ProjectilePrefab(),
+        });
+        World.SetSalvo(gun, 4, 0.2f);
+        World.SetMuzzles(gun, new float3(-1f, 1f, 0f), new float3(0f, 1f, 0f), new float3(1f, 1f, 0f));
+        var weapon = World.Primary(gun);
+        weapon.ProjectileSpeed = 0.5f;
+        World.SetPrimary(gun, weapon);
+        World.SpawnUnit(2, new float3(0f, 0f, 4f));
+
+        var starts = LaunchedFrom(1.5f);
+
+        CollectionAssert.AreEqual(new[] { -1f, 0f, 1f, -1f }, starts, "the fourth shot wraps to the first muzzle");
+    }
+
+    [TestCase(Trajectory.Ballistic, true)]
+    [TestCase(Trajectory.Rocket, false)]
+    [TestCase(Trajectory.Direct, false)]
+    public void Spread_ScattersEveryTrajectory_AndOnlyShellsKeepTheirLock(Trajectory trajectory, bool keepsLock)
+    {
+        var weapon = new Weapon { Spread = 4f, Aim = new WeaponAim { Course = ShotCourse.From(trajectory) } };
+        var aim = new float3(10f, 0f, 20f);
+
+        var landed = new HashSet<float3>();
+        for (var shot = 0u; shot < 6; shot++)
+        {
+            var point = weapon.Scatter(aim, math.hash(new uint2(shot, 7u)));
+            Assert.LessOrEqual(math.distance(point.xz, aim.xz), 4f + 1e-4f);
+            landed.Add(point);
         }
 
-        [Test]
-        public void LongerRangedMount_HaltsTheUnitAtItsReach_WhileThePrimaryHoldsFire()
+        Assert.Greater(landed.Count, 1, "a ripple spreads out");
+        Assert.AreEqual(keepsLock, weapon.KeepsLock);
+    }
+
+    /// <summary>The x of each projectile's launch point, in the order they were fired.</summary>
+    private List<float> LaunchedFrom(float seconds)
+    {
+        var seen = new HashSet<Entity>();
+        var starts = new List<float>();
+        using var query = World.Query(typeof(Projectile));
+        for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
         {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 4f,
-                Damage = 10f,
-                Cooldown = 100f,
-            });
-            World.AddMount(gun, new TestMount { Range = 12f, Damage = 5f, Cooldown = 100f });
-            var enemy = World.SpawnUnit(2, new float3(30f, 0f, 0f), new TestUnit { Speed = 0f });
-            World.Issue(gun, new Order { Type = OrderType.Attack, Target = enemy });
-
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 15f), "the mount fired");
-            World.Run(1f);
-
-            Assert.AreEqual(95f, World.GetHealth(enemy), "only the mount fired");
-            Assert.Greater(World.Get<AttackTarget>(gun).Gap, 4f, "it stopped beyond the primary's range");
-        }
-
-        [Test]
-        public void MinEffect_MountSkipsTargetsItsDamageBarelyHurts()
-        {
-            var missile = World.Own(ScriptableObject.CreateInstance<DamageType>());
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 100f,
-            });
-            World.AddMount(gun, new TestMount
-            {
-                Range = 6f,
-                Damage = 50f,
-                Cooldown = 100f,
-                MinEffect = 0.5f,
-                DamageType = missile,
-            });
-            var soldier = World.SpawnUnit(2, new float3(4f, 0f, 0f));
-            var writer = World.Writer(soldier);
-            writer.AddBuffer(new[] { new ArmorModifier { DamageType = missile, Multiplier = 0.1f } });
-
-            World.Run(1f);
-
-            Assert.AreEqual(90f, World.GetHealth(soldier), "only the primary fired");
-            Assert.AreEqual(Entity.Null, World.Mount(gun).Target);
-        }
-
-        [Test]
-        public void IndependentAirMount_EngagesAndAimsAtAircraft_WhileThePrimaryShootsGround()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 100f,
-                Turreted = true,
-            });
-            World.AddMount(gun, new TestMount
-            {
-                Range = 6f,
-                Damage = 20f,
-                Cooldown = 100f,
-                Targets = WeaponTargets.Air,
-                Independent = true,
-            });
-            var tank = World.SpawnUnit(2, new float3(-3f, 0f, 0f));
-            var aircraft = World.SpawnAircraft(2, new float3(3f, 0f, 0f));
-
-            World.Run(2f);
-
-            Assert.AreEqual(tank, World.Get<AttackTarget>(gun).Value, "the primary keeps the ground target");
-            Assert.AreEqual(90f, World.GetHealth(tank));
-            Assert.AreEqual(80f, World.GetHealth(aircraft), "the mount picked the aircraft itself");
-            var poses = World.Buffer<WeaponPose>(gun);
-            Assert.AreEqual(-0.5f * math.PI, poses[0].YawRadians, YawTolerance, "the primary looks left");
-            Assert.AreEqual(0f, poses[0].PitchRadians, 0.02f, "level with a ground target");
-            Assert.AreEqual(0.5f * math.PI, poses[1].YawRadians, YawTolerance, "the mount looks right");
-        }
-
-        [Test]
-        public void ResearchGatedMount_HoldsFireUntilTheResearchIsDone()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 100f,
-            });
-            World.AddMount(gun, new TestMount
-            {
-                Range = 6f,
-                Damage = 5f,
-                Cooldown = 0.5f,
-                RequiredResearchTypeId = Research,
-            });
-            var enemy = World.SpawnUnit(2, new float3(4f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
-
-            World.Run(1f);
-            Assert.AreEqual(990f, World.GetHealth(enemy), "locked mount stayed silent");
-
-            World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
-                .Add(new CompletedResearch { TypeId = Research });
-            World.Run(1f);
-
-            Assert.IsTrue(World.Mount(gun).Unlocked);
-            Assert.Less(World.GetHealth(enemy), 990f, "the unlocked mount opened fire");
-        }
-
-        [Test]
-        public void ResearchGatedMount_Relocks_WhenTheResearchIsGone()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 0f,
-                Cooldown = 100f,
-            });
-            World.AddMount(gun, new TestMount
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 100f,
-                RequiredResearchTypeId = Research,
-            });
-            World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1))
-                .Add(new CompletedResearch { TypeId = Research });
             World.Tick();
-            Assert.IsTrue(World.Mount(gun).Unlocked);
-
-            World.EntityManager.GetBuffer<CompletedResearch>(World.Player(1)).Clear();
-            World.Tick();
-
-            Assert.IsFalse(World.Mount(gun).Unlocked);
-        }
-
-        [Test]
-        public void Salvo_FiresEachShotAtTheInterval_ThenCoolsDown()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
+            using var projectiles = query.ToEntityArray(Allocator.Temp);
+            foreach (var projectile in projectiles)
             {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 5f,
-            });
-            World.SetSalvo(gun, 3, 0.5f);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
-
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f), "the first shot");
-            Assert.AreEqual(90f, World.GetHealth(enemy));
-            World.Run(0.3f);
-            Assert.AreEqual(90f, World.GetHealth(enemy), "waits the interval");
-            World.Run(0.3f);
-            Assert.AreEqual(80f, World.GetHealth(enemy), "the second shot");
-            World.Run(0.5f);
-            Assert.AreEqual(70f, World.GetHealth(enemy), "the third shot");
-            World.Run(4.6f);
-            Assert.AreEqual(70f, World.GetHealth(enemy), "the cooldown runs after the salvo");
-            World.Run(0.6f);
-            Assert.AreEqual(60f, World.GetHealth(enemy), "the next salvo");
-        }
-
-        [Test]
-        public void Salvo_StopsWhenItsTargetDies()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Damage = 10f,
-                Cooldown = 5f,
-            });
-            World.SetSalvo(gun, 3, 0.5f);
-            var enemy = World.SpawnUnit(2, new float3(0f, 0f, 4f));
-            Assert.IsTrue(World.RunUntil(() => World.GetHealth(enemy) < 100f, 1f));
-
-            World.Kill(enemy);
-            World.Run(0.2f);
-
-            var cycle = World.Buffer<WeaponMount>(gun)[WeaponMounts.PrimaryIndex].Cycle;
-            Assert.AreEqual(0, cycle.SalvoShot);
-            Assert.Greater(cycle.CooldownRemaining, 0.5f, $"the full cooldown runs, not the interval: {cycle.CooldownRemaining}");
-        }
-
-        [Test]
-        public void Salvo_FiresFromEachMuzzleInTurn()
-        {
-            var gun = World.AddWeapon(World.SpawnUnit(1, float3.zero), new TestWeapon
-            {
-                Range = 6f,
-                Cooldown = 100f,
-                Projectile = World.ProjectilePrefab(),
-            });
-            World.SetSalvo(gun, 4, 0.2f);
-            World.SetMuzzles(gun, new float3(-1f, 1f, 0f), new float3(0f, 1f, 0f), new float3(1f, 1f, 0f));
-            var weapon = World.Primary(gun);
-            weapon.ProjectileSpeed = 0.5f;
-            World.SetPrimary(gun, weapon);
-            World.SpawnUnit(2, new float3(0f, 0f, 4f));
-
-            var starts = LaunchedFrom(1.5f);
-
-            CollectionAssert.AreEqual(new[] { -1f, 0f, 1f, -1f }, starts, "the fourth shot wraps to the first muzzle");
-        }
-
-        [TestCase(Trajectory.Ballistic, true)]
-        [TestCase(Trajectory.Rocket, false)]
-        [TestCase(Trajectory.Direct, false)]
-        public void Spread_ScattersEveryTrajectory_AndOnlyShellsKeepTheirLock(Trajectory trajectory, bool keepsLock)
-        {
-            var weapon = new Weapon { Spread = 4f, Aim = new WeaponAim { Course = ShotCourse.From(trajectory) } };
-            var aim = new float3(10f, 0f, 20f);
-
-            var landed = new HashSet<float3>();
-            for (var shot = 0u; shot < 6; shot++)
-            {
-                var point = weapon.Scatter(aim, math.hash(new uint2(shot, 7u)));
-                Assert.LessOrEqual(math.distance(point.xz, aim.xz), 4f + 1e-4f);
-                landed.Add(point);
-            }
-
-            Assert.Greater(landed.Count, 1, "a ripple spreads out");
-            Assert.AreEqual(keepsLock, weapon.KeepsLock);
-        }
-
-        /// <summary>The x of each projectile's launch point, in the order they were fired.</summary>
-        private List<float> LaunchedFrom(float seconds)
-        {
-            var seen = new HashSet<Entity>();
-            var starts = new List<float>();
-            using var query = World.Query(typeof(Projectile));
-            for (var t = 0f; t < seconds; t += TestWorld.FrameTime)
-            {
-                World.Tick();
-                using var projectiles = query.ToEntityArray(Allocator.Temp);
-                foreach (var projectile in projectiles)
+                if (seen.Add(projectile))
                 {
-                    if (seen.Add(projectile))
-                    {
-                        starts.Add(math.round(World.Get<Projectile>(projectile).Start.x * 100f) / 100f);
-                    }
+                    starts.Add(math.round(World.Get<Projectile>(projectile).Start.x * 100f) / 100f);
                 }
             }
-
-            return starts;
         }
+
+        return starts;
     }
 }

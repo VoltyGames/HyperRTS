@@ -1,31 +1,30 @@
 using HyperRTS.Presentation.Animation.Clips;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Animation.Bones
+namespace HyperRTS.Editor.Animation.Bones;
+
+/// <summary>One clip of a <see cref="BoneAnimationSet"/>: how many frames it bakes and the clip time each samples.</summary>
+internal sealed class ClipFrames
 {
-    /// <summary>One clip of a <see cref="BoneAnimationSet"/>: how many frames it bakes and the clip time each samples.</summary>
-    internal sealed class ClipFrames
+    public readonly BoneAnimationSet.Clip Clip;
+    private readonly int _steps;
+
+    public ClipFrames(BoneAnimationSet.Clip clip, float fps)
     {
-        public readonly BoneAnimationSet.Clip Clip;
-        private readonly int _steps;
-
-        public ClipFrames(BoneAnimationSet.Clip clip, float fps)
-        {
-            Clip = clip;
-            var steps = Mathf.Max(1, Mathf.RoundToInt(clip.source.length / clip.speed * fps));
-            // A loop does not repeat its first frame at the end.
-            Count = clip.loop ? steps : steps + 1;
-            _steps = steps;
-        }
-
-        public int Count { get; }
-
-        /// <summary>Seconds into the source clip that frame <paramref name="frame"/> shows.</summary>
-        public float StepTime(int frame) => Clip.source.length * frame / _steps;
-
-        public NamedClip AsClip(int startRow, float fps, float groundSpeed) => new()
-        {
-            name = Clip.name, startRow = startRow, frameCount = Count, fps = fps, loop = Clip.loop, groundSpeed = groundSpeed,
-        };
+        Clip = clip;
+        var steps = Mathf.Max(1, Mathf.RoundToInt(clip.source.length / clip.speed * fps));
+        // A loop does not repeat its first frame at the end.
+        Count = clip.loop ? steps : steps + 1;
+        _steps = steps;
     }
+
+    public int Count { get; }
+
+    /// <summary>Seconds into the source clip that frame <paramref name="frame"/> shows.</summary>
+    public float StepTime(int frame) => Clip.source.length * frame / _steps;
+
+    public NamedClip AsClip(int startRow, float fps, float groundSpeed) => new()
+    {
+        name = Clip.name, startRow = startRow, frameCount = Count, fps = fps, loop = Clip.loop, groundSpeed = groundSpeed,
+    };
 }

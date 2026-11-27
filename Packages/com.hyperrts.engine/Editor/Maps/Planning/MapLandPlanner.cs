@@ -2,40 +2,39 @@ using HyperRTS.Editor.Maps.Planning.Farmland;
 using HyperRTS.Editor.Maps.Planning.Settlements;
 using HyperRTS.Editor.Maps.Planning.War;
 
-namespace HyperRTS.Editor.Maps.Planning
+namespace HyperRTS.Editor.Maps.Planning;
+
+/// <summary>
+/// Lays out the land in priority order, each pass claiming only what earlier ones left, then grows surface trees
+/// and props, scars the land for the war age and lays decals.
+/// </summary>
+public static class MapLandPlanner
 {
-    /// <summary>
-    /// Lays out the land in priority order, each pass claiming only what earlier ones left, then grows surface trees
-    /// and props, scars the land for the war age and lays decals.
-    /// </summary>
-    public static class MapLandPlanner
+    public static void Plan(MapPlanContext context)
     {
-        public static void Plan(MapPlanContext context)
+        MapLandPass[] passes =
         {
-            MapLandPass[] passes =
-            {
-                new MapWaterPlanner(context),
-                new MapRoadPlanner(context),
-                new MapBankPlanner(context),
-                new MapPondPlanner(context),
-                new MapBasePlanner(context),
-                new MapAccessPlanner(context),
-                new MapRavinePlanner(context),
-                new MapSettlementPlanner(context),
-                new MapRowPlanter(context),
-                new MapAreaPlanner(context),
-                new MapWoodPlanner(context),
-                new MapBeltPlanner(context),
-                new MapFarmlandPlanner(context),
-                new MapMeadowPlanner(context),
-                new MapSurfacePlanter(context),
-                new MapWarScarsPlanner(context),
-                new MapDecalPlanner(context),
-            };
-            foreach (var pass in passes)
-            {
-                pass.Plan();
-            }
+            new MapWaterPlanner(context),
+            new MapRoadPlanner(context),
+            new MapBankPlanner(context),
+            new MapPondPlanner(context),
+            new MapBasePlanner(context),
+            new MapAccessPlanner(context),
+            new MapRavinePlanner(context),
+            new MapSettlementPlanner(context),
+            new MapRowPlanter(context),
+            new MapAreaPlanner(context),
+            new MapWoodPlanner(context),
+            new MapBeltPlanner(context),
+            new MapFarmlandPlanner(context),
+            new MapMeadowPlanner(context),
+            new MapSurfacePlanter(context),
+            new MapWarScarsPlanner(context),
+            new MapDecalPlanner(context),
+        };
+        foreach (var pass in passes)
+        {
+            pass.Plan();
         }
     }
 }

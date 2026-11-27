@@ -1,89 +1,88 @@
+using System.Runtime.InteropServices;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Vision;
 using HyperRTS.Simulation.Vision.Sight;
-using System.Runtime.InteropServices;
-using HyperRTS.Simulation.Common.Geometry;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Cues
+namespace HyperRTS.Simulation.Cues;
+
+/// <summary>
+/// One <see cref="CueEvent"/> in 22 bytes, for the network and replays; positions and radii in
+/// <see cref="QuantizedPosition"/> steps.
+/// </summary>
+[StructLayout(LayoutKind.Sequential, Pack = 1)]
+public struct PackedCue
 {
-    /// <summary>
-    /// One <see cref="CueEvent"/> in 22 bytes, for the network and replays; positions and radii in
-    /// <see cref="QuantizedPosition"/> steps.
-    /// </summary>
-    [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct PackedCue
+    private const float PitchSteps = 127f;
+    private const int ConcealmentShift = 4;
+    private const byte SurfaceBits = 0x0F;
+    private const int LayerShift = 6;
+
+    public int TypeId;
+    public int SourceNumber;
+    public short X;
+    public short Y;
+    public short Z;
+    public ushort Radius;
+    public byte Slot;
+    public byte Owner;
+
+    /// <summary>Heading in 256ths of a turn, clockwise from +Z.</summary>
+    public byte Yaw;
+
+    /// <summary>Elevation in 7 bits from straight down (0) to straight up (127).</summary>
+    public byte Pitch;
+
+    // Bytes rather than the enums, so the RPC codegen sends one byte each.
+    /// <summary>The impact's surface in the low 4 bits, the source's concealment in the next 2, then its sight layer.</summary>
+    public byte SurfaceConcealment;
+
+    /// <summary>An impact's material, else the cue's <see cref="CueEvent.Variant"/>; impacts never set one.</summary>
+    public byte Detail;
+
+    public static PackedCue Pack(in CueEvent cue)
     {
-        private const float PitchSteps = 127f;
-        private const int ConcealmentShift = 4;
-        private const byte SurfaceBits = 0x0F;
-        private const int LayerShift = 6;
-
-        public int TypeId;
-        public int SourceNumber;
-        public short X;
-        public short Y;
-        public short Z;
-        public ushort Radius;
-        public byte Slot;
-        public byte Owner;
-
-        /// <summary>Heading in 256ths of a turn, clockwise from +Z.</summary>
-        public byte Yaw;
-
-        /// <summary>Elevation in 7 bits from straight down (0) to straight up (127).</summary>
-        public byte Pitch;
-
-        // Bytes rather than the enums, so the RPC codegen sends one byte each.
-        /// <summary>The impact's surface in the low 4 bits, the source's concealment in the next 2, then its sight layer.</summary>
-        public byte SurfaceConcealment;
-
-        /// <summary>An impact's material, else the cue's <see cref="CueEvent.Variant"/>; impacts never set one.</summary>
-        public byte Detail;
-
-        public static PackedCue Pack(in CueEvent cue)
+        var direction = math.normalizesafe(cue.Direction, new float3(0f, 0f, 1f));
+        var pitch = math.asin(math.clamp(direction.y, -1f, 1f)) / math.PI + 0.5f;
+        return new PackedCue
         {
-            var direction = math.normalizesafe(cue.Direction, new float3(0f, 0f, 1f));
-            var pitch = math.asin(math.clamp(direction.y, -1f, 1f)) / math.PI + 0.5f;
-            return new PackedCue
-            {
-                TypeId = cue.TypeId,
-                SourceNumber = cue.SourceNumber,
-                X = QuantizedPosition.Quantize(cue.Position.x),
-                Y = QuantizedPosition.Quantize(cue.Position.y),
-                Z = QuantizedPosition.Quantize(cue.Position.z),
-                Radius = (ushort)math.clamp(math.round(cue.Radius / QuantizedPosition.Step), 0, ushort.MaxValue),
-                Slot = (byte)cue.Slot,
-                Owner = cue.Owner,
-                Yaw = HeadingByte.Encode(direction.xz),
-                Pitch = (byte)math.round(pitch * PitchSteps),
-                SurfaceConcealment = (byte)((int)cue.Surface | (int)cue.Concealment << ConcealmentShift | (int)cue.Layer << LayerShift),
-                Detail = cue.Slot == CueSlot.Impact ? (byte)cue.Material : cue.Variant,
-            };
-        }
+            TypeId = cue.TypeId,
+            SourceNumber = cue.SourceNumber,
+            X = QuantizedPosition.Quantize(cue.Position.x),
+            Y = QuantizedPosition.Quantize(cue.Position.y),
+            Z = QuantizedPosition.Quantize(cue.Position.z),
+            Radius = (ushort)math.clamp(math.round(cue.Radius / QuantizedPosition.Step), 0, ushort.MaxValue),
+            Slot = (byte)cue.Slot,
+            Owner = cue.Owner,
+            Yaw = HeadingByte.Encode(direction.xz),
+            Pitch = (byte)math.round(pitch * PitchSteps),
+            SurfaceConcealment = (byte)((int)cue.Surface | (int)cue.Concealment << ConcealmentShift | (int)cue.Layer << LayerShift),
+            Detail = cue.Slot == CueSlot.Impact ? (byte)cue.Material : cue.Variant,
+        };
+    }
 
-        public readonly CueEvent Unpack()
+    public readonly CueEvent Unpack()
+    {
+        var pitch = (Pitch / PitchSteps - 0.5f) * math.PI;
+        var level = HeadingByte.Direction(Yaw);
+        math.sincos(pitch, out var sinPitch, out var cosPitch);
+        var impact = (CueSlot)Slot == CueSlot.Impact;
+        return new CueEvent
         {
-            var pitch = (Pitch / PitchSteps - 0.5f) * math.PI;
-            var level = HeadingByte.Direction(Yaw);
-            math.sincos(pitch, out var sinPitch, out var cosPitch);
-            var impact = (CueSlot)Slot == CueSlot.Impact;
-            return new CueEvent
-            {
-                TypeId = TypeId,
-                SourceNumber = SourceNumber,
-                Slot = (CueSlot)Slot,
-                Variant = impact ? (byte)0 : Detail,
-                Owner = Owner,
-                Position = QuantizedPosition.Dequantize(X, Y, Z),
-                Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
-                Concealment = (Concealment)((SurfaceConcealment >> ConcealmentShift) & 3),
-                Layer = (SightLayer)(SurfaceConcealment >> LayerShift),
-                Radius = Radius * QuantizedPosition.Step,
-                Surface = (ImpactSurface)(SurfaceConcealment & SurfaceBits),
-                Material = impact ? (SurfaceMaterial)Detail : default,
-            };
-        }
+            TypeId = TypeId,
+            SourceNumber = SourceNumber,
+            Slot = (CueSlot)Slot,
+            Variant = impact ? (byte)0 : Detail,
+            Owner = Owner,
+            Position = QuantizedPosition.Dequantize(X, Y, Z),
+            Direction = new float3(level.x * cosPitch, sinPitch, level.z * cosPitch),
+            Concealment = (Concealment)((SurfaceConcealment >> ConcealmentShift) & 3),
+            Layer = (SightLayer)(SurfaceConcealment >> LayerShift),
+            Radius = Radius * QuantizedPosition.Step,
+            Surface = (ImpactSurface)(SurfaceConcealment & SurfaceBits),
+            Material = impact ? (SurfaceMaterial)Detail : default,
+        };
     }
 }

@@ -3,95 +3,94 @@ using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Grid
+namespace HyperRTS.Simulation.Navigation.Grid;
+
+/// <summary>
+/// The cells each recent <see cref="NavGrid.Version"/> changed, as one box per version, so a restamp re-plans only
+/// the paths that pass near it.
+/// </summary>
+public struct NavChanges
 {
-    /// <summary>
-    /// The cells each recent <see cref="NavGrid.Version"/> changed, as one box per version, so a restamp re-plans only
-    /// the paths that pass near it.
-    /// </summary>
-    public struct NavChanges
+    /// <summary>Versions remembered; a path planned further back re-plans.</summary>
+    public const int History = 64;
+
+    /// <summary>By version modulo <see cref="History"/>: the first and last changed cell, min above max for none.</summary>
+    public NativeArray<int4> Areas;
+
+    /// <summary>The cells as last stamped, kept by the restamp to compare with.</summary>
+    public NativeArray<byte> Previous;
+
+    /// <summary>First version with a recorded area: a rebuilt grid compares with nothing before it.</summary>
+    public int Since;
+
+    public static NavChanges Create(int cells, Allocator allocator) => new()
     {
-        /// <summary>Versions remembered; a path planned further back re-plans.</summary>
-        public const int History = 64;
+        Areas = new NativeArray<int4>(History, allocator),
+        Previous = new NativeArray<byte>(cells, allocator),
+    };
 
-        /// <summary>By version modulo <see cref="History"/>: the first and last changed cell, min above max for none.</summary>
-        public NativeArray<int4> Areas;
+    public void Dispose()
+    {
+        Areas.Dispose();
+        Previous.Dispose();
+    }
 
-        /// <summary>The cells as last stamped, kept by the restamp to compare with.</summary>
-        public NativeArray<byte> Previous;
+    /// <summary>Whether every version after <paramref name="planned"/> up to <paramref name="version"/> is recorded.</summary>
+    public readonly bool Covers(int planned, int version) => planned + 1 >= Since && version - planned <= History;
 
-        /// <summary>First version with a recorded area: a rebuilt grid compares with nothing before it.</summary>
-        public int Since;
-
-        public static NavChanges Create(int cells, Allocator allocator) => new()
+    /// <summary>Records the box round every cell that differs from <see cref="Previous"/> as this version.</summary>
+    public void Record(in NavGrid grid)
+    {
+        var min = grid.Grid.Size;
+        var max = new int2(-1);
+        for (var i = 0; i < grid.Cells.Length; i++)
         {
-            Areas = new NativeArray<int4>(History, allocator),
-            Previous = new NativeArray<byte>(cells, allocator),
-        };
-
-        public void Dispose()
-        {
-            Areas.Dispose();
-            Previous.Dispose();
+            if (Previous[i] != grid.Cells[i])
+            {
+                var cell = grid.Grid.Cell(i);
+                min = math.min(min, cell);
+                max = math.max(max, cell);
+            }
         }
 
-        /// <summary>Whether every version after <paramref name="planned"/> up to <paramref name="version"/> is recorded.</summary>
-        public readonly bool Covers(int planned, int version) => planned + 1 >= Since && version - planned <= History;
+        Areas[grid.Version % History] = new int4(min, max);
+    }
 
-        /// <summary>Records the box round every cell that differs from <see cref="Previous"/> as this version.</summary>
-        public void Record(in NavGrid grid)
+    /// <summary>Whether a segment passes within <paramref name="margin"/> of cells changed after a version.</summary>
+    public readonly bool Touches(in NavGrid grid, int planned, float2 from, float2 to, float margin)
+    {
+        for (var version = planned + 1; version <= grid.Version; version++)
         {
-            var min = grid.Grid.Size;
-            var max = new int2(-1);
-            for (var i = 0; i < grid.Cells.Length; i++)
+            var area = Areas[version % History];
+            if (math.any(area.xy > area.zw))
             {
-                if (Previous[i] != grid.Cells[i])
-                {
-                    var cell = grid.Grid.Cell(i);
-                    min = math.min(min, cell);
-                    max = math.max(max, cell);
-                }
+                continue;
             }
 
-            Areas[grid.Version % History] = new int4(min, max);
-        }
-
-        /// <summary>Whether a segment passes within <paramref name="margin"/> of cells changed after a version.</summary>
-        public readonly bool Touches(in NavGrid grid, int planned, float2 from, float2 to, float margin)
-        {
-            for (var version = planned + 1; version <= grid.Version; version++)
+            var low = grid.Grid.Min + (float2)area.xy * grid.Grid.CellSize;
+            var high = grid.Grid.Min + (float2)(area.zw + 1) * grid.Grid.CellSize;
+            if (Planar.SegmentRectDistance(from, to, low, high) <= margin)
             {
-                var area = Areas[version % History];
-                if (math.any(area.xy > area.zw))
-                {
-                    continue;
-                }
-
-                var low = grid.Grid.Min + (float2)area.xy * grid.Grid.CellSize;
-                var high = grid.Grid.Min + (float2)(area.zw + 1) * grid.Grid.CellSize;
-                if (Planar.SegmentRectDistance(from, to, low, high) <= margin)
-                {
-                    return true;
-                }
+                return true;
             }
-
-            return false;
         }
 
-        /// <summary>Whether cells changed after a version lie within the field's halo of a corridor, which can move its costs.</summary>
-        public readonly bool Touches(in NavGrid grid, int planned, in NavCorridor corridor)
+        return false;
+    }
+
+    /// <summary>Whether cells changed after a version lie within the field's halo of a corridor, which can move its costs.</summary>
+    public readonly bool Touches(in NavGrid grid, int planned, in NavCorridor corridor)
+    {
+        for (var version = planned + 1; version <= grid.Version; version++)
         {
-            for (var version = planned + 1; version <= grid.Version; version++)
+            var area = Areas[version % History];
+            var changed = math.all(area.xy <= area.zw);
+            if (changed && corridor.Touches(area.xy, area.zw, grid.Field.ReachCells))
             {
-                var area = Areas[version % History];
-                var changed = math.all(area.xy <= area.zw);
-                if (changed && corridor.Touches(area.xy, area.zw, grid.Field.ReachCells))
-                {
-                    return true;
-                }
+                return true;
             }
-
-            return false;
         }
+
+        return false;
     }
 }

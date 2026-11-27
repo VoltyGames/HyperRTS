@@ -1,11 +1,10 @@
-namespace HyperRTS.Simulation.Common
+namespace HyperRTS.Simulation.Common;
+
+/// <summary>The terrain shader's detail step: one sample, hex tiling, micro detail and triplanar, then parallax.</summary>
+public enum TerrainQuality
 {
-    /// <summary>The terrain shader's detail step: one sample, hex tiling, micro detail and triplanar, then parallax.</summary>
-    public enum TerrainQuality
-    {
-        Low,
-        Medium,
-        High,
-        Ultra,
-    }
+    Low,
+    Medium,
+    High,
+    Ultra,
 }

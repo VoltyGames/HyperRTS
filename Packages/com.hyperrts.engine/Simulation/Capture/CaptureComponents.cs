@@ -2,36 +2,35 @@ using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using Unity.Netcode;
 
-namespace HyperRTS.Simulation.Capture
+namespace HyperRTS.Simulation.Capture;
+
+/// <summary>A building other players can take over.</summary>
+public struct Capturable : IComponentData
 {
-    /// <summary>A building other players can take over.</summary>
-    public struct Capturable : IComponentData
-    {
-        public float CaptureTime;
-    }
+    public float CaptureTime;
+}
 
-    /// <summary>Captures <see cref="Capturable"/> buildings through Capture orders.</summary>
-    public struct Capturer : IComponentData
-    {
-        public float Rate;
-        public bool ConsumedOnCapture;
-    }
+/// <summary>Captures <see cref="Capturable"/> buildings through Capture orders.</summary>
+public struct Capturer : IComponentData
+{
+    public float Rate;
+    public bool ConsumedOnCapture;
+}
 
-    /// <summary>Capture under way: who is capturing and how far (0..1); resets when another player starts.</summary>
-    public struct CaptureProgress : IComponentData
-    {
-        [GhostField] public byte Owner;
-        [GhostField(Quantization = 1000)] public float Value;
+/// <summary>Capture under way: who is capturing and how far (0..1); resets when another player starts.</summary>
+public struct CaptureProgress : IComponentData
+{
+    [GhostField] public byte Owner;
+    [GhostField(Quantization = 1000)] public float Value;
 
-        /// <summary>Someone other than <paramref name="owner"/> has started taking the building.</summary>
-        public readonly bool IsUnderWay(byte owner)
+    /// <summary>Someone other than <paramref name="owner"/> has started taking the building.</summary>
+    public readonly bool IsUnderWay(byte owner)
+    {
+        if (Owner == Common.Players.Owner.Neutral || Owner == owner)
         {
-            if (Owner == Common.Players.Owner.Neutral || Owner == owner)
-            {
-                return false;
-            }
-
-            return Value > 0f;
+            return false;
         }
+
+        return Value > 0f;
     }
 }

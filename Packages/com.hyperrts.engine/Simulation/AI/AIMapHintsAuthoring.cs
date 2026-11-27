@@ -1,83 +1,82 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.AI
+namespace HyperRTS.Simulation.AI;
+
+/// <summary>
+/// The map's hints for the skirmish AI: expansion order and defence points per slot, attack lanes between enemy
+/// slots. A map builder writes it, one per match, in the SubScene; without it an error is logged and the bots stay
+/// idle.
+/// </summary>
+[AddComponentMenu("")]
+[Icon(HyperRTSIcons.AIMapHintsAuthoring)]
+[HelpURL(HyperRTSDocs.AI)]
+[DisallowMultipleComponent]
+public class AIMapHintsAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// The map's hints for the skirmish AI: expansion order and defence points per slot, attack lanes between enemy
-    /// slots. A map builder writes it, one per match, in the SubScene; without it an error is logged and the bots stay
-    /// idle.
-    /// </summary>
-    [AddComponentMenu("")]
-    [Icon(HyperRTSIcons.AIMapHintsAuthoring)]
-    [HelpURL(HyperRTSDocs.AI)]
-    [DisallowMultipleComponent]
-    public class AIMapHintsAuthoring : AuthoringBehaviour
+    [Serializable]
+    public class SlotHints
     {
-        [Serializable]
-        public class SlotHints
+        [Tooltip("Player slot: the owner number from 1.")]
+        public int slot;
+
+        [Tooltip("Resource node positions (x, z) by walking distance from the slot's base, main field first.")]
+        public List<Vector2> expansions = new();
+
+        [Tooltip("Where to hold the ground in front of the base (x, z), nearest the base first.")]
+        public List<Vector2> defence = new();
+    }
+
+    [Serializable]
+    public class LaneHints
+    {
+        [Tooltip("Slot whose base the lane starts at.")]
+        public int from;
+
+        [Tooltip("Slot whose base the lane leads to.")]
+        public int to;
+
+        [Tooltip("Waypoints (x, z) from the start base to the end base, neither included.")]
+        public List<Vector2> waypoints = new();
+    }
+
+    public List<SlotHints> slots = new();
+
+    public List<LaneHints> lanes = new();
+
+    public AIMapHintsData ToData()
+    {
+        var data = new AIMapHintsData();
+        foreach (var slot in slots)
         {
-            [Tooltip("Player slot: the owner number from 1.")]
-            public int slot;
-
-            [Tooltip("Resource node positions (x, z) by walking distance from the slot's base, main field first.")]
-            public List<Vector2> expansions = new();
-
-            [Tooltip("Where to hold the ground in front of the base (x, z), nearest the base first.")]
-            public List<Vector2> defence = new();
+            data.AddSlot(slot.slot, slot.expansions, slot.defence);
         }
 
-        [Serializable]
-        public class LaneHints
+        foreach (var lane in lanes)
         {
-            [Tooltip("Slot whose base the lane starts at.")]
-            public int from;
-
-            [Tooltip("Slot whose base the lane leads to.")]
-            public int to;
-
-            [Tooltip("Waypoints (x, z) from the start base to the end base, neither included.")]
-            public List<Vector2> waypoints = new();
+            data.AddLane(lane.from, lane.to, lane.waypoints);
         }
 
-        public List<SlotHints> slots = new();
+        return data;
+    }
 
-        public List<LaneHints> lanes = new();
+    public static void Add(EntityWriter writer, AIMapHintsData data)
+    {
+        writer.Add<AIMapHints>();
+        writer.AddBuffer(data.Slots);
+        writer.AddBuffer(data.Lanes);
+        writer.AddBuffer(data.Points);
+    }
 
-        public AIMapHintsData ToData()
+    public class Baker : Baker<AIMapHintsAuthoring>
+    {
+        public override void Bake(AIMapHintsAuthoring authoring)
         {
-            var data = new AIMapHintsData();
-            foreach (var slot in slots)
-            {
-                data.AddSlot(slot.slot, slot.expansions, slot.defence);
-            }
-
-            foreach (var lane in lanes)
-            {
-                data.AddLane(lane.from, lane.to, lane.waypoints);
-            }
-
-            return data;
-        }
-
-        public static void Add(EntityWriter writer, AIMapHintsData data)
-        {
-            writer.Add<AIMapHints>();
-            writer.AddBuffer(data.Slots);
-            writer.AddBuffer(data.Lanes);
-            writer.AddBuffer(data.Points);
-        }
-
-        public class Baker : Baker<AIMapHintsAuthoring>
-        {
-            public override void Bake(AIMapHintsAuthoring authoring)
-            {
-                var writer = this.Writer(TransformUsageFlags.None);
-                AIMapHintsAuthoring.Add(writer, authoring.ToData());
-            }
+            var writer = this.Writer(TransformUsageFlags.None);
+            AIMapHintsAuthoring.Add(writer, authoring.ToData());
         }
     }
 }

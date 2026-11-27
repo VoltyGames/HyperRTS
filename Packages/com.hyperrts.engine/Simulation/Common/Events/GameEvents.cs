@@ -2,75 +2,74 @@ using HyperRTS.Simulation.Common.Players;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Common.Events
+namespace HyperRTS.Simulation.Common.Events;
+
+/// <summary>
+/// Tags the singleton holding this frame's gameplay events. <c>GameEventSystem</c> clears them at the start of the
+/// order phase; later systems react to them.
+/// </summary>
+public struct GameEvents : IComponentData { }
+
+/// <summary>A producer finished a unit this frame; the unit itself appears when the frame's commands play back.</summary>
+[InternalBufferCapacity(0)]
+public struct UnitProduced : IBufferElementData
 {
-    /// <summary>
-    /// Tags the singleton holding this frame's gameplay events. <c>GameEventSystem</c> clears them at the start of the
-    /// order phase; later systems react to them.
-    /// </summary>
-    public struct GameEvents : IComponentData { }
+    public Entity Producer;
+    public Entity Prefab;
+    public byte Owner;
+    public float3 Position;
+}
 
-    /// <summary>A producer finished a unit this frame; the unit itself appears when the frame's commands play back.</summary>
-    [InternalBufferCapacity(0)]
-    public struct UnitProduced : IBufferElementData
+/// <summary>A building site was finished this frame.</summary>
+[InternalBufferCapacity(0)]
+public struct BuildingCompleted : IBufferElementData
+{
+    public Entity Building;
+    public byte Owner;
+}
+
+/// <summary>
+/// An entity changed hands this frame (capture, a game's mind control). Its <see cref="Owner"/> switches to
+/// <see cref="To"/> when the frame's commands play back; write it with <see cref="Transfer"/>.
+/// </summary>
+[InternalBufferCapacity(0)]
+public struct OwnerChanged : IBufferElementData
+{
+    public Entity Entity;
+    public byte From;
+    public byte To;
+
+    /// <summary>The one way to give an entity a new owner, so every module can react to the event.</summary>
+    public static void Transfer(EntityCommandBuffer ecb, ref EventWriter<OwnerChanged> events, Entity entity,
+        byte from, byte to)
     {
-        public Entity Producer;
-        public Entity Prefab;
-        public byte Owner;
-        public float3 Position;
+        ecb.SetComponent(entity, new Owner { Value = to });
+        events.Add(new OwnerChanged { Entity = entity, From = from, To = to });
     }
+}
 
-    /// <summary>A building site was finished this frame.</summary>
-    [InternalBufferCapacity(0)]
-    public struct BuildingCompleted : IBufferElementData
+/// <summary>A producer finished a research item this frame.</summary>
+[InternalBufferCapacity(0)]
+public struct ResearchCompleted : IBufferElementData
+{
+    public Entity Producer;
+    public Entity Prefab;
+    public byte Owner;
+}
+
+/// <summary>An owned entity lost health to a hit this frame; one per hit, so a splash adds one per victim.</summary>
+[InternalBufferCapacity(0)]
+public struct EntityDamaged : IBufferElementData
+{
+    public Entity Entity;
+    public byte Owner;
+
+    /// <summary>Raises the event for an owned entity; a neutral one raises none.</summary>
+    public static void Raise(ref EventWriter<EntityDamaged> writer, Entity entity, byte owner)
     {
-        public Entity Building;
-        public byte Owner;
-    }
-
-    /// <summary>
-    /// An entity changed hands this frame (capture, a game's mind control). Its <see cref="Owner"/> switches to
-    /// <see cref="To"/> when the frame's commands play back; write it with <see cref="Transfer"/>.
-    /// </summary>
-    [InternalBufferCapacity(0)]
-    public struct OwnerChanged : IBufferElementData
-    {
-        public Entity Entity;
-        public byte From;
-        public byte To;
-
-        /// <summary>The one way to give an entity a new owner, so every module can react to the event.</summary>
-        public static void Transfer(EntityCommandBuffer ecb, ref EventWriter<OwnerChanged> events, Entity entity,
-            byte from, byte to)
+        if (owner != Common.Players.Owner.Neutral)
         {
-            ecb.SetComponent(entity, new Owner { Value = to });
-            events.Add(new OwnerChanged { Entity = entity, From = from, To = to });
-        }
-    }
-
-    /// <summary>A producer finished a research item this frame.</summary>
-    [InternalBufferCapacity(0)]
-    public struct ResearchCompleted : IBufferElementData
-    {
-        public Entity Producer;
-        public Entity Prefab;
-        public byte Owner;
-    }
-
-    /// <summary>An owned entity lost health to a hit this frame; one per hit, so a splash adds one per victim.</summary>
-    [InternalBufferCapacity(0)]
-    public struct EntityDamaged : IBufferElementData
-    {
-        public Entity Entity;
-        public byte Owner;
-
-        /// <summary>Raises the event for an owned entity; a neutral one raises none.</summary>
-        public static void Raise(ref EventWriter<EntityDamaged> writer, Entity entity, byte owner)
-        {
-            if (owner != Common.Players.Owner.Neutral)
-            {
-                writer.Add(new EntityDamaged { Entity = entity, Owner = owner });
-            }
+            writer.Add(new EntityDamaged { Entity = entity, Owner = owner });
         }
     }
 }

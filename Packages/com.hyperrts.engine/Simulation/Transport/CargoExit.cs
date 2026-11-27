@@ -12,147 +12,146 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Transport
+namespace HyperRTS.Simulation.Transport;
+
+/// <summary>Lets passengers out around their container, or kills them with it. Writable lookups: use from one thread.</summary>
+public struct CargoExit
 {
-    /// <summary>Lets passengers out around their container, or kills them with it. Writable lookups: use from one thread.</summary>
-    public struct CargoExit
+    /// <summary>Exits spiral out by the golden angle so passengers don't stack.</summary>
+    private const float GoldenAngle = 2.39996323f;
+
+    private const int WalkableSearchRings = 8;
+
+    private ComponentLookup<Inside> _inside;
+    [ReadOnly] private ComponentLookup<PassengerStance> _saved;
+    private ComponentLookup<CombatStance> _stances;
+    private ComponentLookup<LocalTransform> _transforms;
+    [ReadOnly] private ComponentLookup<NavAgent> _agents;
+    [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
+    private ComponentLookup<Health> _health;
+    private ComponentLookup<LastAttacker> _attackers;
+    [ReadOnly] private ComponentLookup<Container> _containers;
+    [ReadOnly] private ComponentLookup<Owner> _owners;
+
+    public CargoExit(ref SystemState state)
     {
-        /// <summary>Exits spiral out by the golden angle so passengers don't stack.</summary>
-        private const float GoldenAngle = 2.39996323f;
+        _inside = state.GetComponentLookup<Inside>();
+        _saved = state.GetComponentLookup<PassengerStance>(true);
+        _stances = state.GetComponentLookup<CombatStance>();
+        _transforms = state.GetComponentLookup<LocalTransform>();
+        _agents = state.GetComponentLookup<NavAgent>(true);
+        _obstacles = state.GetComponentLookup<NavObstacle>(true);
+        _health = state.GetComponentLookup<Health>();
+        _attackers = state.GetComponentLookup<LastAttacker>();
+        _containers = state.GetComponentLookup<Container>(true);
+        _owners = state.GetComponentLookup<Owner>(true);
+    }
 
-        private const int WalkableSearchRings = 8;
+    public void Update(ref SystemState state)
+    {
+        _inside.Update(ref state);
+        _saved.Update(ref state);
+        _stances.Update(ref state);
+        _transforms.Update(ref state);
+        _agents.Update(ref state);
+        _obstacles.Update(ref state);
+        _health.Update(ref state);
+        _attackers.Update(ref state);
+        _containers.Update(ref state);
+        _owners.Update(ref state);
+    }
 
-        private ComponentLookup<Inside> _inside;
-        [ReadOnly] private ComponentLookup<PassengerStance> _saved;
-        private ComponentLookup<CombatStance> _stances;
-        private ComponentLookup<LocalTransform> _transforms;
-        [ReadOnly] private ComponentLookup<NavAgent> _agents;
-        [ReadOnly] private ComponentLookup<NavObstacle> _obstacles;
-        private ComponentLookup<Health> _health;
-        private ComponentLookup<LastAttacker> _attackers;
-        [ReadOnly] private ComponentLookup<Container> _containers;
-        [ReadOnly] private ComponentLookup<Owner> _owners;
+    /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
+    public bool IsAlive(Entity container) => Health.IsAlive(_health, container);
 
-        public CargoExit(ref SystemState state)
+    public float3 Position(Entity entity) => _transforms[entity].Position;
+
+    /// <summary>Whether the container flies over the ground its passengers would step out onto.</summary>
+    public bool IsAloft(Entity container, in NavGrid grid) =>
+        _agents.TryGetComponent(container, out var agent) && agent.IsAloft(_transforms[container].Position, grid);
+
+    public float MaxHealth(Entity unit) => _health.TryGetComponent(unit, out var health) ? health.Max : 0f;
+
+    public LastAttacker Attacker(Entity container) =>
+        _attackers.TryGetComponent(container, out var attacker) ? attacker : default;
+
+    /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1).</summary>
+    public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, in NavGrid grid)
+    {
+        for (var i = cargo.Length - 1; i >= 0; i--)
         {
-            _inside = state.GetComponentLookup<Inside>();
-            _saved = state.GetComponentLookup<PassengerStance>(true);
-            _stances = state.GetComponentLookup<CombatStance>();
-            _transforms = state.GetComponentLookup<LocalTransform>();
-            _agents = state.GetComponentLookup<NavAgent>(true);
-            _obstacles = state.GetComponentLookup<NavObstacle>(true);
-            _health = state.GetComponentLookup<Health>();
-            _attackers = state.GetComponentLookup<LastAttacker>();
-            _containers = state.GetComponentLookup<Container>(true);
-            _owners = state.GetComponentLookup<Owner>(true);
-        }
-
-        public void Update(ref SystemState state)
-        {
-            _inside.Update(ref state);
-            _saved.Update(ref state);
-            _stances.Update(ref state);
-            _transforms.Update(ref state);
-            _agents.Update(ref state);
-            _obstacles.Update(ref state);
-            _health.Update(ref state);
-            _attackers.Update(ref state);
-            _containers.Update(ref state);
-            _owners.Update(ref state);
-        }
-
-        /// <summary>Health reads through the writable lookup, so a job using this can't also take Health.</summary>
-        public bool IsAlive(Entity container) => Health.IsAlive(_health, container);
-
-        public float3 Position(Entity entity) => _transforms[entity].Position;
-
-        /// <summary>Whether the container flies over the ground its passengers would step out onto.</summary>
-        public bool IsAloft(Entity container, in NavGrid grid) =>
-            _agents.TryGetComponent(container, out var agent) && agent.IsAloft(_transforms[container].Position, grid);
-
-        public float MaxHealth(Entity unit) => _health.TryGetComponent(unit, out var health) ? health.Max : 0f;
-
-        public LastAttacker Attacker(Entity container) =>
-            _attackers.TryGetComponent(container, out var attacker) ? attacker : default;
-
-        /// <summary>Lets out passenger <paramref name="slot"/> (or all for -1).</summary>
-        public void Unload(Entity container, DynamicBuffer<Cargo> cargo, int slot, in NavGrid grid)
-        {
-            for (var i = cargo.Length - 1; i >= 0; i--)
+            if (slot >= 0 && i != slot)
             {
-                if (slot >= 0 && i != slot)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                var unit = cargo[i].Unit;
-                cargo.RemoveAt(i);
-                if (_inside.HasComponent(unit))
-                {
-                    Exit(unit, ExitPosition(container, unit, i, grid));
-                }
+            var unit = cargo[i].Unit;
+            cargo.RemoveAt(i);
+            if (_inside.HasComponent(unit))
+            {
+                Exit(unit, ExitPosition(container, unit, i, grid));
             }
         }
+    }
 
-        /// <summary>Kills every passenger as a lethal hit would: credited to whoever destroyed the container, and reported as damaged.</summary>
-        public void KillAll(Entity container, DynamicBuffer<Cargo> cargo, ref EventWriter<EntityDamaged> damaged)
+    /// <summary>Kills every passenger as a lethal hit would: credited to whoever destroyed the container, and reported as damaged.</summary>
+    public void KillAll(Entity container, DynamicBuffer<Cargo> cargo, ref EventWriter<EntityDamaged> damaged)
+    {
+        var killer = Attacker(container);
+        foreach (var item in cargo)
         {
-            var killer = Attacker(container);
-            foreach (var item in cargo)
+            if (_health.HasComponent(item.Unit))
             {
-                if (_health.HasComponent(item.Unit))
+                _health.GetRefRW(item.Unit).ValueRW.Current = 0f;
+                _attackers[item.Unit] = killer;
+                if (_owners.TryGetComponent(item.Unit, out var owner))
                 {
-                    _health.GetRefRW(item.Unit).ValueRW.Current = 0f;
-                    _attackers[item.Unit] = killer;
-                    if (_owners.TryGetComponent(item.Unit, out var owner))
-                    {
-                        EntityDamaged.Raise(ref damaged, item.Unit, owner.Value);
-                    }
+                    EntityDamaged.Raise(ref damaged, item.Unit, owner.Value);
                 }
             }
-
-            cargo.Clear();
         }
 
-        private void Exit(Entity unit, float3 position)
+        cargo.Clear();
+    }
+
+    private void Exit(Entity unit, float3 position)
+    {
+        _inside.SetComponentEnabled(unit, false);
+        if (_stances.HasComponent(unit))
         {
-            _inside.SetComponentEnabled(unit, false);
-            if (_stances.HasComponent(unit))
-            {
-                var restored = _saved.TryGetComponent(unit, out var saved) ? saved.Value : default;
-                _stances[unit] = _stances[unit].WithPost(restored, position);
-            }
-
-            var transform = _transforms[unit];
-            transform.Position = position;
-            _transforms[unit] = transform;
+            var restored = _saved.TryGetComponent(unit, out var saved) ? saved.Value : default;
+            _stances[unit] = _stances[unit].WithPost(restored, position);
         }
 
-        private float3 ExitPosition(Entity container, Entity unit, int slot, in NavGrid grid)
+        var transform = _transforms[unit];
+        transform.Position = position;
+        _transforms[unit] = transform;
+    }
+
+    private float3 ExitPosition(Entity container, Entity unit, int slot, in NavGrid grid)
+    {
+        var transform = _transforms[container];
+        var hasExit = _containers.TryGetComponent(container, out var holder) && holder.HasExit;
+        var center = hasExit ? transform.TransformPoint(holder.Exit) : transform.Position;
+        var around = hasExit ? 0f : EntityRadius.Get(container, _agents, _obstacles);
+        var distance = around + EntityRadius.Get(unit, _agents, _obstacles) + 0.5f;
+        math.sincos(slot * GoldenAngle, out var sin, out var cos);
+        var position = center + new float3(cos, 0f, sin) * distance;
+        var layer = NavAgent.GetLayer(_agents, unit);
+        if (TryFindStand(unit, grid, position, out var cell))
         {
-            var transform = _transforms[container];
-            var hasExit = _containers.TryGetComponent(container, out var holder) && holder.HasExit;
-            var center = hasExit ? transform.TransformPoint(holder.Exit) : transform.Position;
-            var around = hasExit ? 0f : EntityRadius.Get(container, _agents, _obstacles);
-            var distance = around + EntityRadius.Get(unit, _agents, _obstacles) + 0.5f;
-            math.sincos(slot * GoldenAngle, out var sin, out var cos);
-            var position = center + new float3(cos, 0f, sin) * distance;
-            var layer = NavAgent.GetLayer(_agents, unit);
-            if (TryFindStand(unit, grid, position, out var cell))
-            {
-                position.xz = grid.Grid.Center(cell);
-            }
-
-            position.y = grid.HeightFor(position, layer);
-            return position;
+            position.xz = grid.Grid.Center(cell);
         }
 
-        // A unit whose class isn't registered yet, or an aircraft, gets out where it is.
-        private readonly bool TryFindStand(Entity unit, in NavGrid grid, float3 position, out int2 cell)
-        {
-            cell = default;
-            return _agents.TryGetComponent(unit, out var agent) && agent.TryAccess(grid, out var access) &&
-                   access.TryFindNearest(grid.Grid.Cell(position), WalkableSearchRings, out cell);
-        }
+        position.y = grid.HeightFor(position, layer);
+        return position;
+    }
+
+    // A unit whose class isn't registered yet, or an aircraft, gets out where it is.
+    private readonly bool TryFindStand(Entity unit, in NavGrid grid, float3 position, out int2 cell)
+    {
+        cell = default;
+        return _agents.TryGetComponent(unit, out var agent) && agent.TryAccess(grid, out var access) &&
+               access.TryFindNearest(grid.Grid.Cell(position), WalkableSearchRings, out cell);
     }
 }

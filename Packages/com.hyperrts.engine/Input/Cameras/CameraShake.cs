@@ -5,131 +5,130 @@ using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
-namespace HyperRTS.Input.Cameras
+namespace HyperRTS.Input.Cameras;
+
+/// <summary>
+/// The camera's shake from effect bursts near its focus: summed sines under a fading envelope, capped however many
+/// bursts stack.
+/// </summary>
+[Serializable]
+public class CameraShake
 {
+    // Two unrelated frequencies per axis, so the wobble never settles into a visible rhythm.
+    private const float SlowWave = 2f * Mathf.PI * 11f;
+    private const float FastWave = 2f * Mathf.PI * 17f;
+
+    [Tooltip("Effect bursts near the focus shake the camera; a player setting.")]
+    public bool enabled = true;
+
+    [Tooltip("Most the shake moves the camera at its lowest zoom, however many bursts stack; it moves further in step with height.")]
+    [Unit("m")]
+    [Min(0.01f)]
+    public float maxOffset = 0.15f;
+
+    [Tooltip("Most degrees the shake turns the camera, reached at the full offset.")]
+    [Min(0f)]
+    public float maxAngle = 0.5f;
+
+    [Tooltip("Seconds a burst's shake takes to die out, unless its rig sets its own.")]
+    [Min(0.01f)]
+    public float duration = 0.3f;
+
+    [Tooltip("Distance from the focus at which a burst no longer shakes the camera, unless its rig sets its own.")]
+    [Unit("m")]
+    [Min(0.01f)]
+    public float reach = 30f;
+
+    // x is a jolt's amplitude in metres as it was taken, y its age and z its length in seconds.
+    private readonly List<Vector3> _jolts = new();
+    private float _time;
+    private float _zoomOut = 1f;
+
+    /// <summary>This frame's offset, applied on top of the camera's pose.</summary>
+    public Pose Offset { get; private set; } = Pose.identity;
+
     /// <summary>
-    /// The camera's shake from effect bursts near its focus: summed sines under a fading envelope, capped however many
-    /// bursts stack.
+    /// Takes the presented world's new jolts, then advances; while not <see cref="enabled"/> it drops them all.
+    /// <paramref name="zoomOut"/> is the camera's height over its lowest.
     /// </summary>
-    [Serializable]
-    public class CameraShake
+    public void Step(Vector3 focus, float zoomOut, float deltaTime)
     {
-        // Two unrelated frequencies per axis, so the wobble never settles into a visible rhythm.
-        private const float SlowWave = 2f * Mathf.PI * 11f;
-        private const float FastWave = 2f * Mathf.PI * 17f;
-
-        [Tooltip("Effect bursts near the focus shake the camera; a player setting.")]
-        public bool enabled = true;
-
-        [Tooltip("Most the shake moves the camera at its lowest zoom, however many bursts stack; it moves further in step with height.")]
-        [Unit("m")]
-        [Min(0.01f)]
-        public float maxOffset = 0.15f;
-
-        [Tooltip("Most degrees the shake turns the camera, reached at the full offset.")]
-        [Min(0f)]
-        public float maxAngle = 0.5f;
-
-        [Tooltip("Seconds a burst's shake takes to die out, unless its rig sets its own.")]
-        [Min(0.01f)]
-        public float duration = 0.3f;
-
-        [Tooltip("Distance from the focus at which a burst no longer shakes the camera, unless its rig sets its own.")]
-        [Unit("m")]
-        [Min(0.01f)]
-        public float reach = 30f;
-
-        // x is a jolt's amplitude in metres as it was taken, y its age and z its length in seconds.
-        private readonly List<Vector3> _jolts = new();
-        private float _time;
-        private float _zoomOut = 1f;
-
-        /// <summary>This frame's offset, applied on top of the camera's pose.</summary>
-        public Pose Offset { get; private set; } = Pose.identity;
-
-        /// <summary>
-        /// Takes the presented world's new jolts, then advances; while not <see cref="enabled"/> it drops them all.
-        /// <paramref name="zoomOut"/> is the camera's height over its lowest.
-        /// </summary>
-        public void Step(Vector3 focus, float zoomOut, float deltaTime)
+        if (!enabled)
         {
-            if (!enabled)
-            {
-                _jolts.Clear();
-                Offset = Pose.identity;
-                return;
-            }
-
-            // A jolt weakens with the square root of the height, so a blast is still felt at working zoom, while its
-            // offset grows with the height, so it moves the picture as far at any zoom.
-            _zoomOut = zoomOut;
-            if (TryGetWorldJolts(out var jolts))
-            {
-                foreach (var jolt in jolts)
-                {
-                    Add(jolt, focus, 1f / Mathf.Sqrt(zoomOut));
-                }
-            }
-
-            Advance(deltaTime);
+            _jolts.Clear();
+            Offset = Pose.identity;
+            return;
         }
 
-        /// <summary>
-        /// Starts a jolt, weakened by its distance from <paramref name="focus"/> and by <paramref name="closeness"/>
-        /// (1 at the closest zoom).
-        /// </summary>
-        public void Add(in CameraJolt jolt, Vector3 focus, float closeness)
+        // A jolt weakens with the square root of the height, so a blast is still felt at working zoom, while its
+        // offset grows with the height, so it moves the picture as far at any zoom.
+        _zoomOut = zoomOut;
+        if (TryGetWorldJolts(out var jolts))
         {
-            var felt = jolt.Reach > 0f ? jolt.Reach : reach;
-            var falloff = 1f - Vector3.Distance(jolt.Position, focus) / felt;
-            if (falloff > 0f)
+            foreach (var jolt in jolts)
             {
-                var seconds = jolt.Seconds > 0f ? jolt.Seconds : duration;
-                _jolts.Add(new Vector3(jolt.Strength * falloff * closeness, 0f, seconds));
+                Add(jolt, focus, 1f / Mathf.Sqrt(zoomOut));
             }
         }
 
-        /// <summary>Ages the jolts, drops those past their length and sets <see cref="Offset"/>.</summary>
-        public void Advance(float deltaTime)
-        {
-            _time += deltaTime;
-            var amplitude = 0f;
-            for (var i = _jolts.Count - 1; i >= 0; i--)
-            {
-                var jolt = _jolts[i];
-                jolt.y += deltaTime;
-                if (jolt.y >= jolt.z)
-                {
-                    _jolts.RemoveAt(i);
-                    continue;
-                }
+        Advance(deltaTime);
+    }
 
-                _jolts[i] = jolt;
-                var left = 1f - jolt.y / jolt.z;
-                amplitude += jolt.x * left * left;
+    /// <summary>
+    /// Starts a jolt, weakened by its distance from <paramref name="focus"/> and by <paramref name="closeness"/>
+    /// (1 at the closest zoom).
+    /// </summary>
+    public void Add(in CameraJolt jolt, Vector3 focus, float closeness)
+    {
+        var felt = jolt.Reach > 0f ? jolt.Reach : reach;
+        var falloff = 1f - Vector3.Distance(jolt.Position, focus) / felt;
+        if (falloff > 0f)
+        {
+            var seconds = jolt.Seconds > 0f ? jolt.Seconds : duration;
+            _jolts.Add(new Vector3(jolt.Strength * falloff * closeness, 0f, seconds));
+        }
+    }
+
+    /// <summary>Ages the jolts, drops those past their length and sets <see cref="Offset"/>.</summary>
+    public void Advance(float deltaTime)
+    {
+        _time += deltaTime;
+        var amplitude = 0f;
+        for (var i = _jolts.Count - 1; i >= 0; i--)
+        {
+            var jolt = _jolts[i];
+            jolt.y += deltaTime;
+            if (jolt.y >= jolt.z)
+            {
+                _jolts.RemoveAt(i);
+                continue;
             }
 
-            var share = Mathf.Min(amplitude, maxOffset) / maxOffset;
-            Offset = new Pose(Wobble(0f) * (share * maxOffset * _zoomOut), Quaternion.Euler(Wobble(10f) * (share * maxAngle)));
+            _jolts[i] = jolt;
+            var left = 1f - jolt.y / jolt.z;
+            amplitude += jolt.x * left * left;
         }
 
-        /// <summary>A smooth direction no longer than 1, from three phase-shifted waves.</summary>
-        private Vector3 Wobble(float phase) =>
-            Vector3.ClampMagnitude(new Vector3(Wave(phase), Wave(phase + 2f), Wave(phase + 4f)), 1f);
+        var share = Mathf.Min(amplitude, maxOffset) / maxOffset;
+        Offset = new Pose(Wobble(0f) * (share * maxOffset * _zoomOut), Quaternion.Euler(Wobble(10f) * (share * maxAngle)));
+    }
 
-        private float Wave(float phase) =>
-            0.5f * (Mathf.Sin(_time * SlowWave + phase) + Mathf.Sin(_time * FastWave + phase * 1.7f));
+    /// <summary>A smooth direction no longer than 1, from three phase-shifted waves.</summary>
+    private Vector3 Wobble(float phase) =>
+        Vector3.ClampMagnitude(new Vector3(Wave(phase), Wave(phase + 2f), Wave(phase + 4f)), 1f);
 
-        private static bool TryGetWorldJolts(out List<CameraJolt> jolts)
+    private float Wave(float phase) =>
+        0.5f * (Mathf.Sin(_time * SlowWave + phase) + Mathf.Sin(_time * FastWave + phase * 1.7f));
+
+    private static bool TryGetWorldJolts(out List<CameraJolt> jolts)
+    {
+        jolts = null;
+        if (!DefaultWorld.TryGet(out var world))
         {
-            jolts = null;
-            if (!DefaultWorld.TryGet(out var world))
-            {
-                return false;
-            }
-
-            jolts = world.GetExistingSystemManaged<EffectPoolSystem>()?.Pool.Jolts;
-            return jolts != null;
+            return false;
         }
+
+        jolts = world.GetExistingSystemManaged<EffectPoolSystem>()?.Pool.Jolts;
+        return jolts != null;
     }
 }

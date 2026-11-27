@@ -4,214 +4,213 @@ using HyperRTS.Simulation.Navigation.Sectors;
 using Unity.Collections;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Fields
+namespace HyperRTS.Simulation.Navigation.Fields;
+
+/// <summary>
+/// Signed metres from each cell centre to the nearest wall, positive in the open, per
+/// <see cref="MovementClass.FieldKey"/>. Sectors rebuild over a window with a halo, so values never depend on which
+/// others were rebuilt.
+/// </summary>
+public struct NavField
 {
-    /// <summary>
-    /// Signed metres from each cell centre to the nearest wall, positive in the open, per
-    /// <see cref="MovementClass.FieldKey"/>. Sectors rebuild over a window with a halo, so values never depend on which
-    /// others were rebuilt.
-    /// </summary>
-    public struct NavField
+    public const float MaxDistance = 8f;
+    public const int SectorCells = 16;
+    public const int SectorArea = SectorCells * SectorCells;
+
+    /// <summary>Per field slot, then per cell.</summary>
+    public NativeArray<float> Distances;
+
+    /// <summary>Sectors whose window changed since their last rebuild, marked by <see cref="NavGridSystem"/>.</summary>
+    public NativeArray<bool> DirtySectors;
+
+    public CellGrid Grid;
+
+    public SectorLayout Layout;
+
+    /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>
+    public int ReachCells;
+
+    public static NavField Create(in CellGrid grid, int keys, Allocator allocator)
     {
-        public const float MaxDistance = 8f;
-        public const int SectorCells = 16;
-        public const int SectorArea = SectorCells * SectorCells;
-
-        /// <summary>Per field slot, then per cell.</summary>
-        public NativeArray<float> Distances;
-
-        /// <summary>Sectors whose window changed since their last rebuild, marked by <see cref="NavGridSystem"/>.</summary>
-        public NativeArray<bool> DirtySectors;
-
-        public CellGrid Grid;
-
-        public SectorLayout Layout;
-
-        /// <summary>Cells round a sector that can bring a wall within <see cref="MaxDistance"/> of it.</summary>
-        public int ReachCells;
-
-        public static NavField Create(in CellGrid grid, int keys, Allocator allocator)
+        var layout = SectorLayout.Covering(grid.Size);
+        var field = new NavField
         {
-            var layout = SectorLayout.Covering(grid.Size);
-            var field = new NavField
+            Distances = new NativeArray<float>(keys * grid.Count, allocator),
+            DirtySectors = new NativeArray<bool>(layout.Total, allocator),
+            Grid = grid,
+            Layout = layout,
+            ReachCells = (int)math.ceil(MaxDistance / grid.CellSize + 0.5f),
+        };
+        field.MarkDirty(int2.zero, grid.Size - 1);
+        return field;
+    }
+
+    public void Dispose()
+    {
+        Distances.Dispose();
+        DirtySectors.Dispose();
+    }
+
+    public readonly int CellCount => Grid.Count;
+
+    /// <summary>Field slots allocated; a new key needs <see cref="Grow"/> and a full build.</summary>
+    public readonly int SlotCount => Distances.Length / CellCount;
+
+    /// <summary>The window side every rebuild solves.</summary>
+    public readonly int WindowSide => SectorCells + ReachCells * 2;
+
+    /// <summary>The value at a cell centre; a closed half cell off the map.</summary>
+    public readonly float At(int slot, int2 cell)
+    {
+        if (!Grid.Contains(cell))
+        {
+            return Grid.CellSize * -0.5f;
+        }
+
+        return Distances[slot * CellCount + Grid.Index(cell)];
+    }
+
+    /// <summary>Whether a cell centre keeps <paramref name="radius"/> from walls, less the shared skin.</summary>
+    public readonly bool IsOpen(int slot, int2 cell, float radius) =>
+        At(slot, cell) >= radius - NavTolerances.WallOverlap;
+
+    /// <summary>Bilinear between the four nearest cell centres.</summary>
+    public readonly float Sample(int slot, float2 position) =>
+        Bilinear(new SlotValues(this, slot), Grid, position);
+
+    /// <summary>Bilinear between the four cell centres of a grid nearest a point.</summary>
+    internal static float Bilinear<T>(in T values, in CellGrid grid, float2 position)
+        where T : struct, ICellValues
+    {
+        var p = grid.Local(position) - 0.5f;
+        var cell = (int2)math.floor(p);
+        var t = p - cell;
+        var low = math.lerp(values.At(cell), values.At(cell + new int2(1, 0)), t.x);
+        var high = math.lerp(values.At(cell + new int2(0, 1)), values.At(cell + 1), t.x);
+        return math.lerp(low, high, t.y);
+    }
+
+    /// <summary>The way out of the nearest wall: the field's gradient, normalised.</summary>
+    public readonly float2 Normal(int slot, float2 position)
+    {
+        // Central differences half a cell out, so the slope is even on both sides of a cell row.
+        var h = Grid.CellSize * 0.5f;
+        var dx = Sample(slot, position + new float2(h, 0f)) - Sample(slot, position - new float2(h, 0f));
+        var dz = Sample(slot, position + new float2(0f, h)) - Sample(slot, position - new float2(0f, h));
+        return math.normalizesafe(new float2(dx, dz));
+    }
+
+    /// <summary>Marks every sector whose window holds a cell of the box, so its values get rebuilt.</summary>
+    public void MarkDirty(int2 min, int2 max)
+    {
+        Layout.Range(min, max, ReachCells, out var low, out var high);
+        foreach (var sector in new CellRange(low, high))
+        {
+            DirtySectors[sector.y * Layout.Count.x + sector.x] = true;
+        }
+    }
+
+    /// <summary>Marks the sectors round every cell whose value differs from before, then copies the values over.</summary>
+    public void MarkChanges(in NativeArray<byte> current, NativeArray<byte> previous)
+    {
+        for (var i = 0; i < current.Length; i++)
+        {
+            if (current[i] != previous[i])
             {
-                Distances = new NativeArray<float>(keys * grid.Count, allocator),
-                DirtySectors = new NativeArray<bool>(layout.Total, allocator),
-                Grid = grid,
-                Layout = layout,
-                ReachCells = (int)math.ceil(MaxDistance / grid.CellSize + 0.5f),
-            };
-            field.MarkDirty(int2.zero, grid.Size - 1);
-            return field;
-        }
-
-        public void Dispose()
-        {
-            Distances.Dispose();
-            DirtySectors.Dispose();
-        }
-
-        public readonly int CellCount => Grid.Count;
-
-        /// <summary>Field slots allocated; a new key needs <see cref="Grow"/> and a full build.</summary>
-        public readonly int SlotCount => Distances.Length / CellCount;
-
-        /// <summary>The window side every rebuild solves.</summary>
-        public readonly int WindowSide => SectorCells + ReachCells * 2;
-
-        /// <summary>The value at a cell centre; a closed half cell off the map.</summary>
-        public readonly float At(int slot, int2 cell)
-        {
-            if (!Grid.Contains(cell))
-            {
-                return Grid.CellSize * -0.5f;
-            }
-
-            return Distances[slot * CellCount + Grid.Index(cell)];
-        }
-
-        /// <summary>Whether a cell centre keeps <paramref name="radius"/> from walls, less the shared skin.</summary>
-        public readonly bool IsOpen(int slot, int2 cell, float radius) =>
-            At(slot, cell) >= radius - NavTolerances.WallOverlap;
-
-        /// <summary>Bilinear between the four nearest cell centres.</summary>
-        public readonly float Sample(int slot, float2 position) =>
-            Bilinear(new SlotValues(this, slot), Grid, position);
-
-        /// <summary>Bilinear between the four cell centres of a grid nearest a point.</summary>
-        internal static float Bilinear<T>(in T values, in CellGrid grid, float2 position)
-            where T : struct, ICellValues
-        {
-            var p = grid.Local(position) - 0.5f;
-            var cell = (int2)math.floor(p);
-            var t = p - cell;
-            var low = math.lerp(values.At(cell), values.At(cell + new int2(1, 0)), t.x);
-            var high = math.lerp(values.At(cell + new int2(0, 1)), values.At(cell + 1), t.x);
-            return math.lerp(low, high, t.y);
-        }
-
-        /// <summary>The way out of the nearest wall: the field's gradient, normalised.</summary>
-        public readonly float2 Normal(int slot, float2 position)
-        {
-            // Central differences half a cell out, so the slope is even on both sides of a cell row.
-            var h = Grid.CellSize * 0.5f;
-            var dx = Sample(slot, position + new float2(h, 0f)) - Sample(slot, position - new float2(h, 0f));
-            var dz = Sample(slot, position + new float2(0f, h)) - Sample(slot, position - new float2(0f, h));
-            return math.normalizesafe(new float2(dx, dz));
-        }
-
-        /// <summary>Marks every sector whose window holds a cell of the box, so its values get rebuilt.</summary>
-        public void MarkDirty(int2 min, int2 max)
-        {
-            Layout.Range(min, max, ReachCells, out var low, out var high);
-            foreach (var sector in new CellRange(low, high))
-            {
-                DirtySectors[sector.y * Layout.Count.x + sector.x] = true;
+                var cell = Grid.Cell(i);
+                MarkDirty(cell, cell);
+                previous[i] = current[i];
             }
         }
+    }
 
-        /// <summary>Marks the sectors round every cell whose value differs from before, then copies the values over.</summary>
-        public void MarkChanges(in NativeArray<byte> current, NativeArray<byte> previous)
+    /// <summary>Reallocates for more field slots, keeping the built ones.</summary>
+    public void Grow(int keys, Allocator allocator)
+    {
+        var grown = new NativeArray<float>(keys * CellCount, allocator);
+        NativeArray<float>.Copy(Distances, grown, Distances.Length);
+        Distances.Dispose();
+        Distances = grown;
+    }
+
+    /// <summary>Solves one key over one sector and stores it. Not for parallel jobs.</summary>
+    public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
+        int sector, ref DistanceTransform transform)
+    {
+        var values = new FixedList4096Bytes<float>();
+        Solve(cells, scenery, key, sector, ref transform, ref values);
+        Store(slot, sector, values);
+    }
+
+    /// <summary>
+    /// Solves one key over one sector into <paramref name="values"/>, <see cref="SectorArea"/> values one per cell
+    /// row by row, for <see cref="Store"/>, so parallel jobs write only their own block.
+    /// </summary>
+    public readonly void Solve(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key,
+        int sector, ref DistanceTransform transform, ref FixedList4096Bytes<float> values)
+    {
+        var first = Layout.Origin(sector);
+        var origin = first - ReachCells;
+        var side = transform.Side;
+        for (var i = 0; i < transform.Closed.Length; i++)
         {
-            for (var i = 0; i < current.Length; i++)
+            var cell = origin + new int2(i % side, i / side);
+            var index = Grid.Index(cell);
+            transform.Closed[i] = !Grid.Contains(cell) || key.Blocks((NavSurface)cells[index], scenery[index]);
+        }
+
+        values.Length = SectorArea;
+        transform.Solve(true);
+        Fill(ref values, first, transform, true);
+        transform.Solve(false);
+        Fill(ref values, first, transform, false);
+    }
+
+    /// <summary>Stores the values <see cref="Solve"/> wrote for one slot and sector.</summary>
+    public void Store(int slot, int sector, in FixedList4096Bytes<float> values)
+    {
+        var first = Layout.Origin(sector);
+        var width = math.min(SectorCells, Grid.Size.x - first.x);
+        var rows = math.min(SectorCells, Grid.Size.y - first.y);
+        for (var row = 0; row < rows; row++)
+        {
+            var destination = slot * CellCount + Grid.Index(first + new int2(0, row));
+            for (var column = 0; column < width; column++)
             {
-                if (current[i] != previous[i])
-                {
-                    var cell = Grid.Cell(i);
-                    MarkDirty(cell, cell);
-                    previous[i] = current[i];
-                }
+                Distances[destination + column] = values[row * SectorCells + column];
             }
         }
+    }
 
-        /// <summary>Reallocates for more field slots, keeping the built ones.</summary>
-        public void Grow(int keys, Allocator allocator)
+    // From centre distance to edge distance: half a cell less, signed by side, within the cap.
+    private readonly void Fill(ref FixedList4096Bytes<float> values, int2 first, in DistanceTransform transform,
+        bool open)
+    {
+        var origin = first - ReachCells;
+        foreach (var cell in Grid.Cells(first, first + SectorCells - 1))
         {
-            var grown = new NativeArray<float>(keys * CellCount, allocator);
-            NativeArray<float>.Copy(Distances, grown, Distances.Length);
-            Distances.Dispose();
-            Distances = grown;
-        }
-
-        /// <summary>Solves one key over one sector and stores it. Not for parallel jobs.</summary>
-        public void Rebuild(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key, int slot,
-            int sector, ref DistanceTransform transform)
-        {
-            var values = new FixedList4096Bytes<float>();
-            Solve(cells, scenery, key, sector, ref transform, ref values);
-            Store(slot, sector, values);
-        }
-
-        /// <summary>
-        /// Solves one key over one sector into <paramref name="values"/>, <see cref="SectorArea"/> values one per cell
-        /// row by row, for <see cref="Store"/>, so parallel jobs write only their own block.
-        /// </summary>
-        public readonly void Solve(in NativeArray<byte> cells, in NativeArray<byte> scenery, in MovementClass key,
-            int sector, ref DistanceTransform transform, ref FixedList4096Bytes<float> values)
-        {
-            var first = Layout.Origin(sector);
-            var origin = first - ReachCells;
-            var side = transform.Side;
-            for (var i = 0; i < transform.Closed.Length; i++)
+            var window = (cell.y - origin.y) * transform.Side + (cell.x - origin.x);
+            if (transform.Closed[window] == open)
             {
-                var cell = origin + new int2(i % side, i / side);
-                var index = Grid.Index(cell);
-                transform.Closed[i] = !Grid.Contains(cell) || key.Blocks((NavSurface)cells[index], scenery[index]);
+                continue;
             }
 
-            values.Length = SectorArea;
-            transform.Solve(true);
-            Fill(ref values, first, transform, true);
-            transform.Solve(false);
-            Fill(ref values, first, transform, false);
+            var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Grid.CellSize, MaxDistance);
+            values[(cell.y - first.y) * SectorCells + cell.x - first.x] = open ? edge : -edge;
         }
+    }
 
-        /// <summary>Stores the values <see cref="Solve"/> wrote for one slot and sector.</summary>
-        public void Store(int slot, int sector, in FixedList4096Bytes<float> values)
+    private readonly struct SlotValues : ICellValues
+    {
+        private readonly NavField _field;
+        private readonly int _slot;
+
+        public SlotValues(in NavField field, int slot)
         {
-            var first = Layout.Origin(sector);
-            var width = math.min(SectorCells, Grid.Size.x - first.x);
-            var rows = math.min(SectorCells, Grid.Size.y - first.y);
-            for (var row = 0; row < rows; row++)
-            {
-                var destination = slot * CellCount + Grid.Index(first + new int2(0, row));
-                for (var column = 0; column < width; column++)
-                {
-                    Distances[destination + column] = values[row * SectorCells + column];
-                }
-            }
+            _field = field;
+            _slot = slot;
         }
 
-        // From centre distance to edge distance: half a cell less, signed by side, within the cap.
-        private readonly void Fill(ref FixedList4096Bytes<float> values, int2 first, in DistanceTransform transform,
-            bool open)
-        {
-            var origin = first - ReachCells;
-            foreach (var cell in Grid.Cells(first, first + SectorCells - 1))
-            {
-                var window = (cell.y - origin.y) * transform.Side + (cell.x - origin.x);
-                if (transform.Closed[window] == open)
-                {
-                    continue;
-                }
-
-                var edge = math.min((math.sqrt(transform.Squared(window)) - 0.5f) * Grid.CellSize, MaxDistance);
-                values[(cell.y - first.y) * SectorCells + cell.x - first.x] = open ? edge : -edge;
-            }
-        }
-
-        private readonly struct SlotValues : ICellValues
-        {
-            private readonly NavField _field;
-            private readonly int _slot;
-
-            public SlotValues(in NavField field, int slot)
-            {
-                _field = field;
-                _slot = slot;
-            }
-
-            public float At(int2 cell) => _field.At(_slot, cell);
-        }
+        public float At(int2 cell) => _field.At(_slot, cell);
     }
 }

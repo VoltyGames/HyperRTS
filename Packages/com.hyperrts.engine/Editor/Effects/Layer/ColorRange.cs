@@ -1,13 +1,12 @@
 using System;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Effects.Layer
+namespace HyperRTS.Editor.Effects.Layer;
+
+/// <summary>A start colour picked per particle between min and max, in linear HDR values.</summary>
+[Serializable]
+public struct ColorRange
 {
-    /// <summary>A start colour picked per particle between min and max, in linear HDR values.</summary>
-    [Serializable]
-    public struct ColorRange
-    {
-        [ColorUsage(true, true)] public Color min;
-        [ColorUsage(true, true)] public Color max;
-    }
+    [ColorUsage(true, true)] public Color min;
+    [ColorUsage(true, true)] public Color max;
 }

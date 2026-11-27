@@ -3,19 +3,18 @@ using HyperRTS.Simulation.GameEntities;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Authoring
+namespace HyperRTS.Editor.Authoring;
+
+/// <summary>Adds a draggable radius handle to the entity inspector.</summary>
+[CustomEditor(typeof(UnitAuthoring), true)]
+[CanEditMultipleObjects]
+public class UnitAuthoringEditor : GameEntityAuthoringEditor
 {
-    /// <summary>Adds a draggable radius handle to the entity inspector.</summary>
-    [CustomEditor(typeof(UnitAuthoring), true)]
-    [CanEditMultipleObjects]
-    public class UnitAuthoringEditor : GameEntityAuthoringEditor
+    protected override Action ShapeHandle(Vector3 center, Color color)
     {
-        protected override Action ShapeHandle(Vector3 center, Color color)
-        {
-            var unit = (UnitAuthoring)target;
-            var radius = GroundHandles.Radius(center, unit.radius,
-                new GroundHandles.RadiusDot(color, "Radius", GroundHandles.RadiusAngle));
-            return () => unit.radius = Mathf.Max(0.05f, radius);
-        }
+        var unit = (UnitAuthoring)target;
+        var radius = GroundHandles.Radius(center, unit.radius,
+            new GroundHandles.RadiusDot(color, "Radius", GroundHandles.RadiusAngle));
+        return () => unit.radius = Mathf.Max(0.05f, radius);
     }
 }

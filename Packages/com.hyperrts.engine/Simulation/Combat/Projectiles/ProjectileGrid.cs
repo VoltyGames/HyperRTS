@@ -1,96 +1,95 @@
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Cells;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Players;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat.Projectiles
+namespace HyperRTS.Simulation.Combat.Projectiles;
+
+/// <summary>
+/// The projectiles an interceptor could shoot, filed by map cell once per frame so each looks only at the cells
+/// round it. A projectile files where it is and where it is headed, so a turret tracks a shot before it arrives.
+/// </summary>
+public struct ProjectileGrid
 {
-    /// <summary>
-    /// The projectiles an interceptor could shoot, filed by map cell once per frame so each looks only at the cells
-    /// round it. A projectile files where it is and where it is headed, so a turret tracks a shot before it arrives.
-    /// </summary>
-    public struct ProjectileGrid
+    private const float CellSize = 16f;
+
+    private NativeParallelMultiHashMap<int2, Entry> _cells;
+
+    public ProjectileGrid(int projectileCount, AllocatorManager.AllocatorHandle allocator)
     {
-        private const float CellSize = 16f;
+        _cells = new NativeParallelMultiHashMap<int2, Entry>(math.max(1, projectileCount) * 2, allocator);
+    }
 
-        private NativeParallelMultiHashMap<int2, Entry> _cells;
-
-        public ProjectileGrid(int projectileCount, AllocatorManager.AllocatorHandle allocator)
+    /// <summary>Files a projectile that interceptors may engage; a downed one, or one of no kind, is left out.</summary>
+    public void Add(Entity entity, in Projectile projectile, float3 position)
+    {
+        if (projectile.Kind == ProjectileKind.None || projectile.Intercepted)
         {
-            _cells = new NativeParallelMultiHashMap<int2, Entry>(math.max(1, projectileCount) * 2, allocator);
+            return;
         }
 
-        /// <summary>Files a projectile that interceptors may engage; a downed one, or one of no kind, is left out.</summary>
-        public void Add(Entity entity, in Projectile projectile, float3 position)
+        var entry = new Entry
         {
-            if (projectile.Kind == ProjectileKind.None || projectile.Intercepted)
-            {
-                return;
-            }
-
-            var entry = new Entry
-            {
-                Entity = entity,
-                Position = position,
-                Aim = projectile.Hit.Position,
-                Kind = projectile.Kind,
-                Owner = projectile.Hit.SourceOwner,
-            };
-            var here = Cell(position);
-            var there = Cell(entry.Aim);
-            _cells.Add(here, entry);
-            if (!there.Equals(here))
-            {
-                _cells.Add(there, entry);
-            }
+            Entity = entity,
+            Position = position,
+            Aim = projectile.Hit.Position,
+            Kind = projectile.Kind,
+            Owner = projectile.Hit.SourceOwner,
+        };
+        var here = Cell(position);
+        var there = Cell(entry.Aim);
+        _cells.Add(here, entry);
+        if (!there.Equals(here))
+        {
+            _cells.Add(there, entry);
         }
+    }
 
-        /// <summary>
-        /// The nearest hostile projectile of a kind <paramref name="weapon"/> engages inside its range, else the nearest
-        /// one aimed inside it; <c>Entity.Null</c> for none.
-        /// </summary>
-        public readonly Entity Nearest(float3 center, in Weapon weapon, byte owner, in OwnerRelations relations)
+    /// <summary>
+    /// The nearest hostile projectile of a kind <paramref name="weapon"/> engages inside its range, else the nearest
+    /// one aimed inside it; <c>Entity.Null</c> for none.
+    /// </summary>
+    public readonly Entity Nearest(float3 center, in Weapon weapon, byte owner, in OwnerRelations relations)
+    {
+        var near = Closest.None;
+        var inbound = Closest.None;
+        var min = Cell(center - weapon.Range);
+        var max = Cell(center + weapon.Range);
+        foreach (var cell in new CellRange(min, max))
         {
-            var near = Closest.None;
-            var inbound = Closest.None;
-            var min = Cell(center - weapon.Range);
-            var max = Cell(center + weapon.Range);
-            foreach (var cell in new CellRange(min, max))
+            foreach (var entry in _cells.GetValuesForKey(cell))
             {
-                foreach (var entry in _cells.GetValuesForKey(cell))
+                if (!weapon.Engages(entry.Kind) || !relations.IsHostile(owner, entry.Owner))
                 {
-                    if (!weapon.Engages(entry.Kind) || !relations.IsHostile(owner, entry.Owner))
-                    {
-                        continue;
-                    }
+                    continue;
+                }
 
-                    var distanceSq = math.distancesq(entry.Position, center);
-                    if (weapon.ReachesInFlight(center, entry.Position))
-                    {
-                        near.Consider(0, entry.Entity, distanceSq);
-                    }
-                    else if (weapon.ReachesInFlight(center, entry.Aim))
-                    {
-                        inbound.Consider(0, entry.Entity, distanceSq);
-                    }
+                var distanceSq = math.distancesq(entry.Position, center);
+                if (weapon.ReachesInFlight(center, entry.Position))
+                {
+                    near.Consider(0, entry.Entity, distanceSq);
+                }
+                else if (weapon.ReachesInFlight(center, entry.Aim))
+                {
+                    inbound.Consider(0, entry.Entity, distanceSq);
                 }
             }
-
-            return near.Found ? near.Entity : inbound.Entity;
         }
 
-        private static int2 Cell(float3 position) => (int2)math.floor(position.xz / CellSize);
+        return near.Found ? near.Entity : inbound.Entity;
+    }
 
-        private struct Entry
-        {
-            public Entity Entity;
-            public float3 Position;
-            public float3 Aim;
-            public ProjectileKind Kind;
-            public byte Owner;
-        }
+    private static int2 Cell(float3 position) => (int2)math.floor(position.xz / CellSize);
+
+    private struct Entry
+    {
+        public Entity Entity;
+        public float3 Position;
+        public float3 Aim;
+        public ProjectileKind Kind;
+        public byte Owner;
     }
 }

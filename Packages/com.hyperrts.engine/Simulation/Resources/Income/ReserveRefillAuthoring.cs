@@ -2,38 +2,37 @@ using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Resources.Income
+namespace HyperRTS.Simulation.Resources.Income;
+
+/// <summary>Tops up the owner's finite income reserves of one resource while this entity is owned and online.</summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Resources/Reserve Refill")]
+[Icon(HyperRTSIcons.ReserveRefillAuthoring)]
+[HelpURL(HyperRTSDocs.Resources)]
+[DisallowMultipleComponent]
+public class ReserveRefillAuthoring : AuthoringBehaviour
 {
-    /// <summary>Tops up the owner's finite income reserves of one resource while this entity is owned and online.</summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Reserve Refill")]
-    [Icon(HyperRTSIcons.ReserveRefillAuthoring)]
-    [HelpURL(HyperRTSDocs.Resources)]
-    [DisallowMultipleComponent]
-    public class ReserveRefillAuthoring : AuthoringBehaviour
+    [Tooltip("Resource whose income reserves are refilled.")]
+    public ResourceType type;
+
+    [Tooltip("Amount added to each reserve every interval, up to its capacity.")]
+    [Min(1)]
+    public int amount = 10;
+
+    [Tooltip("Seconds between refills.")]
+    [Min(0.1f)]
+    public float interval = 5f;
+
+    public class Baker : Baker<ReserveRefillAuthoring>
     {
-        [Tooltip("Resource whose income reserves are refilled.")]
-        public ResourceType type;
-
-        [Tooltip("Amount added to each reserve every interval, up to its capacity.")]
-        [Min(1)]
-        public int amount = 10;
-
-        [Tooltip("Seconds between refills.")]
-        [Min(0.1f)]
-        public float interval = 5f;
-
-        public class Baker : Baker<ReserveRefillAuthoring>
+        public override void Bake(ReserveRefillAuthoring authoring)
         {
-            public override void Bake(ReserveRefillAuthoring authoring)
+            var writer = this.Writer();
+            writer.Add(new ReserveRefill
             {
-                var writer = this.Writer();
-                writer.Add(new ReserveRefill
-                {
-                    Type = authoring.type,
-                    Amount = authoring.amount,
-                    Interval = authoring.interval,
-                });
-            }
+                Type = authoring.type,
+                Amount = authoring.amount,
+                Interval = authoring.interval,
+            });
         }
     }
 }

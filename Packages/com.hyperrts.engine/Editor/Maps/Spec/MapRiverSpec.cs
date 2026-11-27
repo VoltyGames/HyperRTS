@@ -1,33 +1,32 @@
 using System;
 using System.Collections.Generic;
 
-namespace HyperRTS.Editor.Maps.Spec
+namespace HyperRTS.Editor.Maps.Spec;
+
+/// <summary>
+/// A river cut below the water level along a smoothed, meandering polyline, with sloped banks out to
+/// <see cref="valleyWidth"/>.
+/// </summary>
+[Serializable]
+[MapFeature("river", 70, 0.25f, 0.5f, 0.95f)]
+public sealed class MapRiverSpec : MapFeatureSpec, IMapLine
 {
-    /// <summary>
-    /// A river cut below the water level along a smoothed, meandering polyline, with sloped banks out to
-    /// <see cref="valleyWidth"/>.
-    /// </summary>
-    [Serializable]
-    [MapFeature("river", 70, 0.25f, 0.5f, 0.95f)]
-    public sealed class MapRiverSpec : MapFeatureSpec, IMapLine
-    {
-        public List<MapPoint> points = new();
-        public float width = 14f;
+    public List<MapPoint> points = new();
+    public float width = 14f;
 
-        /// <summary>Depth of the bed below the water level.</summary>
-        public float depth = 2f;
+    /// <summary>Depth of the bed below the water level.</summary>
+    public float depth = 2f;
 
-        /// <summary>Full width of the valley the river runs in; the ground eases down to the banks across it.</summary>
-        public float valleyWidth = 60f;
+    /// <summary>Full width of the valley the river runs in; the ground eases down to the banks across it.</summary>
+    public float valleyWidth = 60f;
 
-        /// <summary>How far (metres) the channel wanders either side of the authored line; 0 follows it exactly.</summary>
-        public float meander = 6f;
+    /// <summary>How far (metres) the channel wanders either side of the authored line; 0 follows it exactly.</summary>
+    public float meander = 6f;
 
-        /// <summary>How much the width swells and narrows along the river (0 to 1).</summary>
-        public float widthVariation = 0.25f;
+    /// <summary>How much the width swells and narrows along the river (0 to 1).</summary>
+    public float widthVariation = 0.25f;
 
-        public List<MapCrossingSpec> crossings = new();
+    public List<MapCrossingSpec> crossings = new();
 
-        public List<MapPoint> Points => points;
-    }
+    public List<MapPoint> Points => points;
 }

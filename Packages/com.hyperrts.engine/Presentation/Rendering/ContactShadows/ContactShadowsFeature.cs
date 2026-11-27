@@ -1,115 +1,114 @@
-using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Presentation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
-namespace HyperRTS.Presentation.Rendering.ContactShadows
+namespace HyperRTS.Presentation.Rendering.ContactShadows;
+
+/// <summary>
+/// Short sun shadows where small things meet the ground, traced from the depth buffer into URP's screen-space shadows.
+/// Needs URP's Screen Space Shadows feature and a forward renderer.
+/// </summary>
+public sealed class ContactShadowsFeature : ScriptableRendererFeature
 {
-    /// <summary>
-    /// Short sun shadows where small things meet the ground, traced from the depth buffer into URP's screen-space shadows.
-    /// Needs URP's Screen Space Shadows feature and a forward renderer.
-    /// </summary>
-    public sealed class ContactShadowsFeature : ScriptableRendererFeature
+    [Tooltip("Metres traced toward the sun from each pixel.")]
+    public float length = 1f;
+
+    [Tooltip("Depth samples along the trace.")]
+    public int steps = 12;
+
+    [Tooltip("Metres an occluder in the depth buffer is taken to extend behind its surface.")]
+    public float thickness = 0.4f;
+
+    [Tooltip("How dark a contact shadow is, 0 to 1, scaled by the sun's shadow strength.")]
+    public float strength = 1f;
+
+    [Tooltip("View depth where contact shadows start to fade, since a short trace is under a pixel far off.")]
+    [Unit("m")]
+    public float fadeStart = 60f;
+
+    [Tooltip("View depth past which contact shadows are gone.")]
+    [Unit("m")]
+    public float fadeEnd = 80f;
+
+    [Tooltip("Lowest quality level index the shadows run at, so cheaper levels skip them.")]
+    public int lowestQualityLevel = 1;
+
+    private Material _material;
+    private ContactShadowsPass _pass;
+
+    /// <summary>Why the settings can't trace, or empty when they can.</summary>
+    public string SettingsProblem()
     {
-        [Tooltip("Metres traced toward the sun from each pixel.")]
-        public float length = 1f;
-
-        [Tooltip("Depth samples along the trace.")]
-        public int steps = 12;
-
-        [Tooltip("Metres an occluder in the depth buffer is taken to extend behind its surface.")]
-        public float thickness = 0.4f;
-
-        [Tooltip("How dark a contact shadow is, 0 to 1, scaled by the sun's shadow strength.")]
-        public float strength = 1f;
-
-        [Tooltip("View depth where contact shadows start to fade, since a short trace is under a pixel far off.")]
-        [Unit("m")]
-        public float fadeStart = 60f;
-
-        [Tooltip("View depth past which contact shadows are gone.")]
-        [Unit("m")]
-        public float fadeEnd = 80f;
-
-        [Tooltip("Lowest quality level index the shadows run at, so cheaper levels skip them.")]
-        public int lowestQualityLevel = 1;
-
-        private Material _material;
-        private ContactShadowsPass _pass;
-
-        /// <summary>Why the settings can't trace, or empty when they can.</summary>
-        public string SettingsProblem()
+        if (length <= 0f)
         {
-            if (length <= 0f)
-            {
-                return $"Contact shadow length {length} must be above 0.";
-            }
-
-            if (steps < 1)
-            {
-                return $"Contact shadow steps {steps} must be at least 1.";
-            }
-
-            if (thickness <= 0f)
-            {
-                return $"Contact shadow thickness {thickness} must be above 0.";
-            }
-
-            if (strength is < 0f or > 1f)
-            {
-                return $"Contact shadow strength {strength} must be 0 to 1.";
-            }
-
-            return fadeStart < 0f || fadeEnd <= fadeStart
-                ? $"Contact shadow fade {fadeStart} to {fadeEnd} m must start at 0 or more and end past its start."
-                : string.Empty;
+            return $"Contact shadow length {length} must be above 0.";
         }
 
-        public bool RunsAt(int qualityLevel) => qualityLevel >= lowestQualityLevel;
-
-        public override void Create()
+        if (steps < 1)
         {
-            _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().ContactShadows);
-            _pass = new ContactShadowsPass(_material);
+            return $"Contact shadow steps {steps} must be at least 1.";
         }
 
-        public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+        if (thickness <= 0f)
         {
-            if (!Traces(ref renderingData))
-            {
-                return;
-            }
-
-            var sun = renderingData.lightData.visibleLights[renderingData.lightData.mainLightIndex];
-            _pass.Setup(this, sun);
-            renderer.EnqueuePass(_pass);
+            return $"Contact shadow thickness {thickness} must be above 0.";
         }
 
-        // Mirrors when URP's Screen Space Shadows pass runs, since the trace darkens its texture.
-        private bool Traces(ref RenderingData renderingData)
+        if (strength is < 0f or > 1f)
         {
-            if (!RunsAt(QualitySettings.GetQualityLevel()))
-            {
-                return false;
-            }
-
-            var cameraData = renderingData.cameraData;
-            var perspective = !cameraData.camera.orthographic;
-            var shown = SceneCameras.Shown(cameraData.cameraType);
-            if (!perspective || !shown)
-            {
-                return false;
-            }
-
-            return renderingData.shadowData.supportsMainLightShadows && renderingData.lightData.mainLightIndex != -1;
+            return $"Contact shadow strength {strength} must be 0 to 1.";
         }
 
-        protected override void Dispose(bool disposing)
+        return fadeStart < 0f || fadeEnd <= fadeStart
+            ? $"Contact shadow fade {fadeStart} to {fadeEnd} m must start at 0 or more and end past its start."
+            : string.Empty;
+    }
+
+    public bool RunsAt(int qualityLevel) => qualityLevel >= lowestQualityLevel;
+
+    public override void Create()
+    {
+        _material = CoreUtils.CreateEngineMaterial(EngineShaders.Get().ContactShadows);
+        _pass = new ContactShadowsPass(_material);
+    }
+
+    public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+    {
+        if (!Traces(ref renderingData))
         {
-            CoreUtils.Destroy(_material);
-            _material = null;
-            _pass = null;
+            return;
         }
+
+        var sun = renderingData.lightData.visibleLights[renderingData.lightData.mainLightIndex];
+        _pass.Setup(this, sun);
+        renderer.EnqueuePass(_pass);
+    }
+
+    // Mirrors when URP's Screen Space Shadows pass runs, since the trace darkens its texture.
+    private bool Traces(ref RenderingData renderingData)
+    {
+        if (!RunsAt(QualitySettings.GetQualityLevel()))
+        {
+            return false;
+        }
+
+        var cameraData = renderingData.cameraData;
+        var perspective = !cameraData.camera.orthographic;
+        var shown = SceneCameras.Shown(cameraData.cameraType);
+        if (!perspective || !shown)
+        {
+            return false;
+        }
+
+        return renderingData.shadowData.supportsMainLightShadows && renderingData.lightData.mainLightIndex != -1;
+    }
+
+    protected override void Dispose(bool disposing)
+    {
+        CoreUtils.Destroy(_material);
+        _material = null;
+        _pass = null;
     }
 }

@@ -1,127 +1,126 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Destruction;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Destruction
+namespace HyperRTS.Editor.Destruction;
+
+/// <summary>Measures a Topple's trunk from the standing model and its lie from the remains model.</summary>
+public static class ToppleMeasure
 {
-    /// <summary>Measures a Topple's trunk from the standing model and its lie from the remains model.</summary>
-    public static class ToppleMeasure
+    // Averaged over a band so one branch tip doesn't steer the trunk top.
+    private const float TopBand = 0.05f;
+
+    // Closer than this, the remains' mass gives no clear direction.
+    private const float MinReach = 0.25f;
+
+    [InspectorButton("Measure from model", Glyph = "wand-sparkles")]
+    private static void MeasureFromModel(ToppleAuthoring topple)
     {
-        // Averaged over a band so one branch tip doesn't steer the trunk top.
-        private const float TopBand = 0.05f;
-
-        // Closer than this, the remains' mass gives no clear direction.
-        private const float MinReach = 0.25f;
-
-        [InspectorButton("Measure from model", Glyph = "wand-sparkles")]
-        private static void MeasureFromModel(ToppleAuthoring topple)
+        if (topple.trunkMaterial == null)
         {
-            if (topple.trunkMaterial == null)
-            {
-                throw new InvalidOperationException($"{topple.name}: set the trunk material to measure the trunk.");
-            }
-
-            Measure(topple, topple.trunkMaterial);
+            throw new InvalidOperationException($"{topple.name}: set the trunk material to measure the trunk.");
         }
 
-        /// <summary>Sets trunk and lie from the LODGroup model in its children and its Destructible's remains.</summary>
-        public static void Measure(ToppleAuthoring topple, Material trunk)
+        Measure(topple, topple.trunkMaterial);
+    }
+
+    /// <summary>Sets trunk and lie from the LODGroup model in its children and its Destructible's remains.</summary>
+    public static void Measure(ToppleAuthoring topple, Material trunk)
+    {
+        var model = topple.GetComponentInChildren<LODGroup>();
+        if (model == null)
         {
-            var model = topple.GetComponentInChildren<LODGroup>();
-            if (model == null)
-            {
-                throw new InvalidOperationException($"{topple.name} has no LODGroup model in its children to measure the trunk from.");
-            }
-
-            var remains = topple.GetComponent<DestructibleAuthoring>().remains;
-            if (remains == null)
-            {
-                throw new InvalidOperationException($"{topple.name}: Destructible 'remains' is empty, so there is no lie to measure.");
-            }
-
-            var top = Trunk(topple.transform, model, trunk);
-            topple.lie = Lie(remains);
-            topple.trunk = top;
+            throw new InvalidOperationException($"{topple.name} has no LODGroup model in its children to measure the trunk from.");
         }
 
-        /// <summary>From the origin of <paramref name="root"/> to the top of the full-detail faces drawn with <paramref name="trunk"/>.</summary>
-        private static Vector3 Trunk(Transform root, LODGroup model, Material trunk)
+        var remains = topple.GetComponent<DestructibleAuthoring>().remains;
+        if (remains == null)
         {
-            var points = new List<Vector3>();
-            foreach (var renderer in model.GetLODs()[0].renderers)
-            {
-                AddVertices(root, renderer, trunk, points);
-            }
-
-            if (points.Count == 0)
-            {
-                throw new InvalidOperationException($"{model.name} LOD0 has no faces drawn with '{trunk.name}'.");
-            }
-
-            var top = points.Max(point => point.y);
-            var bottom = points.Min(point => point.y);
-            var floor = top - (top - bottom) * TopBand;
-            var band = points.Where(point => point.y >= floor).ToList();
-            return band.Aggregate(Vector3.zero, (sum, point) => sum + point) / band.Count;
+            throw new InvalidOperationException($"{topple.name}: Destructible 'remains' is empty, so there is no lie to measure.");
         }
 
-        /// <summary>Degrees from +Z toward +X, from the stump at the origin to the mass of <paramref name="remains"/>.</summary>
-        private static float Lie(GameObject remains)
+        var top = Trunk(topple.transform, model, trunk);
+        topple.lie = Lie(remains);
+        topple.trunk = top;
+    }
+
+    /// <summary>From the origin of <paramref name="root"/> to the top of the full-detail faces drawn with <paramref name="trunk"/>.</summary>
+    private static Vector3 Trunk(Transform root, LODGroup model, Material trunk)
+    {
+        var points = new List<Vector3>();
+        foreach (var renderer in model.GetLODs()[0].renderers)
         {
-            var points = new List<Vector3>();
-            foreach (var renderer in remains.GetComponentsInChildren<MeshRenderer>())
-            {
-                AddVertices(remains.transform, renderer, null, points);
-            }
-
-            if (points.Count == 0)
-            {
-                throw new InvalidOperationException($"{remains.name} has no mesh to measure its lie from.");
-            }
-
-            var centre = points.Aggregate(Vector3.zero, (sum, point) => sum + point) / points.Count;
-            if (new Vector2(centre.x, centre.z).magnitude < MinReach)
-            {
-                throw new InvalidOperationException(
-                    $"{remains.name} lies around its origin: put the stump at the origin, the canopy away.");
-            }
-
-            return Mathf.Atan2(centre.x, centre.z) * Mathf.Rad2Deg;
+            AddVertices(root, renderer, trunk, points);
         }
 
-        /// <summary>Vertices in <paramref name="root"/> space of faces drawn with <paramref name="material"/>, or all if null.</summary>
-        private static void AddVertices(Transform root, Renderer renderer, Material material, List<Vector3> into)
+        if (points.Count == 0)
         {
-            var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
-            var vertices = mesh.vertices;
-            var materials = renderer.sharedMaterials;
-            var levels = new List<MeshLodRange>();
-            for (var sub = 0; sub < mesh.subMeshCount; sub++)
+            throw new InvalidOperationException($"{model.name} LOD0 has no faces drawn with '{trunk.name}'.");
+        }
+
+        var top = points.Max(point => point.y);
+        var bottom = points.Min(point => point.y);
+        var floor = top - (top - bottom) * TopBand;
+        var band = points.Where(point => point.y >= floor).ToList();
+        return band.Aggregate(Vector3.zero, (sum, point) => sum + point) / band.Count;
+    }
+
+    /// <summary>Degrees from +Z toward +X, from the stump at the origin to the mass of <paramref name="remains"/>.</summary>
+    private static float Lie(GameObject remains)
+    {
+        var points = new List<Vector3>();
+        foreach (var renderer in remains.GetComponentsInChildren<MeshRenderer>())
+        {
+            AddVertices(remains.transform, renderer, null, points);
+        }
+
+        if (points.Count == 0)
+        {
+            throw new InvalidOperationException($"{remains.name} has no mesh to measure its lie from.");
+        }
+
+        var centre = points.Aggregate(Vector3.zero, (sum, point) => sum + point) / points.Count;
+        if (new Vector2(centre.x, centre.z).magnitude < MinReach)
+        {
+            throw new InvalidOperationException(
+                $"{remains.name} lies around its origin: put the stump at the origin, the canopy away.");
+        }
+
+        return Mathf.Atan2(centre.x, centre.z) * Mathf.Rad2Deg;
+    }
+
+    /// <summary>Vertices in <paramref name="root"/> space of faces drawn with <paramref name="material"/>, or all if null.</summary>
+    private static void AddVertices(Transform root, Renderer renderer, Material material, List<Vector3> into)
+    {
+        var mesh = renderer.GetComponent<MeshFilter>().sharedMesh;
+        var vertices = mesh.vertices;
+        var materials = renderer.sharedMaterials;
+        var levels = new List<MeshLodRange>();
+        for (var sub = 0; sub < mesh.subMeshCount; sub++)
+        {
+            if (material != null && materials[sub] != material)
             {
-                if (material != null && materials[sub] != material)
-                {
-                    continue;
-                }
+                continue;
+            }
 
-                // A mesh with Mesh LOD levels keeps them all in one sub-mesh; only the first is the full model.
-                var indices = mesh.GetIndices(sub);
-                var start = 0;
-                var count = indices.Length;
-                if (mesh.lodCount > 1)
-                {
-                    mesh.GetLods(levels, sub);
-                    start = (int)levels[0].indexStart;
-                    count = (int)levels[0].indexCount;
-                }
+            // A mesh with Mesh LOD levels keeps them all in one sub-mesh; only the first is the full model.
+            var indices = mesh.GetIndices(sub);
+            var start = 0;
+            var count = indices.Length;
+            if (mesh.lodCount > 1)
+            {
+                mesh.GetLods(levels, sub);
+                start = (int)levels[0].indexStart;
+                count = (int)levels[0].indexCount;
+            }
 
-                for (var i = start; i < start + count; i++)
-                {
-                    into.Add(root.InverseTransformPoint(renderer.transform.TransformPoint(vertices[indices[i]])));
-                }
+            for (var i = start; i < start + count; i++)
+            {
+                into.Add(root.InverseTransformPoint(renderer.transform.TransformPoint(vertices[indices[i]])));
             }
         }
     }

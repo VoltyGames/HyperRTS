@@ -1,13 +1,12 @@
-namespace HyperRTS.Network.Scenery
+namespace HyperRTS.Network.Scenery;
+
+/// <summary>A scenery change one team has just seen, for its clients.</summary>
+public struct ScenerySighting
 {
-    /// <summary>A scenery change one team has just seen, for its clients.</summary>
-    public struct ScenerySighting
-    {
-        public byte Team;
+    public byte Team;
 
-        /// <summary>The team saw it happen, rather than finding the result later.</summary>
-        public bool Witnessed;
+    /// <summary>The team saw it happen, rather than finding the result later.</summary>
+    public bool Witnessed;
 
-        public SceneryChange Change;
-    }
+    public SceneryChange Change;
 }

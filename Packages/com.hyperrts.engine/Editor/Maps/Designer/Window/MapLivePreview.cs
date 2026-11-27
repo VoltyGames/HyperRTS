@@ -4,143 +4,142 @@ using HyperRTS.Editor.Maps.Build;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Designer.Window
+namespace HyperRTS.Editor.Maps.Designer.Window;
+
+/// <summary>
+/// Previews the Map Editor's document, with <see cref="Auto"/> on also after every change, at most once a second.
+/// Planning runs on a worker (<see cref="MapPreview.RunAsync"/>), the rest on the main thread.
+/// </summary>
+public sealed class MapLivePreview
 {
-    /// <summary>
-    /// Previews the Map Editor's document, with <see cref="Auto"/> on also after every change, at most once a second.
-    /// Planning runs on a worker (<see cref="MapPreview.RunAsync"/>), the rest on the main thread.
-    /// </summary>
-    public sealed class MapLivePreview
+    private const double AutoInterval = 1.0;
+
+    private readonly MapSpecDocument _document;
+    private bool _again;
+    private bool _disposed;
+    private bool _waiting;
+    private double _started = double.NegativeInfinity;
+
+    public MapLivePreview(MapSpecDocument document)
     {
-        private const double AutoInterval = 1.0;
+        _document = document;
+        _document.Changed += OnDocumentChanged;
+    }
 
-        private readonly MapSpecDocument _document;
-        private bool _again;
-        private bool _disposed;
-        private bool _waiting;
-        private double _started = double.NegativeInfinity;
+    /// <summary>A preview finished: its report and image (null on errors), which the handler takes over.</summary>
+    public event Action<MapPreviewResult> Finished;
 
-        public MapLivePreview(MapSpecDocument document)
+    /// <summary>Raised when a preview starts or ends.</summary>
+    public event Action BusyChanged;
+
+    public static bool Auto
+    {
+        get => MapDesignerSettings.instance.autoPreview;
+        set
         {
-            _document = document;
-            _document.Changed += OnDocumentChanged;
+            MapDesignerSettings.instance.autoPreview = value;
+            MapDesignerSettings.instance.Save();
+        }
+    }
+
+    public bool Busy { get; private set; }
+
+    /// <summary>Previews now, whatever <see cref="Auto"/> says; queued behind one that is running.</summary>
+    public void Run()
+    {
+        if (Busy)
+        {
+            _again = true;
+            return;
         }
 
-        /// <summary>A preview finished: its report and image (null on errors), which the handler takes over.</summary>
-        public event Action<MapPreviewResult> Finished;
+        Start();
+    }
 
-        /// <summary>Raised when a preview starts or ends.</summary>
-        public event Action BusyChanged;
+    public void Dispose()
+    {
+        _disposed = true;
+        _document.Changed -= OnDocumentChanged;
+        EditorApplication.update -= WaitForTurn;
+    }
 
-        public static bool Auto
+    // A drag changes the document every frame: the edits gather until a second has passed since the last start.
+    private void OnDocumentChanged()
+    {
+        if (!Auto || _waiting)
         {
-            get => MapDesignerSettings.instance.autoPreview;
-            set
-            {
-                MapDesignerSettings.instance.autoPreview = value;
-                MapDesignerSettings.instance.Save();
-            }
+            return;
         }
 
-        public bool Busy { get; private set; }
+        _waiting = true;
+        EditorApplication.update += WaitForTurn;
+    }
 
-        /// <summary>Previews now, whatever <see cref="Auto"/> says; queued behind one that is running.</summary>
-        public void Run()
+    private void WaitForTurn()
+    {
+        if (EditorApplication.timeSinceStartup - _started < AutoInterval)
         {
-            if (Busy)
-            {
-                _again = true;
-                return;
-            }
+            return;
+        }
 
+        EditorApplication.update -= WaitForTurn;
+        _waiting = false;
+        Run();
+    }
+
+    private async void Start()
+    {
+        SetBusy(true);
+        _started = EditorApplication.timeSinceStartup;
+        try
+        {
+            using var project = MapProject.FromSpec(_document.Spec, _document.Path);
+            var result = await MapPreview.RunAsync(project);
+            Deliver(result);
+        }
+        catch (Exception exception)
+        {
+            Debug.LogException(exception);
+        }
+        finally
+        {
+            SetBusy(false);
+        }
+
+        if (_again && !_disposed)
+        {
+            _again = false;
             Start();
         }
+    }
 
-        public void Dispose()
+    private void Deliver(MapPreviewResult result)
+    {
+        var image = result.Image;
+        if (image != null)
         {
-            _disposed = true;
-            _document.Changed -= OnDocumentChanged;
-            EditorApplication.update -= WaitForTurn;
+            image.hideFlags = HideFlags.HideAndDontSave;
         }
 
-        // A drag changes the document every frame: the edits gather until a second has passed since the last start.
-        private void OnDocumentChanged()
+        if (_disposed)
         {
-            if (!Auto || _waiting)
-            {
-                return;
-            }
-
-            _waiting = true;
-            EditorApplication.update += WaitForTurn;
-        }
-
-        private void WaitForTurn()
-        {
-            if (EditorApplication.timeSinceStartup - _started < AutoInterval)
-            {
-                return;
-            }
-
-            EditorApplication.update -= WaitForTurn;
-            _waiting = false;
-            Run();
-        }
-
-        private async void Start()
-        {
-            SetBusy(true);
-            _started = EditorApplication.timeSinceStartup;
-            try
-            {
-                using var project = MapProject.FromSpec(_document.Spec, _document.Path);
-                var result = await MapPreview.RunAsync(project);
-                Deliver(result);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-            }
-            finally
-            {
-                SetBusy(false);
-            }
-
-            if (_again && !_disposed)
-            {
-                _again = false;
-                Start();
-            }
-        }
-
-        private void Deliver(MapPreviewResult result)
-        {
-            var image = result.Image;
             if (image != null)
             {
-                image.hideFlags = HideFlags.HideAndDontSave;
+                UnityEngine.Object.DestroyImmediate(image);
             }
 
-            if (_disposed)
-            {
-                if (image != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(image);
-                }
-
-                return;
-            }
-
-            Finished?.Invoke(result);
+            return;
         }
 
-        private void SetBusy(bool busy)
+        Finished?.Invoke(result);
+    }
+
+    private void SetBusy(bool busy)
+    {
+        Busy = busy;
+        if (!_disposed)
         {
-            Busy = busy;
-            if (!_disposed)
-            {
-                BusyChanged?.Invoke();
-            }
+            BusyChanged?.Invoke();
         }
     }
 }

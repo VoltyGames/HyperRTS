@@ -9,196 +9,195 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Destruction
+namespace HyperRTS.Editor.Destruction;
+
+/// <summary>
+/// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts, or from its model's sections for
+/// <see cref="SectionsModelFill"/>, and measures the boxes their intact models fill in the building's space.
+/// </summary>
+internal sealed class SectionsFill
 {
-    /// <summary>
-    /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts, or from its model's sections for
-    /// <see cref="SectionsModelFill"/>, and measures the boxes their intact models fill in the building's space.
-    /// </summary>
-    internal sealed class SectionsFill
+    /// <summary>Metres between boxes that still touch, and above the lowest box that still stands on the ground.</summary>
+    private const float Contact = 0.05f;
+
+    // The break clips every sectioned model's pieces play, named by its motion model.
+    private const string BlownInClip = "In";
+    private const string BlownOutClip = "Out";
+    private const string CollapseClip = "Collapse";
+
+    private readonly SectionsAuthoring _owner;
+    private Transform Root => _owner.transform;
+
+    public SectionsFill(SectionsAuthoring owner) => _owner = owner;
+
+    [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
+    private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
+
+    /// <summary>The sections from the <c>X_Intact</c> and <c>X_Broken</c> children, with guesses to correct by hand.</summary>
+    public void FromParts()
     {
-        /// <summary>Metres between boxes that still touch, and above the lowest box that still stands on the ground.</summary>
-        private const float Contact = 0.05f;
-
-        // The break clips every sectioned model's pieces play, named by its motion model.
-        private const string BlownInClip = "In";
-        private const string BlownOutClip = "Out";
-        private const string CollapseClip = "Collapse";
-
-        private readonly SectionsAuthoring _owner;
-        private Transform Root => _owner.transform;
-
-        public SectionsFill(SectionsAuthoring owner) => _owner = owner;
-
-        [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
-        private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
-
-        /// <summary>The sections from the <c>X_Intact</c> and <c>X_Broken</c> children, with guesses to correct by hand.</summary>
-        public void FromParts()
+        var found = new List<SectionEntry>();
+        foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
         {
-            var found = new List<SectionEntry>();
-            foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
+            if (child.name.EndsWith("_Intact", StringComparison.Ordinal))
             {
-                if (child.name.EndsWith("_Intact", StringComparison.Ordinal))
-                {
-                    found.Add(Kept(child.gameObject, child.parent.Find(child.name[..^"_Intact".Length] + "_Broken")));
-                }
+                found.Add(Kept(child.gameObject, child.parent.Find(child.name[..^"_Intact".Length] + "_Broken")));
+            }
+        }
+
+        _owner.sections = Guess(found).ToArray();
+    }
+
+    /// <summary>The sections kept inside the building's model, with the break clips its pieces play.</summary>
+    internal void FromModel()
+    {
+        _owner.sections = new SectionEntries(FindSections(), _owner).Build(Measure).ToArray();
+        _owner.clips = BreakClips();
+    }
+
+    // The one model under the building whose import kept sections.
+    private ModelSections FindSections()
+    {
+        var found = _owner.GetComponentsInChildren<Transform>(true)
+            .Select(child => PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject))
+            .Where(source => source != null)
+            .Select(AssetDatabase.GetAssetPath)
+            .Distinct()
+            .Select(ModelSections.Find)
+            .Where(sections => sections != null)
+            .ToList();
+        return found.Count == 1
+            ? found[0]
+            : throw new InvalidOperationException($"HyperRTS: '{_owner.name}' holds {found.Count} models with sections; it needs one.");
+    }
+
+    private SectionClips BreakClips()
+    {
+        var tables = _owner.GetComponentsInChildren<VATAnimatedAuthoring>(true).Select(vat => vat.clips).Where(table => table != null).Distinct().ToList();
+        if (tables.Count != 1)
+        {
+            throw new InvalidOperationException($"HyperRTS: '{_owner.name}' plays {tables.Count} VAT clip tables on its pieces; it needs one.");
+        }
+
+        return new SectionClips
+        {
+            BlownIn = BreakClip(tables[0], BlownInClip),
+            BlownOut = BreakClip(tables[0], BlownOutClip),
+            Collapse = BreakClip(tables[0], CollapseClip),
+        };
+    }
+
+    private static SectionClip BreakClip(VATClipTable table, string clipName)
+    {
+        var range = table.Range(clipName);
+        return new SectionClip { StartRow = range.StartRow, FrameCount = range.FrameCount, Fps = range.Fps };
+    }
+
+    /// <summary>
+    /// Anchored, exterior, share and supports guessed from the boxes; the rest of each entry stays. Walls carry the
+    /// building, so they take a full share and roofs and floors half.
+    /// </summary>
+    private List<SectionEntry> Guess(List<SectionEntry> entries)
+    {
+        var boxes = entries.ConvertAll(entry => Measure(entry.intact.transform));
+        var middle = Measure(Root).center;
+        var ground = boxes.Select(box => box.min.y).DefaultIfEmpty(float.MaxValue).Min();
+
+        for (var i = 0; i < entries.Count; i++)
+        {
+            var entry = entries[i];
+            entry.anchored = boxes[i].min.y <= ground + Contact;
+            entry.exterior = IsWall(boxes[i].size);
+            entry.share = Share(boxes[i].size);
+            entry.center = boxes[i].center;
+            entry.halfSize = boxes[i].extents;
+            entry.outward = Outward(boxes[i].center, middle);
+            entry.supports = Below(entries, boxes, i);
+            entries[i] = entry;
+        }
+
+        return entries;
+    }
+
+    private SectionEntry Kept(GameObject intact, Transform broken)
+    {
+        if (broken != null)
+        {
+            broken.localScale = Vector3.zero;
+        }
+
+        var entry = Array.Find(_owner.sections, item => item.intact == intact);
+        entry.intact = intact;
+        entry.broken = broken != null ? broken.gameObject : null;
+        return entry;
+    }
+
+    /// <summary>A full share for a wall and half for anything else.</summary>
+    public static float Share(Vector3 size) => IsWall(size) ? 1f : 0.5f;
+
+    /// <summary>Upright and thin, and no taller than twice its length, unlike a chimney.</summary>
+    private static bool IsWall(Vector3 size)
+    {
+        var thin = math.min(size.x, size.z);
+        var length = math.max(size.x, size.z);
+        return thin < size.y && size.y <= 2f * length && thin <= 0.5f * length;
+    }
+
+    private static GameObject[] Below(List<SectionEntry> entries, List<Bounds> boxes, int index)
+    {
+        var box = boxes[index];
+        box.Expand(Contact * 2f);
+        bool IsBelow(int i)
+        {
+            if (i == index || !box.Intersects(boxes[i]))
+            {
+                return false;
             }
 
-            _owner.sections = Guess(found).ToArray();
+            return boxes[i].center.y < boxes[index].center.y - Contact;
         }
 
-        /// <summary>The sections kept inside the building's model, with the break clips its pieces play.</summary>
-        internal void FromModel()
-        {
-            _owner.sections = new SectionEntries(FindSections(), _owner).Build(Measure).ToArray();
-            _owner.clips = BreakClips();
-        }
+        return Enumerable.Range(0, entries.Count).Where(IsBelow).Select(i => entries[i].intact).ToArray();
+    }
 
-        // The one model under the building whose import kept sections.
-        private ModelSections FindSections()
-        {
-            var found = _owner.GetComponentsInChildren<Transform>(true)
-                .Select(child => PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject))
-                .Where(source => source != null)
-                .Select(AssetDatabase.GetAssetPath)
-                .Distinct()
-                .Select(ModelSections.Find)
-                .Where(sections => sections != null)
-                .ToList();
-            return found.Count == 1
-                ? found[0]
-                : throw new InvalidOperationException($"HyperRTS: '{_owner.name}' holds {found.Count} models with sections; it needs one.");
-        }
+    /// <summary>Out from the middle of the building, or up for a section over it.</summary>
+    public static float3 Outward(float3 center, float3 middle)
+    {
+        var offset = center - middle;
+        offset.y = 0f;
+        return math.lengthsq(offset) > 1e-6f ? math.normalize(offset) : math.up();
+    }
 
-        private SectionClips BreakClips()
+    /// <summary>The bounds of every mesh under <paramref name="node"/>, in the building's space.</summary>
+    private Bounds Measure(Transform node)
+    {
+        var bounds = new Bounds();
+        var any = false;
+        foreach (var filter in node.GetComponentsInChildren<MeshFilter>(true))
         {
-            var tables = _owner.GetComponentsInChildren<VATAnimatedAuthoring>(true).Select(vat => vat.clips).Where(table => table != null).Distinct().ToList();
-            if (tables.Count != 1)
+            if (filter.sharedMesh == null)
             {
-                throw new InvalidOperationException($"HyperRTS: '{_owner.name}' plays {tables.Count} VAT clip tables on its pieces; it needs one.");
+                continue;
             }
 
-            return new SectionClips
+            var box = BoundsMath.Moved(filter.sharedMesh.bounds, Root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
+            if (any)
             {
-                BlownIn = BreakClip(tables[0], BlownInClip),
-                BlownOut = BreakClip(tables[0], BlownOutClip),
-                Collapse = BreakClip(tables[0], CollapseClip),
-            };
-        }
-
-        private static SectionClip BreakClip(VATClipTable table, string clipName)
-        {
-            var range = table.Range(clipName);
-            return new SectionClip { StartRow = range.StartRow, FrameCount = range.FrameCount, Fps = range.Fps };
-        }
-
-        /// <summary>
-        /// Anchored, exterior, share and supports guessed from the boxes; the rest of each entry stays. Walls carry the
-        /// building, so they take a full share and roofs and floors half.
-        /// </summary>
-        private List<SectionEntry> Guess(List<SectionEntry> entries)
-        {
-            var boxes = entries.ConvertAll(entry => Measure(entry.intact.transform));
-            var middle = Measure(Root).center;
-            var ground = boxes.Select(box => box.min.y).DefaultIfEmpty(float.MaxValue).Min();
-
-            for (var i = 0; i < entries.Count; i++)
-            {
-                var entry = entries[i];
-                entry.anchored = boxes[i].min.y <= ground + Contact;
-                entry.exterior = IsWall(boxes[i].size);
-                entry.share = Share(boxes[i].size);
-                entry.center = boxes[i].center;
-                entry.halfSize = boxes[i].extents;
-                entry.outward = Outward(boxes[i].center, middle);
-                entry.supports = Below(entries, boxes, i);
-                entries[i] = entry;
+                bounds.Encapsulate(box);
             }
-
-            return entries;
-        }
-
-        private SectionEntry Kept(GameObject intact, Transform broken)
-        {
-            if (broken != null)
+            else
             {
-                broken.localScale = Vector3.zero;
+                bounds = box;
+                any = true;
             }
-
-            var entry = Array.Find(_owner.sections, item => item.intact == intact);
-            entry.intact = intact;
-            entry.broken = broken != null ? broken.gameObject : null;
-            return entry;
         }
 
-        /// <summary>A full share for a wall and half for anything else.</summary>
-        public static float Share(Vector3 size) => IsWall(size) ? 1f : 0.5f;
-
-        /// <summary>Upright and thin, and no taller than twice its length, unlike a chimney.</summary>
-        private static bool IsWall(Vector3 size)
+        if (!any)
         {
-            var thin = math.min(size.x, size.z);
-            var length = math.max(size.x, size.z);
-            return thin < size.y && size.y <= 2f * length && thin <= 0.5f * length;
+            throw new InvalidOperationException(
+                $"HyperRTS: sections on '{Root.name}': '{node.name}' has no mesh to measure.");
         }
 
-        private static GameObject[] Below(List<SectionEntry> entries, List<Bounds> boxes, int index)
-        {
-            var box = boxes[index];
-            box.Expand(Contact * 2f);
-            bool IsBelow(int i)
-            {
-                if (i == index || !box.Intersects(boxes[i]))
-                {
-                    return false;
-                }
-
-                return boxes[i].center.y < boxes[index].center.y - Contact;
-            }
-
-            return Enumerable.Range(0, entries.Count).Where(IsBelow).Select(i => entries[i].intact).ToArray();
-        }
-
-        /// <summary>Out from the middle of the building, or up for a section over it.</summary>
-        public static float3 Outward(float3 center, float3 middle)
-        {
-            var offset = center - middle;
-            offset.y = 0f;
-            return math.lengthsq(offset) > 1e-6f ? math.normalize(offset) : math.up();
-        }
-
-        /// <summary>The bounds of every mesh under <paramref name="node"/>, in the building's space.</summary>
-        private Bounds Measure(Transform node)
-        {
-            var bounds = new Bounds();
-            var any = false;
-            foreach (var filter in node.GetComponentsInChildren<MeshFilter>(true))
-            {
-                if (filter.sharedMesh == null)
-                {
-                    continue;
-                }
-
-                var box = BoundsMath.Moved(filter.sharedMesh.bounds, Root.worldToLocalMatrix * filter.transform.localToWorldMatrix);
-                if (any)
-                {
-                    bounds.Encapsulate(box);
-                }
-                else
-                {
-                    bounds = box;
-                    any = true;
-                }
-            }
-
-            if (!any)
-            {
-                throw new InvalidOperationException(
-                    $"HyperRTS: sections on '{Root.name}': '{node.name}' has no mesh to measure.");
-            }
-
-            return bounds;
-        }
+        return bounds;
     }
 }

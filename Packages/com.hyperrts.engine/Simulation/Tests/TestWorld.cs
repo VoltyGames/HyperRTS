@@ -1,14 +1,11 @@
+using System;
+using System.Collections.Generic;
+using HyperRTS.Simulation.Abilities;
+using HyperRTS.Simulation.AI;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Prefabs;
-using HyperRTS.Simulation.Squads.Cover;
-using HyperRTS.Simulation.Vision.Fog;
-using HyperRTS.Simulation.Vision.Sight;
-using System;
-using HyperRTS.Simulation.Abilities;
-using System.Collections.Generic;
-using HyperRTS.Simulation.AI;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Voice;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.MatchStart;
@@ -17,272 +14,274 @@ using HyperRTS.Simulation.Navigation.Areas;
 using HyperRTS.Simulation.Navigation.Grid;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Squads;
+using HyperRTS.Simulation.Squads.Cover;
+using HyperRTS.Simulation.Vision.Fog;
+using HyperRTS.Simulation.Vision.Sight;
 using Unity.Collections;
 using Unity.Core;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Tests
+namespace HyperRTS.Simulation.Tests;
+
+/// <summary>
+/// Isolated world running every system in HyperRTS.Simulation (no rendering, input or physics), plus
+/// helpers that build entities with the same setup code the bakers use.
+/// </summary>
+public sealed class TestWorld : IDisposable
 {
-    /// <summary>
-    /// Isolated world running every system in HyperRTS.Simulation (no rendering, input or physics), plus
-    /// helpers that build entities with the same setup code the bakers use.
-    /// </summary>
-    public sealed class TestWorld : IDisposable
+    public const float FrameTime = 1f / 30f;
+
+    public readonly World World;
+    private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = new();
+    private readonly List<UnityEngine.Object> _owned = new();
+    private readonly List<Action> _checks = new();
+    private double _elapsed;
+
+    public TestWorld()
     {
-        public const float FrameTime = 1f / 30f;
+        World = new World("HyperRTS Test World");
 
-        public readonly World World;
-        private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = new();
-        private readonly List<UnityEngine.Object> _owned = new();
-        private readonly List<Action> _checks = new();
-        private double _elapsed;
-
-        public TestWorld()
+        var simulation = typeof(UnitTag).Assembly;
+        var systems = new List<Type>
         {
-            World = new World("HyperRTS Test World");
+            typeof(SimulationSystemGroup),
+            typeof(TransformSystemGroup),
+            typeof(BeginSimulationEntityCommandBufferSystem),
+            typeof(EndSimulationEntityCommandBufferSystem),
+            // The command buffer systems order themselves against these groups.
+            typeof(FixedStepSimulationSystemGroup),
+            typeof(VariableRateSimulationSystemGroup),
+            typeof(LateSimulationSystemGroup),
+        };
 
-            var simulation = typeof(UnitTag).Assembly;
-            var systems = new List<Type>
-            {
-                typeof(SimulationSystemGroup),
-                typeof(TransformSystemGroup),
-                typeof(BeginSimulationEntityCommandBufferSystem),
-                typeof(EndSimulationEntityCommandBufferSystem),
-                // The command buffer systems order themselves against these groups.
-                typeof(FixedStepSimulationSystemGroup),
-                typeof(VariableRateSimulationSystemGroup),
-                typeof(LateSimulationSystemGroup),
-            };
-
-            foreach (var type in DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default))
-            {
-                if (type.Assembly == simulation)
-                {
-                    systems.Add(type);
-                }
-            }
-
-            DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(World, systems);
-        }
-
-        /// <summary>Wraps a world built elsewhere, such as a netcode host, for the setup helpers; its owner ticks it.</summary>
-        public TestWorld(World world)
+        foreach (var type in DefaultWorldInitialization.GetAllSystems(WorldSystemFilterFlags.Default))
         {
-            World = world;
-        }
-
-        public EntityManager EntityManager => World.EntityManager;
-
-        /// <summary>Gives the world the match setup a session would write, for the setup system to apply.</summary>
-        public void SetMatchSetup(in MatchSetup setup) => EntityManager.CreateSingleton(setup, "MatchSetup");
-
-        public void Dispose()
-        {
-            if (World.IsCreated)
+            if (type.Assembly == simulation)
             {
-                World.Dispose();
-            }
-
-            foreach (var terrain in _terrains)
-            {
-                terrain.Dispose();
-            }
-
-            foreach (var owned in _owned)
-            {
-                UnityEngine.Object.DestroyImmediate(owned);
+                systems.Add(type);
             }
         }
 
-        /// <summary>Hands <paramref name="asset"/> to this world, which destroys it on dispose.</summary>
-        public T Own<T>(T asset) where T : UnityEngine.Object
-        {
-            _owned.Add(asset);
-            return asset;
-        }
-
-        /// <summary>
-        /// Updates the simulation group, plus the prefab registry from initialization, but not the whole
-        /// initialization group, so the pushed time isn't overwritten.
-        /// </summary>
-        public void Tick(float deltaTime = FrameTime, int frames = 1)
-        {
-            for (var i = 0; i < frames; i++)
-            {
-                _elapsed += deltaTime;
-                World.SetTime(new TimeData(_elapsed, deltaTime));
-                World.GetExistingSystem<PrefabRegistrySystem>().Update(World.Unmanaged);
-                World.GetExistingSystemManaged<SimulationSystemGroup>().Update();
-                foreach (var check in _checks)
-                {
-                    check();
-                }
-            }
-        }
-
-        /// <summary>Runs <paramref name="check"/> after every tick from now on, for rules that must hold every frame.</summary>
-        public void CheckEveryTick(Action check) => _checks.Add(check);
-
-        /// <summary>Ticks fixed frames until <paramref name="seconds"/> of game time have passed.</summary>
-        public void Run(float seconds) => Tick(FrameTime, (int)math.ceil(seconds / FrameTime));
-
-        /// <summary>
-        /// Ticks until <paramref name="done"/> holds or <paramref name="cap"/> seconds pass. Returns whether it
-        /// holds, without asserting, so callers keep their own assert message.
-        /// </summary>
-        public bool RunUntil(Func<bool> done, float cap)
-        {
-            for (var t = 0f; t < cap && !done(); t += FrameTime)
-            {
-                Tick();
-            }
-
-            return done();
-        }
-
-        /// <summary>
-        /// Creates map, rules, relations, AI tunings, one player per team entry (owner = index + 1, first is local)
-        /// and the nav grid, plus AI map hints that <see cref="AIHintsTestKit.CreateHints"/> replaces.
-        /// </summary>
-        public void CreateMatch(params byte[] teams) => CreateMatch(teams, 200f);
-
-        /// <summary><see cref="CreateMatch(byte[])"/> on a square map <paramref name="size"/> metres across, centred on 0.</summary>
-        public void CreateMatch(byte[] teams, float size)
-        {
-            var match = EntityManager.CreateEntity();
-            EntityManager.AddComponentData(match, new MapSettings
-            {
-                Min = new float2(size * -0.5f),
-                Size = new float2(size),
-                NavCellSize = 1f,
-                FogCellSize = 2f,
-                FogOfWar = true,
-            });
-            EntityManager.AddComponentData(match, new MatchState());
-            EntityManager.AddComponentData(match, new MatchRules
-            {
-                LowPowerProductionRate = 0.5f, SellRefund = 0.5f, ExperiencePerCost = 0.1f, JoinTimeout = 60f,
-                StrategicAssets = true,
-            });
-            EntityManager.AddComponentData(match, SightSettings.Standard.Rules);
-            EntityManager.AddComponentData(match, CoverSettings.Standard.Rules);
-            EntityManager.AddComponentData(match, SquadSettings.Standard.Rules);
-            EntityManager.AddComponentData(match, VoiceSettings.Standard.Rules);
-
-            var relations = new OwnerRelations();
-            relations.Teams.Add(0);
-            for (var i = 0; i < teams.Length; i++)
-            {
-                relations.Teams.Add(teams[i]);
-                this.CreatePlayer((byte)(i + 1), local: i == 0);
-            }
-
-            EntityManager.AddComponentData(match, relations);
-            AddAITunings(match);
-            this.CreateHints(AIHintsTestKit.DirectHints(teams));
-            BuildNavGrid();
-            BuildSight();
-        }
-
-        private void AddAITunings(Entity match)
-        {
-            var tunings = EntityManager.AddBuffer<AIDifficultyTuning>(match);
-            foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
-            {
-                tunings.Add(new AITuning().ToTuning(difficulty));
-            }
-        }
-
-        /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>
-        public void CreateTerrain(Func<float2, float> height, float spacing = 1f)
-        {
-            var min = new float2(-100f, -100f);
-            var size = (int2)(200f / spacing) + 1;
-            var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
-            for (var i = 0; i < heights.Length; i++)
-            {
-                heights[i] = height(min + new float2(i % size.x, i / size.x) * spacing);
-            }
-
-            var terrain = TerrainHeight.Create(heights, size, min, spacing, Allocator.Persistent);
-            heights.Dispose();
-            _terrains.Add(terrain.Blob);
-            var writer = new EntityWriter(EntityManager, EntityManager.CreateEntity());
-            NavSetup.AddTerrain(writer, terrain);
-            BuildNavGrid();
-        }
-
-        /// <summary>Builds the nav grid over the current map and terrain, as the map's first frames do.</summary>
-        private void BuildNavGrid()
-        {
-            World.GetExistingSystem<NavGridSystem>().Update(World.Unmanaged);
-            EntityManager.CompleteAllTrackedJobs();
-        }
-
-        /// <summary>
-        /// Builds the sight blockers and fog grid, as the map's first frames do before anyone gives a command, so
-        /// the systems that require them run from the first tick.
-        /// </summary>
-        private void BuildSight()
-        {
-            var time = World.Time;
-            // Stamped one fog interval early, so the first tick restamps as on a fresh grid.
-            World.SetTime(new TimeData(time.ElapsedTime - FogOfWarSystem.UpdateInterval, 0f));
-            World.GetExistingSystem<SightBlockSystem>().Update(World.Unmanaged);
-            World.GetExistingSystem<FogOfWarSystem>().Update(World.Unmanaged);
-            EntityManager.CompleteAllTrackedJobs();
-            World.SetTime(time);
-        }
-
-        public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);
-
-        public T Singleton<T>() where T : unmanaged, IComponentData
-        {
-            using var query = EntityManager.CreateEntityQuery(typeof(T));
-            return query.GetSingleton<T>();
-        }
-
-        /// <summary>The match singleton carrying <see cref="MapSettings"/>.</summary>
-        public Entity MatchEntity()
-        {
-            using var query = EntityManager.CreateEntityQuery(typeof(MapSettings));
-            return query.GetSingletonEntity();
-        }
-
-        public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
-            EntityManager.IsComponentEnabled<T>(entity);
-
-        public void Set<T>(Entity entity, T value) where T : unmanaged, IComponentData =>
-            EntityManager.SetComponentData(entity, value);
-
-        public void Add<T>(Entity entity, T value) where T : unmanaged, IComponentData =>
-            EntityManager.AddComponentData(entity, value);
-
-        public DynamicBuffer<T> Buffer<T>(Entity entity) where T : unmanaged, IBufferElementData =>
-            EntityManager.GetBuffer<T>(entity);
-
-        /// <summary>Adds the ability and its cooldown, creating both buffers on first use.</summary>
-        public Entity GiveAbility(Entity entity, Ability ability, float cooldownRemaining = 0f)
-        {
-            if (!EntityManager.HasBuffer<Ability>(entity))
-            {
-                EntityManager.AddBuffer<Ability>(entity);
-                EntityManager.AddBuffer<AbilityCooldown>(entity);
-            }
-
-            Buffer<Ability>(entity).Add(ability);
-            Buffer<AbilityCooldown>(entity).Add(new AbilityCooldown { Id = ability.Id, Remaining = cooldownRemaining });
-            return entity;
-        }
-
-        public void SetEnabled<T>(Entity entity, bool enabled) where T : unmanaged, IComponentData, IEnableableComponent =>
-            EntityManager.SetComponentEnabled<T>(entity, enabled);
-
-        public EntityWriter Writer(Entity entity) => new(EntityManager, entity);
-
-        /// <summary>A query over <paramref name="types"/>; the caller disposes it.</summary>
-        public EntityQuery Query(params ComponentType[] types) => EntityManager.CreateEntityQuery(types);
+        DefaultWorldInitialization.AddSystemsToRootLevelSystemGroups(World, systems);
     }
+
+    /// <summary>Wraps a world built elsewhere, such as a netcode host, for the setup helpers; its owner ticks it.</summary>
+    public TestWorld(World world)
+    {
+        World = world;
+    }
+
+    public EntityManager EntityManager => World.EntityManager;
+
+    /// <summary>Gives the world the match setup a session would write, for the setup system to apply.</summary>
+    public void SetMatchSetup(in MatchSetup setup) => EntityManager.CreateSingleton(setup, "MatchSetup");
+
+    public void Dispose()
+    {
+        if (World.IsCreated)
+        {
+            World.Dispose();
+        }
+
+        foreach (var terrain in _terrains)
+        {
+            terrain.Dispose();
+        }
+
+        foreach (var owned in _owned)
+        {
+            UnityEngine.Object.DestroyImmediate(owned);
+        }
+    }
+
+    /// <summary>Hands <paramref name="asset"/> to this world, which destroys it on dispose.</summary>
+    public T Own<T>(T asset) where T : UnityEngine.Object
+    {
+        _owned.Add(asset);
+        return asset;
+    }
+
+    /// <summary>
+    /// Updates the simulation group, plus the prefab registry from initialization, but not the whole
+    /// initialization group, so the pushed time isn't overwritten.
+    /// </summary>
+    public void Tick(float deltaTime = FrameTime, int frames = 1)
+    {
+        for (var i = 0; i < frames; i++)
+        {
+            _elapsed += deltaTime;
+            World.SetTime(new TimeData(_elapsed, deltaTime));
+            World.GetExistingSystem<PrefabRegistrySystem>().Update(World.Unmanaged);
+            World.GetExistingSystemManaged<SimulationSystemGroup>().Update();
+            foreach (var check in _checks)
+            {
+                check();
+            }
+        }
+    }
+
+    /// <summary>Runs <paramref name="check"/> after every tick from now on, for rules that must hold every frame.</summary>
+    public void CheckEveryTick(Action check) => _checks.Add(check);
+
+    /// <summary>Ticks fixed frames until <paramref name="seconds"/> of game time have passed.</summary>
+    public void Run(float seconds) => Tick(FrameTime, (int)math.ceil(seconds / FrameTime));
+
+    /// <summary>
+    /// Ticks until <paramref name="done"/> holds or <paramref name="cap"/> seconds pass. Returns whether it
+    /// holds, without asserting, so callers keep their own assert message.
+    /// </summary>
+    public bool RunUntil(Func<bool> done, float cap)
+    {
+        for (var t = 0f; t < cap && !done(); t += FrameTime)
+        {
+            Tick();
+        }
+
+        return done();
+    }
+
+    /// <summary>
+    /// Creates map, rules, relations, AI tunings, one player per team entry (owner = index + 1, first is local)
+    /// and the nav grid, plus AI map hints that <see cref="AIHintsTestKit.CreateHints"/> replaces.
+    /// </summary>
+    public void CreateMatch(params byte[] teams) => CreateMatch(teams, 200f);
+
+    /// <summary><see cref="CreateMatch(byte[])"/> on a square map <paramref name="size"/> metres across, centred on 0.</summary>
+    public void CreateMatch(byte[] teams, float size)
+    {
+        var match = EntityManager.CreateEntity();
+        EntityManager.AddComponentData(match, new MapSettings
+        {
+            Min = new float2(size * -0.5f),
+            Size = new float2(size),
+            NavCellSize = 1f,
+            FogCellSize = 2f,
+            FogOfWar = true,
+        });
+        EntityManager.AddComponentData(match, new MatchState());
+        EntityManager.AddComponentData(match, new MatchRules
+        {
+            LowPowerProductionRate = 0.5f, SellRefund = 0.5f, ExperiencePerCost = 0.1f, JoinTimeout = 60f,
+            StrategicAssets = true,
+        });
+        EntityManager.AddComponentData(match, SightSettings.Standard.Rules);
+        EntityManager.AddComponentData(match, CoverSettings.Standard.Rules);
+        EntityManager.AddComponentData(match, SquadSettings.Standard.Rules);
+        EntityManager.AddComponentData(match, VoiceSettings.Standard.Rules);
+
+        var relations = new OwnerRelations();
+        relations.Teams.Add(0);
+        for (var i = 0; i < teams.Length; i++)
+        {
+            relations.Teams.Add(teams[i]);
+            this.CreatePlayer((byte)(i + 1), local: i == 0);
+        }
+
+        EntityManager.AddComponentData(match, relations);
+        AddAITunings(match);
+        this.CreateHints(AIHintsTestKit.DirectHints(teams));
+        BuildNavGrid();
+        BuildSight();
+    }
+
+    private void AddAITunings(Entity match)
+    {
+        var tunings = EntityManager.AddBuffer<AIDifficultyTuning>(match);
+        foreach (AIDifficulty difficulty in Enum.GetValues(typeof(AIDifficulty)))
+        {
+            tunings.Add(new AITuning().ToTuning(difficulty));
+        }
+    }
+
+    /// <summary>Bakes a heightfield over the test map from a height function, as Terrain Height authoring does.</summary>
+    public void CreateTerrain(Func<float2, float> height, float spacing = 1f)
+    {
+        var min = new float2(-100f, -100f);
+        var size = (int2)(200f / spacing) + 1;
+        var heights = new NativeArray<float>(size.x * size.y, Allocator.Temp);
+        for (var i = 0; i < heights.Length; i++)
+        {
+            heights[i] = height(min + new float2(i % size.x, i / size.x) * spacing);
+        }
+
+        var terrain = TerrainHeight.Create(heights, size, min, spacing, Allocator.Persistent);
+        heights.Dispose();
+        _terrains.Add(terrain.Blob);
+        var writer = new EntityWriter(EntityManager, EntityManager.CreateEntity());
+        NavSetup.AddTerrain(writer, terrain);
+        BuildNavGrid();
+    }
+
+    /// <summary>Builds the nav grid over the current map and terrain, as the map's first frames do.</summary>
+    private void BuildNavGrid()
+    {
+        World.GetExistingSystem<NavGridSystem>().Update(World.Unmanaged);
+        EntityManager.CompleteAllTrackedJobs();
+    }
+
+    /// <summary>
+    /// Builds the sight blockers and fog grid, as the map's first frames do before anyone gives a command, so
+    /// the systems that require them run from the first tick.
+    /// </summary>
+    private void BuildSight()
+    {
+        var time = World.Time;
+        // Stamped one fog interval early, so the first tick restamps as on a fresh grid.
+        World.SetTime(new TimeData(time.ElapsedTime - FogOfWarSystem.UpdateInterval, 0f));
+        World.GetExistingSystem<SightBlockSystem>().Update(World.Unmanaged);
+        World.GetExistingSystem<FogOfWarSystem>().Update(World.Unmanaged);
+        EntityManager.CompleteAllTrackedJobs();
+        World.SetTime(time);
+    }
+
+    public T Get<T>(Entity entity) where T : unmanaged, IComponentData => EntityManager.GetComponentData<T>(entity);
+
+    public T Singleton<T>() where T : unmanaged, IComponentData
+    {
+        using var query = EntityManager.CreateEntityQuery(typeof(T));
+        return query.GetSingleton<T>();
+    }
+
+    /// <summary>The match singleton carrying <see cref="MapSettings"/>.</summary>
+    public Entity MatchEntity()
+    {
+        using var query = EntityManager.CreateEntityQuery(typeof(MapSettings));
+        return query.GetSingletonEntity();
+    }
+
+    public bool IsEnabled<T>(Entity entity) where T : unmanaged, IComponentData, IEnableableComponent =>
+        EntityManager.IsComponentEnabled<T>(entity);
+
+    public void Set<T>(Entity entity, T value) where T : unmanaged, IComponentData =>
+        EntityManager.SetComponentData(entity, value);
+
+    public void Add<T>(Entity entity, T value) where T : unmanaged, IComponentData =>
+        EntityManager.AddComponentData(entity, value);
+
+    public DynamicBuffer<T> Buffer<T>(Entity entity) where T : unmanaged, IBufferElementData =>
+        EntityManager.GetBuffer<T>(entity);
+
+    /// <summary>Adds the ability and its cooldown, creating both buffers on first use.</summary>
+    public Entity GiveAbility(Entity entity, Ability ability, float cooldownRemaining = 0f)
+    {
+        if (!EntityManager.HasBuffer<Ability>(entity))
+        {
+            EntityManager.AddBuffer<Ability>(entity);
+            EntityManager.AddBuffer<AbilityCooldown>(entity);
+        }
+
+        Buffer<Ability>(entity).Add(ability);
+        Buffer<AbilityCooldown>(entity).Add(new AbilityCooldown { Id = ability.Id, Remaining = cooldownRemaining });
+        return entity;
+    }
+
+    public void SetEnabled<T>(Entity entity, bool enabled) where T : unmanaged, IComponentData, IEnableableComponent =>
+        EntityManager.SetComponentEnabled<T>(entity, enabled);
+
+    public EntityWriter Writer(Entity entity) => new(EntityManager, entity);
+
+    /// <summary>A query over <paramref name="types"/>; the caller disposes it.</summary>
+    public EntityQuery Query(params ComponentType[] types) => EntityManager.CreateEntityQuery(types);
 }

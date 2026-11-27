@@ -1,14 +1,13 @@
 using System;
 
-namespace HyperRTS.Input.Cameras.CostProbe
+namespace HyperRTS.Input.Cameras.CostProbe;
+
+/// <summary>A named ground point and yaw in degrees that <see cref="CameraCostProbe"/> looks at.</summary>
+[Serializable]
+public sealed class CameraCostPoint
 {
-    /// <summary>A named ground point and yaw in degrees that <see cref="CameraCostProbe"/> looks at.</summary>
-    [Serializable]
-    public sealed class CameraCostPoint
-    {
-        public string name;
-        public float x;
-        public float z;
-        public float yaw;
-    }
+    public string name;
+    public float x;
+    public float z;
+    public float yaw;
 }

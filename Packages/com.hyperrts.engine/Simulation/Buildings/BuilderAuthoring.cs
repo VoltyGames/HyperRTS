@@ -1,45 +1,44 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Buildings
+namespace HyperRTS.Simulation.Buildings;
+
+/// <summary>Lets a unit place and construct the listed buildings (worker, dozer).</summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Builder")]
+[Icon(HyperRTSIcons.BuilderAuthoring)]
+[HelpURL(HyperRTSDocs.Buildings)]
+[DisallowMultipleComponent]
+public class BuilderAuthoring : AuthoringBehaviour
 {
-    /// <summary>Lets a unit place and construct the listed buildings (worker, dozer).</summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Buildings/Builder")]
-    [Icon(HyperRTSIcons.BuilderAuthoring)]
-    [HelpURL(HyperRTSDocs.Buildings)]
-    [DisallowMultipleComponent]
-    public class BuilderAuthoring : AuthoringBehaviour
+    [Tooltip("Building prefabs this unit can place.")]
+    [PrefabAsset("Build option"), NoEmptyEntries]
+    public List<BuildingAuthoring> buildOptions = new();
+
+    [Tooltip("Construction speed multiplier; several builders on one site add up.")]
+    [Min(0.01f)]
+    public float buildRate = 1f;
+
+    public static DynamicBuffer<BuildOption> Add(EntityWriter writer, float rate)
     {
-        [Tooltip("Building prefabs this unit can place.")]
-        [PrefabAsset("Build option"), NoEmptyEntries]
-        public List<BuildingAuthoring> buildOptions = new();
+        writer.Add(new Builder { Rate = rate });
+        writer.Add(new BuildWork());
+        writer.SetEnabled<BuildWork>(false);
+        return writer.AddBuffer<BuildOption>();
+    }
 
-        [Tooltip("Construction speed multiplier; several builders on one site add up.")]
-        [Min(0.01f)]
-        public float buildRate = 1f;
-
-        public static DynamicBuffer<BuildOption> Add(EntityWriter writer, float rate)
+    public class Baker : Baker<BuilderAuthoring>
+    {
+        public override void Bake(BuilderAuthoring authoring)
         {
-            writer.Add(new Builder { Rate = rate });
-            writer.Add(new BuildWork());
-            writer.SetEnabled<BuildWork>(false);
-            return writer.AddBuffer<BuildOption>();
-        }
-
-        public class Baker : Baker<BuilderAuthoring>
-        {
-            public override void Bake(BuilderAuthoring authoring)
+            var writer = this.Writer();
+            var options = BuilderAuthoring.Add(writer, authoring.buildRate);
+            foreach (var building in authoring.buildOptions)
             {
-                var writer = this.Writer();
-                var options = BuilderAuthoring.Add(writer, authoring.buildRate);
-                foreach (var building in authoring.buildOptions)
+                if (building != null)
                 {
-                    if (building != null)
-                    {
-                        options.Add(new BuildOption { Prefab = GetEntity(building, TransformUsageFlags.Dynamic) });
-                    }
+                    options.Add(new BuildOption { Prefab = GetEntity(building, TransformUsageFlags.Dynamic) });
                 }
             }
         }

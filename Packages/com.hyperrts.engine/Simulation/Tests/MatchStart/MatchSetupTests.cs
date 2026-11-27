@@ -10,174 +10,173 @@ using NUnit.Framework;
 using Unity.Entities;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Tests.MatchStart
+namespace HyperRTS.Simulation.Tests.MatchStart;
+
+/// <summary>A runtime <see cref="MatchSetup"/> reshapes the baked match before play and seeds the bots.</summary>
+public class MatchSetupTests
 {
-    /// <summary>A runtime <see cref="MatchSetup"/> reshapes the baked match before play and seeds the bots.</summary>
-    public class MatchSetupTests
+    private TestWorld _world;
+
+    [SetUp]
+    public void SetUp() => _world = new TestWorld();
+
+    [TearDown]
+    public void TearDown() => _world.Dispose();
+
+    private static SlotSetup Slot(byte team, PlayerControl control = PlayerControl.AI, byte side = 0) => new()
     {
-        private TestWorld _world;
+        Open = true,
+        Control = control,
+        Team = team,
+        Name = $"Slot {team}",
+        Color = new float4(1f, 0f, 0f, 1f),
+        Difficulty = AIDifficulty.Hard,
+        Side = side,
+    };
 
-        [SetUp]
-        public void SetUp() => _world = new TestWorld();
-
-        [TearDown]
-        public void TearDown() => _world.Dispose();
-
-        private static SlotSetup Slot(byte team, PlayerControl control = PlayerControl.AI, byte side = 0) => new()
+    private MatchSetup Setup(params SlotSetup[] slots)
+    {
+        var setup = MatchSetup.Create();
+        foreach (var slot in slots)
         {
-            Open = true,
-            Control = control,
-            Team = team,
-            Name = $"Slot {team}",
-            Color = new float4(1f, 0f, 0f, 1f),
-            Difficulty = AIDifficulty.Hard,
-            Side = side,
-        };
-
-        private MatchSetup Setup(params SlotSetup[] slots)
-        {
-            var setup = MatchSetup.Create();
-            foreach (var slot in slots)
-            {
-                setup.Slots.Add(slot);
-            }
-
-            return setup;
+            setup.Slots.Add(slot);
         }
 
-        private int PlayerCount()
+        return setup;
+    }
+
+    private int PlayerCount()
+    {
+        using var query = _world.Query(typeof(Player));
+        return query.CalculateEntityCount();
+    }
+
+    [Test]
+    public void ClosedSlots_LosePlayerAndEverythingTheyOwn()
+    {
+        _world.CreateMatch(1, 2, 3, 4);
+        var kept = _world.SpawnUnit(2, float3.zero);
+        var closedUnit = _world.SpawnUnit(3, new float3(10f, 0f, 0f));
+        var closedBase = _world.SpawnBuilding(4, new float3(30f, 0f, 0f), new float2(4f, 4f));
+        _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
+
+        _world.Tick(frames: 3);
+
+        Assert.AreEqual(2, PlayerCount());
+        Assert.IsTrue(_world.EntityManager.Exists(kept));
+        Assert.IsFalse(_world.EntityManager.Exists(closedUnit));
+        Assert.IsFalse(_world.EntityManager.Exists(closedBase));
+        Assert.AreEqual(MatchPhase.Playing, _world.Singleton<MatchState>().Phase, "closed slots are not defeated players");
+    }
+
+    [Test]
+    public void OpenSlots_TakeNameColourTeamSideAndControl()
+    {
+        _world.CreateMatch(1, 2);
+        _world.SetMatchSetup(Setup(Slot(2, PlayerControl.AI, side: 3), Slot(2, PlayerControl.LocalHuman, side: 5)));
+
+        _world.Tick();
+
+        var first = _world.Player(1);
+        var second = _world.Player(2);
+        Assert.AreEqual("Slot 2", _world.Get<Player>(first).Name.ToString());
+        Assert.AreEqual(new float4(1f, 0f, 0f, 1f), _world.Get<Player>(first).Color);
+        Assert.AreEqual(3, _world.Get<PlayerSide>(first).Value);
+        Assert.IsTrue(_world.EntityManager.HasComponent<AIPlayer>(first));
+        Assert.IsFalse(_world.EntityManager.HasComponent<LocalPlayer>(first));
+        Assert.IsTrue(_world.EntityManager.HasComponent<LocalPlayer>(second));
+        Assert.IsFalse(_world.EntityManager.HasComponent<AIPlayer>(second));
+        Assert.IsTrue(Relations().IsAllied(1, 2), "both slots were put on team 2");
+    }
+
+    [Test]
+    public void AISlots_UseTheBakedTuningOfTheirDifficulty()
+    {
+        _world.CreateMatch(1, 2);
+        var tunings = _world.EntityManager.GetBuffer<AIDifficultyTuning>(_world.MatchEntity());
+        tunings.Clear();
+        tunings.Add(new AIDifficultyTuning
         {
-            using var query = _world.Query(typeof(Player));
-            return query.CalculateEntityCount();
-        }
+            Difficulty = AIDifficulty.Brutal,
+            Tuning = new AIPlayer { ThinkInterval = 0.25f, AttackWaveSize = 3 },
+            IncomeMultiplier = 1.5f,
+        });
+        var brutal = Slot(2);
+        brutal.Difficulty = AIDifficulty.Brutal;
+        _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), brutal));
 
-        [Test]
-        public void ClosedSlots_LosePlayerAndEverythingTheyOwn()
-        {
-            _world.CreateMatch(1, 2, 3, 4);
-            var kept = _world.SpawnUnit(2, float3.zero);
-            var closedUnit = _world.SpawnUnit(3, new float3(10f, 0f, 0f));
-            var closedBase = _world.SpawnBuilding(4, new float3(30f, 0f, 0f), new float2(4f, 4f));
-            _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
+        _world.Tick();
 
-            _world.Tick(frames: 3);
+        var ai = _world.Player(2);
+        Assert.AreEqual(0.25f, _world.Get<AIPlayer>(ai).ThinkInterval);
+        var modifiers = _world.Buffer<StatModifier>(ai);
+        Assert.AreEqual(1.5f, new StatModifiers(modifiers).Evaluate(Stat.Income, 1f), 1e-5f);
+    }
 
-            Assert.AreEqual(2, PlayerCount());
-            Assert.IsTrue(_world.EntityManager.Exists(kept));
-            Assert.IsFalse(_world.EntityManager.Exists(closedUnit));
-            Assert.IsFalse(_world.EntityManager.Exists(closedBase));
-            Assert.AreEqual(MatchPhase.Playing, _world.Singleton<MatchState>().Phase, "closed slots are not defeated players");
-        }
+    [Test]
+    public void StartingResourcesAndFog_FollowTheSetup()
+    {
+        _world.CreateMatch(1, 2);
+        var supplies = _world.CreateSupplies();
+        new Stockpile(_world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1))).Add(supplies, 1000);
+        var setup = Setup(Slot(1, PlayerControl.LocalHuman), Slot(2));
+        setup.StartingResourceScale = 2.5f;
+        setup.Fog = FogOverride.Revealed;
+        _world.SetMatchSetup(setup);
 
-        [Test]
-        public void OpenSlots_TakeNameColourTeamSideAndControl()
-        {
-            _world.CreateMatch(1, 2);
-            _world.SetMatchSetup(Setup(Slot(2, PlayerControl.AI, side: 3), Slot(2, PlayerControl.LocalHuman, side: 5)));
+        _world.Tick();
 
-            _world.Tick();
+        var stock = _world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1));
+        Assert.AreEqual(2500, new Stockpile(stock).Amount(supplies));
+        Assert.IsFalse(_world.Get<MapSettings>(_world.MatchEntity()).FogOfWar);
+    }
 
-            var first = _world.Player(1);
-            var second = _world.Player(2);
-            Assert.AreEqual("Slot 2", _world.Get<Player>(first).Name.ToString());
-            Assert.AreEqual(new float4(1f, 0f, 0f, 1f), _world.Get<Player>(first).Color);
-            Assert.AreEqual(3, _world.Get<PlayerSide>(first).Value);
-            Assert.IsTrue(_world.EntityManager.HasComponent<AIPlayer>(first));
-            Assert.IsFalse(_world.EntityManager.HasComponent<LocalPlayer>(first));
-            Assert.IsTrue(_world.EntityManager.HasComponent<LocalPlayer>(second));
-            Assert.IsFalse(_world.EntityManager.HasComponent<AIPlayer>(second));
-            Assert.IsTrue(Relations().IsAllied(1, 2), "both slots were put on team 2");
-        }
+    [Test]
+    public void Setup_AppliesOnlyOnce()
+    {
+        _world.CreateMatch(1, 2);
+        _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
+        _world.Tick();
 
-        [Test]
-        public void AISlots_UseTheBakedTuningOfTheirDifficulty()
-        {
-            _world.CreateMatch(1, 2);
-            var tunings = _world.EntityManager.GetBuffer<AIDifficultyTuning>(_world.MatchEntity());
-            tunings.Clear();
-            tunings.Add(new AIDifficultyTuning
-            {
-                Difficulty = AIDifficulty.Brutal,
-                Tuning = new AIPlayer { ThinkInterval = 0.25f, AttackWaveSize = 3 },
-                IncomeMultiplier = 1.5f,
-            });
-            var brutal = Slot(2);
-            brutal.Difficulty = AIDifficulty.Brutal;
-            _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), brutal));
+        _world.Set(_world.Player(2), new Player { Owner = 2, Name = "Renamed" });
+        _world.Tick();
 
-            _world.Tick();
+        Assert.AreEqual("Renamed", _world.Get<Player>(_world.Player(2)).Name.ToString());
+    }
 
-            var ai = _world.Player(2);
-            Assert.AreEqual(0.25f, _world.Get<AIPlayer>(ai).ThinkInterval);
-            var modifiers = _world.Buffer<StatModifier>(ai);
-            Assert.AreEqual(1.5f, new StatModifiers(modifiers).Evaluate(Stat.Income, 1f), 1e-5f);
-        }
+    [Test]
+    public void BotsOfDifferentOwners_GetDifferentNonzeroRouteSeeds_TheSameOnEveryRun()
+    {
+        var first = RouteSeeds(12345u);
+        var again = RouteSeeds(12345u);
 
-        [Test]
-        public void StartingResourcesAndFog_FollowTheSetup()
-        {
-            _world.CreateMatch(1, 2);
-            var supplies = _world.CreateSupplies();
-            new Stockpile(_world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1))).Add(supplies, 1000);
-            var setup = Setup(Slot(1, PlayerControl.LocalHuman), Slot(2));
-            setup.StartingResourceScale = 2.5f;
-            setup.Fog = FogOverride.Revealed;
-            _world.SetMatchSetup(setup);
+        Assert.AreNotEqual(0u, first.First);
+        Assert.AreNotEqual(0u, first.Second);
+        Assert.AreNotEqual(first.First, first.Second);
+        Assert.AreEqual(first, again);
+        Assert.AreNotEqual(first.First, RouteSeeds(2u).First, "another match seed gives other route seeds");
+        Assert.AreEqual((0u, 0u), RouteSeeds(0u), "no match seed leaves them unset");
+    }
 
-            _world.Tick();
+    /// <summary>The attack lane seeds two bots get in a fresh match with the given seed.</summary>
+    private static (uint First, uint Second) RouteSeeds(uint seed)
+    {
+        using var world = new TestWorld();
+        world.CreateMatch(1, 2);
+        var setup = MatchSetup.Create();
+        setup.Seed = seed;
+        setup.Slots.Add(Slot(1));
+        setup.Slots.Add(Slot(2));
+        world.SetMatchSetup(setup);
 
-            var stock = _world.EntityManager.GetBuffer<ResourceStock>(_world.Player(1));
-            Assert.AreEqual(2500, new Stockpile(stock).Amount(supplies));
-            Assert.IsFalse(_world.Get<MapSettings>(_world.MatchEntity()).FogOfWar);
-        }
+        world.Tick();
 
-        [Test]
-        public void Setup_AppliesOnlyOnce()
-        {
-            _world.CreateMatch(1, 2);
-            _world.SetMatchSetup(Setup(Slot(1, PlayerControl.LocalHuman), Slot(2)));
-            _world.Tick();
+        return (world.Get<AIPlayer>(world.Player(1)).RouteSeed, world.Get<AIPlayer>(world.Player(2)).RouteSeed);
+    }
 
-            _world.Set(_world.Player(2), new Player { Owner = 2, Name = "Renamed" });
-            _world.Tick();
-
-            Assert.AreEqual("Renamed", _world.Get<Player>(_world.Player(2)).Name.ToString());
-        }
-
-        [Test]
-        public void BotsOfDifferentOwners_GetDifferentNonzeroRouteSeeds_TheSameOnEveryRun()
-        {
-            var first = RouteSeeds(12345u);
-            var again = RouteSeeds(12345u);
-
-            Assert.AreNotEqual(0u, first.First);
-            Assert.AreNotEqual(0u, first.Second);
-            Assert.AreNotEqual(first.First, first.Second);
-            Assert.AreEqual(first, again);
-            Assert.AreNotEqual(first.First, RouteSeeds(2u).First, "another match seed gives other route seeds");
-            Assert.AreEqual((0u, 0u), RouteSeeds(0u), "no match seed leaves them unset");
-        }
-
-        /// <summary>The attack lane seeds two bots get in a fresh match with the given seed.</summary>
-        private static (uint First, uint Second) RouteSeeds(uint seed)
-        {
-            using var world = new TestWorld();
-            world.CreateMatch(1, 2);
-            var setup = MatchSetup.Create();
-            setup.Seed = seed;
-            setup.Slots.Add(Slot(1));
-            setup.Slots.Add(Slot(2));
-            world.SetMatchSetup(setup);
-
-            world.Tick();
-
-            return (world.Get<AIPlayer>(world.Player(1)).RouteSeed, world.Get<AIPlayer>(world.Player(2)).RouteSeed);
-        }
-
-        private OwnerRelations Relations()
-        {
-            using var query = _world.Query(typeof(OwnerRelations));
-            return query.GetSingleton<OwnerRelations>();
-        }
+    private OwnerRelations Relations()
+    {
+        using var query = _world.Query(typeof(OwnerRelations));
+        return query.GetSingleton<OwnerRelations>();
     }
 }

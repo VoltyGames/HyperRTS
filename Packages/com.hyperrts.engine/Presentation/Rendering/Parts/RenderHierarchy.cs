@@ -2,66 +2,65 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 
-namespace HyperRTS.Presentation.Rendering.Parts
+namespace HyperRTS.Presentation.Rendering.Parts;
+
+/// <summary>Finds every entity that may carry a mesh for a gameplay root, so render tweaks reach child meshes.</summary>
+public static class RenderHierarchy
 {
-    /// <summary>Finds every entity that may carry a mesh for a gameplay root, so render tweaks reach child meshes.</summary>
-    public static class RenderHierarchy
+    /// <summary>
+    /// Instantiated prefabs list their parts in <see cref="LinkedEntityGroup"/> (their <see cref="Child"/> buffer
+    /// appears a frame later); SubScene objects have no group, so walk the transform children instead.
+    /// </summary>
+    public static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> linked, in BufferLookup<Child> children,
+        NativeList<Entity> result)
     {
-        /// <summary>
-        /// Instantiated prefabs list their parts in <see cref="LinkedEntityGroup"/> (their <see cref="Child"/> buffer
-        /// appears a frame later); SubScene objects have no group, so walk the transform children instead.
-        /// </summary>
-        public static void Collect(Entity root, in BufferLookup<LinkedEntityGroup> linked, in BufferLookup<Child> children,
-            NativeList<Entity> result)
+        result.Clear();
+        if (linked.TryGetBuffer(root, out var group))
         {
-            result.Clear();
-            if (linked.TryGetBuffer(root, out var group))
+            for (var i = 0; i < group.Length; i++)
             {
-                for (var i = 0; i < group.Length; i++)
-                {
-                    result.Add(group[i].Value);
-                }
-
-                return;
+                result.Add(group[i].Value);
             }
 
-            result.Add(root);
-            for (var i = 0; i < result.Length; i++)
-            {
-                if (!children.TryGetBuffer(result[i], out var kids))
-                {
-                    continue;
-                }
-
-                for (var k = 0; k < kids.Length; k++)
-                {
-                    result.Add(kids[k].Value);
-                }
-            }
+            return;
         }
 
-        /// <summary>The same walk through an <see cref="EntityManager"/>, for main-thread code.</summary>
-        public static void Collect(EntityManager entityManager, Entity root, NativeList<Entity> result)
+        result.Add(root);
+        for (var i = 0; i < result.Length; i++)
         {
-            result.Clear();
-            if (entityManager.HasBuffer<LinkedEntityGroup>(root))
+            if (!children.TryGetBuffer(result[i], out var kids))
             {
-                result.AddRange(entityManager.GetBuffer<LinkedEntityGroup>(root, true).Reinterpret<Entity>().AsNativeArray());
-                return;
+                continue;
             }
 
-            result.Add(root);
-            for (var i = 0; i < result.Length; i++)
+            for (var k = 0; k < kids.Length; k++)
             {
-                if (!entityManager.HasBuffer<Child>(result[i]))
-                {
-                    continue;
-                }
+                result.Add(kids[k].Value);
+            }
+        }
+    }
 
-                foreach (var kid in entityManager.GetBuffer<Child>(result[i], true))
-                {
-                    result.Add(kid.Value);
-                }
+    /// <summary>The same walk through an <see cref="EntityManager"/>, for main-thread code.</summary>
+    public static void Collect(EntityManager entityManager, Entity root, NativeList<Entity> result)
+    {
+        result.Clear();
+        if (entityManager.HasBuffer<LinkedEntityGroup>(root))
+        {
+            result.AddRange(entityManager.GetBuffer<LinkedEntityGroup>(root, true).Reinterpret<Entity>().AsNativeArray());
+            return;
+        }
+
+        result.Add(root);
+        for (var i = 0; i < result.Length; i++)
+        {
+            if (!entityManager.HasBuffer<Child>(result[i]))
+            {
+                continue;
+            }
+
+            foreach (var kid in entityManager.GetBuffer<Child>(result[i], true))
+            {
+                result.Add(kid.Value);
             }
         }
     }

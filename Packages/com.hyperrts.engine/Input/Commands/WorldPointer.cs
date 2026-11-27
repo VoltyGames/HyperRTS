@@ -8,104 +8,103 @@ using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Input.Commands
+namespace HyperRTS.Input.Commands;
+
+/// <summary>Resolves a screen point to the commandable entity and the ground point under it, for one system.</summary>
+public sealed class WorldPointer
 {
-    /// <summary>Resolves a screen point to the commandable entity and the ground point under it, for one system.</summary>
-    public sealed class WorldPointer
+    private readonly EntityQuery _terrain;
+    private PickRanking _ranking;
+    private Camera _camera;
+
+    public WorldPointer(ref SystemState state)
     {
-        private readonly EntityQuery _terrain;
-        private PickRanking _ranking;
-        private Camera _camera;
+        _terrain = state.GetEntityQuery(ComponentType.ReadOnly<TerrainHeight>());
+        _ranking = new PickRanking(ref state);
+    }
 
-        public WorldPointer(ref SystemState state)
+    /// <summary>
+    /// Picks through <see cref="PickRanking"/>. Only ownable entities and resource nodes count as targets; anything
+    /// else picked supplies the ground point, otherwise the ray meets the baked terrain or the y = 0 plane.
+    /// </summary>
+    public bool TryPick(ref SystemState state, float2 screen, out Entity target, out float3 ground)
+    {
+        target = Entity.Null;
+        ground = default;
+        if (!TryRay(screen, out var origin, out var direction))
         {
-            _terrain = state.GetEntityQuery(ComponentType.ReadOnly<TerrainHeight>());
-            _ranking = new PickRanking(ref state);
+            return false;
         }
 
-        /// <summary>
-        /// Picks through <see cref="PickRanking"/>. Only ownable entities and resource nodes count as targets; anything
-        /// else picked supplies the ground point, otherwise the ray meets the baked terrain or the y = 0 plane.
-        /// </summary>
-        public bool TryPick(ref SystemState state, float2 screen, out Entity target, out float3 ground)
+        var ray = new PickRay(origin, direction, _camera.farClipPlane);
+        var pointer = new PickPointer(screen, CameraMatrices.ViewProjection(_camera),
+            new float2(Screen.width, Screen.height));
+        if (!_ranking.TryPick(ref state, in ray, pointer, out var picked, out var point))
         {
-            target = Entity.Null;
-            ground = default;
-            if (!TryRay(screen, out var origin, out var direction))
-            {
-                return false;
-            }
-
-            var ray = new PickRay(origin, direction, _camera.farClipPlane);
-            var pointer = new PickPointer(screen, CameraMatrices.ViewProjection(_camera),
-                new float2(Screen.width, Screen.height));
-            if (!_ranking.TryPick(ref state, in ray, pointer, out var picked, out var point))
-            {
-                return RaycastTerrain(origin, direction, out ground);
-            }
-
-            if (!IsTarget(state.EntityManager, picked))
-            {
-                ground = point;
-                return true;
-            }
-
-            target = picked;
-            if (!RaycastTerrain(origin, direction, out ground))
-            {
-                ground = point;
-            }
-
-            return true;
-        }
-
-        /// <summary>The terrain point under the screen point, ignoring entities (for placement).</summary>
-        public bool TryGround(float2 screen, out float3 ground)
-        {
-            ground = default;
-            if (!TryRay(screen, out var origin, out var direction))
-            {
-                return false;
-            }
-
             return RaycastTerrain(origin, direction, out ground);
         }
 
-        private bool TryRay(float2 screen, out float3 origin, out float3 direction)
+        if (!IsTarget(state.EntityManager, picked))
         {
-            origin = default;
-            direction = default;
-            if (_camera == null)
-            {
-                _camera = Camera.main;
-                if (_camera == null)
-                {
-                    return false;
-                }
-            }
-
-            var ray = _camera.ScreenPointToRay(new Vector3(screen.x, screen.y, 0f));
-            origin = ray.origin;
-            direction = math.normalizesafe((float3)ray.direction);
+            ground = point;
             return true;
         }
 
-        private bool RaycastTerrain(float3 origin, float3 direction, out float3 ground)
+        target = picked;
+        if (!RaycastTerrain(origin, direction, out ground))
         {
-            // Without a baked terrain the default heightfield is the y = 0 plane.
-            _terrain.TryGetSingleton(out TerrainHeight terrain);
-            return terrain.Raycast(origin, direction, _camera.farClipPlane, out ground);
+            ground = point;
         }
 
-        private bool IsTarget(EntityManager entityManager, Entity entity)
+        return true;
+    }
+
+    /// <summary>The terrain point under the screen point, ignoring entities (for placement).</summary>
+    public bool TryGround(float2 screen, out float3 ground)
+    {
+        ground = default;
+        if (!TryRay(screen, out var origin, out var direction))
         {
-            if (entityManager.HasComponent<ResourceNode>(entity))
+            return false;
+        }
+
+        return RaycastTerrain(origin, direction, out ground);
+    }
+
+    private bool TryRay(float2 screen, out float3 origin, out float3 direction)
+    {
+        origin = default;
+        direction = default;
+        if (_camera == null)
+        {
+            _camera = Camera.main;
+            if (_camera == null)
             {
-                return true;
+                return false;
             }
-
-            // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
-            return entityManager.HasComponent<Owner>(entity) && !entityManager.HasComponent<FogHidden>(entity);
         }
+
+        var ray = _camera.ScreenPointToRay(new Vector3(screen.x, screen.y, 0f));
+        origin = ray.origin;
+        direction = math.normalizesafe((float3)ray.direction);
+        return true;
+    }
+
+    private bool RaycastTerrain(float3 origin, float3 direction, out float3 ground)
+    {
+        // Without a baked terrain the default heightfield is the y = 0 plane.
+        _terrain.TryGetSingleton(out TerrainHeight terrain);
+        return terrain.Raycast(origin, direction, _camera.farClipPlane, out ground);
+    }
+
+    private bool IsTarget(EntityManager entityManager, Entity entity)
+    {
+        if (entityManager.HasComponent<ResourceNode>(entity))
+        {
+            return true;
+        }
+
+        // Enemies hidden by fog must not be targetable, or a click would reveal and attack them.
+        return entityManager.HasComponent<Owner>(entity) && !entityManager.HasComponent<FogHidden>(entity);
     }
 }

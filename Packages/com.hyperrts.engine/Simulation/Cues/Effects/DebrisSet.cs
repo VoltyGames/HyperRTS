@@ -2,50 +2,49 @@ using System.Collections.Generic;
 using HyperRTS.Simulation.Common.Authoring;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Cues.Effects
+namespace HyperRTS.Simulation.Cues.Effects;
+
+/// <summary>
+/// Pieces a broken prop throws on the client, such as planks, hay clumps, sandbags or rubble: meshes drawn with
+/// one material, thrown and bounced off the terrain, then kept where they settle.
+/// </summary>
+[CreateAssetMenu(menuName = HyperRTSMenu.Effects + "Debris Set", fileName = "DebrisSet")]
+public class DebrisSet : ScriptableObject
 {
-    /// <summary>
-    /// Pieces a broken prop throws on the client, such as planks, hay clumps, sandbags or rubble: meshes drawn with
-    /// one material, thrown and bounced off the terrain, then kept where they settle.
-    /// </summary>
-    [CreateAssetMenu(menuName = HyperRTSMenu.Effects + "Debris Set", fileName = "DebrisSet")]
-    public class DebrisSet : ScriptableObject
+    [Tooltip("Meshes picked at random per piece, such as rubble chunks or a unit cube scaled into a sandbag.")]
+    public List<Mesh> meshes = new();
+
+    [Tooltip("Material every piece draws with, usually the prop's own, with GPU instancing on.")]
+    public Material material;
+
+    [Tooltip("Scale per axis applied to the mesh, varied 20 % either way per piece.")]
+    public Vector3 size = Vector3.one;
+
+    [Tooltip("Pieces thrown at High effects; Medium throws fewer and Low none.")]
+    [Min(1)]
+    public int count = 6;
+
+    [Tooltip("Launch speed range in m/s, mostly up and out.")]
+    public Vector2 speed = new(3f, 6f);
+
+    /// <summary>Why the set can't throw, or null.</summary>
+    public string Problem()
     {
-        [Tooltip("Meshes picked at random per piece, such as rubble chunks or a unit cube scaled into a sandbag.")]
-        public List<Mesh> meshes = new();
-
-        [Tooltip("Material every piece draws with, usually the prop's own, with GPU instancing on.")]
-        public Material material;
-
-        [Tooltip("Scale per axis applied to the mesh, varied 20 % either way per piece.")]
-        public Vector3 size = Vector3.one;
-
-        [Tooltip("Pieces thrown at High effects; Medium throws fewer and Low none.")]
-        [Min(1)]
-        public int count = 6;
-
-        [Tooltip("Launch speed range in m/s, mostly up and out.")]
-        public Vector2 speed = new(3f, 6f);
-
-        /// <summary>Why the set can't throw, or null.</summary>
-        public string Problem()
+        if (material == null)
         {
-            if (material == null)
-            {
-                return $"Debris set '{name}' has no 'material'.";
-            }
-
-            if (!material.enableInstancing)
-            {
-                return $"Debris set '{name}' material '{material.name}' needs 'Enable GPU Instancing' on, as pieces draw instanced.";
-            }
-
-            if (meshes.Count == 0 || meshes.Contains(null))
-            {
-                return $"Debris set '{name}' needs 'meshes' with none empty.";
-            }
-
-            return null;
+            return $"Debris set '{name}' has no 'material'.";
         }
+
+        if (!material.enableInstancing)
+        {
+            return $"Debris set '{name}' material '{material.name}' needs 'Enable GPU Instancing' on, as pieces draw instanced.";
+        }
+
+        if (meshes.Count == 0 || meshes.Contains(null))
+        {
+            return $"Debris set '{name}' needs 'meshes' with none empty.";
+        }
+
+        return null;
     }
 }

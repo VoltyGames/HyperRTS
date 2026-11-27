@@ -1,70 +1,69 @@
-using HyperRTS.Editor.Maps.Common;
 using System.Collections.Generic;
 using System.Linq;
+using HyperRTS.Editor.Maps.Common;
 using HyperRTS.Editor.Maps.Geometry;
 using HyperRTS.Editor.Maps.Layout;
 using HyperRTS.Editor.Maps.Palette;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Placement
+namespace HyperRTS.Editor.Maps.Placement;
+
+/// <summary>
+/// Every palette prefab the map will instantiate, and the room they take: each placement reserves its footprint
+/// so later ones keep clear of it.
+/// </summary>
+public sealed class MapPlacements
 {
-    /// <summary>
-    /// Every palette prefab the map will instantiate, and the room they take: each placement reserves its footprint
-    /// so later ones keep clear of it.
-    /// </summary>
-    public sealed class MapPlacements
+    private readonly MapLayout _layout;
+
+    public MapPlacements(MapLayout layout, MapShapes shapes, float baseRadius)
     {
-        private readonly MapLayout _layout;
+        _layout = layout;
+        Clearance = new MapClearance(layout, shapes, baseRadius);
+    }
 
-        public MapPlacements(MapLayout layout, MapShapes shapes, float baseRadius)
+    public List<MapPlacement> All { get; } = new();
+
+    public MapClearance Clearance { get; }
+
+    public void Add(MapPlacement placement)
+    {
+        All.Add(placement);
+        Clearance.Reserve(placement.Position, placement.Radius);
+    }
+
+    /// <summary>
+    /// Play-area props bake into the SubScene so the simulation sees them (sites clear them, tanks crush them), so a
+    /// prefab without HyperRTS authoring is an error. It reads prefabs, so it runs on the main thread.
+    /// </summary>
+    public void CheckEntities(MapIssues issues)
+    {
+        foreach (var key in All.Where(p => p.Entry.prefab != null && !p.IsEntity).Select(p => p.Entry.key).Distinct())
         {
-            _layout = layout;
-            Clearance = new MapClearance(layout, shapes, baseRadius);
+            issues.Error($"Prop '{key}' stands in the play area but its prefab has no HyperRTS authoring; " +
+                         "make it a Destructible scenery prefab so the simulation sees it.");
         }
+    }
 
-        public List<MapPlacement> All { get; } = new();
-
-        public MapClearance Clearance { get; }
-
-        public void Add(MapPlacement placement)
+    /// <summary>Places a choice made at an authored-sector point in every copy of the sector.</summary>
+    public void AddEverywhere(MapProp entry, Vector2 sectorPoint, float yaw, float scale, float stretch)
+    {
+        foreach (var copy in _layout.Symmetry.Copies)
         {
-            All.Add(placement);
-            Clearance.Reserve(placement.Position, placement.Radius);
+            Add(new MapPlacement(entry, copy.Apply(sectorPoint), copy.ApplyYaw(yaw), stretch) { Scale = scale });
         }
+    }
 
-        /// <summary>
-        /// Play-area props bake into the SubScene so the simulation sees them (sites clear them, tanks crush them), so a
-        /// prefab without HyperRTS authoring is an error. It reads prefabs, so it runs on the main thread.
-        /// </summary>
-        public void CheckEntities(MapIssues issues)
+    /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
+    public void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPlacement authored) where T : class
+    {
+        foreach (var copy in copies.Where(c => c.Index == index))
         {
-            foreach (var key in All.Where(p => p.Entry.prefab != null && !p.IsEntity).Select(p => p.Entry.key).Distinct())
+            var position = copy.Transform.Apply(authored.Position);
+            Add(new MapPlacement(authored.Entry, position, copy.Transform.ApplyYaw(authored.Yaw), authored.Stretch)
             {
-                issues.Error($"Prop '{key}' stands in the play area but its prefab has no HyperRTS authoring; " +
-                             "make it a Destructible scenery prefab so the simulation sees it.");
-            }
-        }
-
-        /// <summary>Places a choice made at an authored-sector point in every copy of the sector.</summary>
-        public void AddEverywhere(MapProp entry, Vector2 sectorPoint, float yaw, float scale, float stretch)
-        {
-            foreach (var copy in _layout.Symmetry.Copies)
-            {
-                Add(new MapPlacement(entry, copy.Apply(sectorPoint), copy.ApplyYaw(yaw), stretch) { Scale = scale });
-            }
-        }
-
-        /// <summary>Places an authored-space choice in every copy of the feature it belongs to.</summary>
-        public void AddCopies<T>(List<MapCopy<T>> copies, int index, MapPlacement authored) where T : class
-        {
-            foreach (var copy in copies.Where(c => c.Index == index))
-            {
-                var position = copy.Transform.Apply(authored.Position);
-                Add(new MapPlacement(authored.Entry, position, copy.Transform.ApplyYaw(authored.Yaw), authored.Stretch)
-                {
-                    Scale = authored.Scale,
-                });
-            }
+                Scale = authored.Scale,
+            });
         }
     }
 }

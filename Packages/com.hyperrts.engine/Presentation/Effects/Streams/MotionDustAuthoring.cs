@@ -1,59 +1,58 @@
+using System;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Cues.Effects;
-using System;
 using Unity.Entities;
 using Unity.Mathematics;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Effects.Streams
+namespace HyperRTS.Presentation.Effects.Streams;
+
+/// <summary>Dust this vehicle raises as it moves, by the ground material under it and its speed.</summary>
+[AddComponentMenu(HyperRTSMenu.Look + "Effects/Motion Dust")]
+[Icon(HyperRTSIcons.MotionDustAuthoring)]
+[HelpURL(HyperRTSDocs.Effects)]
+[DisallowMultipleComponent]
+public class MotionDustAuthoring : AuthoringBehaviour
 {
-    /// <summary>Dust this vehicle raises as it moves, by the ground material under it and its speed.</summary>
-    [AddComponentMenu(HyperRTSMenu.Look + "Effects/Motion Dust")]
-    [Icon(HyperRTSIcons.MotionDustAuthoring)]
-    [HelpURL(HyperRTSDocs.Effects)]
-    [DisallowMultipleComponent]
-    public class MotionDustAuthoring : AuthoringBehaviour
-    {
-        [Tooltip("Dust rigs per ground material (dry dust on sand, spray on mud, none on paved).")]
-        public SurfaceEffects effects;
+    [Tooltip("Dust rigs per ground material (dry dust on sand, spray on mud, none on paved).")]
+    public SurfaceEffects effects;
 
-        [Tooltip("Child transform the dust rises from (behind the rear wheels or tracks); none is the root.")]
-        public Transform socket;
+    [Tooltip("Child transform the dust rises from (behind the rear wheels or tracks); none is the root.")]
+    public Transform socket;
 
-        [Tooltip("Below this speed a vehicle creeping or jostled in a crowd raises none.")]
-        [Unit("m/s")]
-        [Min(0f)]
-        public float minSpeed = 1.5f;
+    [Tooltip("Below this speed a vehicle creeping or jostled in a crowd raises none.")]
+    [Unit("m/s")]
+    [Min(0f)]
+    public float minSpeed = 1.5f;
 
-        [Tooltip("Speed at which the dust streams at full rate.")]
-        [Unit("m/s")]
-        [Min(0.1f)]
-        public float fullSpeed = 8f;
+    [Tooltip("Speed at which the dust streams at full rate.")]
+    [Unit("m/s")]
+    [Min(0.1f)]
+    public float fullSpeed = 8f;
 
-        public static void Add(EntityWriter writer, SurfaceEffects effects, float3 socket, float minSpeed,
-            float fullSpeed) =>
-            writer.Add(new MotionDust
-            {
-                Effects = effects,
-                Socket = socket,
-                MinSpeed = minSpeed,
-                FullSpeed = fullSpeed,
-            });
-
-        public class Baker : Baker<MotionDustAuthoring>
+    public static void Add(EntityWriter writer, SurfaceEffects effects, float3 socket, float minSpeed,
+        float fullSpeed) =>
+        writer.Add(new MotionDust
         {
-            public override void Bake(MotionDustAuthoring authoring)
-            {
-                if (authoring.effects == null)
-                {
-                    throw new InvalidOperationException($"Motion Dust on '{authoring.name}' has no 'effects'.");
-                }
+            Effects = effects,
+            Socket = socket,
+            MinSpeed = minSpeed,
+            FullSpeed = fullSpeed,
+        });
 
-                DependsOn(authoring.effects);
-                var writer = this.Writer();
-                var socket = Socket(this, authoring.transform, authoring.socket);
-                Add(writer, authoring.effects, socket, authoring.minSpeed, authoring.fullSpeed);
+    public class Baker : Baker<MotionDustAuthoring>
+    {
+        public override void Bake(MotionDustAuthoring authoring)
+        {
+            if (authoring.effects == null)
+            {
+                throw new InvalidOperationException($"Motion Dust on '{authoring.name}' has no 'effects'.");
             }
+
+            DependsOn(authoring.effects);
+            var writer = this.Writer();
+            var socket = Socket(this, authoring.transform, authoring.socket);
+            Add(writer, authoring.effects, socket, authoring.minSpeed, authoring.fullSpeed);
         }
     }
 }

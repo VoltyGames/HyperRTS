@@ -3,65 +3,64 @@ using HyperRTS.Editor.Maps.Views;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Tests.Views
+namespace HyperRTS.Editor.Maps.Tests.Views;
+
+/// <summary>A view's contrast reads flat ground as flat and light and shade as contrast.</summary>
+public class MapViewContrastTests
 {
-    /// <summary>A view's contrast reads flat ground as flat and light and shade as contrast.</summary>
-    public class MapViewContrastTests
+    private const int Width = 64;
+    private const int Height = 48;
+
+    [Test]
+    public void AFlatView_HasNoSpreadOrLocalContrast()
     {
-        private const int Width = 64;
-        private const int Height = 48;
+        var contrast = MapViewContrast.Measure(Fill((x, y) => 128), Width, Height);
 
-        [Test]
-        public void AFlatView_HasNoSpreadOrLocalContrast()
+        Assert.AreEqual(0f, contrast.LuminanceSpread, 1e-5f);
+        Assert.AreEqual(0f, contrast.LocalContrast, 1e-5f);
+        Assert.AreEqual(0f, contrast.Chroma, 0.01f);
+    }
+
+    [Test]
+    public void ASaturatedView_HasHighChroma()
+    {
+        var pixels = Enumerable.Repeat(new Color32(255, 0, 0, 255), Width * Height).ToArray();
+
+        Assert.AreEqual(104.6f, MapViewContrast.Measure(pixels, Width, Height).Chroma, 1f);
+    }
+
+    [Test]
+    public void ShadowPatches_RaiseBothFigures()
+    {
+        // 8 px blocks of sun and shade, larger than the 4 px cells.
+        var contrast = MapViewContrast.Measure(Fill((x, y) => (x / 8 + y / 8) % 2 == 0 ? (byte)200 : (byte)50),
+            Width, Height);
+
+        Assert.AreEqual(150f / 255f, contrast.LuminanceSpread, 1e-3f);
+        Assert.Greater(contrast.LocalContrast, 0.1f);
+    }
+
+    [Test]
+    public void ASmoothGradient_SpreadsWithoutLocalContrast()
+    {
+        var contrast = MapViewContrast.Measure(Fill((x, y) => (byte)(x * 4)), Width, Height);
+
+        Assert.Greater(contrast.LuminanceSpread, 0.8f);
+        Assert.Less(contrast.LocalContrast, 0.01f);
+    }
+
+    private static Color32[] Fill(System.Func<int, int, byte> grey)
+    {
+        var pixels = new Color32[Width * Height];
+        for (var y = 0; y < Height; y++)
         {
-            var contrast = MapViewContrast.Measure(Fill((x, y) => 128), Width, Height);
-
-            Assert.AreEqual(0f, contrast.LuminanceSpread, 1e-5f);
-            Assert.AreEqual(0f, contrast.LocalContrast, 1e-5f);
-            Assert.AreEqual(0f, contrast.Chroma, 0.01f);
-        }
-
-        [Test]
-        public void ASaturatedView_HasHighChroma()
-        {
-            var pixels = Enumerable.Repeat(new Color32(255, 0, 0, 255), Width * Height).ToArray();
-
-            Assert.AreEqual(104.6f, MapViewContrast.Measure(pixels, Width, Height).Chroma, 1f);
-        }
-
-        [Test]
-        public void ShadowPatches_RaiseBothFigures()
-        {
-            // 8 px blocks of sun and shade, larger than the 4 px cells.
-            var contrast = MapViewContrast.Measure(Fill((x, y) => (x / 8 + y / 8) % 2 == 0 ? (byte)200 : (byte)50),
-                Width, Height);
-
-            Assert.AreEqual(150f / 255f, contrast.LuminanceSpread, 1e-3f);
-            Assert.Greater(contrast.LocalContrast, 0.1f);
-        }
-
-        [Test]
-        public void ASmoothGradient_SpreadsWithoutLocalContrast()
-        {
-            var contrast = MapViewContrast.Measure(Fill((x, y) => (byte)(x * 4)), Width, Height);
-
-            Assert.Greater(contrast.LuminanceSpread, 0.8f);
-            Assert.Less(contrast.LocalContrast, 0.01f);
-        }
-
-        private static Color32[] Fill(System.Func<int, int, byte> grey)
-        {
-            var pixels = new Color32[Width * Height];
-            for (var y = 0; y < Height; y++)
+            for (var x = 0; x < Width; x++)
             {
-                for (var x = 0; x < Width; x++)
-                {
-                    var g = grey(x, y);
-                    pixels[y * Width + x] = new Color32(g, g, g, 255);
-                }
+                var g = grey(x, y);
+                pixels[y * Width + x] = new Color32(g, g, g, 255);
             }
-
-            return pixels;
         }
+
+        return pixels;
     }
 }

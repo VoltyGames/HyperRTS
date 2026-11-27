@@ -2,29 +2,28 @@ using HyperRTS.Presentation.Rendering.Sharpen;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace HyperRTS.Presentation.Tests.Rendering.Sharpen
+namespace HyperRTS.Presentation.Tests.Rendering.Sharpen;
+
+/// <summary>Sharpen settings checks and the quality levels it runs at.</summary>
+public class SharpenFeatureTests
 {
-    /// <summary>Sharpen settings checks and the quality levels it runs at.</summary>
-    public class SharpenFeatureTests
+    private SharpenFeature _feature;
+
+    [SetUp]
+    public void SetUp()
     {
-        private SharpenFeature _feature;
+        _feature = ScriptableObject.CreateInstance<SharpenFeature>();
+    }
 
-        [SetUp]
-        public void SetUp()
-        {
-            _feature = ScriptableObject.CreateInstance<SharpenFeature>();
-        }
+    [TearDown]
+    public void TearDown() => Object.DestroyImmediate(_feature);
 
-        [TearDown]
-        public void TearDown() => Object.DestroyImmediate(_feature);
-
-        [Test]
-        public void SettingsProblem_StrengthOutOfRange_NamesIt()
-        {
-            _feature.strength = 1.5f;
-            StringAssert.Contains("strength", _feature.SettingsProblem());
-            _feature.strength = -0.1f;
-            StringAssert.Contains("strength", _feature.SettingsProblem());
-        }
+    [Test]
+    public void SettingsProblem_StrengthOutOfRange_NamesIt()
+    {
+        _feature.strength = 1.5f;
+        StringAssert.Contains("strength", _feature.SettingsProblem());
+        _feature.strength = -0.1f;
+        StringAssert.Contains("strength", _feature.SettingsProblem());
     }
 }

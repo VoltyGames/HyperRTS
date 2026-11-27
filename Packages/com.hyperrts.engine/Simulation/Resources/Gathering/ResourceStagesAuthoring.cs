@@ -1,54 +1,53 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System;
 using System.Collections.Generic;
+using HyperRTS.Simulation.Common.Authoring;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Resources.Gathering
+namespace HyperRTS.Simulation.Resources.Gathering;
+
+/// <summary>
+/// Swaps between child models as a resource node empties (a full pile, then smaller ones), and back up as a
+/// renewable node regrows.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Stages")]
+[Icon(HyperRTSIcons.ResourceStagesAuthoring)]
+[HelpURL(HyperRTSDocs.Resources)]
+[DisallowMultipleComponent]
+[RequireComponent(typeof(ResourceNodeAuthoring))]
+public class ResourceStagesAuthoring : AuthoringBehaviour
 {
-    /// <summary>
-    /// Swaps between child models as a resource node empties (a full pile, then smaller ones), and back up as a
-    /// renewable node regrows.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Resources/Resource Stages")]
-    [Icon(HyperRTSIcons.ResourceStagesAuthoring)]
-    [HelpURL(HyperRTSDocs.Resources)]
-    [DisallowMultipleComponent]
-    [RequireComponent(typeof(ResourceNodeAuthoring))]
-    public class ResourceStagesAuthoring : AuthoringBehaviour
+    [Tooltip("From full to nearly spent. Each shows while the remaining share is at or below its threshold; the first should be 1.")]
+    public List<Stage> stages = new();
+
+    [Serializable]
+    public class Stage
     {
-        [Tooltip("From full to nearly spent. Each shows while the remaining share is at or below its threshold; the first should be 1.")]
-        public List<Stage> stages = new();
+        [Tooltip("Shown while the remaining amount is at or below this share of the starting amount.")]
+        [Range(0f, 1f)]
+        public float below = 1f;
 
-        [Serializable]
-        public class Stage
+        [Tooltip("Child object holding this stage's model.")]
+        public GameObject visual;
+    }
+
+    public class Baker : Baker<ResourceStagesAuthoring>
+    {
+        public override void Bake(ResourceStagesAuthoring authoring)
         {
-            [Tooltip("Shown while the remaining amount is at or below this share of the starting amount.")]
-            [Range(0f, 1f)]
-            public float below = 1f;
-
-            [Tooltip("Child object holding this stage's model.")]
-            public GameObject visual;
-        }
-
-        public class Baker : Baker<ResourceStagesAuthoring>
-        {
-            public override void Bake(ResourceStagesAuthoring authoring)
+            var stages = new List<ResourceStage>();
+            foreach (var stage in authoring.stages)
             {
-                var stages = new List<ResourceStage>();
-                foreach (var stage in authoring.stages)
+                stages.Add(new ResourceStage
                 {
-                    stages.Add(new ResourceStage
-                    {
-                        Below = stage.below,
-                        Visual = GetEntity(stage.visual, TransformUsageFlags.Dynamic),
-                    });
-                }
-
-                var writer = this.Writer();
-                writer.AddBuffer(stages);
-                writer.Add(new ShownResourceStage { Index = -1 });
+                    Below = stage.below,
+                    Visual = GetEntity(stage.visual, TransformUsageFlags.Dynamic),
+                });
             }
+
+            var writer = this.Writer();
+            writer.AddBuffer(stages);
+            writer.Add(new ShownResourceStage { Index = -1 });
         }
     }
 }

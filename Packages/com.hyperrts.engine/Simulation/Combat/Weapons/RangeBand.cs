@@ -1,29 +1,28 @@
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Combat.Weapons
+namespace HyperRTS.Simulation.Combat.Weapons;
+
+/// <summary>How near and how far a unit's weapons that join one attack can hit: the shortest minimum range and the longest reach.</summary>
+public struct RangeBand
 {
-    /// <summary>How near and how far a unit's weapons that join one attack can hit: the shortest minimum range and the longest reach.</summary>
-    public struct RangeBand
+    public float Floor;
+    public float Reach;
+
+    public RangeBand(float floor, float reach)
     {
-        public float Floor;
-        public float Reach;
+        Floor = floor;
+        Reach = reach;
+    }
 
-        public RangeBand(float floor, float reach)
-        {
-            Floor = floor;
-            Reach = reach;
-        }
+    /// <summary>Whether a target <paramref name="gap"/> away, edge to edge, is neither too near nor too far.</summary>
+    public readonly bool Contains(float gap) => gap >= Floor && gap <= Reach;
 
-        /// <summary>Whether a target <paramref name="gap"/> away, edge to edge, is neither too near nor too far.</summary>
-        public readonly bool Contains(float gap) => gap >= Floor && gap <= Reach;
+    public readonly float Middle => 0.5f * (Floor + Reach);
 
-        public readonly float Middle => 0.5f * (Floor + Reach);
-
-        /// <summary>The distance nearest <paramref name="gap"/> that sits a tenth of the band inside both edges.</summary>
-        public readonly float Nearest(float gap)
-        {
-            var margin = 0.1f * (Reach - Floor);
-            return math.clamp(gap, Floor + margin, Reach - margin);
-        }
+    /// <summary>The distance nearest <paramref name="gap"/> that sits a tenth of the band inside both edges.</summary>
+    public readonly float Nearest(float gap)
+    {
+        var margin = 0.1f * (Reach - Floor);
+        return math.clamp(gap, Floor + margin, Reach - margin);
     }
 }

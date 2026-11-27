@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Authoring;
+using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Orders;
@@ -11,231 +11,230 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Simulation.Tests.Vision
+namespace HyperRTS.Simulation.Tests.Vision;
+
+/// <summary>Fog of war per team, explored memory, the fog-off switch, and stealth with its detectors.</summary>
+public class VisionTests
 {
-    /// <summary>Fog of war per team, explored memory, the fog-off switch, and stealth with its detectors.</summary>
-    public class VisionTests
+    private const byte Team1 = 1;
+    private const byte Team2 = 2;
+
+    private TestWorld _world;
+
+    [SetUp]
+    public void SetUp()
     {
-        private const byte Team1 = 1;
-        private const byte Team2 = 2;
+        _world = new TestWorld();
+        _world.CreateMatch(Team1, Team2);
+    }
 
-        private TestWorld _world;
+    [TearDown]
+    public void TearDown() => _world.Dispose();
 
-        [SetUp]
-        public void SetUp()
+    [Test]
+    public void Fog_RevealsVisionRange_OnlyForOwnersTeam()
+    {
+        _world.SpawnUnit(1, float3.zero);
+
+        _world.Tick();
+        var fog = _world.Fog();
+
+        Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground));
+        Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team2, SightLayer.Ground), "enemies don't share vision");
+        Assert.IsFalse(fog.IsVisible(new float3(30f, 0f, 0f), Team1, SightLayer.Ground), "beyond the vision range");
+    }
+
+    [Test]
+    public void Fog_StampsTheHighestTeam()
+    {
+        const byte lastTeam = OwnerRelations.MaxTeams - 1;
+        using var world = new TestWorld();
+        world.CreateMatch(lastTeam, Team1);
+        world.SpawnUnit(1, float3.zero);
+
+        world.Tick();
+        var fog = world.Fog();
+
+        Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam, SightLayer.Ground), "an eight-player FFA needs teams past 7");
+        Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground));
+    }
+
+    [Test]
+    public void SetTeam_RejectsTeamsPastTheFogBits_AndSlotsPastTheLastOwner()
+    {
+        var relations = new OwnerRelations();
+
+        Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, OwnerRelations.MaxTeams));
+        Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, -1));
+        Assert.Throws<System.ArgumentException>(() => relations.SetTeam(Owner.Max + 1, 1));
+    }
+
+    [Test]
+    public void Fog_KeepsExploredCells_AfterTheUnitLeaves()
+    {
+        var scout = _world.SpawnUnit(1, float3.zero);
+        _world.Tick();
+        var version = _world.Fog().Version;
+
+        _world.Set(scout, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
+        _world.Run(0.5f);
+        var fog = _world.Fog();
+
+        Assert.IsFalse(fog.IsVisible(float3.zero, Team1, SightLayer.Ground));
+        Assert.IsTrue(fog.IsExplored(float3.zero, Team1));
+        Assert.IsTrue(fog.IsVisible(new float3(50f, 0f, 0f), Team1, SightLayer.Ground));
+        Assert.Greater(fog.Version, version, "restamps bump the version");
+    }
+
+    [Test]
+    public void FogDisabled_EverythingVisible()
+    {
+        _world.DisableFog();
+
+        _world.Tick();
+        var fog = _world.Fog();
+
+        Assert.IsTrue(fog.IsVisible(new float3(90f, 0f, -90f), Team1, SightLayer.Ground));
+        Assert.IsTrue(fog.IsVisible(new float3(-90f, 0f, 90f), Team2, SightLayer.Ground));
+        Assert.IsTrue(fog.IsExplored(float3.zero, Team2));
+    }
+
+    [Test]
+    public void FogHidden_TagsOnlyUnseenEnemies_AndDeselectsThem()
+    {
+        var scout = _world.SpawnUnit(1, float3.zero);
+        var seen = _world.SpawnUnit(2, new float3(5f, 0f, 0f));
+        var unseen = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
+        _world.SetEnabled<Selected>(unseen, true);
+
+        _world.Tick(frames: 2);
+
+        Assert.IsTrue(_world.IsFogHidden(unseen));
+        Assert.IsFalse(_world.IsFogHidden(seen));
+        Assert.IsFalse(_world.IsFogHidden(scout), "own units are never hidden");
+        Assert.IsFalse(_world.IsEnabled<Selected>(unseen), "enemies in fog drop out of the selection");
+    }
+
+    [Test]
+    public void Detector_RevealsStealthedEnemy_OnlyInRange()
+    {
+        var soldier = Detect(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), radius: 5f);
+        var enemy = Stealthy(_world.SpawnUnit(2, new float3(8f, 0f, 0f)));
+
+        _world.Run(1f);
+        Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier), "inside vision, outside detection");
+        Assert.IsTrue(_world.IsFogHidden(enemy));
+
+        _world.Set(enemy, LocalTransform.FromPosition(new float3(3f, 0f, 0f)));
+        _world.Run(0.3f);
+        Assert.IsFalse(_world.IsFogHidden(enemy));
+
+        _world.Run(3f);
+        Assert.IsFalse(_world.EntityManager.Exists(enemy), "detected, so acquired and killed");
+    }
+
+    [Test]
+    public void Detector_OnLowPower_StopsDetecting_UntilPowered()
+    {
+        Detect(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), new TestBuilding
         {
-            _world = new TestWorld();
-            _world.CreateMatch(Team1, Team2);
-        }
+            Power = -3f,
+        }), radius: 10f);
+        var enemy = Stealthy(_world.SpawnUnit(2, new float3(5f, 0f, 0f)));
 
-        [TearDown]
-        public void TearDown() => _world.Dispose();
+        _world.Run(0.3f);
+        Assert.IsTrue(_world.IsFogHidden(enemy), "a radar on low power is off");
 
-        [Test]
-        public void Fog_RevealsVisionRange_OnlyForOwnersTeam()
+        _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), new float2(4f, 4f), new TestBuilding { Power = 5f });
+        _world.Run(0.3f);
+        Assert.IsFalse(_world.IsFogHidden(enemy), "powered again, so it detects");
+    }
+
+    [Test]
+    public void Firing_RevealsShooter_ThenItRestealths()
+    {
+        var shooter = Stealthy(_world.AddWeapon(_world.SpawnUnit(2, float3.zero), new TestWeapon
         {
-            _world.SpawnUnit(1, float3.zero);
+            Cooldown = 100f,
+        }), reveal: 1f);
+        var target = _world.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
 
-            _world.Tick();
-            var fog = _world.Fog();
+        _world.Run(0.4f);
+        Assert.Less(_world.GetHealth(target), 1000f, "fired once");
+        Assert.IsFalse(_world.IsEnabled<Stealthed>(shooter));
+        Assert.IsFalse(_world.IsFogHidden(shooter), "visible while revealed");
 
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground));
-            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team2, SightLayer.Ground), "enemies don't share vision");
-            Assert.IsFalse(fog.IsVisible(new float3(30f, 0f, 0f), Team1, SightLayer.Ground), "beyond the vision range");
-        }
+        _world.Run(1.2f);
+        Assert.IsTrue(_world.IsEnabled<Stealthed>(shooter));
+        Assert.IsTrue(_world.IsFogHidden(shooter), "hidden again once the reveal ends");
+    }
 
-        [Test]
-        public void Fog_StampsTheHighestTeam()
+    [Test]
+    public void FogOff_StillHidesStealthedEnemies_UntilDetected()
+    {
+        _world.DisableFog();
+        var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
+        var enemy = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)));
+        var far = _world.SpawnUnit(2, new float3(80f, 0f, 0f));
+
+        _world.Run(1f);
+        Assert.AreEqual(100f, _world.GetHealth(enemy));
+        Assert.IsTrue(_world.IsFogHidden(enemy));
+        Assert.IsFalse(_world.IsFogHidden(far), "fog off shows everything else");
+
+        Detect(soldier, 5f);
+        _world.Run(1f);
+        Assert.IsFalse(_world.IsFogHidden(enemy));
+        Assert.Less(_world.GetHealth(enemy), 100f);
+    }
+
+    [Test]
+    public void StealthedTarget_CannotBeOrderedAttacked()
+    {
+        var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
+        var enemy = Stealthy(_world.SpawnUnit(2, new float3(15f, 0f, 0f)));
+        _world.Tick();
+
+        _world.Command(1, new PlayerCommand
         {
-            const byte lastTeam = OwnerRelations.MaxTeams - 1;
-            using var world = new TestWorld();
-            world.CreateMatch(lastTeam, Team1);
-            world.SpawnUnit(1, float3.zero);
+            Type = CommandType.Smart, Unit = soldier, Target = enemy, Position = new float3(15f, 0f, 0f),
+        });
+        _world.Tick();
 
-            world.Tick();
-            var fog = world.Fog();
+        Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(soldier).Value.Type);
+        Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier));
+    }
 
-            Assert.IsTrue(fog.IsVisible(new float3(5f, 0f, 0f), lastTeam, SightLayer.Ground), "an eight-player FFA needs teams past 7");
-            Assert.IsFalse(fog.IsVisible(new float3(5f, 0f, 0f), Team1, SightLayer.Ground));
-        }
+    [Test]
+    public void StealthDisabledOrMoving_LeavesUnitVisible()
+    {
+        var toggled = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)), enabled: false);
+        var still = Stealthy(_world.SpawnUnit(2, new float3(-3f, 0f, 0f)), onlyWhenStill: true);
+        _world.Tick();
+        Assert.IsFalse(_world.IsEnabled<Stealthed>(toggled));
+        Assert.IsTrue(_world.IsEnabled<Stealthed>(still));
 
-        [Test]
-        public void SetTeam_RejectsTeamsPastTheFogBits_AndSlotsPastTheLastOwner()
-        {
-            var relations = new OwnerRelations();
+        _world.SetEnabled<Stealth>(toggled, true);
+        _world.Set(still, new MoveDestination { Value = new float3(-40f, 0f, 0f) });
+        _world.SetEnabled<MoveDestination>(still, true);
+        _world.Tick();
 
-            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, OwnerRelations.MaxTeams));
-            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(1, -1));
-            Assert.Throws<System.ArgumentException>(() => relations.SetTeam(Owner.Max + 1, 1));
-        }
+        Assert.IsTrue(_world.IsEnabled<Stealthed>(toggled), "games toggle stealth at runtime");
+        Assert.IsFalse(_world.IsEnabled<Stealthed>(still), "still-only stealth drops while moving");
+    }
 
-        [Test]
-        public void Fog_KeepsExploredCells_AfterTheUnitLeaves()
-        {
-            var scout = _world.SpawnUnit(1, float3.zero);
-            _world.Tick();
-            var version = _world.Fog().Version;
+    private Entity Stealthy(Entity entity, float reveal = 1f, bool onlyWhenStill = false, bool enabled = true)
+    {
+        var writer = _world.Writer(entity);
+        StealthSetup.AddStealth(writer,
+            new Stealth { RevealDuration = reveal, OnlyWhenStill = onlyWhenStill }, enabled);
+        return entity;
+    }
 
-            _world.Set(scout, LocalTransform.FromPosition(new float3(50f, 0f, 0f)));
-            _world.Run(0.5f);
-            var fog = _world.Fog();
-
-            Assert.IsFalse(fog.IsVisible(float3.zero, Team1, SightLayer.Ground));
-            Assert.IsTrue(fog.IsExplored(float3.zero, Team1));
-            Assert.IsTrue(fog.IsVisible(new float3(50f, 0f, 0f), Team1, SightLayer.Ground));
-            Assert.Greater(fog.Version, version, "restamps bump the version");
-        }
-
-        [Test]
-        public void FogDisabled_EverythingVisible()
-        {
-            _world.DisableFog();
-
-            _world.Tick();
-            var fog = _world.Fog();
-
-            Assert.IsTrue(fog.IsVisible(new float3(90f, 0f, -90f), Team1, SightLayer.Ground));
-            Assert.IsTrue(fog.IsVisible(new float3(-90f, 0f, 90f), Team2, SightLayer.Ground));
-            Assert.IsTrue(fog.IsExplored(float3.zero, Team2));
-        }
-
-        [Test]
-        public void FogHidden_TagsOnlyUnseenEnemies_AndDeselectsThem()
-        {
-            var scout = _world.SpawnUnit(1, float3.zero);
-            var seen = _world.SpawnUnit(2, new float3(5f, 0f, 0f));
-            var unseen = _world.SpawnUnit(2, new float3(50f, 0f, 0f));
-            _world.SetEnabled<Selected>(unseen, true);
-
-            _world.Tick(frames: 2);
-
-            Assert.IsTrue(_world.IsFogHidden(unseen));
-            Assert.IsFalse(_world.IsFogHidden(seen));
-            Assert.IsFalse(_world.IsFogHidden(scout), "own units are never hidden");
-            Assert.IsFalse(_world.IsEnabled<Selected>(unseen), "enemies in fog drop out of the selection");
-        }
-
-        [Test]
-        public void Detector_RevealsStealthedEnemy_OnlyInRange()
-        {
-            var soldier = Detect(_world.AddWeapon(_world.SpawnUnit(1, float3.zero)), radius: 5f);
-            var enemy = Stealthy(_world.SpawnUnit(2, new float3(8f, 0f, 0f)));
-
-            _world.Run(1f);
-            Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier), "inside vision, outside detection");
-            Assert.IsTrue(_world.IsFogHidden(enemy));
-
-            _world.Set(enemy, LocalTransform.FromPosition(new float3(3f, 0f, 0f)));
-            _world.Run(0.3f);
-            Assert.IsFalse(_world.IsFogHidden(enemy));
-
-            _world.Run(3f);
-            Assert.IsFalse(_world.EntityManager.Exists(enemy), "detected, so acquired and killed");
-        }
-
-        [Test]
-        public void Detector_OnLowPower_StopsDetecting_UntilPowered()
-        {
-            Detect(_world.SpawnBuilding(1, float3.zero, new float2(4f, 4f), new TestBuilding
-            {
-                Power = -3f,
-            }), radius: 10f);
-            var enemy = Stealthy(_world.SpawnUnit(2, new float3(5f, 0f, 0f)));
-
-            _world.Run(0.3f);
-            Assert.IsTrue(_world.IsFogHidden(enemy), "a radar on low power is off");
-
-            _world.SpawnBuilding(1, new float3(-20f, 0f, 0f), new float2(4f, 4f), new TestBuilding { Power = 5f });
-            _world.Run(0.3f);
-            Assert.IsFalse(_world.IsFogHidden(enemy), "powered again, so it detects");
-        }
-
-        [Test]
-        public void Firing_RevealsShooter_ThenItRestealths()
-        {
-            var shooter = Stealthy(_world.AddWeapon(_world.SpawnUnit(2, float3.zero), new TestWeapon
-            {
-                Cooldown = 100f,
-            }), reveal: 1f);
-            var target = _world.SpawnUnit(1, new float3(3f, 0f, 0f), new TestUnit { MaxHealth = 1000f });
-
-            _world.Run(0.4f);
-            Assert.Less(_world.GetHealth(target), 1000f, "fired once");
-            Assert.IsFalse(_world.IsEnabled<Stealthed>(shooter));
-            Assert.IsFalse(_world.IsFogHidden(shooter), "visible while revealed");
-
-            _world.Run(1.2f);
-            Assert.IsTrue(_world.IsEnabled<Stealthed>(shooter));
-            Assert.IsTrue(_world.IsFogHidden(shooter), "hidden again once the reveal ends");
-        }
-
-        [Test]
-        public void FogOff_StillHidesStealthedEnemies_UntilDetected()
-        {
-            _world.DisableFog();
-            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
-            var enemy = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)));
-            var far = _world.SpawnUnit(2, new float3(80f, 0f, 0f));
-
-            _world.Run(1f);
-            Assert.AreEqual(100f, _world.GetHealth(enemy));
-            Assert.IsTrue(_world.IsFogHidden(enemy));
-            Assert.IsFalse(_world.IsFogHidden(far), "fog off shows everything else");
-
-            Detect(soldier, 5f);
-            _world.Run(1f);
-            Assert.IsFalse(_world.IsFogHidden(enemy));
-            Assert.Less(_world.GetHealth(enemy), 100f);
-        }
-
-        [Test]
-        public void StealthedTarget_CannotBeOrderedAttacked()
-        {
-            var soldier = _world.AddWeapon(_world.SpawnUnit(1, float3.zero));
-            var enemy = Stealthy(_world.SpawnUnit(2, new float3(15f, 0f, 0f)));
-            _world.Tick();
-
-            _world.Command(1, new PlayerCommand
-            {
-                Type = CommandType.Smart, Unit = soldier, Target = enemy, Position = new float3(15f, 0f, 0f),
-            });
-            _world.Tick();
-
-            Assert.AreEqual(OrderType.Move, _world.Get<ActiveOrder>(soldier).Value.Type);
-            Assert.IsFalse(_world.IsEnabled<AttackTarget>(soldier));
-        }
-
-        [Test]
-        public void StealthDisabledOrMoving_LeavesUnitVisible()
-        {
-            var toggled = Stealthy(_world.SpawnUnit(2, new float3(3f, 0f, 0f)), enabled: false);
-            var still = Stealthy(_world.SpawnUnit(2, new float3(-3f, 0f, 0f)), onlyWhenStill: true);
-            _world.Tick();
-            Assert.IsFalse(_world.IsEnabled<Stealthed>(toggled));
-            Assert.IsTrue(_world.IsEnabled<Stealthed>(still));
-
-            _world.SetEnabled<Stealth>(toggled, true);
-            _world.Set(still, new MoveDestination { Value = new float3(-40f, 0f, 0f) });
-            _world.SetEnabled<MoveDestination>(still, true);
-            _world.Tick();
-
-            Assert.IsTrue(_world.IsEnabled<Stealthed>(toggled), "games toggle stealth at runtime");
-            Assert.IsFalse(_world.IsEnabled<Stealthed>(still), "still-only stealth drops while moving");
-        }
-
-        private Entity Stealthy(Entity entity, float reveal = 1f, bool onlyWhenStill = false, bool enabled = true)
-        {
-            var writer = _world.Writer(entity);
-            StealthSetup.AddStealth(writer,
-                new Stealth { RevealDuration = reveal, OnlyWhenStill = onlyWhenStill }, enabled);
-            return entity;
-        }
-
-        private Entity Detect(Entity entity, float radius)
-        {
-            var writer = _world.Writer(entity);
-            StealthSetup.AddDetector(writer, radius);
-            return entity;
-        }
+    private Entity Detect(Entity entity, float radius)
+    {
+        var writer = _world.Writer(entity);
+        StealthSetup.AddDetector(writer, radius);
+        return entity;
     }
 }

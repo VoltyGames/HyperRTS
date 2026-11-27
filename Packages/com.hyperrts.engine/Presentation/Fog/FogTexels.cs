@@ -4,50 +4,49 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 
-namespace HyperRTS.Presentation.Fog
+namespace HyperRTS.Presentation.Fog;
+
+/// <summary>Converts a team's fog-of-war planes into per-cell overlay opacity (0 = clear), from the ground layer.</summary>
+public static class FogTexels
 {
-    /// <summary>Converts a team's fog-of-war planes into per-cell overlay opacity (0 = clear), from the ground layer.</summary>
-    public static class FogTexels
+    public static void Fill(in FogOfWar fog, byte team, byte exploredAlpha, byte unexploredAlpha,
+        NativeArray<byte> output)
     {
-        public static void Fill(in FogOfWar fog, byte team, byte exploredAlpha, byte unexploredAlpha,
-            NativeArray<byte> output)
+        new FillJob
         {
-            new FillJob
+            Fog = fog,
+            Team = team,
+            ExploredAlpha = exploredAlpha,
+            UnexploredAlpha = unexploredAlpha,
+            Output = output,
+        }.Run();
+    }
+
+    [BurstCompile]
+    private struct FillJob : IJob
+    {
+        [ReadOnly] public FogOfWar Fog;
+        public byte Team;
+        public byte ExploredAlpha;
+        public byte UnexploredAlpha;
+        public NativeArray<byte> Output;
+
+        public void Execute()
+        {
+            foreach (var cell in Fog.Grid.Cells(int2.zero, Fog.Grid.Size - 1))
             {
-                Fog = fog,
-                Team = team,
-                ExploredAlpha = exploredAlpha,
-                UnexploredAlpha = unexploredAlpha,
-                Output = output,
-            }.Run();
+                Output[Fog.Grid.Index(cell)] = Alpha(cell);
+            }
         }
 
-        [BurstCompile]
-        private struct FillJob : IJob
+        private readonly byte Alpha(int2 cell)
         {
-            [ReadOnly] public FogOfWar Fog;
-            public byte Team;
-            public byte ExploredAlpha;
-            public byte UnexploredAlpha;
-            public NativeArray<byte> Output;
-
-            public void Execute()
+            if (Fog.Has(Fog.Visible, cell, Team))
             {
-                foreach (var cell in Fog.Grid.Cells(int2.zero, Fog.Grid.Size - 1))
-                {
-                    Output[Fog.Grid.Index(cell)] = Alpha(cell);
-                }
+                return 0;
             }
 
-            private readonly byte Alpha(int2 cell)
-            {
-                if (Fog.Has(Fog.Visible, cell, Team))
-                {
-                    return 0;
-                }
-
-                return Fog.Has(Fog.Explored, cell, Team) ? ExploredAlpha : UnexploredAlpha;
-            }
+            return Fog.Has(Fog.Explored, cell, Team) ? ExploredAlpha : UnexploredAlpha;
         }
     }
 }

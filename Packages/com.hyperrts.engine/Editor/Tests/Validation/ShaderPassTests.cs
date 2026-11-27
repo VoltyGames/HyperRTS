@@ -8,119 +8,118 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HyperRTS.Editor.Tests.Validation
+namespace HyperRTS.Editor.Tests.Validation;
+
+/// <summary>
+/// Every URP-lit engine shader has a Meta pass; opaque and cutout shaders join the shadow, depth and motion
+/// vector prepasses; DOTS-instanced shaders compile with it.
+/// </summary>
+public class ShaderPassTests
 {
-    /// <summary>
-    /// Every URP-lit engine shader has a Meta pass; opaque and cutout shaders join the shadow, depth and motion
-    /// vector prepasses; DOTS-instanced shaders compile with it.
-    /// </summary>
-    public class ShaderPassTests
+    private const string Package = "Packages/com.hyperrts.engine";
+
+    // Unlit, or drawn indirectly where GI never renders them.
+    [NoAutoStaticsCleanup]
+    private static readonly HashSet<string> WithoutMeta = new()
     {
-        private const string Package = "Packages/com.hyperrts.engine";
+        "HyperRTS/RowCrop",
+        "HyperRTS/GroundMarker",
+        "HyperRTS/HealthBar",
+        "HyperRTS/Overlay",
+    };
 
-        // Unlit, or drawn indirectly where GI never renders them.
-        [NoAutoStaticsCleanup]
-        private static readonly HashSet<string> WithoutMeta = new()
+    private static readonly ShaderTagId LightMode = new("LightMode");
+    private static readonly ShaderTagId RenderType = new("RenderType");
+    private static readonly ShaderTagId AlwaysRenderMotionVectors = new("AlwaysRenderMotionVectors");
+
+    private static IEnumerable<string> HandWrittenShaders() =>
+        AssetDatabase.FindAssets("t:Shader", new[] { Package })
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Where(path => path.EndsWith(".shader", StringComparison.Ordinal));
+
+    [TestCaseSource(nameof(HandWrittenShaders))]
+    public void ShaderHasItsPrepassesAndCompilesForDOTS(string path)
+    {
+        var shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
+
+        // Opaque and cutout shaders are the ones that cast shadows and fill the depth and normals textures.
+        var renderType = shader.FindSubshaderTagValue(0, RenderType).name;
+        if (renderType is "Opaque" or "TransparentCutout")
         {
-            "HyperRTS/RowCrop",
-            "HyperRTS/GroundMarker",
-            "HyperRTS/HealthBar",
-            "HyperRTS/Overlay",
-        };
-
-        private static readonly ShaderTagId LightMode = new("LightMode");
-        private static readonly ShaderTagId RenderType = new("RenderType");
-        private static readonly ShaderTagId AlwaysRenderMotionVectors = new("AlwaysRenderMotionVectors");
-
-        private static IEnumerable<string> HandWrittenShaders() =>
-            AssetDatabase.FindAssets("t:Shader", new[] { Package })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => path.EndsWith(".shader", StringComparison.Ordinal));
-
-        [TestCaseSource(nameof(HandWrittenShaders))]
-        public void ShaderHasItsPrepassesAndCompilesForDOTS(string path)
-        {
-            var shader = AssetDatabase.LoadAssetAtPath<Shader>(path);
-
-            // Opaque and cutout shaders are the ones that cast shadows and fill the depth and normals textures.
-            var renderType = shader.FindSubshaderTagValue(0, RenderType).name;
-            if (renderType is "Opaque" or "TransparentCutout")
+            foreach (var lightMode in new[] { "ShadowCaster", "DepthOnly", "DepthNormals" })
             {
-                foreach (var lightMode in new[] { "ShadowCaster", "DepthOnly", "DepthNormals" })
-                {
-                    Assert.IsTrue(HasPass(shader, lightMode), $"{shader.name} is {renderType} and needs a {lightMode} pass.");
-                }
-            }
-
-            if (shader.FindSubshaderTagValue(0, AlwaysRenderMotionVectors).name == "true")
-            {
-                Assert.IsTrue(HasPass(shader, "MotionVectors"), $"{shader.name} sets AlwaysRenderMotionVectors and needs a MotionVectors pass.");
-            }
-
-            // Read from the source: the keyword space also lists Unity's global keyword for terrain, whose borrowed
-            // picking pass can't compile with it.
-            if (DeclaresDOTSInstancing(path))
-            {
-                var errors = ShaderChecks.VertexVariantErrors(shader, "DOTS_INSTANCING_ON");
-                Assert.IsEmpty(errors, string.Join("\n", errors));
+                Assert.IsTrue(HasPass(shader, lightMode), $"{shader.name} is {renderType} and needs a {lightMode} pass.");
             }
         }
 
-        private static bool DeclaresDOTSInstancing(string path)
+        if (shader.FindSubshaderTagValue(0, AlwaysRenderMotionVectors).name == "true")
         {
-            var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(path));
-            return source.Contains("DOTS_INSTANCING_ON") || source.Contains("InstancingKeywords.hlsl");
+            Assert.IsTrue(HasPass(shader, "MotionVectors"), $"{shader.name} sets AlwaysRenderMotionVectors and needs a MotionVectors pass.");
         }
 
-        [Test]
-        public void EveryLitShaderHasAMetaPass()
+        // Read from the source: the keyword space also lists Unity's global keyword for terrain, whose borrowed
+        // picking pass can't compile with it.
+        if (DeclaresDOTSInstancing(path))
         {
-            // Hand-written shaders only: Shader Graphs and VFX graphs generate their own passes.
-            var shaders = AssetDatabase.FindAssets("t:Shader", new[] { Package })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(path => path.EndsWith(".shader", StringComparison.Ordinal))
-                .Select(AssetDatabase.LoadAssetAtPath<Shader>)
-                .Where(shader => shader != null)
-                .ToList();
-            Assert.That(shaders, Is.Not.Empty);
-
-            var missing = shaders
-                .Where(shader => !WithoutMeta.Contains(shader.name))
-                .Where(shader => HasPass(shader, "UniversalForward", "UniversalForwardOnly") && !HasPass(shader, "Meta"))
-                .Select(shader => shader.name);
-            Assert.That(missing, Is.Empty, "Lit shaders without a Meta pass; add one through Rendering/MetaPass.hlsl.");
-
-            var stale = WithoutMeta.Where(name => shaders.All(shader => shader.name != name));
-            Assert.That(stale, Is.Empty, "Exempt shaders that no longer exist.");
+            var errors = ShaderChecks.VertexVariantErrors(shader, "DOTS_INSTANCING_ON");
+            Assert.IsEmpty(errors, string.Join("\n", errors));
         }
+    }
 
-        [Test]
-        public void LitTeamVertexStagesCompileWithRigidVATBonesClothAndBuild()
+    private static bool DeclaresDOTSInstancing(string path)
+    {
+        var source = System.IO.File.ReadAllText(System.IO.Path.GetFullPath(path));
+        return source.Contains("DOTS_INSTANCING_ON") || source.Contains("InstancingKeywords.hlsl");
+    }
+
+    [Test]
+    public void EveryLitShaderHasAMetaPass()
+    {
+        // Hand-written shaders only: Shader Graphs and VFX graphs generate their own passes.
+        var shaders = AssetDatabase.FindAssets("t:Shader", new[] { Package })
+            .Select(AssetDatabase.GUIDToAssetPath)
+            .Where(path => path.EndsWith(".shader", StringComparison.Ordinal))
+            .Select(AssetDatabase.LoadAssetAtPath<Shader>)
+            .Where(shader => shader != null)
+            .ToList();
+        Assert.That(shaders, Is.Not.Empty);
+
+        var missing = shaders
+            .Where(shader => !WithoutMeta.Contains(shader.name))
+            .Where(shader => HasPass(shader, "UniversalForward", "UniversalForwardOnly") && !HasPass(shader, "Meta"))
+            .Select(shader => shader.name);
+        Assert.That(missing, Is.Empty, "Lit shaders without a Meta pass; add one through Rendering/MetaPass.hlsl.");
+
+        var stale = WithoutMeta.Where(name => shaders.All(shader => shader.name != name));
+        Assert.That(stale, Is.Empty, "Exempt shaders that no longer exist.");
+    }
+
+    [Test]
+    public void LitTeamVertexStagesCompileWithRigidVATBonesClothAndBuild()
+    {
+        var shader = Shader.Find("HyperRTS/LitTeam");
+
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID"));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES"));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES", "DOTS_INSTANCING_ON"));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "DOTS_INSTANCING_ON"));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
+        Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_CLOTH", "_BUILD", "DOTS_INSTANCING_ON"));
+    }
+
+    // The passes of the subshader URP runs, UsePass ones included. Unity reports built-in light modes upper case (META).
+    private static bool HasPass(Shader shader, params string[] lightModes)
+    {
+        for (var pass = 0; pass < shader.passCount; pass++)
         {
-            var shader = Shader.Find("HyperRTS/LitTeam");
-
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BONES", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_BUILD", "DOTS_INSTANCING_ON"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_VAT_RIGID", "_BUILD"));
-            Assert.IsEmpty(ShaderChecks.VertexVariantErrors(shader, "_CLOTH", "_BUILD", "DOTS_INSTANCING_ON"));
-        }
-
-        // The passes of the subshader URP runs, UsePass ones included. Unity reports built-in light modes upper case (META).
-        private static bool HasPass(Shader shader, params string[] lightModes)
-        {
-            for (var pass = 0; pass < shader.passCount; pass++)
+            if (lightModes.Contains(shader.FindPassTagValue(pass, LightMode).name, StringComparer.OrdinalIgnoreCase))
             {
-                if (lightModes.Contains(shader.FindPassTagValue(pass, LightMode).name, StringComparer.OrdinalIgnoreCase))
-                {
-                    return true;
-                }
+                return true;
             }
-
-            return false;
         }
+
+        return false;
     }
 }

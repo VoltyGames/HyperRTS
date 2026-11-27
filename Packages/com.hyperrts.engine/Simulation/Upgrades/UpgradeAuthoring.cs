@@ -1,91 +1,90 @@
-using HyperRTS.Simulation.Common.Authoring;
-using HyperRTS.Simulation.Stats;
 using System;
 using System.Collections.Generic;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.GameEntities;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
+using HyperRTS.Simulation.Stats;
 using Unity.Entities;
 using UnityEngine;
 
-namespace HyperRTS.Simulation.Upgrades
+namespace HyperRTS.Simulation.Upgrades;
+
+/// <summary>
+/// A one-time research a producer can queue. Once done, its stat bonuses apply to the owner's matching units and
+/// buildings, including ones built later. Put it on its own prefab and list it in a Producer's research options.
+/// </summary>
+[AddComponentMenu(HyperRTSMenu.Entity + "Research/Upgrade")]
+[Icon(HyperRTSIcons.UpgradeAuthoring)]
+[HelpURL(HyperRTSDocs.Upgrades)]
+[DisallowMultipleComponent]
+public class UpgradeAuthoring : ProducibleAuthoring
 {
-    /// <summary>
-    /// A one-time research a producer can queue. Once done, its stat bonuses apply to the owner's matching units and
-    /// buildings, including ones built later. Put it on its own prefab and list it in a Producer's research options.
-    /// </summary>
-    [AddComponentMenu(HyperRTSMenu.Entity + "Research/Upgrade")]
-    [Icon(HyperRTSIcons.UpgradeAuthoring)]
-    [HelpURL(HyperRTSDocs.Upgrades)]
-    [DisallowMultipleComponent]
-    public class UpgradeAuthoring : ProducibleAuthoring
+    [Serializable]
+    public class Effect
     {
-        [Serializable]
-        public class Effect
-        {
-            [Tooltip("Unit and building types affected; empty affects everything the owner has.")]
-            [PrefabAsset("Upgrade target"), NoEmptyEntries]
-            public List<GameEntityAuthoring> appliesTo = new();
+        [Tooltip("Unit and building types affected; empty affects everything the owner has.")]
+        [PrefabAsset("Upgrade target"), NoEmptyEntries]
+        public List<GameEntityAuthoring> appliesTo = new();
 
-            [Tooltip("Bonuses given to every affected entity.")]
-            public List<StatBonus> bonuses = new();
+        [Tooltip("Bonuses given to every affected entity.")]
+        public List<StatBonus> bonuses = new();
+    }
+
+    [Header("Research")]
+    [Tooltip("What the upgrade changes.")]
+    public List<Effect> effects = new();
+
+    // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
+    public static void Add(EntityWriter writer, in EntityInfo info, float buildTime,
+        IReadOnlyList<ResourceCost> cost, IReadOnlyList<Prerequisite> prerequisites,
+        IReadOnlyList<UpgradeEffect> effects)
+    {
+        writer.Add<Research>();
+        // A limit of one, counting queued and finished, is what keeps research to once per player.
+        writer.Add(new BuildLimit { Max = 1 });
+        writer.Add(info);
+        writer.Add(new Producible { BuildTime = buildTime });
+
+        writer.AddBuffer(cost);
+        writer.AddBuffer(prerequisites);
+        writer.AddBuffer(effects);
+    }
+
+    public class Baker : Baker<UpgradeAuthoring>
+    {
+        public override void Bake(UpgradeAuthoring authoring)
+        {
+            var writer = this.Writer(TransformUsageFlags.None);
+            var info = authoring.BakeProducible(this, out var costs, out var required);
+            UpgradeAuthoring.Add(writer, info, authoring.buildTime, costs, required, BakeEffects(authoring));
         }
 
-        [Header("Research")]
-        [Tooltip("What the upgrade changes.")]
-        public List<Effect> effects = new();
-
-        // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
-        public static void Add(EntityWriter writer, in EntityInfo info, float buildTime,
-            IReadOnlyList<ResourceCost> cost, IReadOnlyList<Prerequisite> prerequisites,
-            IReadOnlyList<UpgradeEffect> effects)
+        private List<UpgradeEffect> BakeEffects(UpgradeAuthoring authoring)
         {
-            writer.Add<Research>();
-            // A limit of one, counting queued and finished, is what keeps research to once per player.
-            writer.Add(new BuildLimit { Max = 1 });
-            writer.Add(info);
-            writer.Add(new Producible { BuildTime = buildTime });
-
-            writer.AddBuffer(cost);
-            writer.AddBuffer(prerequisites);
-            writer.AddBuffer(effects);
-        }
-
-        public class Baker : Baker<UpgradeAuthoring>
-        {
-            public override void Bake(UpgradeAuthoring authoring)
+            var effects = new List<UpgradeEffect>();
+            foreach (var effect in authoring.effects)
             {
-                var writer = this.Writer(TransformUsageFlags.None);
-                var info = authoring.BakeProducible(this, out var costs, out var required);
-                UpgradeAuthoring.Add(writer, info, authoring.buildTime, costs, required, BakeEffects(authoring));
-            }
-
-            private List<UpgradeEffect> BakeEffects(UpgradeAuthoring authoring)
-            {
-                var effects = new List<UpgradeEffect>();
-                foreach (var effect in authoring.effects)
+                foreach (var modifier in StatBonus.ToModifiers(effect.bonuses, StatSource.Upgrade(authoring.TypeId)))
                 {
-                    foreach (var modifier in StatBonus.ToModifiers(effect.bonuses, StatSource.Upgrade(authoring.TypeId)))
+                    if (effect.appliesTo.Count == 0)
                     {
-                        if (effect.appliesTo.Count == 0)
-                        {
-                            effects.Add(new UpgradeEffect { Modifier = modifier });
-                        }
+                        effects.Add(new UpgradeEffect { Modifier = modifier });
+                    }
 
-                        foreach (var target in effect.appliesTo)
+                    foreach (var target in effect.appliesTo)
+                    {
+                        if (target != null)
                         {
-                            if (target != null)
-                            {
-                                DependsOn(target);
-                                effects.Add(new UpgradeEffect { AppliesTo = target.TypeId, Modifier = modifier });
-                            }
+                            DependsOn(target);
+                            effects.Add(new UpgradeEffect { AppliesTo = target.TypeId, Modifier = modifier });
                         }
                     }
                 }
-
-                return effects;
             }
+
+            return effects;
         }
     }
 }

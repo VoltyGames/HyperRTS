@@ -4,68 +4,67 @@ using HyperRTS.Editor.Maps.Kits;
 using HyperRTS.Editor.Maps.Palette;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Maps.Planning.Settlements
+namespace HyperRTS.Editor.Maps.Planning.Settlements;
+
+/// <summary>A settlement kit with its keys resolved to props and the orchard tree; empty keys stay null.</summary>
+internal sealed class MapSettlementEntries
 {
-    /// <summary>A settlement kit with its keys resolved to props and the orchard tree; empty keys stay null.</summary>
-    internal sealed class MapSettlementEntries
+    public MapSettlementEntries(MapPalette palette, MapClimate climate, MapSettlementKit kit)
     {
-        public MapSettlementEntries(MapPalette palette, MapClimate climate, MapSettlementKit kit)
+        Houses = kit.houses.ConvertAll(palette.Entry);
+        Outbuildings = kit.outbuildings.ConvertAll(palette.Entry);
+        Extras = kit.extras.ConvertAll(extra => (palette.Entry(extra.kind), extra));
+        FrontFence = Optional(palette, kit.frontFence);
+        SideFence = Optional(palette, kit.sideFence);
+        Gate = Optional(palette, kit.gate);
+        Pipe = Optional(palette, kit.streetPipe);
+        PipeArch = Pipe == null ? null : palette.Entry(kit.streetPipeArch);
+        Pole = Optional(palette, kit.streetPole);
+        OrchardTree = string.IsNullOrEmpty(kit.orchardTree) ? -1 : climate.TreeIndex(kit.orchardTree);
+        OutbuildingDepth = DeepestOutbuilding(kit, Outbuildings);
+    }
+
+    public List<MapProp> Houses { get; }
+
+    public List<MapProp> Outbuildings { get; }
+
+    public List<(MapProp Entry, MapPlotProp Prop)> Extras { get; }
+
+    public MapProp FrontFence { get; }
+
+    public MapProp SideFence { get; }
+
+    public MapProp Gate { get; }
+
+    public MapProp Pipe { get; }
+
+    /// <summary>The arch carrying the pipe over a gap; required (and resolved) whenever there is a pipe.</summary>
+    public MapProp PipeArch { get; }
+
+    public MapProp Pole { get; }
+
+    /// <summary>Climate tree index of the orchard, -1 for a meadow back.</summary>
+    public int OrchardTree { get; }
+
+    /// <summary>Depth behind the house that outbuildings may stand in; the yard keeps only what they take.</summary>
+    public float OutbuildingDepth { get; }
+
+    private static MapProp Optional(MapPalette palette, string key) =>
+        string.IsNullOrEmpty(key) ? null : palette.Entry(key);
+
+    private static float DeepestOutbuilding(MapSettlementKit kit, List<MapProp> outbuildings)
+    {
+        if (kit.maxOutbuildings <= 0)
         {
-            Houses = kit.houses.ConvertAll(palette.Entry);
-            Outbuildings = kit.outbuildings.ConvertAll(palette.Entry);
-            Extras = kit.extras.ConvertAll(extra => (palette.Entry(extra.kind), extra));
-            FrontFence = Optional(palette, kit.frontFence);
-            SideFence = Optional(palette, kit.sideFence);
-            Gate = Optional(palette, kit.gate);
-            Pipe = Optional(palette, kit.streetPipe);
-            PipeArch = Pipe == null ? null : palette.Entry(kit.streetPipeArch);
-            Pole = Optional(palette, kit.streetPole);
-            OrchardTree = string.IsNullOrEmpty(kit.orchardTree) ? -1 : climate.TreeIndex(kit.orchardTree);
-            OutbuildingDepth = DeepestOutbuilding(kit, Outbuildings);
+            return 0f;
         }
 
-        public List<MapProp> Houses { get; }
-
-        public List<MapProp> Outbuildings { get; }
-
-        public List<(MapProp Entry, MapPlotProp Prop)> Extras { get; }
-
-        public MapProp FrontFence { get; }
-
-        public MapProp SideFence { get; }
-
-        public MapProp Gate { get; }
-
-        public MapProp Pipe { get; }
-
-        /// <summary>The arch carrying the pipe over a gap; required (and resolved) whenever there is a pipe.</summary>
-        public MapProp PipeArch { get; }
-
-        public MapProp Pole { get; }
-
-        /// <summary>Climate tree index of the orchard, -1 for a meadow back.</summary>
-        public int OrchardTree { get; }
-
-        /// <summary>Depth behind the house that outbuildings may stand in; the yard keeps only what they take.</summary>
-        public float OutbuildingDepth { get; }
-
-        private static MapProp Optional(MapPalette palette, string key) =>
-            string.IsNullOrEmpty(key) ? null : palette.Entry(key);
-
-        private static float DeepestOutbuilding(MapSettlementKit kit, List<MapProp> outbuildings)
+        var deepest = 0f;
+        foreach (var entry in outbuildings)
         {
-            if (kit.maxOutbuildings <= 0)
-            {
-                return 0f;
-            }
-
-            var deepest = 0f;
-            foreach (var entry in outbuildings)
-            {
-                deepest = Mathf.Max(deepest, entry.size.y * entry.scale.y);
-            }
-
-            return deepest > 0f ? deepest + 1f : 0f;
+            deepest = Mathf.Max(deepest, entry.size.y * entry.scale.y);
         }
+
+        return deepest > 0f ? deepest + 1f : 0f;
     }
 }

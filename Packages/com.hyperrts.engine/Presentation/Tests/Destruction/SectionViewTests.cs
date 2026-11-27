@@ -7,225 +7,224 @@ using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
 
-namespace HyperRTS.Presentation.Tests.Destruction
+namespace HyperRTS.Presentation.Tests.Destruction;
+
+/// <summary>
+/// Section views follow the building's broken mask: quietly on the first frame, as a clip of pieces for a break
+/// this client saw, and back to standing on repair. Models other than the intact one are copied in while they show.
+/// </summary>
+public class SectionViewTests : SectionViewFixture
 {
-    /// <summary>
-    /// Section views follow the building's broken mask: quietly on the first frame, as a clip of pieces for a break
-    /// this client saw, and back to standing on repair. Models other than the intact one are copied in while they show.
-    /// </summary>
-    public class SectionViewTests : SectionViewFixture
+    [Test]
+    public void TheMaskDrivesTheViews()
     {
-        [Test]
-        public void TheMaskDrivesTheViews()
-        {
-            var house = Building(0b0101ul, false, out var models);
+        var house = Building(0b0101ul, false, out var models);
 
-            Update(0f);
+        Update(0f);
 
-            AssertBroken(models, true, false, true, false);
-            Assert.AreEqual(0b0101ul, _em.GetComponentData<ShownSections>(house).Broken);
-        }
+        AssertBroken(models, true, false, true, false);
+        Assert.AreEqual(0b0101ul, _em.GetComponentData<ShownSections>(house).Broken);
+    }
 
-        [Test]
-        public void Break_AndRepair_FlipOnlyThatSection()
-        {
-            var house = Building(0ul, false, out var models);
-            Update(0f);
+    [Test]
+    public void Break_AndRepair_FlipOnlyThatSection()
+    {
+        var house = Building(0ul, false, out var models);
+        Update(0f);
 
-            SetBroken(house, 0b1000ul);
-            Update(0f);
-            AssertBroken(models, false, false, false, true);
+        SetBroken(house, 0b1000ul);
+        Update(0f);
+        AssertBroken(models, false, false, false, true);
 
-            SetBroken(house, 0ul);
-            Update(0f);
-            AssertBroken(models, false, false, false, false);
-        }
+        SetBroken(house, 0ul);
+        Update(0f);
+        AssertBroken(models, false, false, false, false);
+    }
 
-        [Test]
-        public void SectionParts_HideWithTheIntactModel_AndShowOnRepair()
-        {
-            var house = Building(0ul, false, out _);
-            var turret = AddPart(house, 1);
-            var door = AddPart(house, 2);
-            Update(0f);
-            Assert.IsTrue(Drawn(turret));
+    [Test]
+    public void SectionParts_HideWithTheIntactModel_AndShowOnRepair()
+    {
+        var house = Building(0ul, false, out _);
+        var turret = AddPart(house, 1);
+        var door = AddPart(house, 2);
+        Update(0f);
+        Assert.IsTrue(Drawn(turret));
 
-            SetBroken(house, 0b0010ul);
-            Update(0f);
-            Assert.IsFalse(Drawn(turret), "hidden with its section");
-            Assert.IsTrue(Drawn(door), "another section's part stays");
+        SetBroken(house, 0b0010ul);
+        Update(0f);
+        Assert.IsFalse(Drawn(turret), "hidden with its section");
+        Assert.IsTrue(Drawn(door), "another section's part stays");
 
-            SetBroken(house, 0ul);
-            Update(0f);
-            Assert.IsTrue(Drawn(turret));
-        }
+        SetBroken(house, 0ul);
+        Update(0f);
+        Assert.IsTrue(Drawn(turret));
+    }
 
-        [Test]
-        public void SeenBreak_PlaysItsClipOnce_AndItsPiecesStayWhereItLeftThem()
-        {
-            var house = Building(0ul, true, out var models);
-            Update(0f);
+    [Test]
+    public void SeenBreak_PlaysItsClipOnce_AndItsPiecesStayWhereItLeftThem()
+    {
+        var house = Building(0ul, true, out var models);
+        Update(0f);
 
-            SetBroken(house, 0b0100ul);
-            Update(10f);
+        SetBroken(house, 0b0100ul);
+        Update(10f);
 
-            var piece = models[2];
-            var started = _em.GetComponentData<PlayingClip>(Copy(piece.Pieces)).Value;
-            Assert.AreEqual(new float4(61f, 60f, -30f, 10f), started, "falls apart alone");
-            AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
+        var piece = models[2];
+        var started = _em.GetComponentData<PlayingClip>(Copy(piece.Pieces)).Value;
+        Assert.AreEqual(new float4(61f, 60f, -30f, 10f), started, "falls apart alone");
+        AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
 
-            Update(10f + Clips.Collapse.Seconds + 0.1f);
-            AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
-            AssertDrawn(models[0], intact: true, pieces: false, stub: false, heap: false);
-        }
+        Update(10f + Clips.Collapse.Seconds + 0.1f);
+        AssertDrawn(piece, intact: false, pieces: true, stub: true, heap: false);
+        AssertDrawn(models[0], intact: true, pieces: false, stub: false, heap: false);
+    }
 
-        [Test]
-        public void UnseenBreak_ShowsTheEndStateWithoutAClip()
-        {
-            var house = Building(0ul, true, out var models);
-            Update(0f);
-            Unseen(house);
+    [Test]
+    public void UnseenBreak_ShowsTheEndStateWithoutAClip()
+    {
+        var house = Building(0ul, true, out var models);
+        Update(0f);
+        Unseen(house);
 
-            SetBroken(house, 0b0011ul);
-            Update(5f);
+        SetBroken(house, 0b0011ul);
+        Update(5f);
 
-            AssertDrawn(models[0], intact: false, pieces: false, stub: true, heap: true);
-            AssertDrawn(models[1], intact: false, pieces: false, stub: true, heap: true);
-            AssertDrawn(models[2], intact: true, pieces: false, stub: false, heap: false);
-            Assert.IsTrue(_em.GetComponentData<ShownSections>(house).Seen);
-        }
+        AssertDrawn(models[0], intact: false, pieces: false, stub: true, heap: true);
+        AssertDrawn(models[1], intact: false, pieces: false, stub: true, heap: true);
+        AssertDrawn(models[2], intact: true, pieces: false, stub: false, heap: false);
+        Assert.IsTrue(_em.GetComponentData<ShownSections>(house).Seen);
+    }
 
-        [Test]
-        public void Stub_HidesWhileNoSupportStands_AndReturnsOnRepair()
-        {
-            var house = Building(0ul, true, out var models);
-            Lean(house, holders: 0b1000ul, rests: 0ul);
-            BreakAndSettle(house);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+    [Test]
+    public void Stub_HidesWhileNoSupportStands_AndReturnsOnRepair()
+    {
+        var house = Building(0ul, true, out var models);
+        Lean(house, holders: 0b1000ul, rests: 0ul);
+        BreakAndSettle(house);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
 
-            SetBroken(house, 0b1100ul);
-            Update(10f);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+        SetBroken(house, 0b1100ul);
+        Update(10f);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
 
-            SetBroken(house, 0b0100ul);
-            Update(11f);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
-        }
+        SetBroken(house, 0b0100ul);
+        Update(11f);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+    }
 
-        [Test]
-        public void SectionFallingAfterItsSupport_ShowsNoStubWhileItsPiecesFall()
-        {
-            var house = Building(0ul, true, out var models);
-            Lean(house, holders: 0b1000ul, rests: 0ul);
-            Update(0f);
+    [Test]
+    public void SectionFallingAfterItsSupport_ShowsNoStubWhileItsPiecesFall()
+    {
+        var house = Building(0ul, true, out var models);
+        Lean(house, holders: 0b1000ul, rests: 0ul);
+        Update(0f);
 
-            SetBroken(house, 0b1100ul);
-            Update(1f);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
-        }
+        SetBroken(house, 0b1100ul);
+        Update(1f);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+    }
 
-        [Test]
-        public void SupportLostMidClip_HidesTheStub_AndThePiecesPlayOn()
-        {
-            var house = Building(0ul, true, out var models);
-            Lean(house, holders: 0b1000ul, rests: 0ul);
-            Update(0f);
-            SetBroken(house, 0b0100ul);
-            Update(1f);
-            var started = _em.GetComponentData<PlayingClip>(Copy(models[2].Pieces)).Value;
+    [Test]
+    public void SupportLostMidClip_HidesTheStub_AndThePiecesPlayOn()
+    {
+        var house = Building(0ul, true, out var models);
+        Lean(house, holders: 0b1000ul, rests: 0ul);
+        Update(0f);
+        SetBroken(house, 0b0100ul);
+        Update(1f);
+        var started = _em.GetComponentData<PlayingClip>(Copy(models[2].Pieces)).Value;
 
-            SetBroken(house, 0b1100ul);
-            Update(1.5f);
+        SetBroken(house, 0b1100ul);
+        Update(1.5f);
 
-            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
-            Assert.AreEqual(started, _em.GetComponentData<PlayingClip>(Copy(models[2].Pieces)).Value, "the clip is not restarted");
-            Update(1f + Clips.Collapse.Seconds + 0.1f);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
-        }
+        AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+        Assert.AreEqual(started, _em.GetComponentData<PlayingClip>(Copy(models[2].Pieces)).Value, "the clip is not restarted");
+        Update(1f + Clips.Collapse.Seconds + 0.1f);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: false, heap: false);
+    }
 
-        [Test]
-        public void Debris_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
-        {
-            var house = Building(0ul, true, out var models);
-            Lean(house, holders: 0ul, rests: 0b1000ul);
-            BreakAndSettle(house);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+    [Test]
+    public void Debris_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
+    {
+        var house = Building(0ul, true, out var models);
+        Lean(house, holders: 0ul, rests: 0b1000ul);
+        BreakAndSettle(house);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
 
-            SetBroken(house, 0b1100ul);
-            Update(10f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: false);
+        SetBroken(house, 0b1100ul);
+        Update(10f);
+        AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: false);
 
-            SetBroken(house, 0b0100ul);
-            Update(11f);
-            AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
-        }
+        SetBroken(house, 0b0100ul);
+        Update(11f);
+        AssertDrawn(models[2], intact: false, pieces: true, stub: true, heap: false);
+    }
 
-        [Test]
-        public void Heap_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
-        {
-            var house = Building(0ul, true, out var models);
-            Lean(house, holders: 0ul, rests: 0b1000ul);
-            Update(0f);
-            Unseen(house);
-            SetBroken(house, 0b0100ul);
-            Update(5f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+    [Test]
+    public void Heap_HidesWhileTheSectionItLiesOnIsBroken_AndReturnsOnRepair()
+    {
+        var house = Building(0ul, true, out var models);
+        Lean(house, holders: 0ul, rests: 0b1000ul);
+        Update(0f);
+        Unseen(house);
+        SetBroken(house, 0b0100ul);
+        Update(5f);
+        AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
 
-            SetBroken(house, 0b1100ul);
-            Update(6f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: false);
+        SetBroken(house, 0b1100ul);
+        Update(6f);
+        AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: false);
 
-            SetBroken(house, 0b0100ul);
-            Update(7f);
-            AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
-        }
+        SetBroken(house, 0b0100ul);
+        Update(7f);
+        AssertDrawn(models[2], intact: false, pieces: false, stub: true, heap: true);
+    }
 
-        [Test]
-        public void Copies_JoinTheBuildingsGroupWithItsHideReasons_AndLeaveWithRepair()
-        {
-            var house = Building(0ul, false, out var models);
-            Update(0f);
-            var standing = _em.GetBuffer<LinkedEntityGroup>(house).Length;
-            _em.SetComponentData(house, new HiddenBy { Reasons = HideReason.Inside });
+    [Test]
+    public void Copies_JoinTheBuildingsGroupWithItsHideReasons_AndLeaveWithRepair()
+    {
+        var house = Building(0ul, false, out var models);
+        Update(0f);
+        var standing = _em.GetBuffer<LinkedEntityGroup>(house).Length;
+        _em.SetComponentData(house, new HiddenBy { Reasons = HideReason.Inside });
 
-            SetBroken(house, 0b0001ul);
-            Update(1f);
-            var copy = Copy(models[0].Broken);
-            var group = _em.GetBuffer<LinkedEntityGroup>(house).Reinterpret<Entity>().AsNativeArray();
-            Assert.IsTrue(group.Contains(copy), "destroyed with the building");
-            Assert.AreEqual(house, _em.GetComponentData<Parent>(copy).Value);
-            Assert.IsFalse(Drawn(copy), "hidden like the rest of the building");
+        SetBroken(house, 0b0001ul);
+        Update(1f);
+        var copy = Copy(models[0].Broken);
+        var group = _em.GetBuffer<LinkedEntityGroup>(house).Reinterpret<Entity>().AsNativeArray();
+        Assert.IsTrue(group.Contains(copy), "destroyed with the building");
+        Assert.AreEqual(house, _em.GetComponentData<Parent>(copy).Value);
+        Assert.IsFalse(Drawn(copy), "hidden like the rest of the building");
 
-            SetBroken(house, 0ul);
-            Update(2f);
-            Assert.IsFalse(_em.Exists(copy));
-            Assert.AreEqual(standing, _em.GetBuffer<LinkedEntityGroup>(house).Length);
-        }
+        SetBroken(house, 0ul);
+        Update(2f);
+        Assert.IsFalse(_em.Exists(copy));
+        Assert.AreEqual(standing, _em.GetBuffer<LinkedEntityGroup>(house).Length);
+    }
 
-        // Section 2 stands on, or lies on, section 3.
-        private void Lean(Entity house, ulong holders, ulong rests)
-        {
-            var sections = _em.GetBuffer<Section>(house);
-            var resting = sections[2];
-            resting.Holders = holders;
-            resting.Rests = rests;
-            sections[2] = resting;
-        }
+    // Section 2 stands on, or lies on, section 3.
+    private void Lean(Entity house, ulong holders, ulong rests)
+    {
+        var sections = _em.GetBuffer<Section>(house);
+        var resting = sections[2];
+        resting.Holders = holders;
+        resting.Rests = rests;
+        sections[2] = resting;
+    }
 
-        private void Unseen(Entity house)
-        {
-            var shown = _em.GetComponentData<ShownSections>(house);
-            shown.Seen = false;
-            _em.SetComponentData(house, shown);
-        }
+    private void Unseen(Entity house)
+    {
+        var shown = _em.GetComponentData<ShownSections>(house);
+        shown.Seen = false;
+        _em.SetComponentData(house, shown);
+    }
 
-        // Breaks section 2 in view and plays its clip to the end.
-        private void BreakAndSettle(Entity house)
-        {
-            Update(0f);
-            SetBroken(house, 0b0100ul);
-            Update(1f);
-            Update(1f + Clips.Collapse.Seconds + 0.1f);
-        }
+    // Breaks section 2 in view and plays its clip to the end.
+    private void BreakAndSettle(Entity house)
+    {
+        Update(0f);
+        SetBroken(house, 0b0100ul);
+        Update(1f);
+        Update(1f + Clips.Collapse.Seconds + 0.1f);
     }
 }

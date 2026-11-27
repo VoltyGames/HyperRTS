@@ -6,90 +6,89 @@ using HyperRTS.Simulation.Production;
 using UnityEditor;
 using UnityEngine;
 
-namespace HyperRTS.Editor.Templates
+namespace HyperRTS.Editor.Templates;
+
+/// <summary>One row of the New Entity wizard: a heading, an engine template or a project's base prefab.</summary>
+public sealed class EntityChoice
 {
-    /// <summary>One row of the New Entity wizard: a heading, an engine template or a project's base prefab.</summary>
-    public sealed class EntityChoice
+    private readonly Func<string, GameObject> _build;
+
+    private EntityChoice(string label, Texture icon, Func<string, GameObject> build)
     {
-        private readonly Func<string, GameObject> _build;
+        Label = label;
+        Icon = icon;
+        _build = build;
+    }
 
-        private EntityChoice(string label, Texture icon, Func<string, GameObject> build)
+    public string Label { get; }
+
+    public Texture Icon { get; }
+
+    public bool IsHeading => _build == null;
+
+    /// <summary>Headings with their choices: every project's base groups first, then the engine templates.</summary>
+    public static IEnumerable<(EntityChoice Heading, List<EntityChoice> Choices)> All()
+    {
+        foreach (var bases in EditorAssets.FindAssets<EntityBases>())
         {
-            Label = label;
-            Icon = icon;
-            _build = build;
+            foreach (var group in bases.groups)
+            {
+                yield return (Heading(group.name), group.prefabs.Select(Variant).ToList());
+            }
         }
 
-        public string Label { get; }
+        yield return (Heading("Templates"), TemplateRegistry.All.Select(Template).ToList());
+    }
 
-        public Texture Icon { get; }
+    /// <summary>Builds the entity named <paramref name="name"/> as a scene object, ready to save as a prefab.</summary>
+    public GameObject Build(string name) => _build(name);
 
-        public bool IsHeading => _build == null;
-
-        /// <summary>Headings with their choices: every project's base groups first, then the engine templates.</summary>
-        public static IEnumerable<(EntityChoice Heading, List<EntityChoice> Choices)> All()
+    /// <summary>Saves the entity named <paramref name="name"/> as a prefab in <paramref name="folder"/>, then runs each step on it.</summary>
+    public GameObject Save(string name, string folder, IEnumerable<EntityWizardStep> steps)
+    {
+        var go = Build(name);
+        var path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{name}.prefab");
+        var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
+        UnityEngine.Object.DestroyImmediate(go);
+        foreach (var step in steps)
         {
-            foreach (var bases in EditorAssets.FindAssets<EntityBases>())
-            {
-                foreach (var group in bases.groups)
-                {
-                    yield return (Heading(group.name), group.prefabs.Select(Variant).ToList());
-                }
-            }
-
-            yield return (Heading("Templates"), TemplateRegistry.All.Select(Template).ToList());
+            step.Run(prefab);
         }
 
-        /// <summary>Builds the entity named <paramref name="name"/> as a scene object, ready to save as a prefab.</summary>
-        public GameObject Build(string name) => _build(name);
+        return prefab;
+    }
 
-        /// <summary>Saves the entity named <paramref name="name"/> as a prefab in <paramref name="folder"/>, then runs each step on it.</summary>
-        public GameObject Save(string name, string folder, IEnumerable<EntityWizardStep> steps)
+    private static EntityChoice Heading(string label) => new(label, null, null);
+
+    private static EntityChoice Template(EntityTemplate template) =>
+        new(template.Path.Replace("/", " / "), null, template.Create);
+
+    // Saving a prefab instance as a new asset makes a variant of it.
+    private static EntityChoice Variant(GameObject prefab)
+    {
+        if (prefab == null)
         {
-            var go = Build(name);
-            var path = AssetDatabase.GenerateUniqueAssetPath($"{folder}/{name}.prefab");
-            var prefab = PrefabUtility.SaveAsPrefabAsset(go, path);
-            UnityEngine.Object.DestroyImmediate(go);
-            foreach (var step in steps)
-            {
-                step.Run(prefab);
-            }
-
-            return prefab;
+            throw new InvalidOperationException("An EntityBases group lists an empty prefab slot.");
         }
 
-        private static EntityChoice Heading(string label) => new(label, null, null);
-
-        private static EntityChoice Template(EntityTemplate template) =>
-            new(template.Path.Replace("/", " / "), null, template.Create);
-
-        // Saving a prefab instance as a new asset makes a variant of it.
-        private static EntityChoice Variant(GameObject prefab)
+        return new EntityChoice(prefab.name, AssetPreview.GetMiniThumbnail(prefab), name =>
         {
-            if (prefab == null)
-            {
-                throw new InvalidOperationException("An EntityBases group lists an empty prefab slot.");
-            }
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            Rename(instance, name);
+            return instance;
+        });
+    }
 
-            return new EntityChoice(prefab.name, AssetPreview.GetMiniThumbnail(prefab), name =>
-            {
-                var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
-                Rename(instance, name);
-                return instance;
-            });
-        }
-
-        /// <summary>
-        /// Names the object and its HUD display name, which is also its type identity; underscores read as spaces, so
-        /// <c>USA_M1A2</c> shows as "USA M1A2".
-        /// </summary>
-        internal static void Rename(GameObject go, string name)
+    /// <summary>
+    /// Names the object and its HUD display name, which is also its type identity; underscores read as spaces, so
+    /// <c>USA_M1A2</c> shows as "USA M1A2".
+    /// </summary>
+    internal static void Rename(GameObject go, string name)
+    {
+        go.name = name;
+        if (go.TryGetComponent(out ProducibleAuthoring producible))
         {
-            go.name = name;
-            if (go.TryGetComponent(out ProducibleAuthoring producible))
-            {
-                producible.displayName = name.Replace('_', ' ');
-            }
+            producible.displayName = name.Replace('_', ' ');
         }
     }
 }

@@ -1,19 +1,18 @@
 using Unity.Entities;
 
-namespace HyperRTS.Simulation.Destruction
+namespace HyperRTS.Simulation.Destruction;
+
+/// <summary>
+/// The floors of a building that still stand, a bit each, ground floor first. A collapse marks the ones that fell;
+/// a container gives each floor an even share of its slots and empties a floor once it falls.
+/// </summary>
+public struct IntactFloors : IComponentData
 {
-    /// <summary>
-    /// The floors of a building that still stand, a bit each, ground floor first. A collapse marks the ones that fell;
-    /// a container gives each floor an even share of its slots and empties a floor once it falls.
-    /// </summary>
-    public struct IntactFloors : IComponentData
-    {
-        public byte Count;
+    public byte Count;
 
-        /// <summary>Floors that came down and are not rebuilt yet.</summary>
-        public byte Fallen;
+    /// <summary>Floors that came down and are not rebuilt yet.</summary>
+    public byte Fallen;
 
-        /// <summary>Fallen floors whose passengers are already out, kept by the container.</summary>
-        public byte Emptied;
-    }
+    /// <summary>Fallen floors whose passengers are already out, kept by the container.</summary>
+    public byte Emptied;
 }

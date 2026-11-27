@@ -1,243 +1,242 @@
-using HyperRTS.Simulation.Common.Cells;
 using System;
+using HyperRTS.Simulation.Common.Cells;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Fields;
 using HyperRTS.Simulation.Navigation.Paths;
 using Unity.Mathematics;
 
-namespace HyperRTS.Simulation.Navigation.Grid
+namespace HyperRTS.Simulation.Navigation.Grid;
+
+/// <summary>
+/// One movement class's view of the <see cref="NavGrid"/>: which cells it may stand on, one rule shared by A*, the
+/// nearest-cell search and line of sight, and what steps onto them cost.
+/// </summary>
+public readonly struct NavAccess : IWallDistance
 {
-    /// <summary>
-    /// One movement class's view of the <see cref="NavGrid"/>: which cells it may stand on, one rule shared by A*, the
-    /// nearest-cell search and line of sight, and what steps onto them cost.
-    /// </summary>
-    public readonly struct NavAccess : IWallDistance
+    /// <summary>A <see cref="NavAgent.SceneryCrushLimit"/> that passes all scenery, as infantry walk among trees.</summary>
+    public const byte AllScenery = byte.MaxValue;
+
+    public readonly NavGrid Grid;
+    public readonly MovementClass Class;
+
+    /// <summary>Distance from walls inside which steps cost more; 0 keeps every step at its length.</summary>
+    public readonly float WallMargin;
+
+    /// <summary>The class's index in <see cref="MovementClasses"/>, which lays out its sector graph.</summary>
+    public readonly int ClassIndex;
+
+    // Region filter that takes an open cell in any region.
+    private const int AnyRegion = -1;
+
+    // Clearance for a nearest-cell search that needs no line to the cell.
+    private const float AnyClearance = float.NegativeInfinity;
+
+    private readonly int _slot;
+
+    /// <summary>The view of a registered class; throws for one <see cref="NavFieldSystem"/> hasn't registered.</summary>
+    public NavAccess(in NavGrid grid, in MovementClass movementClass, float wallMargin)
     {
-        /// <summary>A <see cref="NavAgent.SceneryCrushLimit"/> that passes all scenery, as infantry walk among trees.</summary>
-        public const byte AllScenery = byte.MaxValue;
-
-        public readonly NavGrid Grid;
-        public readonly MovementClass Class;
-
-        /// <summary>Distance from walls inside which steps cost more; 0 keeps every step at its length.</summary>
-        public readonly float WallMargin;
-
-        /// <summary>The class's index in <see cref="MovementClasses"/>, which lays out its sector graph.</summary>
-        public readonly int ClassIndex;
-
-        // Region filter that takes an open cell in any region.
-        private const int AnyRegion = -1;
-
-        // Clearance for a nearest-cell search that needs no line to the cell.
-        private const float AnyClearance = float.NegativeInfinity;
-
-        private readonly int _slot;
-
-        /// <summary>The view of a registered class; throws for one <see cref="NavFieldSystem"/> hasn't registered.</summary>
-        public NavAccess(in NavGrid grid, in MovementClass movementClass, float wallMargin)
+        Grid = grid;
+        Class = movementClass;
+        WallMargin = wallMargin;
+        ClassIndex = grid.Classes.Find(movementClass);
+        if (ClassIndex < 0)
         {
-            Grid = grid;
-            Class = movementClass;
-            WallMargin = wallMargin;
-            ClassIndex = grid.Classes.Find(movementClass);
-            if (ClassIndex < 0)
-            {
-                throw new InvalidOperationException("Movement class not registered: no NavAgent has it yet.");
-            }
-
-            _slot = grid.Classes.FieldSlot(ClassIndex);
+            throw new InvalidOperationException("Movement class not registered: no NavAgent has it yet.");
         }
 
-        /// <summary>Signed metres from the cell centre to the nearest wall, at most <see cref="NavField.MaxDistance"/>.</summary>
-        public float Distance(int2 cell) => Grid.Field.At(_slot, cell);
+        _slot = grid.Classes.FieldSlot(ClassIndex);
+    }
 
-        /// <summary>Signed metres from a point to the nearest wall, blended between cell centres.</summary>
-        public float Distance(float2 position) => Grid.Field.Sample(_slot, position);
+    /// <summary>Signed metres from the cell centre to the nearest wall, at most <see cref="NavField.MaxDistance"/>.</summary>
+    public float Distance(int2 cell) => Grid.Field.At(_slot, cell);
 
-        /// <summary>The way out of the nearest wall at a point.</summary>
-        public float2 Normal(float2 position) => Grid.Field.Normal(_slot, position);
+    /// <summary>Signed metres from a point to the nearest wall, blended between cell centres.</summary>
+    public float Distance(float2 position) => Grid.Field.Sample(_slot, position);
 
-        /// <summary>Whether the class may stand on the cell's centre.</summary>
-        public bool IsOpen(int2 cell) => Grid.Grid.Contains(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
+    /// <summary>The way out of the nearest wall at a point.</summary>
+    public float2 Normal(float2 position) => Grid.Field.Normal(_slot, position);
 
-        /// <summary>The connected region of a cell for this class; 0 when closed or off the grid.</summary>
-        public int Region(int2 cell) => Grid.Sectors.Region(ClassIndex, cell);
+    /// <summary>Whether the class may stand on the cell's centre.</summary>
+    public bool IsOpen(int2 cell) => Grid.Grid.Contains(cell) && Grid.Field.IsOpen(_slot, cell, Class.Radius);
 
-        /// <summary>What a step onto the cell costs per metre: 1 in the open, up to 3 against a wall.</summary>
-        public float CellCost(int2 cell) => CellCost(Distance(cell), WallMargin);
+    /// <summary>The connected region of a cell for this class; 0 when closed or off the grid.</summary>
+    public int Region(int2 cell) => Grid.Sectors.Region(ClassIndex, cell);
 
-        /// <summary><see cref="CellCost(int2)"/> from a field value already read.</summary>
-        public static float CellCost(float distance, float wallMargin)
+    /// <summary>What a step onto the cell costs per metre: 1 in the open, up to 3 against a wall.</summary>
+    public float CellCost(int2 cell) => CellCost(Distance(cell), WallMargin);
+
+    /// <summary><see cref="CellCost(int2)"/> from a field value already read.</summary>
+    public static float CellCost(float distance, float wallMargin)
+    {
+        if (wallMargin <= 0f)
         {
-            if (wallMargin <= 0f)
-            {
-                return 1f;
-            }
-
-            return 1f + 2f * math.max(0f, wallMargin - distance) / wallMargin;
+            return 1f;
         }
 
-        /// <summary>The least field value a cell may read and stay open to the class.</summary>
-        public float OpenDistance => Class.Radius - NavTolerances.WallOverlap;
+        return 1f + 2f * math.max(0f, wallMargin - distance) / wallMargin;
+    }
 
-        /// <summary>Closest open cell by ring distance, up to <paramref name="rings"/> rings out.</summary>
-        public bool TryFindNearest(int2 cell, int rings, out int2 found) =>
-            TryFindNearest(cell, rings, AnyRegion, out found);
+    /// <summary>The least field value a cell may read and stay open to the class.</summary>
+    public float OpenDistance => Class.Radius - NavTolerances.WallOverlap;
 
-        /// <summary>The same search, keeping only cells in <paramref name="region"/>.</summary>
-        public bool TryFindNearest(int2 cell, int rings, int region, out int2 found) =>
-            TryFindNearest(cell, rings, new NearestFilter(region, float3.zero, AnyClearance), out found);
+    /// <summary>Closest open cell by ring distance, up to <paramref name="rings"/> rings out.</summary>
+    public bool TryFindNearest(int2 cell, int rings, out int2 found) =>
+        TryFindNearest(cell, rings, AnyRegion, out found);
 
-        /// <summary>
-        /// Where a path from <paramref name="start"/> in <paramref name="startCell"/> begins: the cell when open, else
-        /// the nearest open cell it can squeeze to (goal's region first), which is how a unit inside a footprint gets
-        /// out.
-        /// </summary>
-        public bool TryFindStart(int2 startCell, float3 start, float3 goal, out int2 from)
+    /// <summary>The same search, keeping only cells in <paramref name="region"/>.</summary>
+    public bool TryFindNearest(int2 cell, int rings, int region, out int2 found) =>
+        TryFindNearest(cell, rings, new NearestFilter(region, float3.zero, AnyClearance), out found);
+
+    /// <summary>
+    /// Where a path from <paramref name="start"/> in <paramref name="startCell"/> begins: the cell when open, else
+    /// the nearest open cell it can squeeze to (goal's region first), which is how a unit inside a footprint gets
+    /// out.
+    /// </summary>
+    public bool TryFindStart(int2 startCell, float3 start, float3 goal, out int2 from)
+    {
+        var rings = GridPathfinder.NearestSearchRadius;
+        startCell = Grid.Grid.Clamp(startCell);
+        if (IsOpen(startCell))
         {
-            var rings = GridPathfinder.NearestSearchRadius;
-            startCell = Grid.Grid.Clamp(startCell);
-            if (IsOpen(startCell))
-            {
-                from = startCell;
-                return true;
-            }
-
-            // A unit already in a gap narrower than its class may drive along it, but never through anything tighter.
-            var squeeze = math.min(OpenDistance, Distance(startCell));
-            if (squeeze > 0f)
-            {
-                var goalRegion = NearestRegion(goal);
-                if (goalRegion != 0 &&
-                    TryFindNearest(startCell, rings, new NearestFilter(goalRegion, start, squeeze), out from))
-                {
-                    return true;
-                }
-
-                if (TryFindNearest(startCell, rings, new NearestFilter(AnyRegion, start, squeeze), out from))
-                {
-                    return true;
-                }
-            }
-
-            return TryFindNearest(startCell, rings, out from);
+            from = startCell;
+            return true;
         }
 
-        /// <summary>The region of the open cell nearest <paramref name="point"/>; 0 when none is near.</summary>
-        public int NearestRegion(float3 point)
+        // A unit already in a gap narrower than its class may drive along it, but never through anything tighter.
+        var squeeze = math.min(OpenDistance, Distance(startCell));
+        if (squeeze > 0f)
         {
-            var cell = Grid.Grid.Cell(point);
-            return TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var open) ? Region(open) : 0;
-        }
-
-        // Ring search; with a clearance, a cell also needs a straight line to it from the origin that keeps it.
-        private bool TryFindNearest(int2 cell, int rings, in NearestFilter filter, out int2 found)
-        {
-            cell = Grid.Grid.Clamp(cell);
-            found = cell;
-            if (IsCandidate(filter, cell))
+            var goalRegion = NearestRegion(goal);
+            if (goalRegion != 0 &&
+                TryFindNearest(startCell, rings, new NearestFilter(goalRegion, start, squeeze), out from))
             {
                 return true;
             }
 
-            for (var r = 1; r <= rings; r++)
+            if (TryFindNearest(startCell, rings, new NearestFilter(AnyRegion, start, squeeze), out from))
             {
-                var best = int.MaxValue;
-                for (var i = -r; i <= r; i++)
-                {
-                    Consider(filter, cell, new int2(i, -r), ref best, ref found);
-                    Consider(filter, cell, new int2(i, r), ref best, ref found);
-                    // The corners already came with the rows.
-                    if (i > -r && i < r)
-                    {
-                        Consider(filter, cell, new int2(-r, i), ref best, ref found);
-                        Consider(filter, cell, new int2(r, i), ref best, ref found);
-                    }
-                }
-
-                if (best != int.MaxValue)
-                {
-                    return true;
-                }
+                return true;
             }
-
-            return false;
         }
 
-        /// <summary>True when every cell a straight move crosses is open; through a corner, both cells beside it too.</summary>
-        public bool HasLineOfSight(float3 from, float3 to) => HasLineOfSight(from, to, OpenDistance);
+        return TryFindNearest(startCell, rings, out from);
+    }
 
-        /// <summary>The same walk, each cell reading at least <paramref name="clearance"/> from walls.</summary>
-        public bool HasLineOfSight(float3 from, float3 to, float clearance)
+    /// <summary>The region of the open cell nearest <paramref name="point"/>; 0 when none is near.</summary>
+    public int NearestRegion(float3 point)
+    {
+        var cell = Grid.Grid.Cell(point);
+        return TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var open) ? Region(open) : 0;
+    }
+
+    // Ring search; with a clearance, a cell also needs a straight line to it from the origin that keeps it.
+    private bool TryFindNearest(int2 cell, int rings, in NearestFilter filter, out int2 found)
+    {
+        cell = Grid.Grid.Clamp(cell);
+        found = cell;
+        if (IsCandidate(filter, cell))
         {
-            var ray = new GridRay(Grid.Grid, from.xz, to.xz);
-            ray.MoveNext();
-            var clear = IsClear(ray.Cell, clearance);
-            while (clear && ray.MoveNext())
-            {
-                clear = CanCross(ray, clearance);
-            }
-
-            return clear;
+            return true;
         }
 
-        /// <summary>Whether a ray's step onto its new cell stays clear; through a corner, both cells beside it too.</summary>
-        public bool CanCross(in GridRay ray) => CanCross(ray, OpenDistance);
-
-        private bool CanCross(in GridRay ray, float clearance)
+        for (var r = 1; r <= rings; r++)
         {
-            if (ray.CrossedCorner)
+            var best = int.MaxValue;
+            for (var i = -r; i <= r; i++)
             {
-                var before = ray.Cell - ray.Step;
-                var sides = IsClear(before + new int2(ray.Step.x, 0), clearance);
-                if (!sides || !IsClear(before + new int2(0, ray.Step.y), clearance))
+                Consider(filter, cell, new int2(i, -r), ref best, ref found);
+                Consider(filter, cell, new int2(i, r), ref best, ref found);
+                // The corners already came with the rows.
+                if (i > -r && i < r)
                 {
-                    return false;
+                    Consider(filter, cell, new int2(-r, i), ref best, ref found);
+                    Consider(filter, cell, new int2(r, i), ref best, ref found);
                 }
             }
 
-            return IsClear(ray.Cell, clearance);
-        }
-
-        private void Consider(in NearestFilter filter, int2 center, int2 offset, ref int best, ref int2 found)
-        {
-            var distance = offset.x * offset.x + offset.y * offset.y;
-            if (distance < best && IsCandidate(filter, center + offset))
+            if (best != int.MaxValue)
             {
-                best = distance;
-                found = center + offset;
+                return true;
             }
         }
 
-        private bool IsCandidate(in NearestFilter filter, int2 cell)
+        return false;
+    }
+
+    /// <summary>True when every cell a straight move crosses is open; through a corner, both cells beside it too.</summary>
+    public bool HasLineOfSight(float3 from, float3 to) => HasLineOfSight(from, to, OpenDistance);
+
+    /// <summary>The same walk, each cell reading at least <paramref name="clearance"/> from walls.</summary>
+    public bool HasLineOfSight(float3 from, float3 to, float clearance)
+    {
+        var ray = new GridRay(Grid.Grid, from.xz, to.xz);
+        ray.MoveNext();
+        var clear = IsClear(ray.Cell, clearance);
+        while (clear && ray.MoveNext())
         {
-            if (!IsOpenIn(filter.Region, cell))
+            clear = CanCross(ray, clearance);
+        }
+
+        return clear;
+    }
+
+    /// <summary>Whether a ray's step onto its new cell stays clear; through a corner, both cells beside it too.</summary>
+    public bool CanCross(in GridRay ray) => CanCross(ray, OpenDistance);
+
+    private bool CanCross(in GridRay ray, float clearance)
+    {
+        if (ray.CrossedCorner)
+        {
+            var before = ray.Cell - ray.Step;
+            var sides = IsClear(before + new int2(ray.Step.x, 0), clearance);
+            if (!sides || !IsClear(before + new int2(0, ray.Step.y), clearance))
             {
                 return false;
             }
-
-            return filter.Clearance == AnyClearance ||
-                   HasLineOfSight(filter.Origin, Grid.Grid.CenterPoint(cell), filter.Clearance);
         }
 
-        // Which cells a ring search keeps: open ones in the region, and with a clearance only those a straight line
-        // from the origin reaches keeping it.
-        private readonly struct NearestFilter
-        {
-            public readonly int Region;
-            public readonly float3 Origin;
-            public readonly float Clearance;
-
-            public NearestFilter(int region, float3 origin, float clearance)
-            {
-                Region = region;
-                Origin = origin;
-                Clearance = clearance;
-            }
-        }
-
-        private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);
-
-        private bool IsClear(int2 cell, float clearance) => Grid.Grid.Contains(cell) && Distance(cell) >= clearance;
+        return IsClear(ray.Cell, clearance);
     }
+
+    private void Consider(in NearestFilter filter, int2 center, int2 offset, ref int best, ref int2 found)
+    {
+        var distance = offset.x * offset.x + offset.y * offset.y;
+        if (distance < best && IsCandidate(filter, center + offset))
+        {
+            best = distance;
+            found = center + offset;
+        }
+    }
+
+    private bool IsCandidate(in NearestFilter filter, int2 cell)
+    {
+        if (!IsOpenIn(filter.Region, cell))
+        {
+            return false;
+        }
+
+        return filter.Clearance == AnyClearance ||
+               HasLineOfSight(filter.Origin, Grid.Grid.CenterPoint(cell), filter.Clearance);
+    }
+
+    // Which cells a ring search keeps: open ones in the region, and with a clearance only those a straight line
+    // from the origin reaches keeping it.
+    private readonly struct NearestFilter
+    {
+        public readonly int Region;
+        public readonly float3 Origin;
+        public readonly float Clearance;
+
+        public NearestFilter(int region, float3 origin, float clearance)
+        {
+            Region = region;
+            Origin = origin;
+            Clearance = clearance;
+        }
+    }
+
+    private bool IsOpenIn(int region, int2 cell) => (region == AnyRegion || Region(cell) == region) && IsOpen(cell);
+
+    private bool IsClear(int2 cell, float clearance) => Grid.Grid.Contains(cell) && Distance(cell) >= clearance;
 }
