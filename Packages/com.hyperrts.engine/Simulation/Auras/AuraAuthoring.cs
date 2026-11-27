@@ -33,7 +33,7 @@ public class AuraAuthoring : AuthoringBehaviour
     public AuraTargets affects = AuraTargets.Friendly | AuraTargets.AllKinds;
 
     [Tooltip("Bonuses while inside; negative percents weaken (e.g. -0.3 Range for jamming).")]
-    public List<StatBonus> bonuses = new();
+    public List<StatBonus> bonuses = [];
 
     [Tooltip("Health restored while inside.")]
     [Unit("/s")]

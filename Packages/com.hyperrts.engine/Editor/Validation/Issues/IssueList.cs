@@ -14,8 +14,8 @@ namespace HyperRTS.Editor.Validation.Issues;
 [UxmlElement]
 public sealed partial class IssueList : VisualElement
 {
-    private readonly HashSet<string> _collapsed = new();
-    private readonly Dictionary<int, string> _rules = new();
+    private readonly HashSet<string> _collapsed = [];
+    private readonly Dictionary<int, string> _rules = [];
     private readonly VisualTreeAsset _row = EditorAssets.Layout(typeof(IssueList), "Row");
     private TreeView _tree;
 

@@ -22,7 +22,7 @@ public sealed class SectionsOverlay : Overlay, ITransientOverlay
     private static readonly Color StandingColor = new(0.4f, 0.75f, 1f);
     private static readonly Color PickedColor = new(1f, 0.85f, 0.2f);
 
-    private readonly List<string> _names = new();
+    private readonly List<string> _names = [];
     private readonly ListView _list;
     private SectionsAuthoring _building;
     private int _picked = -1;

@@ -12,5 +12,5 @@ public sealed class EntityBaseGroup
     public string name;
 
     [Tooltip("Base prefabs a new entity can be a variant of.")]
-    public List<GameObject> prefabs = new();
+    public List<GameObject> prefabs = [];
 }

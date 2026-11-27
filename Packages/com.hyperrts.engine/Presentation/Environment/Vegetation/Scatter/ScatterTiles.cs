@@ -31,7 +31,7 @@ public sealed class ScatterTiles
     public int Count => _bounds.Length;
 
     /// <summary>Indices of the tiles in a camera's view and draw distance, in tile order.</summary>
-    public List<int> Visible { get; } = new();
+    public List<int> Visible { get; } = [];
 
     public Bounds this[int tile] => _bounds[tile];
 

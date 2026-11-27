@@ -23,25 +23,25 @@ namespace HyperRTS.Presentation.Animation.Rigs;
 public class MotionRigAuthoring : AuthoringBehaviour
 {
     [Tooltip("Parts that turn to the weapon's yaw.")]
-    public List<TurretSlot> turrets = new();
+    public List<TurretSlot> turrets = [];
 
     [Tooltip("Barrels and launchers that raise to the weapon's pitch.")]
-    public List<ElevationSlot> elevations = new();
+    public List<ElevationSlot> elevations = [];
 
     [Tooltip("Barrels that kick back on each shot.")]
-    public List<RecoilSlot> recoils = new();
+    public List<RecoilSlot> recoils = [];
 
     [Tooltip("Road wheels, sprockets and idlers that roll with the ground covered.")]
-    public List<WheelSlot> wheels = new();
+    public List<WheelSlot> wheels = [];
 
     [Tooltip("Tracks whose lower run bends over the lift of their road wheels.")]
-    public List<TrackSlot> tracks = new();
+    public List<TrackSlot> tracks = [];
 
     [Tooltip("Rotors that spin up in flight and down when docked.")]
-    public List<RotorSlot> rotors = new();
+    public List<RotorSlot> rotors = [];
 
     [Tooltip("Trailers that swing after the hull on their hitch; the unit still moves as one rigid hull.")]
-    public List<TrailerSlot> trailers = new();
+    public List<TrailerSlot> trailers = [];
 
     [Tooltip("The model or hull child that pitches and rolls; none keeps the body level, as on buildings.")]
     public Transform tiltRoot;

@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Projectiles;
 using HyperRTS.Simulation.Combat.Targeting;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Spatial;
 using Unity.Burst;
 using Unity.Entities;

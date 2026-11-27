@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.PlayMode;
 internal sealed class PlayModeState : UserSettings<PlayModeState>
 {
     /// <summary>Full type names of the debug layers switched on.</summary>
-    public List<string> debugLayers = new();
+    public List<string> debugLayers = [];
 
     [Min(0)]
     public int cheatResources = 1000;

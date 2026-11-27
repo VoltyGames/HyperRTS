@@ -12,7 +12,7 @@ internal sealed class ProjectUnitIcons
     private const float LabelHeight = 16f;
     private const float BadgeSize = 16f;
 
-    private readonly Dictionary<string, Texture2D> _icons = new();
+    private readonly Dictionary<string, Texture2D> _icons = [];
     private Texture _prefabBadge;
 
     [InitializeOnLoadMethod]

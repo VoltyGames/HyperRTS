@@ -46,7 +46,7 @@ namespace HyperRTS.Presentation.HUD
             var parts = name.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
             return parts.Length > 1
                 ? $"{char.ToUpperInvariant(parts[0][0])}{char.ToUpperInvariant(parts[1][0])}"
-                : name.Substring(0, Mathf.Min(2, name.Length)).ToUpperInvariant();
+                : name[..Mathf.Min(2, name.Length)].ToUpperInvariant();
         }
     }
 }

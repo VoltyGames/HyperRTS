@@ -16,7 +16,7 @@ public sealed class ContainerRule : AuthoringRule<ContainerAuthoring>
 {
     protected override void Check(ContainerAuthoring container, ValidationIssues issues)
     {
-        foreach (var port in container.firingPorts ?? System.Array.Empty<Transform>())
+        foreach (var port in container.firingPorts ?? [])
         {
             if (port == null || !port.IsChildOf(container.transform) || port == container.transform)
             {

@@ -26,7 +26,7 @@ internal sealed class RagdollBake
         table.bindPoses = posed.BindPoses().ToList();
         table.upperBones = posed.UpperBones().ToList();
         table.ragdoll = _bodies.Select(body => body.Bake(posed.BoneIndex(body.bone), ParentBody(body))).ToList();
-        table.boneBodies = _bodies.Count == 0 ? new List<int>() : BoneBodies(table.ragdoll, parents);
+        table.boneBodies = _bodies.Count == 0 ? [] : BoneBodies(table.ragdoll, parents);
         table.ragdollTuning = _tuning;
     }
 

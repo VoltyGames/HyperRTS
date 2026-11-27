@@ -39,7 +39,7 @@ public class SectionsAuthoring : AuthoringBehaviour
     }
 
     [Tooltip("Which section material each material name in the model's sections means.")]
-    public MaterialName[] materialNames = Array.Empty<MaterialName>();
+    public MaterialName[] materialNames = [];
 
     [Tooltip("How the pieces of every section break: blown in, blown out and collapse. Fill From Model sets them from the clip table the pieces play.")]
     public SectionClips clips;
@@ -61,7 +61,7 @@ public class SectionsAuthoring : AuthoringBehaviour
     public float repairSeconds = 10f;
 
     [Tooltip("The sections, at most 64. Fill From Model lists them from the sections kept inside the building's model, Fill From Parts from X_Intact and X_Broken children.")]
-    public SectionEntry[] sections = Array.Empty<SectionEntry>();
+    public SectionEntry[] sections = [];
 
     /// <summary>What stops the sections baking; empty when they are fine.</summary>
     public List<string> Problems()
@@ -139,17 +139,17 @@ public class SectionsAuthoring : AuthoringBehaviour
                 var entry = authoring.sections[i];
                 models.Add(Model(entry));
                 looks.Add(SectionLook.Untouched);
-                foreach (var hole in entry.holes ?? Array.Empty<Hole>())
+                foreach (var hole in entry.holes ?? [])
                 {
                     holes.Add(new SectionHole { Section = (byte)i, Model = Find(hole.model), Center = hole.center });
                 }
 
-                foreach (var part in entry.parts ?? Array.Empty<GameObject>())
+                foreach (var part in entry.parts ?? [])
                 {
                     parts.Add(new SectionPart { Section = (byte)i, Part = Find(part) });
                 }
 
-                foreach (var mount in entry.weapons ?? Array.Empty<int>())
+                foreach (var mount in entry.weapons ?? [])
                 {
                     weapons.Add(new SectionWeapon { Section = (byte)i, Mount = (byte)mount });
                 }

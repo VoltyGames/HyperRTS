@@ -26,18 +26,18 @@ public abstract class BoneRigFixture : TemplateFixture
         var offHand = Child(hips, "OffHand", OffHandAt - hips.position, Quaternion.identity);
         var body = Child(root.transform, "Body", Vector3.zero, meshTurn);
         var mesh = Track(new Mesh { name = name });
-        mesh.vertices = Array.ConvertAll(new[] { HandAt, HandAt + Vector3.up * 0.1f, HandAt + Vector3.right * 0.1f }, body.InverseTransformPoint);
-        mesh.normals = Array.ConvertAll(new[] { Vector3.back, Vector3.back, Vector3.back }, body.InverseTransformDirection);
-        mesh.triangles = new[] { 0, 1, 2 };
-        mesh.boneWeights = new[] { Weighted(), Weighted(), Weighted() };
-        mesh.bindposes = new[]
-        {
+        mesh.vertices = Array.ConvertAll([HandAt, HandAt + Vector3.up * 0.1f, HandAt + Vector3.right * 0.1f], body.InverseTransformPoint);
+        mesh.normals = Array.ConvertAll([Vector3.back, Vector3.back, Vector3.back], body.InverseTransformDirection);
+        mesh.triangles = [0, 1, 2];
+        mesh.boneWeights = [Weighted(), Weighted(), Weighted()];
+        mesh.bindposes =
+        [
             hips.worldToLocalMatrix * body.localToWorldMatrix, hand.worldToLocalMatrix * body.localToWorldMatrix,
             offHand.worldToLocalMatrix * body.localToWorldMatrix,
-        };
+        ];
         var skin = body.gameObject.AddComponent<SkinnedMeshRenderer>();
         skin.sharedMesh = mesh;
-        skin.bones = new[] { hips, hand, offHand };
+        skin.bones = [hips, hand, offHand];
         return root;
     }
 

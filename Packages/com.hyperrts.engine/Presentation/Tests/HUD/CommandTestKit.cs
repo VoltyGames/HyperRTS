@@ -14,7 +14,7 @@ namespace HyperRTS.Presentation.Tests.HUD;
 internal static partial class CommandTestKit
 {
     [AutoStaticsCleanup]
-    private static readonly List<Object> Made = new();
+    private static readonly List<Object> Made = [];
 
     /// <summary>A kit with one prefab spec per name, in the first slots.</summary>
     public static CommandKit Prefabs(params string[] names) => Kit(names.Select((name, slot) =>

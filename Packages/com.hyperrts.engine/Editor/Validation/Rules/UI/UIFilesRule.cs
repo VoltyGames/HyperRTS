@@ -57,6 +57,6 @@ public sealed class UIFilesRule : IAssetRule
     private static (string Folder, string AssetFolder)[] Roots()
     {
         var engine = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(UIFilesRule).Assembly);
-        return new[] { ("Assets", "Assets"), (engine.resolvedPath, engine.assetPath) };
+        return [("Assets", "Assets"), (engine.resolvedPath, engine.assetPath)];
     }
 }

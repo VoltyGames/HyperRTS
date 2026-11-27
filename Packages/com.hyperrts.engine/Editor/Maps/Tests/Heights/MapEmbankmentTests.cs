@@ -27,8 +27,8 @@ public class MapEmbankmentTests
         var deck = _bridge.AddComponent<NavAreaAuthoring>();
         deck.kind = NavAreaKind.Deck;
         deck.size = new Vector2(7f, DeckLength);
-        deck.abutments = new[] { Abutment(-1f), Abutment(1f) };
-        deck.piers = new[] { Pier(-5f), Pier(5f) };
+        deck.abutments = [Abutment(-1f), Abutment(1f)];
+        deck.piers = [Pier(-5f), Pier(5f)];
     }
 
     // A 1 m wide, 2 m long block 1.5 m off the deck's middle along the river, so its half-width across the flow is 1.
@@ -99,7 +99,7 @@ public class MapEmbankmentTests
         var spec = MapFixture.Spec();
         var river = new MapRiverSpec
         {
-            points = new List<MapPoint> { new(-110f, RiverZ), new(110f, RiverZ) },
+            points = [new(-110f, RiverZ), new(110f, RiverZ)],
             width = 10f, valleyWidth = 90f, widthVariation = 0f,
         };
         if (withBridge)

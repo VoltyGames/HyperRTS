@@ -5,18 +5,14 @@ public static class NavLayers
 {
     public static NavSurface Surfaces(NavLayer layer)
     {
-        switch (layer)
+        return layer switch
         {
-            case NavLayer.Naval:
-                return NavSurface.Water;
-            case NavLayer.Amphibious:
-                return NavSurface.Land | NavSurface.Water;
+            NavLayer.Naval => NavSurface.Water,
+            NavLayer.Amphibious => NavSurface.Land | NavSurface.Water,
             // Movement never consults the grid for aircraft; this only serves spot searches (unloading).
-            case NavLayer.Air:
-                return NavSurface.Land | NavSurface.Water | NavSurface.Deck;
-            default:
-                return NavSurface.Land;
-        }
+            NavLayer.Air => NavSurface.Land | NavSurface.Water | NavSurface.Deck,
+            _ => NavSurface.Land,
+        };
     }
 
     /// <summary>

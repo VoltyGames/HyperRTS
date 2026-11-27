@@ -19,9 +19,9 @@ public sealed class MapWarScars
 
     public MapWarScars(MapNoise edges) => _edges = edges;
 
-    public List<MapWarCrater> Craters { get; } = new();
+    public List<MapWarCrater> Craters { get; } = [];
 
-    public List<MapBurntGround> Burns { get; } = new();
+    public List<MapBurntGround> Burns { get; } = [];
 
     public void Dig(MapWarCrater crater, MapHeights heights)
     {

@@ -26,9 +26,9 @@ public sealed partial class MapFeatureList : VisualElement
     private readonly VisualTreeAsset _item = EditorAssets.Layout(typeof(MapFeatureList), "Item");
     private readonly ToolbarSearchField _search;
     private readonly TreeView _tree;
-    private readonly HashSet<string> _collapsed = new();
-    private readonly Dictionary<int, MapFeatureKind> _groups = new();
-    private readonly Dictionary<MapFeatureRef, int> _ids = new();
+    private readonly HashSet<string> _collapsed = [];
+    private readonly Dictionary<int, MapFeatureKind> _groups = [];
+    private readonly Dictionary<MapFeatureRef, int> _ids = [];
     private MapFeatureSelection _selection;
     private MapLayers _layers;
     private MapSpec _spec;

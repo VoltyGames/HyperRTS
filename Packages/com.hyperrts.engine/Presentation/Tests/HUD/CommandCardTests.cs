@@ -21,8 +21,8 @@ public class CommandCardTests : HUDFixture
 {
     private const int LastSlot = CommandCard.Slots - 1;
 
-    private readonly List<string> _pressed = new();
-    private readonly List<(CommandSpec Spec, string Label)> _specs = new();
+    private readonly List<string> _pressed = [];
+    private readonly List<(CommandSpec Spec, string Label)> _specs = [];
 
     [SetUp]
     public void ClearSpecs()

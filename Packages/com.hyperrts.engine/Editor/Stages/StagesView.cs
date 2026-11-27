@@ -14,7 +14,7 @@ public sealed class StagesView<TSource> where TSource : class
     private readonly PageShell _shell;
     private readonly VisualElement _list;
     private readonly Button _stop;
-    private List<Stage<TSource>> _shown = new();
+    private List<Stage<TSource>> _shown = [];
 
     /// <summary>Wires the <c>stages</c>, <c>stop</c> and log elements under <paramref name="root"/>; <paramref name="key"/> tells two sources apart.</summary>
     public StagesView(VisualElement root, PageShell shell, Func<TSource, IEnumerable<Stage<TSource>>> stages, Func<TSource, string> key)

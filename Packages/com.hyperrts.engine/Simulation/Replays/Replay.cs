@@ -21,15 +21,15 @@ public sealed class Replay
     /// <summary>The <see cref="MatchSetup.Weather"/> the match ran with; empty for the map's own.</summary>
     public string Weather = "";
     public float Duration;
-    public List<ReplayPlayerInfo> Players = new();
+    public List<ReplayPlayerInfo> Players = [];
 
     /// <summary>The outcome when the recording was taken; still <see cref="MatchPhase.Playing"/> if unfinished.</summary>
     public MatchState Result;
 
-    public ReplayFrame[] Frames = Array.Empty<ReplayFrame>();
-    public ReplayEntity[] Entities = Array.Empty<ReplayEntity>();
-    public int[] Removed = Array.Empty<int>();
-    public PackedCue[] Cues = Array.Empty<PackedCue>();
+    public ReplayFrame[] Frames = [];
+    public ReplayEntity[] Entities = [];
+    public int[] Removed = [];
+    public PackedCue[] Cues = [];
 
     /// <summary>Copies the samples into a native stream the caller disposes.</summary>
     public ReplayStream ToStream(Allocator allocator)

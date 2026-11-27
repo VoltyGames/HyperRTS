@@ -14,8 +14,8 @@ namespace HyperRTS.Presentation.Effects.Rig;
 /// </summary>
 public sealed class EffectPool : IDisposable
 {
-    private readonly Dictionary<GameObject, EffectRig> _rigs = new();
-    private readonly HashSet<GameObject> _broken = new();
+    private readonly Dictionary<GameObject, EffectRig> _rigs = [];
+    private readonly HashSet<GameObject> _broken = [];
     private GameObject _root;
     private EffectLights _lights;
     private Camera _camera;
@@ -27,7 +27,7 @@ public sealed class EffectPool : IDisposable
     public bool HasEye { get; private set; }
 
     /// <summary>The camera shakes this frame's bursts gave, read by the camera in the next frame.</summary>
-    public List<CameraJolt> Jolts { get; } = new();
+    public List<CameraJolt> Jolts { get; } = [];
 
     /// <summary>The prefab's live rig, or null when there is no prefab or it is broken (logged once, naming it).</summary>
     public EffectRig Get(GameObject prefab)

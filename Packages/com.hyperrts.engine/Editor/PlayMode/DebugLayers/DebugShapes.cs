@@ -25,9 +25,9 @@ public sealed class DebugShapes
     // Caps the draped mesh near 256 by 256 vertices on any grid.
     private const int MaxDrapeQuads = 255;
 
-    private readonly List<Vector3> _lineVertices = new();
-    private readonly List<Color32> _lineColors = new();
-    private readonly List<int> _lineIndices = new();
+    private readonly List<Vector3> _lineVertices = [];
+    private readonly List<Color32> _lineColors = [];
+    private readonly List<int> _lineIndices = [];
 
     private GameObject _root;
     private GameObject _cells;

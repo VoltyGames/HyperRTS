@@ -1,8 +1,8 @@
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Combat;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Selection;

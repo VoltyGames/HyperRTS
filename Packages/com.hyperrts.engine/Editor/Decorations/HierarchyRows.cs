@@ -25,15 +25,15 @@ internal static class HierarchyRows
 {
     // The Hierarchy window and its decorated rows outlive Play mode, so this state does too.
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<EntityId, HierarchyRow> Decorations = new();
+    private static readonly Dictionary<EntityId, HierarchyRow> Decorations = [];
 
     // Each bound item's view and the elements added to it, so a rebind or unbind removes them.
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<HierarchyViewItem, (HierarchyView View, VisualElement Marks, VisualElement Edge)> Bound = new();
+    private static readonly Dictionary<HierarchyViewItem, (HierarchyView View, VisualElement Marks, VisualElement Edge)> Bound = [];
 
     // Rows to rebuild since the last refresh: the changed objects and their ancestors, or all of them.
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<EntityId> Dirty = new();
+    private static readonly HashSet<EntityId> Dirty = [];
 
     [NoAutoStaticsCleanup]
     private static bool _dirtyAll;

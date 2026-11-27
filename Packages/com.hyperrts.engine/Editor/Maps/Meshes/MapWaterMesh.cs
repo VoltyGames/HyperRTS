@@ -18,10 +18,10 @@ public sealed class MapWaterMesh
 
     private readonly IReadOnlyList<MapCrossing> _crossings;
     private readonly MapClimate _climate;
-    private readonly List<Vector3> _vertices = new();
-    private readonly List<Vector2> _uvs = new();
-    private readonly List<Color> _colors = new();
-    private readonly List<int> _triangles = new();
+    private readonly List<Vector3> _vertices = [];
+    private readonly List<Vector2> _uvs = [];
+    private readonly List<Color> _colors = [];
+    private readonly List<int> _triangles = [];
 
     private MapWaterMesh(IReadOnlyList<MapCrossing> crossings, MapClimate climate)
     {

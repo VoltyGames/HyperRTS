@@ -15,7 +15,7 @@ public sealed class VoiceBank : IDisposable
     private readonly string _name;
     private readonly int _count;
     private readonly bool _loop;
-    private readonly Dictionary<SoundCue, DistanceCurves> _curves = new();
+    private readonly Dictionary<SoundCue, DistanceCurves> _curves = [];
     private GameObject _root;
     private AudioSource[] _sources;
     private AudioLowPassFilter[] _filters;

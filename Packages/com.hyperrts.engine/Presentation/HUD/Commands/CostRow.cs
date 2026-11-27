@@ -1,9 +1,9 @@
 using System.Collections.Generic;
+using HyperRTS.Presentation.HUD;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
 using UnityEngine;
 using UnityEngine.UIElements;
-using HyperRTS.Presentation.HUD;
 
 namespace HyperRTS.Presentation.HUD.Commands
 {
@@ -11,7 +11,7 @@ namespace HyperRTS.Presentation.HUD.Commands
     [UxmlElement]
     public partial class CostRow : VisualElement
     {
-        private readonly List<(Label Amount, ResourceType Type)> _amounts = new();
+        private readonly List<(Label Amount, ResourceType Type)> _amounts = [];
         private bool _short;
 
         public CostRow()

@@ -10,11 +10,11 @@ namespace HyperRTS.Editor.Tests.Animation.Bones;
 /// <summary>The ragdoll bake writes the rest pose and the body each bone rides on, and refuses a missing bone.</summary>
 public class RagdollBakeTests : BoneRigFixture
 {
-    private static RagdollBake Bake(string handBody) => new("Soldier", new List<RagdollBodyEntry>
-    {
+    private static RagdollBake Bake(string handBody) => new("Soldier",
+    [
         new() { bone = "Hips" },
         new() { bone = handBody, parentBone = "Hips" },
-    }, RagdollTuning.Default);
+    ], RagdollTuning.Default);
 
     [Test]
     public void RagdollBake_WritesParentsBindPosesAndTheBodyEachBoneRidesOn()

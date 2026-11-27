@@ -15,7 +15,7 @@ internal sealed class ScatterView
     // Metres the camera may drift before its plants regrow; fades and bands lag by at most this.
     private const float Step = 0.5f;
 
-    private readonly List<int> _tiles = new();
+    private readonly List<int> _tiles = [];
     private Vector3Int _cell;
     private Vector4 _settings;
     private int _footprints;

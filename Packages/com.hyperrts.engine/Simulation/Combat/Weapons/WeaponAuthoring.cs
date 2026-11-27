@@ -42,7 +42,7 @@ public class WeaponAuthoring : AuthoringBehaviour
 
     [Header("Extra weapons")]
     [Tooltip("Weapons mounted beside the primary; each plays its own Fire cue by weapon index.")]
-    public List<WeaponSlot> extraWeapons = new();
+    public List<WeaponSlot> extraWeapons = [];
 
     /// <summary>A building never turns and an interceptor tracks shots in the air, so their weapons always aim a turret.</summary>
     public bool AimsTurret => turreted || stats.Role == WeaponRole.Interceptor || TryGetComponent<BuildingAuthoring>(out _);

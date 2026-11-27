@@ -25,7 +25,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         // Destroyed buildings leave the set on this slow sweep, which keeps a long match's set small.
         private const double PruneSeconds = 30;
 
-        private readonly HashSet<Entity> _stamped = new();
+        private readonly HashSet<Entity> _stamped = [];
         private double _nextPrune;
 
         protected override void OnUpdate()

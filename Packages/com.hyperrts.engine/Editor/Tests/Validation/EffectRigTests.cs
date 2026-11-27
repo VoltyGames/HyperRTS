@@ -97,7 +97,7 @@ public class EffectRigTests : TemplateFixture
             case "NestedVariants":
                 var rig = Rig();
                 var variant = Rig();
-                variant.GetComponent<EffectRig>().variants = new[] { rig };
+                variant.GetComponent<EffectRig>().variants = [rig];
                 return WithVariant(rig, variant);
             case "GraphWithoutAsset":
                 return Rig(graph: null);
@@ -110,7 +110,7 @@ public class EffectRigTests : TemplateFixture
 
     private static GameObject WithVariant(GameObject rig, GameObject variant)
     {
-        rig.GetComponent<EffectRig>().variants = new[] { variant };
+        rig.GetComponent<EffectRig>().variants = [variant];
         return rig;
     }
 

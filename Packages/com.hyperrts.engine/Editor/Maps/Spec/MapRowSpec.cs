@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("row", 100, 0.8f, 0.5f, 0.9f)]
 public sealed class MapRowSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     [MapKey(typeof(MapClimateTree), typeof(MapProp))]
     public string kind;
     public float spacing = 8f;

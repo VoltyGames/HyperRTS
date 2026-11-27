@@ -34,7 +34,7 @@ public static class BuildPieceLods
         var ranges = new MeshLodRange[mesh.subMeshCount][];
         for (var sub = 0; sub < mesh.subMeshCount; sub++)
         {
-            indices[sub] = new List<int>();
+            indices[sub] = [];
             ranges[sub] = new MeshLodRange[mesh.lodCount];
             for (var lod = 0; lod < mesh.lodCount; lod++)
             {

@@ -42,17 +42,17 @@ public sealed class TrampleStamps
     // Worn ground discs sit this share of the band's width apart along a side, so neighbours overlap.
     private const float WornSpacing = 0.7f;
 
-    public readonly List<TrampleStamp> Trample = new();
-    public readonly List<TrampleStamp> Tracks = new();
+    public readonly List<TrampleStamp> Trample = [];
+    public readonly List<TrampleStamp> Tracks = [];
 
-    public readonly List<TrampleStamp> Scars = new();
+    public readonly List<TrampleStamp> Scars = [];
 
     /// <summary>Ground levelled under buildings, drawn once and then dropped.</summary>
-    public readonly List<TrampleStamp> Fills = new();
+    public readonly List<TrampleStamp> Fills = [];
 
-    public readonly List<TrampleStamp> Stains = new();
+    public readonly List<TrampleStamp> Stains = [];
 
-    public readonly List<TrampleStamp> Wakes = new();
+    public readonly List<TrampleStamp> Wakes = [];
 
     /// <summary>Clear every map before drawing: a replay sought back past the scars.</summary>
     public bool Reset;

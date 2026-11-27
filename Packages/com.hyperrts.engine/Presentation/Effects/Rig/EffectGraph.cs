@@ -24,7 +24,7 @@ public sealed class EffectGraph
     private readonly VisualEffect _effect;
     private readonly VFXEventAttribute _attributes;
     private readonly int _spawnFrame = Time.frameCount;
-    private readonly List<(Vector3 Position, Quaternion Rotation, float Scale)> _waiting = new();
+    private readonly List<(Vector3 Position, Quaternion Rotation, float Scale)> _waiting = [];
 
     public EffectGraph(VisualEffect effect)
     {

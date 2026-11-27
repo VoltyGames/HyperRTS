@@ -104,7 +104,7 @@ public struct SectionEntry
 
     private string CarriedProblem(SectionsAuthoring owner)
     {
-        foreach (var part in parts ?? Array.Empty<GameObject>())
+        foreach (var part in parts ?? [])
         {
             if (part == null || !part.transform.IsChildOf(owner.transform))
             {
@@ -112,7 +112,7 @@ public struct SectionEntry
             }
         }
 
-        foreach (var mount in weapons ?? Array.Empty<int>())
+        foreach (var mount in weapons ?? [])
         {
             if (mount is < 0 or > byte.MaxValue)
             {
@@ -127,7 +127,7 @@ public struct SectionEntry
     private string ModelProblem(SectionsAuthoring owner)
     {
         var models = new System.Collections.Generic.List<GameObject> { intact, broken, pieces, stub, heap };
-        foreach (var hole in holes ?? Array.Empty<SectionsAuthoring.Hole>())
+        foreach (var hole in holes ?? [])
         {
             models.Add(hole.model);
         }

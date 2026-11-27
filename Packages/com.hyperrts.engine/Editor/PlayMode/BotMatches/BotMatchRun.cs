@@ -22,7 +22,7 @@ namespace HyperRTS.Editor.PlayMode.BotMatches
 
         /// <summary>Every match finished since the editor opened, oldest first.</summary>
         [NoAutoStaticsCleanup]
-        public static readonly List<Result> Results = new();
+        public static readonly List<Result> Results = [];
 
         [AutoStaticsCleanup]
         private static BotMatchReport _report;

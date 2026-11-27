@@ -65,7 +65,7 @@ public class MapParallelTests
             var weights = MapGroundTexturePainter.Paint(context.Layout, edges, context.Heights, climate, Resolution);
             var grass = MapGrassPainter.Paint(land, edges, context.Shapes, context.Heights, context.Placements.Clearance,
                 Resolution);
-            grass.ThinByLayers(weights, new[] { 1f, 0.5f, 0.8f, 1f });
+            grass.ThinByLayers(weights, [1f, 0.5f, 0.8f, 1f]);
             return (context.Heights, weights, grass);
         }
         finally

@@ -40,23 +40,14 @@ public struct SelectionHitTest
 
     private bool MatchesGesture(Entity entity, float3 position)
     {
-        switch (Input.Command)
+        return Input.Command switch
         {
-            case SelectionCommand.Click:
-                return entity == Clicked;
-
-            case SelectionCommand.DragRelease:
-                return InDragBox(position) && (PreferredRank < 0 || Rank(entity) == PreferredRank);
-
-            case SelectionCommand.DoubleClick:
-                return IsDoubleClickedType(entity) && OnScreen(position);
-
-            case SelectionCommand.RecallGroup:
-                return Groups.HasComponent(entity) && (Groups[entity].Mask & (1 << Input.Group)) != 0;
-
-            default:
-                return false;
-        }
+            SelectionCommand.Click => entity == Clicked,
+            SelectionCommand.DragRelease => InDragBox(position) && (PreferredRank < 0 || Rank(entity) == PreferredRank),
+            SelectionCommand.DoubleClick => IsDoubleClickedType(entity) && OnScreen(position),
+            SelectionCommand.RecallGroup => Groups.HasComponent(entity) && (Groups[entity].Mask & (1 << Input.Group)) != 0,
+            _ => false,
+        };
     }
 
     /// <summary>Same type and owner as the double-clicked entity.</summary>

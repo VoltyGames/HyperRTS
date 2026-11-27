@@ -16,7 +16,7 @@ public sealed class GeneratorRunLog
     private const string Folder = "Library/HyperRTS";
     private const string FilePath = Folder + "/GeneratorRuns.json";
 
-    [SerializeField] private List<GeneratorRun> runs = new();
+    [SerializeField] private List<GeneratorRun> runs = [];
 
     /// <summary>Raised after every recorded run, so views that cache states read them again.</summary>
     [NoAutoStaticsCleanup]

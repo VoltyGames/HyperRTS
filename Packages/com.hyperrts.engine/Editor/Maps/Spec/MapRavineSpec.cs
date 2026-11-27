@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("ravine", 80, 0.6f, 0.4f, 0.25f)]
 public sealed class MapRavineSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     public float width = 24f;
     public float depth = 6f;
 

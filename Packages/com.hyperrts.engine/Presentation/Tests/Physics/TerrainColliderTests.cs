@@ -21,7 +21,7 @@ public class TerrainColliderTests
     private TerrainColliderSystem _system;
     private TerrainData _data;
     private Terrain _terrain;
-    private readonly List<Terrain> _hidden = new();
+    private readonly List<Terrain> _hidden = [];
 
     [SetUp]
     public void SetUp()

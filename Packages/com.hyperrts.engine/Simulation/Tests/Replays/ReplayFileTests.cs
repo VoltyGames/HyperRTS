@@ -36,7 +36,7 @@ public class ReplayFileTests
                 Difficulty = AIDifficulty.Hard,
             },
         },
-        Frames = new[] { new ReplayFrame { Time = 0f, Keyframe = true } },
+        Frames = [new ReplayFrame { Time = 0f, Keyframe = true }],
     };
 
     [Test]

@@ -164,7 +164,7 @@ internal struct EconomyPlanner
 
         /// <summary>The stockpile left after what this think already queued.</summary>
         public NativeArray<ResourceStock> Copy;
-        public readonly Stockpile Stock => new Stockpile(Copy);
+        public readonly Stockpile Stock => new(Copy);
         public Buyer Buyer;
 
         public readonly bool CanTrain(EntityManager entities, Entity prefab)

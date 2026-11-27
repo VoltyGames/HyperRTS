@@ -19,7 +19,7 @@ public class FireMissionTests : SimulationFixture
     private const int SalvoSize = 4;
     private const float Spread = 3f;
 
-    private readonly Dictionary<Entity, float3> _landings = new();
+    private readonly Dictionary<Entity, float3> _landings = [];
 
     [SetUp]
     public void Record()

@@ -22,19 +22,19 @@ public sealed class MapPalette : MapLibraryItem
 
     [Tooltip("Prefab per spec kind (props, resources, bridges, line and scatter props, settlement buildings).")]
     [NonSerialized]
-    public List<MapProp> entries = new();
+    public List<MapProp> entries = [];
 
     [Tooltip("Start kit and AI build order per side. Slot n plays sides[(n - 1) % count] when its scene plays as baked.")]
-    public List<MapPaletteSide> sides = new();
+    public List<MapPaletteSide> sides = [];
 
     [Tooltip("Every slot's starting stock.")]
-    public List<ResourceQuantity> startingResources = new();
+    public List<ResourceQuantity> startingResources = [];
 
     [Tooltip("Ground levelled and kept clear of settlements, trees and scenery around each spawn (radius, metres).")]
     public float baseRadius = 30f;
 
     [NonSerialized]
-    public List<MapSettlementKit> settlementKits = new();
+    public List<MapSettlementKit> settlementKits = [];
 
     public MapProp Entry(string key) => MapKeys.Get(entries, key, this.key, "entry");
 

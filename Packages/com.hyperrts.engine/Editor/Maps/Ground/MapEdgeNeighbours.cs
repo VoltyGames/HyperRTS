@@ -56,7 +56,7 @@ public sealed class MapEdgeNeighbours
         }
     }
 
-    private static readonly (int, int)[] Sides = { (-1, 0), (1, 0), (0, -1), (0, 1) };
+    private static readonly (int, int)[] Sides = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
     /// <summary>A neighbour's distance carries over only if its other region is not this cell's own.</summary>
     private void Carry(int cell, int from, float step)

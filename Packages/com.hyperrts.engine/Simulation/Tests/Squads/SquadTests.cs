@@ -120,7 +120,7 @@ public class SquadTests : SquadFixture
     {
         var squad = Squad(float3.zero, 0, 0, 0, 0);
         var members = World.Buffer<SquadMember>(squad);
-        float[] health = { 25f, 10f, 20f, 25f };
+        float[] health = [25f, 10f, 20f, 25f];
         for (var i = 0; i < 4; i++)
         {
             var member = members[i];

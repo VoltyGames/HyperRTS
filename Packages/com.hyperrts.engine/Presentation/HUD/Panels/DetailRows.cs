@@ -8,7 +8,7 @@ public sealed class DetailRows
 {
     private readonly VisualElement _column;
     private readonly VisualTreeAsset _template;
-    private readonly List<(VisualElement Row, Label Name, Label Value, VisualElement Chevrons)> _rows = new();
+    private readonly List<(VisualElement Row, Label Name, Label Value, VisualElement Chevrons)> _rows = [];
 
     public DetailRows(VisualElement column, VisualTreeAsset template)
     {

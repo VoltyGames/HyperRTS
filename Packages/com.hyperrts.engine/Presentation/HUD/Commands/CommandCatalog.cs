@@ -13,7 +13,7 @@ public sealed class CommandCatalog : ScriptableObject
 {
     [SerializeField]
     [Tooltip("Every command the card can show.")]
-    private List<CommandSpec> specs = new();
+    private List<CommandSpec> specs = [];
 
     public IReadOnlyList<CommandSpec> Specs => specs;
 

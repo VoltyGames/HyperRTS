@@ -79,7 +79,7 @@ public class CrowdTests : SimulationFixture
         World.MoveTo(b, goalB);
         World.Tick();
 
-        var (closest, slowest) = Watch(new[] { a, b }, 8f);
+        var (closest, slowest) = Watch([a, b], 8f);
 
         Assert.Greater(closest, 0.98f, "never touched");
         Assert.Greater(slowest, 1f, "neither stopped to let the other by");

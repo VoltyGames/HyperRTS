@@ -33,25 +33,25 @@ public sealed class MapSpec
 
     /// <summary>Whether players may pick the map. An unlisted one, a test or showroom ground, plays only from its scene.</summary>
     public bool listed = true;
-    public List<string> notes = new();
-    public List<MapSpawnSpec> spawns = new();
-    public List<MapResourceSpec> resources = new();
-    public List<MapPropSpec> props = new();
-    public List<MapRiverSpec> rivers = new();
-    public List<MapPondSpec> ponds = new();
-    public List<MapRavineSpec> ravines = new();
-    public List<MapHillSpec> hills = new();
-    public List<MapRoadSpec> roads = new();
-    public List<MapSettlementSpec> settlements = new();
-    public List<MapWoodSpec> woods = new();
-    public List<MapBeltSpec> belts = new();
-    public List<MapFarmlandSpec> farmland = new();
-    public List<MapAreaSpec> areas = new();
-    public List<MapRowSpec> rows = new();
-    public List<MapScatterSpec> scatters = new();
+    public List<string> notes = [];
+    public List<MapSpawnSpec> spawns = [];
+    public List<MapResourceSpec> resources = [];
+    public List<MapPropSpec> props = [];
+    public List<MapRiverSpec> rivers = [];
+    public List<MapPondSpec> ponds = [];
+    public List<MapRavineSpec> ravines = [];
+    public List<MapHillSpec> hills = [];
+    public List<MapRoadSpec> roads = [];
+    public List<MapSettlementSpec> settlements = [];
+    public List<MapWoodSpec> woods = [];
+    public List<MapBeltSpec> belts = [];
+    public List<MapFarmlandSpec> farmland = [];
+    public List<MapAreaSpec> areas = [];
+    public List<MapRowSpec> rows = [];
+    public List<MapScatterSpec> scatters = [];
 
     /// <summary>Points the Play-mode look captures frame (<c>map look</c>); they change nothing on the map.</summary>
-    public List<MapLookSpec> looks = new();
+    public List<MapLookSpec> looks = [];
 
     public MapWarAge WarAge => Enum.Parse<MapWarAge>(warAge);
 }

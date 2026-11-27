@@ -19,11 +19,11 @@ public class ProducerAuthoring : AuthoringBehaviour
 {
     [Tooltip("Unit prefabs this building can train.")]
     [ProducibleOption, PrefabAsset("Production option"), NoEmptyEntries]
-    public List<UnitAuthoring> productionOptions = new();
+    public List<UnitAuthoring> productionOptions = [];
 
     [Tooltip("Research prefabs (upgrades) this building can research, each once per player.")]
     [ProducibleOption, PrefabAsset("Research option"), NoEmptyEntries]
-    public List<UpgradeAuthoring> researchOptions = new();
+    public List<UpgradeAuthoring> researchOptions = [];
 
     [Tooltip("Local offset where finished units appear.")]
     public Vector3 spawnOffset = new(0f, 0f, -4f);

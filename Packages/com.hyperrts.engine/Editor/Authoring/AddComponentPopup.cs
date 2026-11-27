@@ -18,7 +18,7 @@ public sealed class AddComponentPopup : PopupWindowContent
     private const string NoFolder = "Other";
 
     private readonly GameObject _target;
-    private readonly List<(VisualElement Group, List<Button> Items)> _groups = new();
+    private readonly List<(VisualElement Group, List<Button> Items)> _groups = [];
 
     public AddComponentPopup(GameObject target)
     {
@@ -52,7 +52,7 @@ public sealed class AddComponentPopup : PopupWindowContent
         }
 
         var slash = menu.LastIndexOf('/');
-        return slash < 0 ? (NoFolder, menu) : (menu.Substring(0, slash).Replace(HyperRTSMenu.Root, ""), menu.Substring(slash + 1));
+        return slash < 0 ? (NoFolder, menu) : (menu[..slash].Replace(HyperRTSMenu.Root, ""), menu[(slash + 1)..]);
     }
 
     /// <summary>A component with an empty Add Component menu is added from its parent's inspector instead.</summary>

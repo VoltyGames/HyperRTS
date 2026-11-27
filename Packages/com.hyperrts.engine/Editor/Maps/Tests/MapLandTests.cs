@@ -109,9 +109,9 @@ public class MapLandTests
     {
         var river = new MapRiverSpec
         {
-            points = new List<MapPoint> { new(-100f, -30f), new(-60f, -10f), new(-20f, -25f), new(0f, 0f) },
+            points = [new(-100f, -30f), new(-60f, -10f), new(-20f, -25f), new(0f, 0f)],
             meander = 8f,
-            crossings = new List<MapCrossingSpec> { new() { along = 0.5f, kind = MapCrossingSpec.Ford } },
+            crossings = [new() { along = 0.5f, kind = MapCrossingSpec.Ford }],
         };
         var authored = MapGeometry.ToVectors(river.points);
         var crossing = MapGeometry.PointAlong(authored, 0.5f * MapGeometry.Length(authored), out _);
@@ -133,10 +133,10 @@ public class MapLandTests
         {
             symmetry = MapSymmetry.Rotate180,
             seed = 3,
-            ravines = new List<MapRavineSpec>
-            {
-                new() { points = new List<MapPoint> { new(-80f, -40f), new(-60f, -90f), new(-40f, -150f) }, branches = 3 },
-            },
+            ravines =
+            [
+                new() { points = [new(-80f, -40f), new(-60f, -90f), new(-40f, -150f)], branches = 3 },
+            ],
         };
 
         MapRavineRefiner.Refine(spec, MapSymmetry.Parse(spec.symmetry));
@@ -168,7 +168,7 @@ public class MapLandTests
             i.marginSurface = "Margin";
             i.minField = 200f;
             i.headlandWidth = headlandWidth;
-            i.crops = new List<MapCropShare> { new() { surface = "Wheat" }, new() { surface = "Sunflower" }, new() { surface = "Plowed" } };
+            i.crops = [new() { surface = "Wheat" }, new() { surface = "Sunflower" }, new() { surface = "Plowed" }];
         }));
         return climate;
     }

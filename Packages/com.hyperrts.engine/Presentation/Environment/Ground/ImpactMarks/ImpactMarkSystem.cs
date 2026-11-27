@@ -1,14 +1,14 @@
+using System.Collections.Generic;
+using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Destruction;
 using HyperRTS.Presentation.Environment.Fire;
 using HyperRTS.Presentation.Environment.Ground.Stamps;
-using HyperRTS.Simulation.Common.Prefabs;
-using HyperRTS.Simulation.Cues.Effects;
-using System.Collections.Generic;
-using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Prefabs;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
+using HyperRTS.Simulation.Cues.Effects;
 using HyperRTS.Simulation.Navigation.Heights;
 using HyperRTS.Simulation.Replays;
 using Unity.Entities;
@@ -29,7 +29,7 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks
     [UpdateBefore(typeof(FieldFireSystem))]
     public partial class ImpactMarkSystem : SystemBase
     {
-        private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = new();
+        private readonly Dictionary<ImpactMark, ImpactMarkDecals> _decals = [];
         private TypeCatalog<ImpactMark[]> _catalog;
         private CueVisibility _visibility;
         private DebrisSystem _debris;

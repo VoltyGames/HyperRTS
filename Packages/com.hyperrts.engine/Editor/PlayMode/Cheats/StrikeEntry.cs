@@ -207,7 +207,7 @@ internal readonly struct StrikeEntry
             command.Argument = AbilityId;
         }
 
-        using var caster = new NativeArray<Entity>(new[] { instance }, Allocator.Temp);
+        using var caster = new NativeArray<Entity>([instance], Allocator.Temp);
         PlayerCommands.Address(ref command, entityManager.GetBuffer<PlayerCommandSubject>(player), caster);
         entityManager.GetBuffer<PlayerCommand>(player).Add(command);
     }

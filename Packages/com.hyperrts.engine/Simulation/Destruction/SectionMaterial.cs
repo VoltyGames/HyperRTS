@@ -14,5 +14,5 @@ public class SectionMaterial : ScriptableObject
     public string displayName = "Brick";
 
     [Tooltip("Per-type multipliers; unlisted types deal full damage.")]
-    public List<DamageFactor> factors = new();
+    public List<DamageFactor> factors = [];
 }

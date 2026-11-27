@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Destruction;
 public class DamageStagesAuthoring : AuthoringBehaviour
 {
     [Tooltip("From intact to most damaged. Each shows while health is below its threshold; the first should be 1.")]
-    public List<Stage> stages = new();
+    public List<Stage> stages = [];
 
     [Serializable]
     public class Stage

@@ -46,20 +46,20 @@ public sealed class MapLayout
     public int GrassResolution => Mathf.CeilToInt(TerrainBounds.width * 1.25f);
 
     /// <summary>Ordered by slot.</summary>
-    public List<MapSpawn> Spawns { get; } = new();
+    public List<MapSpawn> Spawns { get; } = [];
 
-    public List<MapCopy<MapResourceSpec>> Resources { get; set; } = new();
-    public List<MapCopy<MapPropSpec>> Props { get; set; } = new();
-    public List<MapCopy<MapRiverSpec>> Rivers { get; set; } = new();
-    public List<MapCopy<MapPondSpec>> Ponds { get; set; } = new();
-    public List<MapCopy<MapRavineSpec>> Ravines { get; set; } = new();
-    public List<MapCopy<MapHillSpec>> Hills { get; set; } = new();
-    public List<MapCopy<MapRoadSpec>> Roads { get; set; } = new();
-    public List<MapCopy<MapSettlementSpec>> Settlements { get; set; } = new();
-    public List<MapCopy<MapWoodSpec>> Woods { get; set; } = new();
-    public List<MapCopy<MapBeltSpec>> Belts { get; set; } = new();
-    public List<MapCopy<MapFarmlandSpec>> Farmland { get; set; } = new();
-    public List<MapCopy<MapAreaSpec>> Areas { get; set; } = new();
-    public List<MapCopy<MapRowSpec>> Rows { get; set; } = new();
-    public List<MapCopy<MapScatterSpec>> Scatters { get; set; } = new();
+    public List<MapCopy<MapResourceSpec>> Resources { get; set; } = [];
+    public List<MapCopy<MapPropSpec>> Props { get; set; } = [];
+    public List<MapCopy<MapRiverSpec>> Rivers { get; set; } = [];
+    public List<MapCopy<MapPondSpec>> Ponds { get; set; } = [];
+    public List<MapCopy<MapRavineSpec>> Ravines { get; set; } = [];
+    public List<MapCopy<MapHillSpec>> Hills { get; set; } = [];
+    public List<MapCopy<MapRoadSpec>> Roads { get; set; } = [];
+    public List<MapCopy<MapSettlementSpec>> Settlements { get; set; } = [];
+    public List<MapCopy<MapWoodSpec>> Woods { get; set; } = [];
+    public List<MapCopy<MapBeltSpec>> Belts { get; set; } = [];
+    public List<MapCopy<MapFarmlandSpec>> Farmland { get; set; } = [];
+    public List<MapCopy<MapAreaSpec>> Areas { get; set; } = [];
+    public List<MapCopy<MapRowSpec>> Rows { get; set; } = [];
+    public List<MapCopy<MapScatterSpec>> Scatters { get; set; } = [];
 }

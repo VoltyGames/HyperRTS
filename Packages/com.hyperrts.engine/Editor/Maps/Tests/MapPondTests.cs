@@ -20,7 +20,7 @@ public class MapPondTests
     // The dam is the bottom edge (z = -60); water spans x -20 to 20, z -60 to -30.
     private static MapPondSpec Pond() => new()
     {
-        points = new List<MapPoint> { new(-20f, -60f), new(20f, -60f), new(20f, -30f), new(-20f, -30f) },
+        points = [new(-20f, -60f), new(20f, -60f), new(20f, -30f), new(-20f, -30f)],
         shore = "Verge", dam = 0, damSurface = "Dirt",
     };
 
@@ -94,7 +94,7 @@ public class MapPondTests
     public void PondOnABaseOrARoad_FailsNamingIt(float x, float z, string what)
     {
         var pond = Pond();
-        pond.points = new List<MapPoint> { new(x - 8f, z - 8f), new(x + 8f, z - 8f), new(x + 8f, z + 8f), new(x - 8f, z + 8f) };
+        pond.points = [new(x - 8f, z - 8f), new(x + 8f, z - 8f), new(x + 8f, z + 8f), new(x - 8f, z + 8f)];
         pond.dam = -1;
         var spec = Spec(pond);
         spec.roads.Add(MapFixture.Road("Dirt", new Vector2(-60f, -45f), new Vector2(60f, -45f)));

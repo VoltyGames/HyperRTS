@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Animation.Figures;
 internal sealed class CorpseBodies
 {
     private readonly EntityManager _entities;
-    private readonly Dictionary<BlobAssetReference<FigureClips>, BlobAssetReference<Collider>[]> _colliders = new();
+    private readonly Dictionary<BlobAssetReference<FigureClips>, BlobAssetReference<Collider>[]> _colliders = [];
 
     private static readonly int BoneTextureId = Shader.PropertyToID("_BoneTex");
     private static readonly int FadeTimeId = Shader.PropertyToID("_BoneFadeTime");

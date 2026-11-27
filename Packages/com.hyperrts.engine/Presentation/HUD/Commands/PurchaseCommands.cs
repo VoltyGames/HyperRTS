@@ -17,11 +17,11 @@ namespace HyperRTS.Presentation.HUD.Commands;
 /// </summary>
 public sealed class PurchaseCommands : ICommandSource
 {
-    private readonly List<Option> _options = new();
-    private readonly List<Entity> _producers = new();
-    private readonly HashSet<(Entity Producer, Entity Prefab)> _offers = new();
-    private readonly HashSet<Entity> _unpowered = new();
-    private readonly Dictionary<Entity, QueuedOption> _queued = new();
+    private readonly List<Option> _options = [];
+    private readonly List<Entity> _producers = [];
+    private readonly HashSet<(Entity Producer, Entity Prefab)> _offers = [];
+    private readonly HashSet<Entity> _unpowered = [];
+    private readonly Dictionary<Entity, QueuedOption> _queued = [];
 
     private readonly CommandKit _kit;
 
@@ -48,7 +48,7 @@ public sealed class PurchaseCommands : ICommandSource
 
         foreach (var (prefab, card) in builds)
         {
-            Add(context, entries, card, prefab, new List<Entity>(), () => context.StartPlacement(prefab));
+            Add(context, entries, card, prefab, [], () => context.StartPlacement(prefab));
         }
 
         foreach (var prefab in products)

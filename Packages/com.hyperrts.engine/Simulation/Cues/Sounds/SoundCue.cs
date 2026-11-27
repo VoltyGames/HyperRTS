@@ -21,7 +21,7 @@ public class SoundCue : ScriptableObject
     private int _lastDistant = -1;
 
     [Tooltip("Variations; one is picked at random each time the cue plays, never the same one twice in a row.")]
-    public AudioClip[] clips = { };
+    public AudioClip[] clips = [];
 
     [Tooltip("Random volume between x and y.")]
     public Vector2 volume = new(0.9f, 1f);
@@ -61,7 +61,7 @@ public class SoundCue : ScriptableObject
 
     [Tooltip("3D only: variations heard from beyond Distant From, such as a far boom without the near crack. " +
              "Empty plays the clips at every distance.")]
-    public AudioClip[] distantClips = { };
+    public AudioClip[] distantClips = [];
 
     [Tooltip("3D only: from this distance to the listener the distant variations play instead of the clips.")]
     [Min(0f)]

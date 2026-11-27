@@ -24,9 +24,9 @@ namespace HyperRTS.Presentation.Physics
         private Terrain _terrain;
         private TerrainData _data;
         private int _tilesAcross;
-        private Entity[] _tiles = System.Array.Empty<Entity>();
-        private BlobAssetReference<Unity.Physics.Collider>[] _colliders = System.Array.Empty<BlobAssetReference<Unity.Physics.Collider>>();
-        private bool[] _dirty = System.Array.Empty<bool>();
+        private Entity[] _tiles = [];
+        private BlobAssetReference<Unity.Physics.Collider>[] _colliders = [];
+        private bool[] _dirty = [];
         private bool _anyDirty;
         private EntityArchetype _tileArchetype;
 
@@ -176,11 +176,11 @@ namespace HyperRTS.Presentation.Physics
                 ReleaseTile(i);
             }
 
-            _tiles = System.Array.Empty<Entity>();
-            _colliders = System.Array.Empty<BlobAssetReference<Unity.Physics.Collider>>();
+            _tiles = [];
+            _colliders = [];
             _terrain = null;
             _data = null;
-            _dirty = System.Array.Empty<bool>();
+            _dirty = [];
             _anyDirty = false;
         }
     }

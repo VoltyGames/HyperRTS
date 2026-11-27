@@ -38,7 +38,7 @@ public class MeshLodsTests
         var fine = Sphere();
         var coarse = Sphere();
         var vertices = fine.vertexCount;
-        MeshLods.Pack(new[] { fine, coarse });
+        MeshLods.Pack([fine, coarse]);
 
         Assert.AreEqual(2, fine.lodCount);
         Assert.AreEqual(vertices * 2, fine.vertexCount);

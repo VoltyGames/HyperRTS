@@ -1,7 +1,7 @@
 ﻿using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common.Combat;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Orders;
 using Unity.Burst;
 using Unity.Collections;

@@ -14,7 +14,7 @@ public sealed class GraphStreamPool
 {
     private readonly VisualEffect[] _templates;
     private readonly Stack<GraphStream> _idle = new();
-    private readonly List<GraphStream> _stopping = new();
+    private readonly List<GraphStream> _stopping = [];
 
     public GraphStreamPool(VisualEffect[] effects) => _templates = Array.FindAll(effects, GraphStream.Streams);
 

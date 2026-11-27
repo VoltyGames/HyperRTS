@@ -26,15 +26,15 @@ public class UpgradeAuthoring : ProducibleAuthoring
     {
         [Tooltip("Unit and building types affected; empty affects everything the owner has.")]
         [PrefabAsset("Upgrade target"), NoEmptyEntries]
-        public List<GameEntityAuthoring> appliesTo = new();
+        public List<GameEntityAuthoring> appliesTo = [];
 
         [Tooltip("Bonuses given to every affected entity.")]
-        public List<StatBonus> bonuses = new();
+        public List<StatBonus> bonuses = [];
     }
 
     [Header("Research")]
     [Tooltip("What the upgrade changes.")]
-    public List<Effect> effects = new();
+    public List<Effect> effects = [];
 
     // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
     public static void Add(EntityWriter writer, in EntityInfo info, float buildTime,

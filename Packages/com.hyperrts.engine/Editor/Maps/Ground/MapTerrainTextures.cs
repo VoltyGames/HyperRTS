@@ -31,12 +31,12 @@ public static class MapTerrainTextures
         var folder = GeneratedFolder(climate);
         var atlas = new MapTerrainAtlas(layers, SliceSize);
         var albedo = atlas.Ensure($"{folder}/{climate.key}_TerrainAlbedo.png",
-            l => new[] { l.diffuseTexture, l.maskMapTexture }, AlbedoCell, normalMap: false, sRGB: true);
+            l => [l.diffuseTexture, l.maskMapTexture], AlbedoCell, normalMap: false, sRGB: true);
         var normal = atlas.Ensure($"{folder}/{climate.key}_TerrainNormal.png",
-            l => new[] { l.normalMapTexture }, l => MapTerrainSource.Read(l.normalMapTexture, SliceSize),
+            l => [l.normalMapTexture], l => MapTerrainSource.Read(l.normalMapTexture, SliceSize),
             normalMap: true, sRGB: false);
         var mask = atlas.Ensure($"{folder}/{climate.key}_TerrainMask.png",
-            l => new[] { l.maskMapTexture }, MaskCell, normalMap: false, sRGB: false);
+            l => [l.maskMapTexture], MaskCell, normalMap: false, sRGB: false);
         return (albedo, normal, mask);
     }
 

@@ -42,7 +42,7 @@ internal readonly struct BurstText
         {
             var burst = _bursts.GetArrayElementAtIndex(i);
             var parts = entries[i].Split(':');
-            var counts = parts.Length == 2 ? parts[1].Split('-') : Array.Empty<string>();
+            var counts = parts.Length == 2 ? parts[1].Split('-') : [];
             if (counts.Length is 0 or > 2)
             {
                 throw new ArgumentException($"HyperRTS: '{entries[i]}' is not 'delay:min-max' for '{_bursts.propertyPath}'.");

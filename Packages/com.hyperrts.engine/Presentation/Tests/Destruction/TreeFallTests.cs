@@ -142,7 +142,7 @@ public class TreeFallTests
         _em.AddComponentData(model, LocalTransform.FromPosition(offset));
         _em.AddComponentData(model, new Parent { Value = remains });
         _em.AddBuffer<LinkedEntityGroup>(remains).AddRange(new NativeArray<LinkedEntityGroup>(
-            new LinkedEntityGroup[] { remains, model }, Allocator.Temp));
+            [remains, model], Allocator.Temp));
         return model;
     }
 

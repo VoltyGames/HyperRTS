@@ -16,13 +16,13 @@ public sealed class EntityExtent : IDisposable
 {
     private sealed class Entry
     {
-        public readonly List<Entity> Parts = new();
+        public readonly List<Entity> Parts = [];
         public int GroupLength;
         public int Frame;
     }
 
-    private readonly Dictionary<Entity, Entry> _entries = new();
-    private readonly List<Entity> _unseen = new();
+    private readonly Dictionary<Entity, Entry> _entries = [];
+    private readonly List<Entity> _unseen = [];
     private NativeList<Entity> _scratch = new(Allocator.Persistent);
     private int _frame;
 

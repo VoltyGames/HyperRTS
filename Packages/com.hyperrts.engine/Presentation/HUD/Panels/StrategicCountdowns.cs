@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.HUD.Panels;
 /// <summary>The map-wide strategic asset countdowns: one row per player holding one, in the owner's colour.</summary>
 public sealed class StrategicCountdowns : HUDPanel
 {
-    private readonly List<Row> _rows = new();
+    private readonly List<Row> _rows = [];
     private readonly VisualTreeAsset _rowTemplate;
 
     private readonly LiveQuery _charges = new(entityManager => entityManager.CreateEntityQuery(

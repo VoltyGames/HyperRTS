@@ -182,7 +182,7 @@ internal static class RuleFiresCases
     {
         yield return Case<SectionsRule>("has no effect rig", f => f.Add<SectionsAuthoring>(new GameObject("Sections")));
         yield return Case<EffectReferencesRule>("has no socket", f => f.Add<LoopEffectsAuthoring>(new GameObject("Loops"))
-            .With(effects => effects.loops = new[] { new LoopEffectsAuthoring.Entry() }));
+            .With(effects => effects.loops = [new LoopEffectsAuthoring.Entry()]));
         yield return Case<MotionRigRule>("has no part", f => f.Add<MotionRigAuthoring>(new GameObject("Rig"))
             .With(rig => rig.turrets.Add(new TurretSlot())));
     }

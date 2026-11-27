@@ -31,12 +31,12 @@ namespace HyperRTS.Simulation.GameEntities
             {
                 var query = state.GetEntityQuery(new EntityQueryDesc
                 {
-                    All = new[]
-                    {
+                    All =
+                    [
                         _table.Components[i].Component, ComponentType.ReadOnly<StatModifier>(),
                         ComponentType.ReadOnly<BaseStat>(),
-                    },
-                    Disabled = new[] { ComponentType.ReadOnly<StatBasesPending>() },
+                    ],
+                    Disabled = [ComponentType.ReadOnly<StatBasesPending>()],
                 });
                 query.SetChangedVersionFilter(ComponentType.ReadOnly<StatModifier>());
                 _queries[i] = query;

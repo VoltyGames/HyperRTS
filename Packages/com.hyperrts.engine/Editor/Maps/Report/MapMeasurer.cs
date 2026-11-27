@@ -25,7 +25,7 @@ public sealed class MapMeasurer
     private readonly MapPalette _palette;
     private readonly MapRules _rules;
     private readonly MapIssues _issues;
-    private readonly List<int2> _spawnCells = new();
+    private readonly List<int2> _spawnCells = [];
 
     private MapMeasurer(MapLayout layout, MapNavGrid nav, MapPalette palette, MapRules rules, MapIssues issues)
     {
@@ -37,7 +37,7 @@ public sealed class MapMeasurer
     }
 
     /// <summary>The attack paths found between slots 1 and 2, for the overview image.</summary>
-    public List<MapPath> Paths { get; private set; } = new();
+    public List<MapPath> Paths { get; private set; } = [];
 
     public MapMetrics Metrics { get; } = new();
 

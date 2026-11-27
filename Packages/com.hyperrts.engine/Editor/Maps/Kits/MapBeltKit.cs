@@ -20,7 +20,7 @@ public sealed class MapBeltKit : MapLibraryItem
     [Tooltip("Distance between trees along a row (metres).")]
     public float spacing = 5f;
 
-    public List<MapTreeShare> trees = new();
+    public List<MapTreeShare> trees = [];
 
     [Tooltip("Climate tree (shrub) filling the gaps and edges; empty for none.")]
     [MapKey(typeof(MapClimateTree), Optional = true)]

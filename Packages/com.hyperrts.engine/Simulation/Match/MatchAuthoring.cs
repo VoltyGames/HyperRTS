@@ -81,16 +81,16 @@ public class MatchAuthoring : AuthoringBehaviour
 
     [Header("Players")]
     [Tooltip("Player slots. Slot 1 is owner 1, the 'Owner' number on units and buildings.")]
-    public List<PlayerSlot> players = new()
-    {
+    public List<PlayerSlot> players =
+    [
         new PlayerSlot { name = "Player", team = 1, color = PlayerSlot.Palette[0] },
         new PlayerSlot { name = "Enemy", team = 2, color = PlayerSlot.Palette[1], control = PlayerControl.AI },
-    };
+    ];
 
     [Header("Sides")]
     [Tooltip("Start kit and AI build order per side (the game's army id). Empty: players start with what the " +
              "scene places and keep their own build orders.")]
-    public List<SideContent> sides = new();
+    public List<SideContent> sides = [];
 
     [Header("AI")]
     [Tooltip("Tuning of AI slots set to Easy.")]

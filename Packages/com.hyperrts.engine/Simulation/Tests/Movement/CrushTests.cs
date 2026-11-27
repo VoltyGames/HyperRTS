@@ -19,7 +19,7 @@ public class CrushTests : SimulationFixture
     private const int SquadSize = 4;
 
     // Owners 1 and 2 are teammates; owner 3 is the enemy.
-    protected override byte[] Teams => new byte[] { 1, 1, 2 };
+    protected override byte[] Teams => [1, 1, 2];
 
     private Entity SpawnTank(float speed, int crusherSize = 3)
     {

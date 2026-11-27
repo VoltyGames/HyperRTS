@@ -19,7 +19,7 @@ public class ImpactAuthoring : AuthoringBehaviour
 
     [Tooltip("Marks every hit leaves on open ground (never on buildings, bridges, water or aircraft), e.g. a crater " +
              "and a scorch. Leave empty for effects only.")]
-    public ImpactMark[] marks = { };
+    public ImpactMark[] marks = [];
 
     public static void Add(EntityWriter writer, SurfaceEffects effects)
     {

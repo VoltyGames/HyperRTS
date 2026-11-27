@@ -88,7 +88,7 @@ internal sealed class MapPlotPaths
             plot.Local(spot, out var u, out var v);
             if (v <= front)
             {
-                lines.Add(new List<Vector2> { door, spot });
+                lines.Add([door, spot]);
                 continue;
             }
 

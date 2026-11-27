@@ -211,7 +211,7 @@ public struct PathState : IComponentData
             return;
         }
 
-        var last = waypoints[waypoints.Length - 1];
+        var last = waypoints[^1];
         var distanceSq = math.distancesq(last.Position.xz, goal.xz);
         if (distanceSq <= 1e-6f || distanceSq > grid.Grid.CellSize * grid.Grid.CellSize)
         {

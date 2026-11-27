@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;

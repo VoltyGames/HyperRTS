@@ -13,10 +13,10 @@ public sealed class GrassField : ScatterField
     [Tooltip("Share of the ground each plant covers, 0 to 1, one slice per plant in plant order, north up.")]
     public Texture2DArray coverage;
 
-    public List<GrassPlant> plants = new();
+    public List<GrassPlant> plants = [];
 
     [Tooltip("Plants per tile with their mean coverage, each tile's run in turn.")]
-    public List<GrassTilePlant> tilePlants = new();
+    public List<GrassTilePlant> tilePlants = [];
 
     /// <summary>Draw slots over all plants: one per model and band, in plant order.</summary>
     public int SlotCount => FirstSlots()[plants.Count];

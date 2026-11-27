@@ -9,7 +9,7 @@ public abstract class ScatterField : ScriptableObject
     [Tooltip("World XZ rectangle the baked picture and tile grid cover. x and y are its minimum x and z.")]
     public Rect area;
 
-    public List<ScatterTile> tiles = new();
+    public List<ScatterTile> tiles = [];
 
     /// <summary>Metres the tallest plant can grow to, the height of every tile's culling box.</summary>
     public abstract float TallestPlant { get; }

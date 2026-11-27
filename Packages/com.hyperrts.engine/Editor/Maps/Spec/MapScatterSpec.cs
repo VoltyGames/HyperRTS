@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("scatter", 40, 0.9f, 0.6f, 0.6f, Closed = true)]
 public sealed class MapScatterSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     [MapKey(typeof(MapProp))]
     public string kind;
     public int count;

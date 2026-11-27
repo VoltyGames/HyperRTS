@@ -19,9 +19,9 @@ public sealed class UnitFacts
 {
     private readonly StringBuilder _text = new();
 
-    public List<DetailRow> Weapons { get; } = new();
+    public List<DetailRow> Weapons { get; } = [];
 
-    public List<DetailRow> Facts { get; } = new();
+    public List<DetailRow> Facts { get; } = [];
 
     public void Read(EntityManager entityManager, Entity entity, Entity prefab)
     {

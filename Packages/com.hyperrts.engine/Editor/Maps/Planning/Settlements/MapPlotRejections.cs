@@ -12,8 +12,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// </summary>
 internal sealed class MapPlotRejections
 {
-    private readonly Dictionary<string, int> _counts = new();
-    private readonly Dictionary<string, Vector2> _first = new();
+    private readonly Dictionary<string, int> _counts = [];
+    private readonly Dictionary<string, Vector2> _first = [];
 
     public int Total { get; private set; }
 

@@ -16,7 +16,7 @@ public static class AnimationSetBake
     /// <summary>Bakes the set named or at a path, or every set when the name is empty; returns each set with what it wrote.</summary>
     public static object Bake<T>(string set) where T : ScriptableObject, IAnimationSet
     {
-        var sets = string.IsNullOrEmpty(set) ? EditorAssets.FindAssets<T>() : new List<T> { Find<T>(set) };
+        var sets = string.IsNullOrEmpty(set) ? EditorAssets.FindAssets<T>() : [Find<T>(set)];
         return sets.Select(found => new { set = AssetDatabase.GetAssetPath(found), written = found.Bake() }).ToList();
     }
 

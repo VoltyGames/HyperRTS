@@ -22,7 +22,7 @@ public sealed class LoopOffers<T> where T : Component
     [NoAutoStaticsCleanup]
     private static readonly Comparison<Offer> Nearer = (a, b) => a.DistanceSq.CompareTo(b.DistanceSq);
 
-    private readonly List<Offer> _offers = new();
+    private readonly List<Offer> _offers = [];
 
     public int Count => _offers.Count;
 

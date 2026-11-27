@@ -16,9 +16,9 @@ namespace HyperRTS.Simulation.Tests.Cues;
 public class SquadBarkTests : SimulationFixture
 {
     private static readonly CueSlot[] Slots =
-    {
+    [
         CueSlot.TakeCover, CueSlot.Suppressed, CueSlot.Pinned, CueSlot.Retreat, CueSlot.DigIn, CueSlot.Reinforced,
-    };
+    ];
 
     [SetUp]
     public void Prepare()

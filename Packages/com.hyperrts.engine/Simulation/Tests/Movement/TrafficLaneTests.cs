@@ -16,8 +16,8 @@ public class TrafficLaneTests : TrafficScenarioFixture
     private const int BaseMoves = 50;
     private const float MoveTimeout = 90f;
     private const float BlockSize = 14f;
-    private static readonly float[] ColumnGaps = { 4f, 6f, 8f, 5f };
-    private static readonly float[] RowGaps = { 4f, 6f, 8f };
+    private static readonly float[] ColumnGaps = [4f, 6f, 8f, 5f];
+    private static readonly float[] RowGaps = [4f, 6f, 8f];
 
     // One truck's run of random moves, with the planned length of the move it is on.
     private sealed class RouteTruck

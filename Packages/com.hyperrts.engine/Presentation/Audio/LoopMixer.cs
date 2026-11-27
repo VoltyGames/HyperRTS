@@ -18,12 +18,12 @@ public sealed class LoopMixer
     [NoAutoStaticsCleanup]
     private static readonly Comparison<LoopCandidate> Nearest = (a, b) => a.DistanceSq.CompareTo(b.DistanceSq);
 
-    private readonly List<LoopCandidate> _candidates = new();
-    private readonly List<(LoopCandidate Loop, int Source, bool Claimed)> _winners = new();
-    private readonly List<int> _released = new();
-    private readonly Dictionary<(Entity, LoopSlot), int> _playing = new();
-    private readonly HashSet<(Entity, LoopSlot)> _kept = new();
-    private readonly Dictionary<SoundCue, int> _perCue = new();
+    private readonly List<LoopCandidate> _candidates = [];
+    private readonly List<(LoopCandidate Loop, int Source, bool Claimed)> _winners = [];
+    private readonly List<int> _released = [];
+    private readonly Dictionary<(Entity, LoopSlot), int> _playing = [];
+    private readonly HashSet<(Entity, LoopSlot)> _kept = [];
+    private readonly Dictionary<SoundCue, int> _perCue = [];
     private readonly Stack<int> _free = new();
 
     public LoopMixer(int capacity)

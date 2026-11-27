@@ -1,10 +1,10 @@
-using HyperRTS.Simulation.Common.Authoring;
 using System.Collections.Generic;
-using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Presentation.Rendering.LightTransport;
+using HyperRTS.Presentation.Rendering.Parts;
 using HyperRTS.Presentation.Rendering.Silhouettes;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Transport;
@@ -68,7 +68,7 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             _em.AddComponent<Prefab>(intact);
             _em.AddComponent<Prefab>(broken);
             _em.AddBuffer<LinkedEntityGroup>(building).AddRange(
-                new NativeArray<Entity>(new[] { building, intact, broken }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+                new NativeArray<Entity>([building, intact, broken], Allocator.Temp).Reinterpret<LinkedEntityGroup>());
             _em.AddBuffer<SectionModel>(building).Add(new SectionModel { Intact = intact, Broken = broken });
 
             Update<ModelCopyBakingSystem>();
@@ -83,10 +83,10 @@ namespace HyperRTS.Presentation.Tests.Rendering.Parts
             var tree = _em.CreateEntity();
             var whole = Piece(1f, tree);
             var snapped = Piece(2f, tree);
-            _em.AddBuffer<DamageStage>(tree).AddRange(new NativeArray<DamageStage>(new[]
-            {
+            _em.AddBuffer<DamageStage>(tree).AddRange(new NativeArray<DamageStage>(
+            [
                 new DamageStage { Below = 1f, Visual = whole }, new DamageStage { Below = 0.3f, Visual = snapped },
-            }, Allocator.Temp));
+            ], Allocator.Temp));
 
             Update<ModelCopyBakingSystem>();
 

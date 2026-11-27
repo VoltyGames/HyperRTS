@@ -18,7 +18,7 @@ namespace HyperRTS.Simulation.Resources.Gathering;
 public class ResourceStagesAuthoring : AuthoringBehaviour
 {
     [Tooltip("From full to nearly spent. Each shows while the remaining share is at or below its threshold; the first should be 1.")]
-    public List<Stage> stages = new();
+    public List<Stage> stages = [];
 
     [Serializable]
     public class Stage

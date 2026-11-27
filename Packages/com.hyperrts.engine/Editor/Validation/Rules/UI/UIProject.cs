@@ -18,7 +18,7 @@ public sealed class UIProject
     public Func<string, Object> AssetAt;
 
     /// <summary>The class names the project's C# uses, so a class only code styles or queries counts as used.</summary>
-    public HashSet<string> CodeClassNames = new();
+    public HashSet<string> CodeClassNames = [];
 
     private static readonly Regex ClassName = new(
         @"(?:AddToClassList|RemoveFromClassList|EnableInClassList|ClassListContains|ToggleInClassList)\(\s*""([^""]+)""" +

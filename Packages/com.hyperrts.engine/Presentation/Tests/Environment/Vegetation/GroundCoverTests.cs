@@ -30,7 +30,7 @@ public class GroundCoverTests
         _field = ScriptableObject.CreateInstance<GrassField>();
         _field.coverage = _coverage;
         _field.area = new Rect(-32f, -32f, 64f, 64f);
-        _field.plants = new List<GrassPlant> { Plant("Grass", 2, 9f), Plant("Thistle", 3, 0.25f) };
+        _field.plants = [Plant("Grass", 2, 9f), Plant("Thistle", 3, 0.25f)];
     }
 
     [TearDown]

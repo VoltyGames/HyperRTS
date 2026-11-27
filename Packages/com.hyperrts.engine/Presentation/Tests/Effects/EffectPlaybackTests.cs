@@ -58,7 +58,7 @@ public class EffectPlaybackTests
     [Test]
     public void Pick_PlaysEachVariantAsItsOwnPooledRig_StablePerKey_AndBurstsReachEvery()
     {
-        _dust.variants = new[] { _sparks.gameObject };
+        _dust.variants = [_sparks.gameObject];
         var dust = _pool.Get(_dust.gameObject);
         var sparks = _pool.Get(_sparks.gameObject);
 
@@ -174,7 +174,7 @@ public class EffectPlaybackTests
     // A 45 degree ramp rising along x: height = x.
     private TerrainHeight Ramp()
     {
-        using var heights = new NativeArray<float>(new[] { 0f, 10f, 0f, 10f }, Allocator.Temp);
+        using var heights = new NativeArray<float>([0f, 10f, 0f, 10f], Allocator.Temp);
         _ramp = TerrainHeight.Create(heights, new int2(2, 2), float2.zero, 10f, Allocator.Persistent);
         return _ramp;
     }

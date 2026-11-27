@@ -21,7 +21,7 @@ internal sealed class MapPlotBuilder
     private readonly MapSettlementEntries _entries;
     private readonly MapPlotFences _fences;
     private readonly MapPlotPaths _paths;
-    private readonly List<Vector2> _spots = new();
+    private readonly List<Vector2> _spots = [];
     private readonly System.Random _random;
 
     public MapPlotBuilder(MapSettlement settlement, System.Random random)

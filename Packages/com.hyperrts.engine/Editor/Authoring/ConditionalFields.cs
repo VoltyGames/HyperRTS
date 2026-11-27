@@ -25,7 +25,7 @@ public static class ConditionalFields
     /// <summary>Each <c>[ShowIf]</c> field's property path with its condition's, which names a sibling field.</summary>
     public static IEnumerable<(string Field, string Condition)> Conditions(Type type, string prefix = "") =>
         DrawnFields.Marked<ShowIfAttribute>(type, prefix).Select(marked =>
-            (marked.Path, marked.Path.Substring(0, marked.Path.LastIndexOf('.') + 1) + marked.Attribute.Field));
+            (marked.Path, marked.Path[..(marked.Path.LastIndexOf('.') + 1)] + marked.Attribute.Field));
 
     /// <summary>True when the condition field is set: a true bool, a number above 0 or an assigned object.</summary>
     public static bool IsMet(SerializedProperty condition)

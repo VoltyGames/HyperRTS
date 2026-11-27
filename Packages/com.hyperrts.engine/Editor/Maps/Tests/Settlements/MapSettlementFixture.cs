@@ -25,7 +25,7 @@ internal sealed class MapSettlementFixture : IDisposable
 {
     public const float RoadZ = -60f;
     public const float BaseRadius = 15f;
-    private readonly List<Object> _made = new();
+    private readonly List<Object> _made = [];
 
     private MapSettlementFixture()
     {
@@ -85,7 +85,7 @@ internal sealed class MapSettlementFixture : IDisposable
         {
             spec.roads.Add(new MapRoadSpec
             {
-                kind = "Street", points = new List<MapPoint> { new(-110f, RoadZ), new(110f, RoadZ) },
+                kind = "Street", points = [new(-110f, RoadZ), new(110f, RoadZ)],
             });
         }
 
@@ -93,7 +93,7 @@ internal sealed class MapSettlementFixture : IDisposable
         {
             spec.rivers.Add(new MapRiverSpec
             {
-                points = new List<MapPoint> { new(-110f, -85f), new(110f, -85f) }, width = 10f, valleyWidth = 30f,
+                points = [new(-110f, -85f), new(110f, -85f)], width = 10f, valleyWidth = 30f,
             });
         }
 

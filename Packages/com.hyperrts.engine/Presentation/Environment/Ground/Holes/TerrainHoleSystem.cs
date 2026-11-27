@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Holes
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class TerrainHoleSystem : SystemBase
     {
-        private readonly Dictionary<Entity, HoleFootprint> _wanted = new();
+        private readonly Dictionary<Entity, HoleFootprint> _wanted = [];
         private TerrainHoles _holes;
 
         protected override void OnDestroy() => Release();

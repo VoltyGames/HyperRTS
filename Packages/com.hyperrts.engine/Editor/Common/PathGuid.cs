@@ -57,7 +57,7 @@ public readonly struct PathGuid
 
         // AssetDatabase.CreateAsset ignores a .meta written before it, so the file is written and imported by hand.
         var asset = ScriptableObject.CreateInstance<T>();
-        InternalEditorUtility.SaveToSerializedFileAndForget(new Object[] { asset }, Path, true);
+        InternalEditorUtility.SaveToSerializedFileAndForget([asset], Path, true);
         Object.DestroyImmediate(asset);
         WriteMeta(AssetImporter);
         AssetDatabase.ImportAsset(Path);

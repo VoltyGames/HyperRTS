@@ -28,7 +28,7 @@ public class TurretTossAuthoring : AuthoringBehaviour
     public GameObject turret;
 
     [Tooltip("A lethal hit of any of these damage types is catastrophic.")]
-    public List<DamageType> damageTypes = new();
+    public List<DamageType> damageTypes = [];
 
     [Tooltip("A lethal hit that overshoots the unit's health by this share of its maximum is catastrophic, whatever its type.")]
     [Min(0.01f)]

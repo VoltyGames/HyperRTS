@@ -10,7 +10,7 @@ public sealed class MapRiver
     private const float WidthWavelength = 70f;
     private const float PinReach = 30f;
     private readonly MapNoise _width;
-    private readonly List<Vector2> _pins = new();
+    private readonly List<Vector2> _pins = [];
 
     public MapRiver(MapLine line, MapRiverSpec spec, MapNoise width)
     {

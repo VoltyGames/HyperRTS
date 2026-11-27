@@ -118,7 +118,7 @@ public abstract class SquadFigureRagdollFixture : SquadFigureFixture
     {
         var mesh = new Mesh();
         _made.Add(mesh);
-        var array = new RenderMeshArray(new[] { material }, new[] { mesh });
+        var array = new RenderMeshArray([material], [mesh]);
         foreach (var renderer in _em.GetBuffer<FigureRenderer>(_squad).ToNativeArray(Allocator.Temp))
         {
             _em.AddSharedComponent(renderer.Part, array);

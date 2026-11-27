@@ -112,7 +112,7 @@ public sealed class MapGrassPass
     private static List<(int, MapPlantCoverage)>[] Plants(MapClimate climate, MapEdgeField edges)
     {
         var plants = new List<(int, MapPlantCoverage)>[edges.RegionCount];
-        plants[MapLand.Unclaimed] = new List<(int, MapPlantCoverage)>();
+        plants[MapLand.Unclaimed] = [];
         for (var i = 1; i < plants.Length; i++)
         {
             plants[i] = edges.Surface(i).plants.ConvertAll(entry => (climate.PlantIndex(entry.plant), entry));

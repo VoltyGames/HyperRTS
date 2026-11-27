@@ -19,7 +19,7 @@ namespace HyperRTS.Presentation.Tests.Destruction;
 /// </summary>
 public class DamageStageTests
 {
-    private static readonly float[] Thresholds = { 1f, 0.6f, 0.3f };
+    private static readonly float[] Thresholds = [1f, 0.6f, 0.3f];
 
     private PresentationWorldKit _kit;
     private EntityManager _em;
@@ -77,10 +77,10 @@ public class DamageStageTests
         _em.AddComponentData(building, new LocalToWorld { Value = float4x4.identity });
         _em.AddComponentData(building, new Health { Current = 260f, Max = 260f });
         _em.AddComponentData(building, new ShownDamageStage { Index = -1 });
-        _em.AddBuffer<DamageStage>(building).AddRange(new NativeArray<DamageStage>(new[]
-        {
+        _em.AddBuffer<DamageStage>(building).AddRange(new NativeArray<DamageStage>(
+        [
             new DamageStage { Below = 1f }, new DamageStage { Below = 0.5f },
-        }, Allocator.Temp));
+        ], Allocator.Temp));
         _em.AddBuffer<ModelCopy>(building);
         _stages.Update();
 
@@ -101,12 +101,12 @@ public class DamageStageTests
         _em.AddComponentData(wreck, new ShownDamageStage { Index = -1 });
         var hull = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
         _em.AddComponentData(hull, new Parent { Value = wreck });
-        _em.AddBuffer<DamageStage>(wreck).AddRange(new NativeArray<DamageStage>(new[]
-        {
+        _em.AddBuffer<DamageStage>(wreck).AddRange(new NativeArray<DamageStage>(
+        [
             new DamageStage { Below = 1f, Visual = hull }, new DamageStage { Below = 0.5f, Visual = hull },
-        }, Allocator.Temp));
+        ], Allocator.Temp));
         _em.AddBuffer<LinkedEntityGroup>(wreck).AddRange(
-            new NativeArray<Entity>(new[] { wreck, hull }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            new NativeArray<Entity>([wreck, hull], Allocator.Temp).Reinterpret<LinkedEntityGroup>());
         _em.AddBuffer<ModelCopy>(wreck);
         _stages.Update();
 
@@ -157,12 +157,12 @@ public class DamageStageTests
         _em.AddComponentData(whole, new Parent { Value = crown });
         var stripped = StageModel(crown);
         _em.AddComponentData(stripped, new LocalToWorld { Value = float4x4.Translate(new float3(0f, 3f, 0f)) });
-        _em.AddBuffer<DamageStage>(prefab).AddRange(new NativeArray<DamageStage>(new[]
-        {
+        _em.AddBuffer<DamageStage>(prefab).AddRange(new NativeArray<DamageStage>(
+        [
             new DamageStage { Below = 1f, Visual = whole }, new DamageStage { Below = 0.6f, Visual = stripped },
-        }, Allocator.Temp));
+        ], Allocator.Temp));
         _em.AddBuffer<LinkedEntityGroup>(prefab).AddRange(
-            new NativeArray<Entity>(new[] { prefab, crown, whole }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            new NativeArray<Entity>([prefab, crown, whole], Allocator.Temp).Reinterpret<LinkedEntityGroup>());
         _em.AddBuffer<ModelCopy>(prefab);
 
         var tree = _em.Instantiate(prefab);
@@ -202,7 +202,7 @@ public class DamageStageTests
 
         _em.AddBuffer<DamageStage>(tree).AddRange(stages.AsArray());
         _em.AddBuffer<LinkedEntityGroup>(tree).AddRange(
-            new NativeArray<Entity>(new[] { tree, models[0] }, Allocator.Temp).Reinterpret<LinkedEntityGroup>());
+            new NativeArray<Entity>([tree, models[0]], Allocator.Temp).Reinterpret<LinkedEntityGroup>());
         _em.AddBuffer<ModelCopy>(tree);
         return tree;
     }

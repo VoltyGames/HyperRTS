@@ -11,7 +11,7 @@ public sealed class HUDPointerTracker
     [NoAutoStaticsCleanup]
     private static readonly Predicate<VisualElement> NotShown = panel => !IsShown(panel);
 
-    private readonly HashSet<VisualElement> _hovered = new();
+    private readonly HashSet<VisualElement> _hovered = [];
 
     public void Track(VisualElement panel)
     {

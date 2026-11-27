@@ -76,7 +76,7 @@ internal sealed class BoneSkin
         BoneMesh.Move(mesh, _binds[bone].inverse);
         var weights = new BoneWeight[mesh.vertexCount];
         Array.Fill(weights, new BoneWeight { boneIndex0 = 0, weight0 = 1f });
-        Skin(mesh, weights, new[] { bone });
+        Skin(mesh, weights, [bone]);
         return mesh;
     }
 
@@ -100,8 +100,8 @@ internal sealed class BoneSkin
 
         mesh.SetUVs(BoneAnimatedAuthoring.IndexChannel, indices);
         mesh.SetUVs(BoneAnimatedAuthoring.WeightChannel, strengths);
-        mesh.boneWeights = Array.Empty<BoneWeight>();
-        mesh.bindposes = Array.Empty<Matrix4x4>();
+        mesh.boneWeights = [];
+        mesh.bindposes = [];
     }
 
     private float Signed(float weight, int bone) => _upper[bone] ? -weight : weight;

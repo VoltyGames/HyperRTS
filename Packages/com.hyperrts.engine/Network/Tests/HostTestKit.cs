@@ -28,10 +28,10 @@ public sealed class HostTestKit : IDisposable
 
     // Rendering, input and the game stay out.
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<string> Assemblies = new()
-    {
+    private static readonly HashSet<string> Assemblies =
+    [
         "UnityEngine.EntitiesModule", "Unity.Entities", "Unity.Transforms", "Unity.NetCode", "HyperRTS.Simulation", "HyperRTS.Network",
-    };
+    ];
 
     // IPC ports stay unique across tests, so a closing test's port is never reused.
     [NoAutoStaticsCleanup]

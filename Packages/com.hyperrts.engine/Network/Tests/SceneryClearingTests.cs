@@ -29,12 +29,12 @@ public class SceneryClearingTests
         var sightings = new NativeList<ScenerySighting>(Allocator.Temp);
         tracker.Register(9, float3.zero);
         tracker.Set(9, SceneryChange.Destroyed, 0, 0, 0b10, 1);
-        tracker.Reveal(default(FogOfWar), false, 1, sightings);
+        tracker.Reveal(default, false, 1, sightings);
         sightings.Clear();
 
         Assert.IsTrue(tracker.Clear(9, 0b10, 2));
         Assert.IsFalse(tracker.Clear(9, 0b10, 3), "a piece is cleared once");
-        tracker.Reveal(default(FogOfWar), false, 2, sightings);
+        tracker.Reveal(default, false, 2, sightings);
         var known = new NativeList<SceneryChange>(Allocator.Temp);
         tracker.Known(1, known);
 

@@ -17,7 +17,7 @@ namespace HyperRTS.Simulation.Tests.Resources;
 /// </summary>
 public class IncomeTests : SimulationFixture
 {
-    protected override byte[] Teams => new byte[] { 1, 2, 1 };
+    protected override byte[] Teams => [1, 2, 1];
 
     private ResourceType _supplies;
 

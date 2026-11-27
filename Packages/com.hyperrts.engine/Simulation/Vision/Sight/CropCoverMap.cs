@@ -24,10 +24,10 @@ public class CropCoverMap : ScriptableObject
     public float spacing = 1f;
 
     [Tooltip("Row-major sight lost per metre, in 1/250 steps, from the south-west corner.")]
-    public byte[] density = { };
+    public byte[] density = [];
 
     [Tooltip("Row-major crop top above the ground, in 0.25 m steps.")]
-    public byte[] top = { };
+    public byte[] top = [];
 
     /// <summary>Throws naming the asset when the grid can't be baked.</summary>
     public void Require()

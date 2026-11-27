@@ -16,11 +16,11 @@ internal sealed class MapPlotFinder
 
     // A plot's copy lies across the seam at the mirrored spot, so a small gap keeps the two apart.
     private const float SeamGap = 2f;
-    private static readonly float[] Depths = { 1f, 0.8f, 0.65f, Shortest };
+    private static readonly float[] Depths = [1f, 0.8f, 0.65f, Shortest];
 
     private readonly MapSettlement _settlement;
     private readonly MapPlanContext _context;
-    private readonly List<MapPlot> _found = new();
+    private readonly List<MapPlot> _found = [];
 
     public MapPlotFinder(MapSettlement settlement)
     {

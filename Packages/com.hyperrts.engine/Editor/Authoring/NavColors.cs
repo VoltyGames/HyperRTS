@@ -12,14 +12,11 @@ public static class NavColors
 
     public static Color Get(NavAreaKind kind)
     {
-        switch (kind)
+        return kind switch
         {
-            case NavAreaKind.Water:
-                return Water;
-            case NavAreaKind.Blocked:
-                return Blocked;
-            default:
-                return Deck;
-        }
+            NavAreaKind.Water => Water,
+            NavAreaKind.Blocked => Blocked,
+            _ => Deck,
+        };
     }
 }

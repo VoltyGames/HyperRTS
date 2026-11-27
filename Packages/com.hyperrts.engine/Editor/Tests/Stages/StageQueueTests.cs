@@ -12,8 +12,8 @@ namespace HyperRTS.Editor.Tests.Stages;
 /// <summary>The queue runs stages one at a time in the order added, and a failure drops only its own source's later stages.</summary>
 public class StageQueueTests
 {
-    private readonly List<string> _ran = new();
-    private readonly List<string> _finished = new();
+    private readonly List<string> _ran = [];
+    private readonly List<string> _finished = [];
     private StageQueue<string> _queue;
     private TaskCompletionSource<bool> _gate;
 

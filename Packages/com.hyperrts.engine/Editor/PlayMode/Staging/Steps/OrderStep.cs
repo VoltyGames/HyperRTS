@@ -28,7 +28,7 @@ internal sealed class OrderStep : StagingStep
     private string _target;
     private int _argument;
 
-    public override IEnumerable<string> Uses => _target == null ? new[] { units } : new[] { units, _target };
+    public override IEnumerable<string> Uses => _target == null ? new[] { units } : [units, _target];
 
     public override void Check()
     {

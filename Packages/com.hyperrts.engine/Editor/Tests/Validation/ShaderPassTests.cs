@@ -20,20 +20,20 @@ public class ShaderPassTests
 
     // Unlit, or drawn indirectly where GI never renders them.
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<string> WithoutMeta = new()
-    {
+    private static readonly HashSet<string> WithoutMeta =
+    [
         "HyperRTS/RowCrop",
         "HyperRTS/GroundMarker",
         "HyperRTS/HealthBar",
         "HyperRTS/Overlay",
-    };
+    ];
 
     private static readonly ShaderTagId LightMode = new("LightMode");
     private static readonly ShaderTagId RenderType = new("RenderType");
     private static readonly ShaderTagId AlwaysRenderMotionVectors = new("AlwaysRenderMotionVectors");
 
     private static IEnumerable<string> HandWrittenShaders() =>
-        AssetDatabase.FindAssets("t:Shader", new[] { Package })
+        AssetDatabase.FindAssets("t:Shader", [Package])
             .Select(AssetDatabase.GUIDToAssetPath)
             .Where(path => path.EndsWith(".shader", StringComparison.Ordinal));
 
@@ -76,7 +76,7 @@ public class ShaderPassTests
     public void EveryLitShaderHasAMetaPass()
     {
         // Hand-written shaders only: Shader Graphs and VFX graphs generate their own passes.
-        var shaders = AssetDatabase.FindAssets("t:Shader", new[] { Package })
+        var shaders = AssetDatabase.FindAssets("t:Shader", [Package])
             .Select(AssetDatabase.GUIDToAssetPath)
             .Where(path => path.EndsWith(".shader", StringComparison.Ordinal))
             .Select(AssetDatabase.LoadAssetAtPath<Shader>)

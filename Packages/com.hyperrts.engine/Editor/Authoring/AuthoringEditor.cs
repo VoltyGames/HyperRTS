@@ -27,7 +27,7 @@ public class AuthoringEditor : UnityEditor.Editor
     private IssueBadge _issues;
     private FieldIssueMarks _marks;
     private IVisualElementScheduledItem _change;
-    private readonly Dictionary<Component, ValidationIssues> _checked = new();
+    private readonly Dictionary<Component, ValidationIssues> _checked = [];
 
     public override VisualElement CreateInspectorGUI()
     {

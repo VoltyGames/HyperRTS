@@ -14,7 +14,7 @@ public sealed class FieldIssueMarks
     private const string MessageClass = "hrts-field-issue";
 
     private readonly VisualElement _root;
-    private readonly List<VisualElement> _marked = new();
+    private readonly List<VisualElement> _marked = [];
 
     public FieldIssueMarks(VisualElement root)
     {
@@ -53,7 +53,7 @@ public sealed class FieldIssueMarks
                 return field;
             }
 
-            path = path.Substring(0, Mathf.Max(path.LastIndexOf('.'), 0));
+            path = path[..Mathf.Max(path.LastIndexOf('.'), 0)];
         }
 
         return null;

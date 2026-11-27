@@ -12,9 +12,9 @@ namespace HyperRTS.Input;
 public static partial class InputActionsProvider
 {
     [AutoStaticsCleanup]
-    private static readonly Dictionary<InputActionMap, int> Users = new();
+    private static readonly Dictionary<InputActionMap, int> Users = [];
     [AutoStaticsCleanup]
-    private static readonly HashSet<object> Suspenders = new();
+    private static readonly HashSet<object> Suspenders = [];
     [NoAutoStaticsCleanup]
     private static MatchInputActions _actions;
 

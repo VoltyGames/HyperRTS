@@ -23,7 +23,7 @@ public class RigidAnimationSet : ScriptableObject, IAnimationSet
     public GameObject model;
 
     [Tooltip("The model's meshes that carry each vertex's texture column in UV1. Its other meshes are not measured.")]
-    public List<Mesh> pieces = new();
+    public List<Mesh> pieces = [];
 
     [Tooltip("The motion model, VAT/<Model>_Motion.fbx: an empty a piece, keyed on every frame of one take.")]
     public GameObject motion;
@@ -69,7 +69,7 @@ public class RigidAnimationSet : ScriptableObject, IAnimationSet
         EditorUtility.SetDirty(table);
         EditorUtility.SetDirty(this);
         AssetDatabase.SaveAssets();
-        return new List<string> { positionsPath, rotationsPath, AssetDatabase.GetAssetPath(table) };
+        return [positionsPath, rotationsPath, AssetDatabase.GetAssetPath(table)];
     }
 
     private void Check()

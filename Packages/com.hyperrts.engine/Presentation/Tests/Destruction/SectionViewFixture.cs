@@ -36,7 +36,7 @@ public abstract class SectionViewFixture
     protected EntityManager _em;
     private SectionViewSystem _views;
     protected Entity _house;
-    private readonly List<SectionHole> _holes = new();
+    private readonly List<SectionHole> _holes = [];
 
     [SetUp]
     public void SetUp()

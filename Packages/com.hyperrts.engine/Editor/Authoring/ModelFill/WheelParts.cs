@@ -17,7 +17,7 @@ internal static class WheelParts
 
     /// <summary>The steering axles of a wheeled hull, each as its distance ahead of the hull centre; empty for tracks.</summary>
     public static List<float> SteeringAxles(LocomotionAuthoring locomotion) =>
-        locomotion.Chassis.IsWheeled ? Axles(locomotion).Take(locomotion.steeringAxles).ToList() : new List<float>();
+        locomotion.Chassis.IsWheeled ? Axles(locomotion).Take(locomotion.steeringAxles).ToList() : [];
 
     /// <summary>Whether <paramref name="wheel"/> sits on one of the <see cref="SteeringAxles"/>.</summary>
     public static bool IsOnAxle(LocomotionAuthoring locomotion, List<float> axles, Transform wheel)

@@ -47,22 +47,21 @@ internal sealed class PropertyText
 
     public string Read()
     {
-        switch (_property.propertyType)
+        return _property.propertyType switch
         {
-            case SerializedPropertyType.Float: return Text(_property.floatValue);
-            case SerializedPropertyType.Integer: return _property.intValue.ToString(CultureInfo.InvariantCulture);
-            case SerializedPropertyType.Boolean: return _property.boolValue ? "true" : "false";
-            case SerializedPropertyType.String: return _property.stringValue;
-            case SerializedPropertyType.Enum: return _property.enumNames[_property.enumValueIndex];
-            case SerializedPropertyType.Color: return Text(_property.colorValue);
-            case SerializedPropertyType.Vector3: return Text(_property.vector3Value);
-            case SerializedPropertyType.AnimationCurve: return Text(_property.animationCurveValue);
-            case SerializedPropertyType.ObjectReference:
-                return _property.objectReferenceValue == null ? "none" : _property.objectReferenceValue.name;
-            case SerializedPropertyType.Generic when IsRange: return Text(Range());
-            case SerializedPropertyType.Generic when _property.isArray: return Bursts().Read();
-            default: throw Unsupported();
-        }
+            SerializedPropertyType.Float => Text(_property.floatValue),
+            SerializedPropertyType.Integer => _property.intValue.ToString(CultureInfo.InvariantCulture),
+            SerializedPropertyType.Boolean => _property.boolValue ? "true" : "false",
+            SerializedPropertyType.String => _property.stringValue,
+            SerializedPropertyType.Enum => _property.enumNames[_property.enumValueIndex],
+            SerializedPropertyType.Color => Text(_property.colorValue),
+            SerializedPropertyType.Vector3 => Text(_property.vector3Value),
+            SerializedPropertyType.AnimationCurve => Text(_property.animationCurveValue),
+            SerializedPropertyType.ObjectReference => _property.objectReferenceValue == null ? "none" : _property.objectReferenceValue.name,
+            SerializedPropertyType.Generic when IsRange => Text(Range()),
+            SerializedPropertyType.Generic when _property.isArray => Bursts().Read(),
+            _ => throw Unsupported(),
+        };
     }
 
     public void Write(string text)
@@ -207,7 +206,7 @@ internal sealed class PropertyText
     private string FindAsset(string name)
     {
         var type = _property.type;
-        var typeName = type.Substring(type.IndexOf('<') + 1).TrimEnd('>').TrimStart('$');
+        var typeName = type[(type.IndexOf('<') + 1)..].TrimEnd('>').TrimStart('$');
         var paths = AssetDatabase.FindAssets($"{name} t:{typeName}")
             .Select(AssetDatabase.GUIDToAssetPath)
             .Where(path => System.IO.Path.GetFileNameWithoutExtension(path) == name)

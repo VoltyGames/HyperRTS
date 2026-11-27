@@ -132,7 +132,7 @@ public struct SectorSearch : IDisposable
         for (var node = last; node >= 0; node = _records[node].Parent)
         {
             var sector = graph.Links.Owners[node];
-            if (sectors.Length == begin || sectors[sectors.Length - 1] != sector)
+            if (sectors.Length == begin || sectors[^1] != sector)
             {
                 sectors.Add(sector);
             }

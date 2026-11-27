@@ -16,8 +16,8 @@ public sealed class MapGroundMaterialPainter
 {
     private readonly MapLand _land;
     private readonly MapClimate _climate;
-    private readonly Dictionary<string, SurfaceMaterial> _surfaces = new();
-    private readonly Dictionary<MapLandRegion, SurfaceMaterial> _roads = new();
+    private readonly Dictionary<string, SurfaceMaterial> _surfaces = [];
+    private readonly Dictionary<MapLandRegion, SurfaceMaterial> _roads = [];
 
     private MapGroundMaterialPainter(MapLand land, MapClimate climate)
     {

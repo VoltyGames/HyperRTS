@@ -15,7 +15,7 @@ public sealed class EffectLayer
     public string name;
     public EffectLayerKind kind;
     public int capacity;
-    public List<EffectBurst> bursts = new();
+    public List<EffectBurst> bursts = [];
     public float rate;
     public float ratePerMetre;
     public string parent;

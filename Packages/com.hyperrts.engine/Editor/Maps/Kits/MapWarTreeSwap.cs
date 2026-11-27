@@ -13,5 +13,5 @@ public sealed class MapWarTreeSwap
     public string tree;
 
     [MapKey(typeof(MapClimateTree))]
-    public List<string> shredded = new();
+    public List<string> shredded = [];
 }

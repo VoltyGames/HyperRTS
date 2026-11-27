@@ -32,7 +32,7 @@ public class EntityEffectsAuthoring : AuthoringBehaviour
     public GameObject warning;
 
     [Tooltip("Each shot of the extra weapons, in order; one without an entry shows nothing.")]
-    public List<MountFire> mountFire = new();
+    public List<MountFire> mountFire = [];
 
     /// <summary>The fire rig of one extra weapon.</summary>
     [Serializable]

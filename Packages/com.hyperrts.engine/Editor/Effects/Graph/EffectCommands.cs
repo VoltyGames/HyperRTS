@@ -12,7 +12,7 @@ public static class EffectCommands
     [CliCommand("effect", "build", "Build one effect graph from its .effect.asset recipe, or every graph without a recipe named: each graph with its problem and shader errors.", Tags = new[] { "hyperrts/effects" })]
     public static object Build([CliArg("recipe", "A graph name (FX_Smoke_01) or its .effect.asset path; empty builds every graph")] string recipe = "")
     {
-        var recipes = string.IsNullOrEmpty(recipe) ? EffectGraphBuilder.RecipePaths().ToList() : new() { EffectGraphBuilder.FindRecipe(recipe) };
+        var recipes = string.IsNullOrEmpty(recipe) ? EffectGraphBuilder.RecipePaths().ToList() : [EffectGraphBuilder.FindRecipe(recipe)];
         EffectGraphBuilder.BuildAll(recipes);
 
         return recipes.Select(path => new

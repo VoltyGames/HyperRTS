@@ -24,7 +24,7 @@ internal static partial class EditorAssets
     private const string MatchStateGuid = "37a4b4ac2aee31d42895a37c3d702bed";
 
     [AutoStaticsCleanup]
-    private static readonly Dictionary<string, Object> Found = new();
+    private static readonly Dictionary<string, Object> Found = [];
 
     /// <summary>
     /// The layout named after <paramref name="owner"/> plus <paramref name="part"/>, such as MapGalleryCard.uxml, in
@@ -44,7 +44,7 @@ internal static partial class EditorAssets
             return (T)cached;
         }
 
-        foreach (var guid in AssetDatabase.FindAssets($"t:{typeof(T).Name} {name}", new[] { folder }))
+        foreach (var guid in AssetDatabase.FindAssets($"t:{typeof(T).Name} {name}", [folder]))
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             if (Path.GetFileNameWithoutExtension(path) == name)

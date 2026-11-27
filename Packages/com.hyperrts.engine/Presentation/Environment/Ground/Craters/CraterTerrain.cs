@@ -57,7 +57,7 @@ public sealed class CraterTerrain : IDisposable
         _material.SetFloat(DepthScaleId, TerrainHeightInput.HeightmapFull / size.y);
         _material.SetFloat(TerrainYId, position.y);
         _material.SetFloat(LevelSkirtId, BuildingLevel.Skirt);
-        SetBuildings(new List<BuildingLevel>());
+        SetBuildings([]);
         Undented.Publish(_original, TerrainHeightInput.Area(terrain));
         Shader.SetGlobalVector(UndentedScaleId, TerrainHeightInput.Scale(terrain));
     }

@@ -15,7 +15,7 @@ namespace HyperRTS.Presentation.HUD.Panels;
 /// </summary>
 public sealed class SquadView
 {
-    private static readonly string[] StatusKeys = { "", "squad.retreating", "squad.reinforcing", "squad.building" };
+    private static readonly string[] StatusKeys = ["", "squad.retreating", "squad.reinforcing", "squad.building"];
 
     private const string LevelClass = "hud-squad__suppression--";
 
@@ -27,8 +27,8 @@ public sealed class SquadView
     private readonly VisualElement _status;
     private readonly Label _statusText;
     private readonly HUDBar _progress;
-    private readonly List<SquadMemberCard> _cards = new();
-    private readonly Dictionary<FixedString32Bytes, string> _weaponNames = new();
+    private readonly List<SquadMemberCard> _cards = [];
+    private readonly Dictionary<FixedString32Bytes, string> _weaponNames = [];
     private int _shownLevel = -1;
     private int _shownStatus = -1;
 

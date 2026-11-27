@@ -60,7 +60,7 @@ public class FigureClipSet : ScriptableObject
 
     [Header("Whole body")]
     [Tooltip("The clip for each member action except None.")]
-    public List<ActionClip> actions = new();
+    public List<ActionClip> actions = [];
 
     [Header("Deaths")]
     [Tooltip("Clips played once when a shot drops the figure, by posture.")]
@@ -87,7 +87,7 @@ public class FigureClipSet : ScriptableObject
         _ => blastRightDeath,
     };
 
-    private static readonly Posture[] Postures = { Posture.Stand, Posture.Crouch, Posture.Prone };
+    private static readonly Posture[] Postures = [Posture.Stand, Posture.Crouch, Posture.Prone];
 
     /// <summary>
     /// The ranges of this set's clips in <paramref name="table"/>, owned by the caller. Fails naming this set and the

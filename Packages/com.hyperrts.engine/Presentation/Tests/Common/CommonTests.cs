@@ -38,8 +38,8 @@ public class CommonTests
         _registry = _kit.AddRegistry();
         _catalog = new TypeCatalog<EffectSet>(_em.CreateEntityQuery(new EntityQueryDesc
         {
-            All = new[] { ComponentType.ReadOnly<EntityInfo>() },
-            Any = new[] { ComponentType.ReadOnly<EntityEffect>(), ComponentType.ReadOnly<EntityImpactEffects>() },
+            All = [ComponentType.ReadOnly<EntityInfo>()],
+            Any = [ComponentType.ReadOnly<EntityEffect>(), ComponentType.ReadOnly<EntityImpactEffects>()],
             Options = EntityQueryOptions.IncludePrefab,
         }), EffectSet.Read);
     }
@@ -99,7 +99,7 @@ public class CommonTests
         {
             var marks = new TypeCatalog<ImpactMark[]>(_em.CreateEntityQuery(new EntityQueryDesc
             {
-                All = new[] { ComponentType.ReadOnly<EntityInfo>(), ComponentType.ReadOnly<EntityImpactMark>() },
+                All = [ComponentType.ReadOnly<EntityInfo>(), ComponentType.ReadOnly<EntityImpactMark>()],
                 Options = EntityQueryOptions.IncludePrefab,
             }), ImpactMarkSystem.ReadMarks);
             var entity = CreateTyped(false);

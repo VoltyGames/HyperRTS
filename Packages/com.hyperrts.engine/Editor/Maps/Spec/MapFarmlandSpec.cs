@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("farmland", 10, 0.85f, 0.75f, 0.3f, Closed = true)]
 public sealed class MapFarmlandSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     [MapKey(typeof(MapFarmlandKit))]
     public string kind;
 

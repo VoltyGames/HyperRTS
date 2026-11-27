@@ -22,7 +22,7 @@ public class MapAccessTests
 
     private static MapRavineSpec Ravine(float z, float from, float to) => new()
     {
-        points = new List<MapPoint> { new(from, z), new(to, z) }, width = 12f, depth = 3f, rim = 4f,
+        points = [new(from, z), new(to, z)], width = 12f, depth = 3f, rim = 4f,
     };
 
     /// <summary>A context for the road specs and ravines, with a "Shed" prop at <see cref="Prop"/> asking for a track.</summary>
@@ -49,7 +49,7 @@ public class MapAccessTests
     public void ATrackRunsFromThePadEdgeToTheNearestRoad_InEveryCopy()
     {
         var issues = new MapIssues();
-        var context = Context(issues, "Dirt", new[] { MainRoad(-60f) });
+        var context = Context(issues, "Dirt", [MainRoad(-60f)]);
 
         new MapAccessPlanner(context).Plan();
 
@@ -70,7 +70,7 @@ public class MapAccessTests
     public void PropsWithinSharedAccessDistanceOfEachOther_ShareOneTrack()
     {
         var issues = new MapIssues();
-        var context = Context(issues, "Dirt", new[] { MainRoad(-60f) });
+        var context = Context(issues, "Dirt", [MainRoad(-60f)]);
         var shed = context.Placements.All[^1].Entry;
         foreach (var x in new[] { 35f, 50f, 90f })
         {
@@ -91,7 +91,7 @@ public class MapAccessTests
     {
         var issues = new MapIssues();
         var far = MapFixture.Road("Dirt", new Vector2(-90f, -118f), new Vector2(-90f, -85f));
-        var context = Context(issues, "Dirt", new[] { MainRoad(-60f), far }, Ravine(-80f, -5f, 60f));
+        var context = Context(issues, "Dirt", [MainRoad(-60f), far], Ravine(-80f, -5f, 60f));
 
         new MapAccessPlanner(context).Plan();
 
@@ -104,7 +104,7 @@ public class MapAccessTests
     public void NoClearRoad_IsAWarningNamingTheProp()
     {
         var issues = new MapIssues();
-        var context = Context(issues, "Dirt", new[] { MainRoad(-60f) }, Ravine(-80f, -130f, 130f));
+        var context = Context(issues, "Dirt", [MainRoad(-60f)], Ravine(-80f, -130f, 130f));
 
         new MapAccessPlanner(context).Plan();
 
@@ -116,7 +116,7 @@ public class MapAccessTests
     public void APadBesideTheRoad_NeedsNoTrack()
     {
         var issues = new MapIssues();
-        var context = Context(issues, "Dirt", new[] { MainRoad(-108f) });
+        var context = Context(issues, "Dirt", [MainRoad(-108f)]);
 
         new MapAccessPlanner(context).Plan();
 

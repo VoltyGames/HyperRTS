@@ -1,7 +1,7 @@
 ﻿using HyperRTS.Presentation.Common;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Prefabs;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Vision.Fog;

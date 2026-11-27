@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.Combat.Damage;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Destruction;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;

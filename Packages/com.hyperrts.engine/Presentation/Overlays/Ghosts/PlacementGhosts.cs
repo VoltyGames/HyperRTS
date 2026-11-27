@@ -19,8 +19,8 @@ namespace HyperRTS.Presentation.Overlays.Ghosts;
 public sealed class PlacementGhosts : IDisposable
 {
     private readonly Material _material;
-    private readonly List<Entity> _ghosts = new();
-    private readonly List<(BuildingSpot Spot, bool Valid)> _spots = new();
+    private readonly List<Entity> _ghosts = [];
+    private readonly List<(BuildingSpot Spot, bool Valid)> _spots = [];
     private World _world;
     private Entity _source;
     private Entity _ghostPrefab;

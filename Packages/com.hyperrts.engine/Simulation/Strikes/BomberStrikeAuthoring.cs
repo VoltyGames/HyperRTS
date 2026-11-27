@@ -105,7 +105,7 @@ public class BomberStrikeAuthoring : AuthoringBehaviour
             var missile = GetComponent<MissileStrikeAuthoring>();
             writer.AddBuffer(missile == null
                 ? new[] { authoring.Entry() }
-                : new[] { authoring.Entry(), missile.Entry() });
+                : [authoring.Entry(), missile.Entry()]);
             Add(writer, id, new BomberStrike
             {
                 Aircraft = GetEntity(authoring.aircraft, TransformUsageFlags.Dynamic),

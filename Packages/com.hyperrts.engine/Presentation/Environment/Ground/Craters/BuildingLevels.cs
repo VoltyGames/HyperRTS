@@ -8,8 +8,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters;
 /// <summary>The buildings the drawn terrain is levelled under, and the ground their changes touch.</summary>
 public sealed class BuildingLevels
 {
-    private readonly Dictionary<Entity, BuildingLevel> _current = new();
-    private readonly List<BuildingLevel> _list = new();
+    private readonly Dictionary<Entity, BuildingLevel> _current = [];
+    private readonly List<BuildingLevel> _list = [];
     private float2 _filledMin = new(float.MaxValue);
     private float2 _filledMax = new(float.MinValue);
 

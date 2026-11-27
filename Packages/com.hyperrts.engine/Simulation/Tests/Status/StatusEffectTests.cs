@@ -88,7 +88,7 @@ public class StatusEffectTests : SimulationFixture
         World.Set(unit, new MovementSpeed { Value = 4f });
         World.Tick();
         var haste = Effect("Haste", new StatusEffectDefinition { Duration = 1f, MaxStacks = 1 },
-            new[] { new StatBonus { stat = Stat.MoveSpeed, percent = 0.5f } });
+            [new StatBonus { stat = Stat.MoveSpeed, percent = 0.5f }]);
 
         Apply(unit, haste);
         Assert.AreEqual(6f, World.Get<MovementSpeed>(unit).Value, 1e-3f);
@@ -144,13 +144,13 @@ public class StatusEffectTests : SimulationFixture
         var entity = World.EntityManager.CreateEntity();
         var writer = World.Writer(entity);
         var info = new EntityInfo { TypeId = EntityInfo.TypeIdFromName(name), Name = name };
-        StatusEffectAuthoring.Add(writer, info, definition, bonuses ?? new StatBonus[0]);
+        StatusEffectAuthoring.Add(writer, info, definition, bonuses ?? []);
         return World.MakePrefab(entity);
     }
 
     private Entity Marked(float duration, StatusStackRule rule = StatusStackRule.Refresh, int maxStacks = 1) =>
         Effect("Marked", new StatusEffectDefinition { Duration = duration, Rule = rule, MaxStacks = maxStacks },
-            new[] { new StatBonus { stat = Stat.DamageTaken, percent = 0.3f, damageType = _precision } });
+            [new StatBonus { stat = Stat.DamageTaken, percent = 0.3f, damageType = _precision }]);
 
     private void Apply(Entity target, Entity effect, Entity source = default, byte sourceOwner = 0)
     {

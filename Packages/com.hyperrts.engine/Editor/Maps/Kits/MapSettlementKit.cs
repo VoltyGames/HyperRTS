@@ -30,11 +30,11 @@ public sealed class MapSettlementKit : MapLibraryItem
 
     [Tooltip("Palette keys of the houses, picked in turn with some shuffling.")]
     [MapKey(typeof(MapProp))]
-    public List<string> houses = new();
+    public List<string> houses = [];
 
     [Tooltip("Palette keys of outbuildings (summer kitchens, sheds, barns) placed behind the house.")]
     [MapKey(typeof(MapProp))]
-    public List<string> outbuildings = new();
+    public List<string> outbuildings = [];
 
     [Min(0)]
     public int maxOutbuildings = 2;
@@ -83,7 +83,7 @@ public sealed class MapSettlementKit : MapLibraryItem
 
     public float orchardSpacing = 6f;
 
-    public List<MapPlotProp> extras = new();
+    public List<MapPlotProp> extras = [];
 
     [Tooltip("Palette key of a pipe section run along the plot fronts (gas pipe); empty for none.")]
     [MapKey(typeof(MapProp), Optional = true)]

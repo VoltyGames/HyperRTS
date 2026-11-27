@@ -32,12 +32,12 @@ internal readonly struct RecipeEdit
     {
         var equals = entry.IndexOf('=');
         var scales = equals > 0 && entry[equals - 1] == '*';
-        var field = equals > 0 ? entry.Substring(0, scales ? equals - 1 : equals).Trim() : string.Empty;
+        var field = equals > 0 ? entry[..(scales ? equals - 1 : equals)].Trim() : string.Empty;
         if (field.Length == 0)
         {
             throw new ArgumentException($"HyperRTS: '{entry}' is not 'field=value' or 'field*=factor'.");
         }
 
-        return new RecipeEdit(field, entry.Substring(equals + 1).Trim(), scales);
+        return new RecipeEdit(field, entry[(equals + 1)..].Trim(), scales);
     }
 }

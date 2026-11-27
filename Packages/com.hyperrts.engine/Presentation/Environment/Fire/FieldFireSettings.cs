@@ -21,7 +21,7 @@ public sealed class FieldFireSettings : PresentationBehaviour
     public GameObject rig;
 
     [Tooltip("Terrain layers dry enough to burn. A cell burns where these hold over half the ground's weight.")]
-    public TerrainLayer[] dryLayers = Array.Empty<TerrainLayer>();
+    public TerrainLayer[] dryLayers = [];
 
     [Tooltip("Fires only start while the ground's wetness is below this.")]
     [Range(0f, 1f)]

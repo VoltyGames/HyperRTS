@@ -34,9 +34,9 @@ public sealed class TestWorld : IDisposable
     public const float FrameTime = 1f / 30f;
 
     public readonly World World;
-    private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = new();
-    private readonly List<UnityEngine.Object> _owned = new();
-    private readonly List<Action> _checks = new();
+    private readonly List<BlobAssetReference<HeightfieldBlob>> _terrains = [];
+    private readonly List<UnityEngine.Object> _owned = [];
+    private readonly List<Action> _checks = [];
     private double _elapsed;
 
     public TestWorld()

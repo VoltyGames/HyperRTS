@@ -21,7 +21,7 @@ public class GroundMaterialMap : ScriptableObject
     public float spacing = 1f;
 
     [Tooltip("Row-major SurfaceMaterial bytes from the south-west corner.")]
-    public byte[] cells = { };
+    public byte[] cells = [];
 
     /// <summary>Throws naming the asset when the grid can't be baked.</summary>
     public void Require()

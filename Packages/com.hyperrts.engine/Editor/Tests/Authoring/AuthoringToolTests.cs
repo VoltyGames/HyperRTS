@@ -225,7 +225,7 @@ public class AuthoringToolTests : TemplateFixture
         var model = TreeModel(Vector3.zero, bark, leaves);
         model.transform.SetParent(root.transform, false);
         var group = model.AddComponent<LODGroup>();
-        group.SetLODs(new[] { new LOD(0.1f, new Renderer[] { model.GetComponent<MeshRenderer>() }) });
+        group.SetLODs([new LOD(0.1f, [model.GetComponent<MeshRenderer>()])]);
         return (root.AddComponent<ToppleAuthoring>(), bark);
     }
 
@@ -233,17 +233,17 @@ public class AuthoringToolTests : TemplateFixture
     private GameObject TreeModel(Vector3 offset, Material bark, Material leaves)
     {
         var mesh = Track(new Mesh());
-        mesh.vertices = new[]
-        {
+        mesh.vertices =
+        [
             offset, offset + new Vector3(0.1f, 0f, 0f), offset + new Vector3(0f, 10f, 0f),
             offset + new Vector3(-1f, 12f, 0f), offset + new Vector3(1f, 12f, 0f), offset + new Vector3(0f, 14f, 0f),
-        };
+        ];
         mesh.subMeshCount = 2;
         mesh.SetTriangles(new[] { 0, 1, 2 }, 0);
         mesh.SetTriangles(new[] { 3, 4, 5 }, 1);
         var model = Make("Model");
         model.AddComponent<MeshFilter>().sharedMesh = mesh;
-        model.AddComponent<MeshRenderer>().sharedMaterials = new[] { bark, leaves };
+        model.AddComponent<MeshRenderer>().sharedMaterials = [bark, leaves];
         return model;
     }
 
@@ -263,8 +263,8 @@ public class AuthoringToolTests : TemplateFixture
 
     private Mesh CapMesh(float z) => Track(new Mesh
     {
-        vertices = new[] { new Vector3(0f, 0f, z - 0.3f), new Vector3(0f, 1f, z), new Vector3(0f, 0f, z + 0.3f) },
-        triangles = new[] { 0, 1, 2 },
+        vertices = [new Vector3(0f, 0f, z - 0.3f), new Vector3(0f, 1f, z), new Vector3(0f, 0f, z + 0.3f)],
+        triangles = [0, 1, 2],
     });
 
     private static Transform Child(Transform root, Vector3 position, Quaternion rotation)

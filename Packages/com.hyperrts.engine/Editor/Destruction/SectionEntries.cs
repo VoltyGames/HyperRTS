@@ -109,7 +109,7 @@ internal sealed class SectionEntries
         var carriers = _data.parts.Where(moving => moving.section == sectionName).Select(moving => FindModel(moving.node).transform).ToList();
         if (!_owner.TryGetComponent<WeaponAuthoring>(out var weapons))
         {
-            return Array.Empty<int>();
+            return [];
         }
 
         var mounts = new List<int>();

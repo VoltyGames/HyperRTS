@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Report;
 public sealed class MapLandShares
 {
     /// <summary>Share of the playable area per land kind, largest first.</summary>
-    public List<MapLandShare> shares = new();
+    public List<MapLandShare> shares = [];
 
     public int fields;
     public int trees;
@@ -33,7 +33,7 @@ public sealed class MapLandShares
     public long cropPlants;
 
     /// <summary>Props per hectare of each surface.</summary>
-    public List<MapSurfaceProps> props = new();
+    public List<MapSurfaceProps> props = [];
 
     /// <summary>Share of camera-sized frames holding enough kinds of interest, and each kind's presence.</summary>
     public MapComposition composition = new();

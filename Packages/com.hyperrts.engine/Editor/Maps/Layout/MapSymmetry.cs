@@ -54,7 +54,7 @@ public sealed class MapSymmetry
         }
 
         if (name != null && name.StartsWith(RotatePrefix, StringComparison.Ordinal)
-            && int.TryParse(name.Substring(RotatePrefix.Length), NumberStyles.None, CultureInfo.InvariantCulture,
+            && int.TryParse(name[RotatePrefix.Length..], NumberStyles.None, CultureInfo.InvariantCulture,
                 out var count) && count >= 3 && count <= 8)
         {
             return Rotations(name, count);

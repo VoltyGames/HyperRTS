@@ -37,7 +37,7 @@ public sealed class GeneratorRun
     private static IEnumerable<string> Files(string assetPath)
     {
         var package = PackageInfo.FindForAssetPath(assetPath);
-        var disk = package == null ? assetPath : package.resolvedPath + assetPath.Substring(package.assetPath.Length);
+        var disk = package == null ? assetPath : package.resolvedPath + assetPath[package.assetPath.Length..];
         if (File.Exists(disk))
         {
             return new[] { disk };
@@ -45,7 +45,7 @@ public sealed class GeneratorRun
 
         return Directory.Exists(disk)
             ? Directory.EnumerateFiles(disk, "*", SearchOption.AllDirectories).Where(file => !file.EndsWith(".meta"))
-            : Enumerable.Empty<string>();
+            : [];
     }
 
     public override string ToString() => Failed ? $"Failed {RanText}: {error}" : $"Ran {RanText}";

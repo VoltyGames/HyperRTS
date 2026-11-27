@@ -116,14 +116,14 @@ public class HullSpacingTests : SimulationFixture
     [Test]
     public void MixedRow_GivesEachUnitASlotItsOwnWidth()
     {
-        using var positions = new NativeArray<float3>(new[]
-        {
+        using var positions = new NativeArray<float3>(
+        [
             new float3(-2f, 0f, 0f), new float3(0f, 0f, 0f), new float3(2f, 0f, 0f),
-        }, Allocator.Temp);
-        using var spacings = new NativeArray<float2>(new[]
-        {
+        ], Allocator.Temp);
+        using var spacings = new NativeArray<float2>(
+        [
             new float2(5f, 8f), new float2(1f, 1f), new float2(1f, 1f),
-        }, Allocator.Temp);
+        ], Allocator.Temp);
         using var slots = new NativeArray<float3>(3, Allocator.Temp);
 
         Formation.Assign(positions, new float3(0f, 0f, 10f), spacings, slots);

@@ -29,11 +29,11 @@ internal sealed class MapClimateAssembly
         climate.beltKits = All<MapBeltKit>(library, climate.beltKitKeys, file);
         climate.woodlandKits = All<MapWoodlandKit>(library, climate.woodlandKitKeys, file);
         climate.war = string.IsNullOrEmpty(climate.warKit) ? null : library.Get<MapWarKit>(climate.warKit, file);
-        climate.layers = new List<MapClimateLayer>();
-        climate.trees = new List<MapClimateTree>();
-        climate.plants = new List<MapClimatePlant>();
-        climate.rowCrops = new List<MapClimateRowCrop>();
-        climate.decals = new List<MapClimateDecal>();
+        climate.layers = [];
+        climate.trees = [];
+        climate.plants = [];
+        climate.rowCrops = [];
+        climate.decals = [];
         new MapClimateAssembly(library, climate).Collect(file);
         if (climate.layers.Count > MapTerrainTextures.MaxLayers)
         {

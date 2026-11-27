@@ -26,9 +26,9 @@ public class EffectsPage : HubPage
 {
     private const long ReloadDelayMilliseconds = 500;
     private const string PickHint = "Pick an effect from the list.";
-    private static readonly string[] PlaySettings = { "scale", "wind-strength", "wind-heading" };
+    private static readonly string[] PlaySettings = ["scale", "wind-strength", "wind-heading"];
 
-    private List<EffectRigEntry> _rigs = new();
+    private List<EffectRigEntry> _rigs = [];
     private EffectRigEntry _current;
     private string _filter = "";
     private EffectPlayback _playback;

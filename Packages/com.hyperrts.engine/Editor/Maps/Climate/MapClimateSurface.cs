@@ -18,25 +18,25 @@ public sealed class MapClimateSurface : MapLibraryItem
     [Tooltip("SurfaceMaterial name hits and wheels on this surface throw up (Soil, Grass, Mud, Gravel...).")]
     public string impactClass;
 
-    public List<MapTreeDensity> trees = new();
+    public List<MapTreeDensity> trees = [];
 
     [Tooltip("Smallest distance between trees on this surface (metres).")]
     public float treeSpacing = 4f;
 
     [Tooltip("Grass and small plants and the share of the ground each covers.")]
-    public List<MapPlantCoverage> plants = new();
+    public List<MapPlantCoverage> plants = [];
 
     [Tooltip("Crop grown in 3D rows on this surface's fields. Empty for none.")]
     [MapKey(typeof(MapClimateRowCrop), Optional = true)]
     public string rowCrop;
 
-    public List<MapPropDensity> props = new();
+    public List<MapPropDensity> props = [];
 
     [Tooltip("Ground decals laid on this surface at build time, per hectare.")]
-    public List<MapDecalDensity> decals = new();
+    public List<MapDecalDensity> decals = [];
 
     [Tooltip("Noise-shaped mixes of other terrain layers, painted in order over this surface's own.")]
-    public List<MapSurfaceMix> mixes = new();
+    public List<MapSurfaceMix> mixes = [];
 
     [Tooltip("Wheel lines along the rows of this surface's fields.")]
     public MapTramlines tramlines = new();

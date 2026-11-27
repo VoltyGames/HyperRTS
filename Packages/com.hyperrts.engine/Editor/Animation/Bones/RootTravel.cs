@@ -11,7 +11,7 @@ internal sealed class RootTravel
 
     private readonly GameObject _root;
     private readonly Transform _rootBone;
-    private readonly Dictionary<AnimationClip, (Vector3 Start, Vector3 End)> _ends = new();
+    private readonly Dictionary<AnimationClip, (Vector3 Start, Vector3 End)> _ends = [];
 
     public RootTravel(GameObject root, Transform rootBone)
     {

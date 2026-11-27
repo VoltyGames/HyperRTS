@@ -37,19 +37,19 @@ public sealed class FieldFires
     private const uint ReachSalt = 0x85EBCA6Bu;
 
     private static readonly int2[] Neighbours =
-    {
+    [
         new(1, 0), new(-1, 0), new(0, 1), new(0, -1), new(1, 1), new(1, -1), new(-1, 1), new(-1, -1),
-    };
+    ];
 
     private readonly CellGrid _grid;
     private readonly float2 _burnSeconds;
     private readonly float2 _reach;
     private readonly FieldCell[] _cells;
     private readonly float[] _chances = new float[8];
-    private readonly List<Flame> _flames = new();
-    private readonly List<Flame> _lit = new();
-    private readonly List<float2> _burntOut = new();
-    private readonly Dictionary<int, float3> _clusterSums = new();
+    private readonly List<Flame> _flames = [];
+    private readonly List<Flame> _lit = [];
+    private readonly List<float2> _burntOut = [];
+    private readonly Dictionary<int, float3> _clusterSums = [];
     private float _carry;
 
     /// <summary>

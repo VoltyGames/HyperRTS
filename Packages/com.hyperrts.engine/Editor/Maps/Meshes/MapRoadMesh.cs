@@ -32,17 +32,17 @@ public sealed class MapRoadMesh
         _groundLevel = groundLevel;
     }
 
-    public List<Vector3> Vertices { get; } = new();
+    public List<Vector3> Vertices { get; } = [];
 
-    public List<Vector3> Normals { get; } = new();
+    public List<Vector3> Normals { get; } = [];
 
-    public List<Vector4> Tangents { get; } = new();
+    public List<Vector4> Tangents { get; } = [];
 
-    public List<Vector2> Uvs { get; } = new();
+    public List<Vector2> Uvs { get; } = [];
 
-    public List<Color32> Colors { get; } = new();
+    public List<Color32> Colors { get; } = [];
 
-    public List<int> Triangles { get; } = new();
+    public List<int> Triangles { get; } = [];
 
     public int Count => Vertices.Count;
 

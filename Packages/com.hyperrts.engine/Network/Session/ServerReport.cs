@@ -35,7 +35,7 @@ public sealed class ServerReport
 
     /// <summary>Errors and exceptions the server logged.</summary>
     public int errors;
-    public List<PlayerResult> players = new();
+    public List<PlayerResult> players = [];
 
     /// <summary>Seconds sampled, from the match start.</summary>
     public int samples;

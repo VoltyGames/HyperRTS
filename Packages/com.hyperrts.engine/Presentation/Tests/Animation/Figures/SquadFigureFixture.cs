@@ -46,7 +46,7 @@ public abstract class SquadFigureFixture : SquadFigureClipFixture
     protected Entity[] _figures;
 
     /// <summary>Systems a test adds, updated after the figure system.</summary>
-    protected readonly List<SystemHandle> _later = new();
+    protected readonly List<SystemHandle> _later = [];
     protected double _time;
 
     [SetUp]

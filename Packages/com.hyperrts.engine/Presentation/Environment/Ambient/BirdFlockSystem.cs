@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class BirdFlockSystem : SystemBase
     {
-        private readonly List<BirdFlock> _flocks = new();
+        private readonly List<BirdFlock> _flocks = [];
         private float3[] _impacts = new float3[16];
         private BirdRenderer _renderer;
         private AmbientLife _life;

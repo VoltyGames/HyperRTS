@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.PlayMode.Staging;
 /// <summary>Collects the console's errors and exceptions while it lives, one entry per message and first stack line.</summary>
 internal sealed class ConsoleIssues : IDisposable
 {
-    private readonly Dictionary<string, StagingReport.Issue> _byKey = new();
+    private readonly Dictionary<string, StagingReport.Issue> _byKey = [];
 
     public ConsoleIssues() => Application.logMessageReceived += Receive;
 

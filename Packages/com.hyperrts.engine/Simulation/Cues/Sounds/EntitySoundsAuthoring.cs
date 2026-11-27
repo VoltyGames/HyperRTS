@@ -34,7 +34,7 @@ public class EntitySoundsAuthoring : AuthoringBehaviour
     public SoundCue warning;
 
     [Tooltip("Each shot of the extra weapons, in order; one without an entry fires silently.")]
-    public List<SoundCue> mountFire = new();
+    public List<SoundCue> mountFire = [];
 
     [Header("Owner only")]
     [Tooltip("At this producer when a unit or research in its queue finishes.")]

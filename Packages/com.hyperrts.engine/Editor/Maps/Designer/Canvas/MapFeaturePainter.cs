@@ -21,9 +21,9 @@ public static class MapFeaturePainter
     private static readonly Color Outline = new(0f, 0f, 0f, 0.7f);
     private static readonly Color Selected = Color.white;
     [NoAutoStaticsCleanup]
-    private static readonly List<Vector2> World = new();
+    private static readonly List<Vector2> World = [];
     [NoAutoStaticsCleanup]
-    private static readonly List<Vector2> Local = new();
+    private static readonly List<Vector2> Local = [];
 
     /// <summary>The symmetry's other copies of every shown feature that isn't shared, faded.</summary>
     public static void DrawGhosts(Painter2D painter, MapSpec spec, MapCanvasView view, MapSymmetry symmetry,

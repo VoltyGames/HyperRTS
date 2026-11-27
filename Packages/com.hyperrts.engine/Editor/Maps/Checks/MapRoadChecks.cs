@@ -21,7 +21,7 @@ public sealed class MapRoadChecks
     private readonly MapShapes _shapes;
     private readonly float _baseRadius;
     private readonly MapIssues _issues;
-    private readonly HashSet<string> _reported = new();
+    private readonly HashSet<string> _reported = [];
 
     private MapRoadChecks(MapLayout layout, MapShapes shapes, float baseRadius, MapIssues issues)
     {

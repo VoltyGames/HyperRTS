@@ -19,8 +19,8 @@ public sealed class ResourceBar : HUDPanel
     private readonly Label _population;
     private readonly VisualElement _powerEntry;
     private readonly Label _power;
-    private readonly List<Label> _amounts = new();
-    private readonly List<int> _shown = new();
+    private readonly List<Label> _amounts = [];
+    private readonly List<int> _shown = [];
     private int _typesHash = -1;
     private Population _shownPopulation = new() { Used = -1 };
     private PowerGrid _shownPower = new() { Produced = -1f };

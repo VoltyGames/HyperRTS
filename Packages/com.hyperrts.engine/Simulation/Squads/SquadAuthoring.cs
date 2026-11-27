@@ -25,7 +25,7 @@ namespace HyperRTS.Simulation.Squads;
 public class SquadAuthoring : AuthoringBehaviour
 {
     [Tooltip("The soldiers, in figure order. Each fires one shot per cycle with its weapon.")]
-    public List<Member> members = new();
+    public List<Member> members = [];
 
     /// <summary>One soldier of the squad.</summary>
     [Serializable]

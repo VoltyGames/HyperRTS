@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Vision;
 using Unity.Burst;
 using Unity.Collections;

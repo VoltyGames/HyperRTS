@@ -27,7 +27,7 @@ public class AnnouncerAuthoring : AuthoringBehaviour
     }
 
     [Tooltip("One announcer per side; a side without one hears no alerts.")]
-    public List<Entry> sides = new();
+    public List<Entry> sides = [];
 
     public static DynamicBuffer<AnnouncerVoice> Add(EntityWriter writer) =>
         writer.AddBuffer<AnnouncerVoice>();

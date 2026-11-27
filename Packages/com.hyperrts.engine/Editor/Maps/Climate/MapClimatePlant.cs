@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Climate;
 public sealed class MapClimatePlant : MapLibraryItem
 {
     [Tooltip("The plant's models, each an FBX or mesh asset with one submesh, origin at the root.")]
-    public List<Mesh> meshes = new();
+    public List<Mesh> meshes = [];
 
     [Tooltip("HyperRTS/Foliage material the models share.")]
     public Material material;

@@ -49,7 +49,7 @@ public static class SectionShape
     public static ulong Bits(SectionEntry[] entries, GameObject[] named)
     {
         var bits = 0ul;
-        foreach (var model in named ?? Array.Empty<GameObject>())
+        foreach (var model in named ?? [])
         {
             var index = Array.FindIndex(entries, entry => entry.intact == model);
             if (index >= 0)

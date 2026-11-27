@@ -23,7 +23,7 @@ public sealed class SquadCommands : ICommandSource
     private readonly LiveQuery _reinforcePoints = PointQuery<ReinforcePoint>();
 
     private readonly CommandKit _kit;
-    private readonly List<Entity> _squads = new();
+    private readonly List<Entity> _squads = [];
     private CommandButton _retreat;
     private CommandButton _reinforce;
     private SquadRefusal _retreatReason;

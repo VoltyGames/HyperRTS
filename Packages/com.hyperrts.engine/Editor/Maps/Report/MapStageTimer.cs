@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Report;
 /// <summary>Times the stages of a map build in the order they ran, for the report.</summary>
 public sealed class MapStageTimer
 {
-    private readonly List<MapStageTime> _stages = new();
+    private readonly List<MapStageTime> _stages = [];
 
     public IReadOnlyList<MapStageTime> Stages => _stages;
 

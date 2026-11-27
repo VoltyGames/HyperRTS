@@ -43,7 +43,7 @@ public class ImpactMarkTests
 
         _decal = new Material(Shader.Find("Shader Graphs/Decal"));
         _mark = ScriptableObject.CreateInstance<ImpactMark>();
-        _mark.decals = new[] { _decal };
+        _mark.decals = [_decal];
         _mark.size = new Vector2(3f, 3f);
         _mark.depth = 1f;
         _mark.lifetime = 10f;
@@ -210,7 +210,7 @@ public class ImpactMarkTests
     public void GroundFrame_FollowsTheSlope_AndProjectsIntoIt()
     {
         // A 45 degree ramp rising along x: height = x.
-        using var heights = new NativeArray<float>(new[] { 0f, 10f, 0f, 10f }, Allocator.Temp);
+        using var heights = new NativeArray<float>([0f, 10f, 0f, 10f], Allocator.Temp);
         var terrain = TerrainHeight.Create(heights, new int2(2, 2), new float2(0f, 0f), 10f, Allocator.Persistent);
         try
         {

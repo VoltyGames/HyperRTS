@@ -14,7 +14,7 @@ public class BuilderAuthoring : AuthoringBehaviour
 {
     [Tooltip("Building prefabs this unit can place.")]
     [PrefabAsset("Build option"), NoEmptyEntries]
-    public List<BuildingAuthoring> buildOptions = new();
+    public List<BuildingAuthoring> buildOptions = [];
 
     [Tooltip("Construction speed multiplier; several builders on one site add up.")]
     [Min(0.01f)]

@@ -76,8 +76,8 @@ public class MapLayoutTests
         var spec = Spec("1v1", MapSymmetry.Rotate180, new MapPoint(0f, -80f));
         spec.rivers.Add(new MapRiverSpec
         {
-            points = new List<MapPoint> { new(-100f, -20f), new(0f, 0f) },
-            crossings = new List<MapCrossingSpec> { new() { along = 0.25f, kind = MapCrossingSpec.Ford } },
+            points = [new(-100f, -20f), new(0f, 0f)],
+            crossings = [new() { along = 0.25f, kind = MapCrossingSpec.Ford }],
         });
 
         var layout = MapSymmetryCopier.Expand(spec, new MapIssues());

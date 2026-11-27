@@ -19,7 +19,7 @@ public sealed class MapPathTool : IMapTool
 
     private readonly MapToolContext _context;
     private readonly MapToolbox _toolbox;
-    private readonly List<Vector2> _points = new();
+    private readonly List<Vector2> _points = [];
     private Vector2? _cursor;
 
     public MapPathTool(MapToolContext context, MapToolbox toolbox)
@@ -37,7 +37,7 @@ public sealed class MapPathTool : IMapTool
         }
 
         var point = _context.Place(local, false);
-        var repeated = _points.Count > 0 && _points[_points.Count - 1] == point;
+        var repeated = _points.Count > 0 && _points[^1] == point;
         if (!repeated)
         {
             _points.Add(point);

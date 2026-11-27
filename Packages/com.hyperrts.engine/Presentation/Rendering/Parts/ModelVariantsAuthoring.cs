@@ -14,13 +14,13 @@ namespace HyperRTS.Presentation.Rendering.Parts;
 public class ModelVariantsAuthoring : AuthoringBehaviour
 {
     [Tooltip("The looks to pick from. Each lists every child that belongs to it, its damage stage models included.")]
-    public List<Variant> variants = new();
+    public List<Variant> variants = [];
 
     [Serializable]
     public class Variant
     {
         [Tooltip("Child objects shown only while this variant is picked.")]
-        public List<GameObject> models = new();
+        public List<GameObject> models = [];
     }
 
     public class Baker : Baker<ModelVariantsAuthoring>

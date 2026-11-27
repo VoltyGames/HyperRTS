@@ -1,4 +1,3 @@
-using Unity.Jobs;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Systems;
@@ -8,6 +7,7 @@ using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using Unity.Transforms;

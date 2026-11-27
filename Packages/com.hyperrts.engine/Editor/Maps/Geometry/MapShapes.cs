@@ -69,15 +69,15 @@ public sealed class MapShapes
     public MapPalette Palette { get; }
     public MapClimate Climate { get; }
 
-    public List<MapRiver> Rivers { get; } = new();
+    public List<MapRiver> Rivers { get; } = [];
 
-    public List<MapRoad> Roads { get; } = new();
+    public List<MapRoad> Roads { get; } = [];
 
-    public List<MapPond> Ponds { get; } = new();
+    public List<MapPond> Ponds { get; } = [];
 
-    public List<MapRavine> Ravines { get; } = new();
+    public List<MapRavine> Ravines { get; } = [];
 
-    public List<MapCrossing> Crossings { get; } = new();
+    public List<MapCrossing> Crossings { get; } = [];
 
     /// <summary>The noise that makes ravine walls and river banks wander.</summary>
     public MapNoise EdgeWander { get; }

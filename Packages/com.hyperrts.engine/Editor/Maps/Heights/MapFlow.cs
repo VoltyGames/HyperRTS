@@ -18,7 +18,7 @@ public sealed class MapFlow
     private const float SwaleArea = 20000f;
 
     private static readonly (int X, int Z)[] Neighbours =
-        { (1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1) };
+        [(1, 0), (-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (-1, 1), (-1, -1)];
 
     private readonly MapSymmetry _symmetry;
     private readonly MapValues<float> _strength;

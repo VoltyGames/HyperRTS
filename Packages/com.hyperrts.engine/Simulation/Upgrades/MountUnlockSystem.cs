@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Production;
 using Unity.Burst;
 using Unity.Burst.Intrinsics;

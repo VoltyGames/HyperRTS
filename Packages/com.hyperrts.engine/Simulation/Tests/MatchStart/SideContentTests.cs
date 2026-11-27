@@ -14,8 +14,8 @@ namespace HyperRTS.Simulation.Tests.MatchStart;
 public class SideContentTests
 {
     private const float Ground = 2f;
-    private static readonly float3[] Spawns = { new(-40f, 0f, 0f), new(40f, 0f, 0f), new(0f, 0f, 40f) };
-    private static readonly float[] Yaws = { 0f, math.PI / 2f, math.PI };
+    private static readonly float3[] Spawns = [new(-40f, 0f, 0f), new(40f, 0f, 0f), new(0f, 0f, 40f)];
+    private static readonly float[] Yaws = [0f, math.PI / 2f, math.PI];
 
     private TestWorld _world;
     private Entity _base;

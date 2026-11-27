@@ -16,9 +16,9 @@ public sealed class CommandCard : HUDPanel
 
     private readonly CommandKit _kit;
     private readonly List<ICommandSource> _sources;
-    private readonly List<CommandEntry> _entries = new();
-    private readonly List<CommandButton> _turns = new();
-    private readonly List<Entity> _owned = new();
+    private readonly List<CommandEntry> _entries = [];
+    private readonly List<CommandButton> _turns = [];
+    private readonly List<Entity> _owned = [];
     private readonly HUDTooltip _tooltip;
     private readonly VisualTreeAsset _blank;
     private int _hash = -1;
@@ -32,11 +32,11 @@ public sealed class CommandCard : HUDPanel
         _kit = new CommandKit(layouts.CommandButton, catalog);
         _blank = layouts.CommandBlank;
         _tooltip = new HUDTooltip(layouts.TooltipStat);
-        _sources = new List<ICommandSource>
-        {
+        _sources =
+        [
             new PurchaseCommands(_kit), new AbilityCommands(_kit), new OrderCommands(_kit), new SquadCommands(_kit),
-        };
-        _sources.AddRange(extra);
+            .. extra,
+        ];
         Root.RegisterCallback<PointerDownEvent>(OnPointerDown, TrickleDown.TrickleDown);
     }
 

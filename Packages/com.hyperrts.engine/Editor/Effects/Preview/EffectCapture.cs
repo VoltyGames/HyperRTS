@@ -32,7 +32,7 @@ public sealed class EffectCapture
     private static readonly Vector3 Sky = new(0f, 10000f, 0f);
 
     // Front, then turned a quarter about the aim, so a quad that does not face the camera shows edge-on.
-    private static readonly (string Name, float Yaw)[] Views = { ("front", 0f), ("side", 90f) };
+    private static readonly (string Name, float Yaw)[] Views = [("front", 0f), ("side", 90f)];
 
     private readonly GameObject _prefab;
     private readonly EffectCaptureSettings _settings;

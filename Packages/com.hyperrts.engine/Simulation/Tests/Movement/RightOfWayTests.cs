@@ -20,7 +20,7 @@ public class RightOfWayTests : SimulationFixture
     private const float East = math.PI * 0.5f;
 
     // Owners 1 and 2 are teammates, so a teammate's squad needs no second match.
-    protected override byte[] Teams => new byte[] { 1, 1 };
+    protected override byte[] Teams => [1, 1];
 
     private Entity SpawnTruck(float3 position) =>
         World.SpawnVehicle(1, TestVehicles.At(position, East), 6f, TestVehicles.SupplyTruckHull(),

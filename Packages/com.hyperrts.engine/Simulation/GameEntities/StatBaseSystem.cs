@@ -29,11 +29,11 @@ namespace HyperRTS.Simulation.GameEntities
             {
                 _queries[i] = state.GetEntityQuery(new EntityQueryDesc
                 {
-                    All = new[]
-                    {
+                    All =
+                    [
                         ComponentType.ReadOnly(_table.Components[i].Component.TypeIndex),
                         ComponentType.ReadWrite<BaseStat>(), ComponentType.ReadOnly<StatBasesPending>(),
-                    },
+                    ],
                 });
             }
         }

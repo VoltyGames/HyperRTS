@@ -63,11 +63,11 @@ public class MotionRigFillTests
         var damaged = Pivot("Damaged", _unit.transform);
         var damagedHull = Pivot("Hull", damaged, new Vector3(3f, 2f, 7f));
         var damagedTurret = Pivot("Turret", damagedHull);
-        _unit.AddComponent<DamageStagesAuthoring>().stages = new()
-        {
+        _unit.AddComponent<DamageStagesAuthoring>().stages =
+        [
             new() { below = 1f, visual = model.gameObject },
             new() { below = 0.5f, visual = damaged.gameObject },
-        };
+        ];
         _unit.AddComponent<WeaponAuthoring>().turreted = true;
         var rig = _unit.AddComponent<MotionRigAuthoring>();
 

@@ -21,7 +21,7 @@ public sealed class MapLibrary : IDisposable
     /// <summary>Item types in listing order.</summary>
     [NoAutoStaticsCleanup]
     private static readonly Type[] Types =
-    {
+    [
         typeof(MapClimateLayer),
         typeof(MapClimatePlant),
         typeof(MapClimateRowCrop),
@@ -38,13 +38,13 @@ public sealed class MapLibrary : IDisposable
         typeof(MapClimate),
         typeof(MapPalette),
         typeof(MapRules),
-    };
+    ];
 
     [NoAutoStaticsCleanup]
     private static readonly Dictionary<Type, string> TypeNames =
         Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Require(type).Name);
 
-    private readonly Dictionary<Type, SortedDictionary<string, Entry>> _entries = new();
+    private readonly Dictionary<Type, SortedDictionary<string, Entry>> _entries = [];
 
     private MapLibrary()
     {

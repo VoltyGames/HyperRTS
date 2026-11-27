@@ -66,9 +66,9 @@ public class PlacementTests
         var part = _em.CreateEntity(typeof(Prefab), typeof(LocalTransform), typeof(Parent), typeof(MaterialMeshInfo));
         _em.SetComponentData(part, new Parent { Value = prefab });
         _em.SetComponentData(part, MaterialMeshInfo.FromRenderMeshArrayIndices(0, 0));
-        _em.AddSharedComponent(part, new RenderMeshArray(new[] { _source }, new[] { _mesh }));
+        _em.AddSharedComponent(part, new RenderMeshArray([_source], [_mesh]));
         _em.AddBuffer<LinkedEntityGroup>(prefab).AddRange(new NativeArray<LinkedEntityGroup>(
-            new LinkedEntityGroup[] { prefab, part }, Allocator.Temp));
+            [prefab, part], Allocator.Temp));
         return prefab;
     }
 

@@ -9,13 +9,13 @@ public partial class HUDGlyph : VisualElement
 {
     // The bolt as fractions of the box, from its top tip round its outline.
     private static readonly Vector2[] Bolt =
-    {
+    [
         new(0.62f, 0f), new(0.22f, 0.56f), new(0.48f, 0.56f), new(0.36f, 1f), new(0.8f, 0.4f), new(0.54f, 0.4f),
-    };
+    ];
 
-    private static readonly Vector2[] ChevronRight = { new(0.3f, 0.1f), new(0.7f, 0.5f), new(0.3f, 0.9f) };
-    private static readonly Vector2[] ChevronUp = { new(0.1f, 0.7f), new(0.5f, 0.3f), new(0.9f, 0.7f) };
-    private static readonly Vector2[] ChevronLeft = { new(0.7f, 0.1f), new(0.3f, 0.5f), new(0.7f, 0.9f) };
+    private static readonly Vector2[] ChevronRight = [new(0.3f, 0.1f), new(0.7f, 0.5f), new(0.3f, 0.9f)];
+    private static readonly Vector2[] ChevronUp = [new(0.1f, 0.7f), new(0.5f, 0.3f), new(0.9f, 0.7f)];
+    private static readonly Vector2[] ChevronLeft = [new(0.7f, 0.1f), new(0.3f, 0.5f), new(0.7f, 0.9f)];
 
     private HUDGlyphShape _shape;
 

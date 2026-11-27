@@ -1,5 +1,5 @@
-using HyperRTS.Presentation.Animation.Figures;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Animation.Figures;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
@@ -245,8 +245,8 @@ namespace HyperRTS.Presentation.Environment.Ground.Stamps
         /// <summary>Last frame's positions (and a vehicle's forward), kept to measure how each unit moved.</summary>
         private sealed class LastFrame<T> where T : unmanaged
         {
-            private Dictionary<Entity, T> _last = new();
-            private Dictionary<Entity, T> _current = new();
+            private Dictionary<Entity, T> _last = [];
+            private Dictionary<Entity, T> _current = [];
 
             public void Forget() => _last.Clear();
 

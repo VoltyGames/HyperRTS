@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Cues.Effects;
 public class ImpactMark : ScriptableObject
 {
     [Tooltip("Decal materials (URP decal shader); each impact picks one at random.")]
-    public Material[] decals = { };
+    public Material[] decals = [];
 
     [Tooltip("Random diameter in metres between x and y, for a hit without splash.")]
     public Vector2 size = new(2f, 3f);
@@ -34,7 +34,7 @@ public class ImpactMark : ScriptableObject
     public GroundScar scar;
 
     [Tooltip("Debris the blast throws out of the bowl and leaves lying for the match, such as clods and stones.")]
-    public DebrisSet[] debris = { };
+    public DebrisSet[] debris = [];
 
     [Tooltip("Seconds the decal stays at full strength; 0 keeps it until newer marks of this kind reuse it. The " +
              "crater, scorch and stain outlast it.")]

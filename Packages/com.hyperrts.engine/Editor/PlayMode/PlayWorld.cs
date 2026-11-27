@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Netcode;
@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.PlayMode
     internal static partial class PlayWorld
     {
         [AutoStaticsCleanup]
-        private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> SingletonQueries = new();
+        private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> SingletonQueries = [];
 
         /// <summary>The world that owns game state: the host or server when one runs, else the single-player world. Cheats write here.</summary>
         public static bool TryGetAuthoritative(out EntityManager entityManager) =>
@@ -27,7 +27,7 @@ namespace HyperRTS.Editor.PlayMode
 
         /// <summary>Every running game world, without thin clients or the worlds SubScenes load into.</summary>
         public static IEnumerable<World> Running =>
-            Application.isPlaying ? World.All.Where(world => GetRole(world) != 0) : Enumerable.Empty<World>();
+            Application.isPlaying ? World.All.Where(world => GetRole(world) != 0) : [];
 
         /// <summary>The first running world with one of <paramref name="roles"/>, preferring a networked one.</summary>
         public static bool TryGet(WorldSystemFilterFlags roles, out EntityManager entityManager)
@@ -143,7 +143,7 @@ namespace HyperRTS.Editor.PlayMode
             }
 
             disposed.ForEach(stale => SingletonQueries.Remove(stale));
-            SingletonQueries[world] = queries = new Dictionary<Type, EntityQuery>();
+            SingletonQueries[world] = queries = [];
             return queries;
         }
     }

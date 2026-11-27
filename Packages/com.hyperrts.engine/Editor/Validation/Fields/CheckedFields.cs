@@ -18,10 +18,10 @@ internal sealed partial class CheckedFields
         BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
 
     [AutoStaticsCleanup]
-    private static readonly Dictionary<Type, CheckedFields> Cache = new();
+    private static readonly Dictionary<Type, CheckedFields> Cache = [];
 
-    public readonly List<CheckedField> Checked = new();
-    public readonly List<(FieldInfo Field, CheckedFields Inner)> Nested = new();
+    public readonly List<CheckedField> Checked = [];
+    public readonly List<(FieldInfo Field, CheckedFields Inner)> Nested = [];
 
     public bool IsEmpty => Checked.Count == 0 && Nested.Count == 0;
 

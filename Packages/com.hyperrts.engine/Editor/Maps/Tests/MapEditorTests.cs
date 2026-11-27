@@ -138,7 +138,7 @@ public class MapEditorTests
         var spec = new MapSpec
         {
             name = "Sample", symmetry = "rotate-180", size = new MapPoint(400, 300),
-            notes = new List<string> { "first" },
+            notes = ["first"],
         };
         spec.spawns.Add(new MapSpawnSpec { pos = new MapPoint(-55, -165.5f), yaw = 20 });
         spec.rivers.Add(new MapRiverSpec { points = { new MapPoint(-200, 0), new MapPoint(200, 10) } });

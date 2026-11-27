@@ -27,7 +27,7 @@ public static class MapCommands
     {
         var reports = string.IsNullOrEmpty(map)
             ? MapBuildRunner.BuildAll(ask: false)
-            : new List<MapReport> { MapBuildRunner.Build(MapPaths.Find(map), ask: false) };
+            : [MapBuildRunner.Build(MapPaths.Find(map), ask: false)];
         return reports.Select(Summary).ToList();
     }
 

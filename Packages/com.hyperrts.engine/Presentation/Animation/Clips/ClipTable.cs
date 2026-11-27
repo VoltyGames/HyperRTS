@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Animation.Clips;
 /// <summary>The named clips and all-row bounds of one animation texture.</summary>
 public abstract class ClipTable : ScriptableObject
 {
-    public List<NamedClip> clips = new();
+    public List<NamedClip> clips = [];
 
     [Tooltip("Object-space minimum over every row of every clip.")]
     public Vector3 boundsMin;

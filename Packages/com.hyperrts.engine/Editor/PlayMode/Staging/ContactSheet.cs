@@ -10,7 +10,7 @@ internal sealed class ContactSheet
 {
     private const int Width = 1920;
 
-    private readonly List<string> _images = new();
+    private readonly List<string> _images = [];
 
     public IReadOnlyList<string> Images => _images;
 

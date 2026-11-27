@@ -104,7 +104,7 @@ internal sealed class MotionRigFill
     private void FillSteering()
     {
         var found = _rig.TryGetComponent<LocomotionAuthoring>(out var locomotion);
-        var axles = found ? WheelParts.SteeringAxles(locomotion) : new List<float>();
+        var axles = found ? WheelParts.SteeringAxles(locomotion) : [];
         foreach (var wheel in _rig.wheels)
         {
             wheel.steers = found && WheelParts.IsOnAxle(locomotion, axles, wheel.part);

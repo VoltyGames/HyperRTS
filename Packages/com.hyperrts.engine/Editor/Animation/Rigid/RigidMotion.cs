@@ -35,10 +35,10 @@ public sealed class RigidMotion : ScriptableObject
     }
 
     [Tooltip("Every piece, by column.")]
-    public List<Piece> pieces = new();
+    public List<Piece> pieces = [];
 
     [Tooltip("The clips, by first row.")]
-    public List<NamedClip> clips = new();
+    public List<NamedClip> clips = [];
 
     /// <summary>The motion model a rigid VAT model at <paramref name="modelPath"/> would have, in its format.</summary>
     public static string PathFor(string modelPath) =>

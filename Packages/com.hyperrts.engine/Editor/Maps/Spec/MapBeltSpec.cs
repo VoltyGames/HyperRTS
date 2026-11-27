@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("belt", 90, 0.35f, 0.7f, 0.3f)]
 public sealed class MapBeltSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     [MapKey(typeof(MapBeltKit))]
     public string kind;
 

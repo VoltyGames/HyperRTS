@@ -15,9 +15,9 @@ public sealed class MapFieldRegions
     private readonly MapFarmlandKit _kit;
     private readonly int _seed;
     private readonly float _angle;
-    private readonly Dictionary<int, (string Surface, int Seed, int Region)> _fields = new();
-    private readonly Dictionary<int, int> _headlands = new();
-    private readonly Dictionary<int, int> _leftovers = new();
+    private readonly Dictionary<int, (string Surface, int Seed, int Region)> _fields = [];
+    private readonly Dictionary<int, int> _headlands = [];
+    private readonly Dictionary<int, int> _leftovers = [];
 
     public MapFieldRegions(MapPlanContext context, MapFarmlandKit kit, int index, float angle)
     {

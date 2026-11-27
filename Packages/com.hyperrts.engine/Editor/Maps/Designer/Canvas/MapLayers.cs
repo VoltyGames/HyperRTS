@@ -10,8 +10,8 @@ namespace HyperRTS.Editor.Maps.Designer.Canvas;
 /// </summary>
 public sealed class MapLayers
 {
-    private readonly HashSet<string> _hidden = new();
-    private readonly HashSet<string> _locked = new();
+    private readonly HashSet<string> _hidden = [];
+    private readonly HashSet<string> _locked = [];
 
     public event Action Changed;
 

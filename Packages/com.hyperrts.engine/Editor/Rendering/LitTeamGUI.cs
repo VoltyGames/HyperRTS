@@ -25,7 +25,7 @@ public sealed class LitTeamGUI : ShaderGUI
     private static readonly int DstBlend = Shader.PropertyToID("_DstBlend");
     private static readonly int ZWrite = Shader.PropertyToID("_ZWrite");
 
-    private static readonly string[] DepthPasses = { "ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors" };
+    private static readonly string[] DepthPasses = ["ShadowCaster", "DepthOnly", "DepthNormals", "MotionVectors"];
 
     public override void OnGUI(MaterialEditor editor, MaterialProperty[] properties)
     {

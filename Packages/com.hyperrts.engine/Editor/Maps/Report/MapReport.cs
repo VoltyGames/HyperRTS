@@ -21,18 +21,18 @@ public sealed class MapReport
     public string map;
     public string status;
     public string built;
-    public List<string> errors = new();
-    public List<string> warnings = new();
+    public List<string> errors = [];
+    public List<string> warnings = [];
 
     /// <summary>The spec feature of each error and warning, index for index (empty array name: the whole map).</summary>
-    public List<MapIssueFeature> errorFeatures = new();
-    public List<MapIssueFeature> warningFeatures = new();
+    public List<MapIssueFeature> errorFeatures = [];
+    public List<MapIssueFeature> warningFeatures = [];
 
     public MapMetrics metrics;
     public MapLandShares land;
 
     /// <summary>Milliseconds per build stage, so a slow painter shows.</summary>
-    public List<MapStageTime> stages = new();
+    public List<MapStageTime> stages = [];
 
     public bool Passed => errors.Count == 0;
 

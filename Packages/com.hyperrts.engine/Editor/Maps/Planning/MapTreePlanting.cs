@@ -26,7 +26,7 @@ public sealed class MapTreePlanting
     }
 
     /// <summary>Every tree planted so far, copies included.</summary>
-    public List<MapTree> Planted { get; } = new();
+    public List<MapTree> Planted { get; } = [];
 
     public bool Fits(Vector2 point, float spacing) => _spacing.Fits(point, spacing);
 

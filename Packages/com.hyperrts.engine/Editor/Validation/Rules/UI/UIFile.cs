@@ -19,7 +19,7 @@ internal sealed class UIFile
     /// <summary>The text with comments blanked, so indexes and line numbers still match the file.</summary>
     public readonly string Code;
 
-    private readonly List<int> _lineStarts = new() { 0 };
+    private readonly List<int> _lineStarts = [0];
 
     public UIFile(string path, string text)
     {
@@ -55,16 +55,16 @@ internal sealed class UIFile
     public string Resolve(string link)
     {
         link = link.Trim();
-        var cut = link.IndexOfAny(new[] { '?', '#' });
+        var cut = link.IndexOfAny(['?', '#']);
         if (cut >= 0)
         {
-            link = link.Substring(0, cut);
+            link = link[..cut];
         }
 
         const string database = "project://database/";
         if (link.StartsWith(database))
         {
-            link = "/" + link.Substring(database.Length);
+            link = "/" + link[database.Length..];
         }
 
         if (link.StartsWith("data:") || link.Contains("://"))
@@ -73,7 +73,7 @@ internal sealed class UIFile
         }
 
         link = Uri.UnescapeDataString(link);
-        var folder = link.StartsWith("/") ? "" : Path.Substring(0, Path.LastIndexOf('/') + 1);
+        var folder = link.StartsWith("/") ? "" : Path[..(Path.LastIndexOf('/') + 1)];
         return Normalize(folder + link.TrimStart('/'));
     }
 

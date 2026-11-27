@@ -110,7 +110,7 @@ public class BuildingLightsTests
         var root = _em.CreateEntity(typeof(BuildingTag));
         _em.AddComponentData(root, new Offline());
         SetOffline(root, reasons);
-        meshes = new[] { _em.CreateEntity(typeof(MaterialMeshInfo)), _em.CreateEntity(typeof(MaterialMeshInfo)) };
+        meshes = [_em.CreateEntity(typeof(MaterialMeshInfo)), _em.CreateEntity(typeof(MaterialMeshInfo))];
         bare = _em.CreateEntity();
         var group = new NativeList<LinkedEntityGroup>(Allocator.Temp) { root, meshes[0], meshes[1], bare };
         _em.AddBuffer<LinkedEntityGroup>(root).AddRange(group.AsArray());

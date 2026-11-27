@@ -12,7 +12,7 @@ public static class MapCanvasPainter
     private const float MarkerRadius = 14f;
     private const float MarkerReach = 24f;
 
-    private static readonly float[] GridSteps = { 1f, 2f, 5f, 10f, 20f, 50f, 100f, 200f, 500f, 1000f };
+    private static readonly float[] GridSteps = [1f, 2f, 5f, 10f, 20f, 50f, 100f, 200f, 500f, 1000f];
     private static readonly Color GridColor = new(1f, 1f, 1f, 0.08f);
     private static readonly Color BoundsColor = new(1f, 1f, 1f, 0.85f);
     private static readonly Color MarginColor = new(1f, 1f, 1f, 0.3f);
@@ -29,7 +29,7 @@ public static class MapCanvasPainter
             }
         }
 
-        return GridSteps[GridSteps.Length - 1];
+        return GridSteps[^1];
     }
 
     public static void DrawGrid(Painter2D painter, MapCanvasView view, Rect terrain)

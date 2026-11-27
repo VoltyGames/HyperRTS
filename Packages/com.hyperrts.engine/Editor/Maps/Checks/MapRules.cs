@@ -42,7 +42,7 @@ public sealed class MapRules : MapLibraryItem
     public int maxDecals = 600;
 
     [Tooltip("Fewest props per hectare per surface before the report warns it looks bare.")]
-    public List<MapPropTarget> propTargets = new();
+    public List<MapPropTarget> propTargets = [];
 
     [Header("Composition")]
     [Tooltip("Ground the match camera sees at its middle zoom (metres, across and deep); the report tiles the play area with frames this size.")]
@@ -62,7 +62,7 @@ public sealed class MapRules : MapLibraryItem
 
     [Header("Modes")]
     [Tooltip("Thresholds per mode.")]
-    public List<MapModeRules> modes = new();
+    public List<MapModeRules> modes = [];
 
     [Header("Views")]
     [Tooltip("Usual match camera height above the ground (metres).")]

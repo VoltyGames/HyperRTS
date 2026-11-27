@@ -9,8 +9,8 @@ namespace HyperRTS.Editor.Maps.Common;
 /// </summary>
 public sealed class MapIssues
 {
-    private readonly List<MapIssue> _errors = new();
-    private readonly List<MapIssue> _warnings = new();
+    private readonly List<MapIssue> _errors = [];
+    private readonly List<MapIssue> _warnings = [];
 
     public IReadOnlyList<MapIssue> Errors => _errors;
 

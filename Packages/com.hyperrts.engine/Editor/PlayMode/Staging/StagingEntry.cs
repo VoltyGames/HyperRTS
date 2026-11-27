@@ -40,8 +40,8 @@ internal sealed class StagingEntry
         return (kind, given.First(pair => pair.Key == kind).Step);
     }
 
-    private List<(string Key, StagingStep Step)> Given() => new()
-    {
+    private List<(string Key, StagingStep Step)> Given() =>
+    [
         ("spawn", spawn),
         ("order", order),
         ("camera", camera),
@@ -62,5 +62,5 @@ internal sealed class StagingEntry
         ("select", select == null ? null : new SelectStep(select)),
         ("weather", weather == null ? null : new WeatherStep(weather)),
         ("group", group),
-    };
+    ];
 }

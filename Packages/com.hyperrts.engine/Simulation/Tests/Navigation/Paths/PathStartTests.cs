@@ -23,7 +23,7 @@ public class PathStartTests
     public void SetUp()
     {
         _world = new TestWorld();
-        _world.CreateMatch(new byte[] { 1, 2 }, 200f);
+        _world.CreateMatch([1, 2], 200f);
     }
 
     [TearDown]

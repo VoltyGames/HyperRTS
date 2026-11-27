@@ -40,7 +40,7 @@ public class CameraShake
     public float reach = 30f;
 
     // x is a jolt's amplitude in metres as it was taken, y its age and z its length in seconds.
-    private readonly List<Vector3> _jolts = new();
+    private readonly List<Vector3> _jolts = [];
     private float _time;
     private float _zoomOut = 1f;
 

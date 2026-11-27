@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("wood", 30, 0.15f, 0.55f, 0.2f, Closed = true)]
 public sealed class MapWoodSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     [MapKey(typeof(MapWoodlandKit))]
     public string kind;
 

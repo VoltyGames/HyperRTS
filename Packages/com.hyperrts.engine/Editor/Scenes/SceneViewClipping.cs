@@ -17,7 +17,7 @@ internal static class SceneViewClipping
     private const float Far = 5000f;
 
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<SceneView> Configured = new();
+    private static readonly HashSet<SceneView> Configured = [];
 
     static SceneViewClipping() => SceneView.duringSceneGui += Apply;
 

@@ -44,13 +44,13 @@ public sealed class MapPlanContext
     public MapWarScars WarScars { get; }
 
     /// <summary>Every ground decal laid so far, in map space (copies included).</summary>
-    public List<MapDecal> Decals { get; } = new();
+    public List<MapDecal> Decals { get; } = [];
 
     /// <summary>Surface decals shown only after rain, in map space (copies included).</summary>
-    public List<MapDecal> WetDecals { get; } = new();
+    public List<MapDecal> WetDecals { get; } = [];
 
     /// <summary>Props laid in the backdrop as terrain scenery, in map space (copies included).</summary>
-    public List<MapScenery> Scenery { get; } = new();
+    public List<MapScenery> Scenery { get; } = [];
 
     public int Seed => Layout.Spec.seed;
 

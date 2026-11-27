@@ -22,7 +22,7 @@ public class CombatBenchmarkTests
     public void SetUp()
     {
         _world = new TestWorld();
-        _world.CreateMatch(new byte[] { 1, 2 }, 600f);
+        _world.CreateMatch([1, 2], 600f);
     }
 
     [TearDown]

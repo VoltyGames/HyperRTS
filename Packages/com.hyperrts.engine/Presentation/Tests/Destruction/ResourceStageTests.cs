@@ -12,7 +12,7 @@ namespace HyperRTS.Presentation.Tests.Destruction;
 /// <summary>A resource pile's stage models shrinking as it empties and growing back as it refills.</summary>
 public class ResourceStageTests
 {
-    private static readonly float[] Thresholds = { 1f, 2f / 3f, 1f / 3f, 0.12f };
+    private static readonly float[] Thresholds = [1f, 2f / 3f, 1f / 3f, 0.12f];
 
     private PresentationWorldKit _kit;
     private EntityManager _em;

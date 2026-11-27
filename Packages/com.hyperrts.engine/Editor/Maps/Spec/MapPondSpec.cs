@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("pond", 65, 0.3f, 0.6f, 0.9f, Closed = true)]
 public sealed class MapPondSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
 
     /// <summary>Depth of the deepest point below the water level.</summary>
     public float depth = 2f;

@@ -24,7 +24,7 @@ public sealed partial class StatsTable : MultiColumnListView
 
     [NoAutoStaticsCleanup]
     private static readonly (string Header, Type Component, string Field)[] Fields =
-    {
+    [
         ("HP", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.maxHealth)),
         ("Build s", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.buildTime)),
         ("Vision", typeof(GameEntityAuthoring), nameof(GameEntityAuthoring.visionRange)),
@@ -32,9 +32,9 @@ public sealed partial class StatsTable : MultiColumnListView
         ("Damage", typeof(WeaponAuthoring), Stat($"{nameof(WeaponStats.hit)}.{nameof(DamageSettings.damage)}")),
         ("Cooldown", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.cooldown))),
         ("Range", typeof(WeaponAuthoring), Stat(nameof(WeaponStats.range))),
-    };
+    ];
 
-    private readonly Dictionary<Component, SerializedObject> _serialized = new();
+    private readonly Dictionary<Component, SerializedObject> _serialized = [];
 
     public StatsTable()
     {

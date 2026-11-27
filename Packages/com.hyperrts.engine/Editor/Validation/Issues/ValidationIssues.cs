@@ -60,7 +60,7 @@ public sealed class ValidationIssues : List<ValidationIssue>
             if (top >= 0 && top != i)
             {
                 folded.Add(i);
-                variants.TryAdd(top, new List<ValidationIssue>());
+                variants.TryAdd(top, []);
                 variants[top].Add(this[i]);
             }
         }

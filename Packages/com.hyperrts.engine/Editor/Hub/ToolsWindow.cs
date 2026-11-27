@@ -15,8 +15,8 @@ public class ToolsWindow : EditorWindow
 
     private const long BadgeMilliseconds = 2000;
 
-    private HubPage[] _pages = Array.Empty<HubPage>();
-    private PageBadge[] _badges = Array.Empty<PageBadge>();
+    private HubPage[] _pages = [];
+    private PageBadge[] _badges = [];
     private HubPage _current;
     private ListView _sidebar;
     private VisualElement _content;

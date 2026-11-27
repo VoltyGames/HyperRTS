@@ -8,10 +8,10 @@ namespace HyperRTS.Input.Cameras.CostProbe;
 [Serializable]
 public sealed class CameraCostPlan
 {
-    public List<CameraCostPoint> points = new();
+    public List<CameraCostPoint> points = [];
 
     [Tooltip("Camera heights above the ground to measure at each point.")]
-    public List<float> heights = new();
+    public List<float> heights = [];
 
     [Tooltip("Frames sampled at each point and height.")]
     public int sampleFrames;

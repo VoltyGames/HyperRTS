@@ -43,7 +43,7 @@ public struct OrderReader
     {
         if (_queue.TryGetBuffer(unit, out var pending) && pending.Length > 0)
         {
-            order = pending[pending.Length - 1].Value;
+            order = pending[^1].Value;
             return true;
         }
 

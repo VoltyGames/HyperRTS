@@ -39,7 +39,7 @@ public class HUDController : PanelContent
 
     private readonly HUDContext _context = new();
     private readonly HUDPointerTracker _pointer = new();
-    private readonly List<HUDPanel> _panels = new();
+    private readonly List<HUDPanel> _panels = [];
     private string _theme;
 
     /// <summary>

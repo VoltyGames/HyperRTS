@@ -64,7 +64,7 @@ public class AbilityAuthoring : AuthoringBehaviour
     }
 
     [Tooltip("Abilities in command-card order.")]
-    public List<Entry> abilities = new();
+    public List<Entry> abilities = [];
 
     public class Baker : Baker<AbilityAuthoring>
     {

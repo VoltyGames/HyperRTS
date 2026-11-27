@@ -1,12 +1,12 @@
-using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Systems;
-using HyperRTS.Simulation.Cues.Surfaces;
 using System.Collections.Generic;
 using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Effects.Rig;
 using HyperRTS.Presentation.Effects.Streams;
 using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Quality;
+using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Heights;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -24,7 +24,7 @@ namespace HyperRTS.Presentation.Environment.Ambient
     {
         private const float Reach = 120f;
 
-        private readonly List<DustDevil> _devils = new();
+        private readonly List<DustDevil> _devils = [];
         private Camera _camera;
         private AmbientLife _life;
         private Random _random = new(0x2545F491u);

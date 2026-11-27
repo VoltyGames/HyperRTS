@@ -42,7 +42,7 @@ public sealed class HUDContext
     public MatchView View { get; private set; }
 
     /// <summary>Selected, visible entities this frame.</summary>
-    public List<Entity> Selected { get; } = new();
+    public List<Entity> Selected { get; } = [];
 
     /// <summary>
     /// Changes whenever the selected set, an owner or a construction state in it changes, so widgets rebuild.

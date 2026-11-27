@@ -53,7 +53,7 @@ public abstract class MapLandPass
 
             if (!cells.TryGetValue(region, out var list))
             {
-                cells[region] = list = new List<int>();
+                cells[region] = list = [];
             }
 
             list.Add(Land.Grid.Index(x, z));

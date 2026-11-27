@@ -11,11 +11,11 @@ namespace HyperRTS.Simulation.Tests.Movement;
 public abstract class TrafficScenarioFixture : SimulationFixture
 {
     protected TripRecord _record;
-    protected readonly Dictionary<Entity, float> _arrivedAt = new();
+    protected readonly Dictionary<Entity, float> _arrivedAt = [];
 
     // Owners 1 and 2 are teammates, so teammate traffic needs no second match. Squad members keep off walls and
     // allied hulls every frame.
-    protected override byte[] Teams => new byte[] { 1, 1 };
+    protected override byte[] Teams => [1, 1];
 
     protected override float MapSize => 400f;
 

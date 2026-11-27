@@ -1,6 +1,6 @@
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Resources;
 using HyperRTS.Simulation.Transport.Garrison;
 using Unity.Burst;

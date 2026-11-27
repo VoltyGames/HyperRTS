@@ -13,7 +13,7 @@ public static class MapLandPlanner
     public static void Plan(MapPlanContext context)
     {
         MapLandPass[] passes =
-        {
+        [
             new MapWaterPlanner(context),
             new MapRoadPlanner(context),
             new MapBankPlanner(context),
@@ -31,7 +31,7 @@ public static class MapLandPlanner
             new MapSurfacePlanter(context),
             new MapWarScarsPlanner(context),
             new MapDecalPlanner(context),
-        };
+        ];
         foreach (var pass in passes)
         {
             pass.Plan();

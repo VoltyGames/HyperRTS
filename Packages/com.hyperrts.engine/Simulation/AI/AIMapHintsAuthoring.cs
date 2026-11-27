@@ -24,10 +24,10 @@ public class AIMapHintsAuthoring : AuthoringBehaviour
         public int slot;
 
         [Tooltip("Resource node positions (x, z) by walking distance from the slot's base, main field first.")]
-        public List<Vector2> expansions = new();
+        public List<Vector2> expansions = [];
 
         [Tooltip("Where to hold the ground in front of the base (x, z), nearest the base first.")]
-        public List<Vector2> defence = new();
+        public List<Vector2> defence = [];
     }
 
     [Serializable]
@@ -40,12 +40,12 @@ public class AIMapHintsAuthoring : AuthoringBehaviour
         public int to;
 
         [Tooltip("Waypoints (x, z) from the start base to the end base, neither included.")]
-        public List<Vector2> waypoints = new();
+        public List<Vector2> waypoints = [];
     }
 
-    public List<SlotHints> slots = new();
+    public List<SlotHints> slots = [];
 
-    public List<LaneHints> lanes = new();
+    public List<LaneHints> lanes = [];
 
     public AIMapHintsData ToData()
     {

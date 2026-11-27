@@ -220,12 +220,12 @@ public sealed class MapFarmlandPlanner : MapLandPass
                 yield break;
             }
 
-            run = new List<Vector2>();
+            run = [];
         }
     }
 
     /// <summary>A straight run sampled every metre needs only its ends.</summary>
-    private static List<Vector2> Simplify(List<Vector2> run) => new() { run[0], run[^1] };
+    private static List<Vector2> Simplify(List<Vector2> run) => [run[0], run[^1]];
 
     private static int Mod(int value, int every) => ((value % every) + every) % every;
 }

@@ -15,7 +15,7 @@ public abstract class PathFixture
     protected void CreateMatch(float size)
     {
         _world = new TestWorld();
-        _world.CreateMatch(new byte[] { 1, 2 }, size);
+        _world.CreateMatch([1, 2], size);
     }
 
     protected DynamicBuffer<PathWaypoint> Waypoints(Entity unit) =>

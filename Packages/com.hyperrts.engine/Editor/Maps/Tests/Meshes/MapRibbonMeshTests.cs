@@ -224,8 +224,8 @@ public class MapRibbonMeshTests
         spec.seed = 5;
         spec.rivers.Add(new MapRiverSpec
         {
-            points = new List<MapPoint> { new(-110f, RiverZ), new(110f, RiverZ) }, width = 10f, valleyWidth = 30f,
-            crossings = new List<MapCrossingSpec> { new() { along = 0.5f, kind = MapCrossingSpec.Ford } },
+            points = [new(-110f, RiverZ), new(110f, RiverZ)], width = 10f, valleyWidth = 30f,
+            crossings = [new() { along = 0.5f, kind = MapCrossingSpec.Ford }],
         });
         var layout = MapSymmetryCopier.Expand(spec, new MapIssues());
         var climate = MapFixture.Item<MapClimate>("Climate", i => { i.fordShallowsWidth = 6f; i.fordRapidsLength = 10f; });

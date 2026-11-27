@@ -17,10 +17,10 @@ internal sealed class MapLookSummary
     public int width;
     public int height;
     public string failure;
-    public List<MapLookShot> shots = new();
+    public List<MapLookShot> shots = [];
 
     /// <summary>Each weather's mean view numbers; empty until <see cref="MeasureWeathers"/> runs.</summary>
-    public List<MapLookWeather> weathers = new();
+    public List<MapLookWeather> weathers = [];
 
     /// <summary>Measures the written shots of each weather with <see cref="MapViewContrast"/>.</summary>
     public void MeasureWeathers()

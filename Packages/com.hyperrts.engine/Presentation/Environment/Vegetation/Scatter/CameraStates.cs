@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Scatter;
 /// <summary>A scatter renderer's GPU state per camera, freed once its camera is destroyed.</summary>
 internal sealed class CameraStates<T> : IDisposable where T : class, IDisposable
 {
-    private readonly Dictionary<Camera, T> _states = new();
+    private readonly Dictionary<Camera, T> _states = [];
 
     public IEnumerable<T> All => _states.Values;
 

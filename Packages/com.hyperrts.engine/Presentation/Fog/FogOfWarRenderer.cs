@@ -2,9 +2,9 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Rendering;
 using HyperRTS.Simulation.Common.Authoring;
 using HyperRTS.Simulation.Vision.Fog;
-using Unity.Scripting.LifecycleManagement;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
 namespace HyperRTS.Presentation.Fog

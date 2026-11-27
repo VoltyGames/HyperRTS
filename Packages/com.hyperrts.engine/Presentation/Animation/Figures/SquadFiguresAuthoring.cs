@@ -53,7 +53,7 @@ public class SquadFiguresAuthoring : AuthoringBehaviour
     public Transform deployedModel;
 
     [Tooltip("The figures, one per Squad member in the same order.")]
-    public List<Figure> figures = new();
+    public List<Figure> figures = [];
 
     [Tooltip("Horizontal speed from which figures run instead of walk.")]
     [Unit("m/s")]
@@ -162,7 +162,7 @@ public class SquadFiguresAuthoring : AuthoringBehaviour
 
     /// <summary>The Bone Animated renderers of a figure.</summary>
     public static BoneAnimatedAuthoring[] Renderers(Transform figure) =>
-        figure != null ? figure.GetComponentsInChildren<BoneAnimatedAuthoring>(true) : Array.Empty<BoneAnimatedAuthoring>();
+        figure != null ? figure.GetComponentsInChildren<BoneAnimatedAuthoring>(true) : [];
 
     /// <summary>The clip table of a figure, which every renderer of it must share; null when it has none or they differ.</summary>
     public static BoneClipTable Table(Transform figure)

@@ -77,7 +77,7 @@ public class ConnectionTests
         viewers.Add(1, allies[0]);
         viewers.Add(0, observer);
         viewers.Add(1, allies[1]);
-        using var rpcs = new NativeList<CueRpc>(Allocator.Temp) { new CueRpc(), new CueRpc() };
+        using var rpcs = new NativeList<CueRpc>(Allocator.Temp) { new(), new() };
         var ecb = new EntityCommandBuffer(Allocator.Temp);
 
         viewers.Send(ecb, 1, rpcs);

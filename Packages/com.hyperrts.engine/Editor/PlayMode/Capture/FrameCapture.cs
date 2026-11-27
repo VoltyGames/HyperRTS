@@ -76,7 +76,7 @@ public sealed class FrameCapture
 
         if (Movie)
         {
-            return new[] { Folder + MovieExtension };
+            return [Folder + MovieExtension];
         }
 
         return Directory.GetFiles(Folder, "*.png").Select(path => path.Replace('\\', '/')).OrderBy(path => path).ToArray();

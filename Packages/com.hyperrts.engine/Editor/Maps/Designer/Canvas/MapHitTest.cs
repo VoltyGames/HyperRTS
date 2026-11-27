@@ -19,7 +19,7 @@ public static class MapHitTest
     public const float LinePixels = 5f;
 
     [NoAutoStaticsCleanup]
-    private static readonly List<Vector2> Points = new();
+    private static readonly List<Vector2> Points = [];
 
     /// <summary>The handles of a feature in map metres: its points, plus a radius handle east of a circle.</summary>
     public static void Handles(MapSpec spec, MapFeatureRef feature, List<Vector2> into)
@@ -116,15 +116,12 @@ public static class MapHitTest
 
     private static bool Inside(MapFeatureKind kind, List<Vector2> points, float radius, Vector2 world)
     {
-        switch (kind.Geometry)
+        return kind.Geometry switch
         {
-            case MapFeatureGeometry.Circle:
-                return Vector2.Distance(points[0], world) <= radius;
-            case MapFeatureGeometry.Polygon:
-                return MapGeometry.Contains(points, world);
-            default:
-                return false;
-        }
+            MapFeatureGeometry.Circle => Vector2.Distance(points[0], world) <= radius,
+            MapFeatureGeometry.Polygon => MapGeometry.Contains(points, world),
+            _ => false,
+        };
     }
 
     private static float LineDistance(List<Vector2> points, MapCanvasView view, Vector2 local, bool closed)

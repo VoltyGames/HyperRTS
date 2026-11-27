@@ -8,5 +8,5 @@ namespace HyperRTS.Editor.Templates;
 public sealed class EntityBases : ScriptableObject
 {
     [Tooltip("Each group's heading and base prefabs, in the order the New Entity wizard lists them.")]
-    public List<EntityBaseGroup> groups = new();
+    public List<EntityBaseGroup> groups = [];
 }

@@ -34,7 +34,7 @@ public class CoverSpotAuthoring : AuthoringBehaviour
     }
 
     [Tooltip("The spots, in this object's space.")]
-    public List<Spot> spots = new();
+    public List<Spot> spots = [];
 
     [Header("Fillers")]
     [Tooltip("Footprint (X by Z) of the prop for Fill Both Sides.")]

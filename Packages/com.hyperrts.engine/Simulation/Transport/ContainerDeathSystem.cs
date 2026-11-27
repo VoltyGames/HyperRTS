@@ -1,6 +1,6 @@
 using HyperRTS.Simulation.Common.Combat;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Events;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Death;
 using HyperRTS.Simulation.Navigation.Grid;
 using Unity.Burst;

@@ -13,7 +13,7 @@ internal sealed class BoneFrames
 {
     private const int TexelsPerBone = 3;
 
-    private readonly List<Matrix4x4[]> _frames = new();
+    private readonly List<Matrix4x4[]> _frames = [];
     private bool[] _upper;
 
     /// <summary>Poses the rig at every frame of every plan, in order.</summary>

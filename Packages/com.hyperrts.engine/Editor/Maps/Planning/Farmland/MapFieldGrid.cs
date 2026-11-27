@@ -73,5 +73,5 @@ public sealed class MapFieldGrid
     }
 
     private static Vector2[] Corners(Rect area) =>
-        new[] { area.min, area.max, new Vector2(area.xMin, area.yMax), new Vector2(area.xMax, area.yMin) };
+        [area.min, area.max, new Vector2(area.xMin, area.yMax), new Vector2(area.xMax, area.yMin)];
 }

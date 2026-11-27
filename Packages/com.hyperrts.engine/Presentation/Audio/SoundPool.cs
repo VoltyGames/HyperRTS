@@ -18,7 +18,7 @@ public sealed class SoundPool
     private readonly int[] _priorities;
     private readonly float[] _loudness;
     private readonly double[] _ends;
-    private readonly Dictionary<SoundCue, Throttle> _rested = new();
+    private readonly Dictionary<SoundCue, Throttle> _rested = [];
 
     public SoundPool(int capacity)
     {

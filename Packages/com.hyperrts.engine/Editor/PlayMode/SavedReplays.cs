@@ -37,7 +37,7 @@ internal static class SavedReplays
     {
         if (!Directory.Exists(Folder))
         {
-            return new List<string>();
+            return [];
         }
 
         return Directory.GetFiles(Folder, "*." + Extension)

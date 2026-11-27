@@ -29,7 +29,7 @@ public class ReplayTests
     /// </summary>
     internal static Replay Record(out List<(float Time, float3 Position)> track)
     {
-        track = new List<(float, float3)>();
+        track = [];
         using var world = new TestWorld();
         world.CreateMatch(1, 2);
         var mover = world.SpawnUnit(1, MoverStart, new TestUnit { Name = "Mover" });

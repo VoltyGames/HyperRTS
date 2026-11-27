@@ -16,7 +16,7 @@ public sealed class EffectRecipe : ScriptableObject
     public const string Extension = ".effect.asset";
 
     [Tooltip("One VFX system per layer, built in order; a child layer names an earlier one as its parent.")]
-    public List<EffectLayer> layers = new();
+    public List<EffectLayer> layers = [];
 
     public static bool IsRecipe(string path) => path.EndsWith(Extension, StringComparison.Ordinal);
 
@@ -28,7 +28,7 @@ public sealed class EffectRecipe : ScriptableObject
             throw new ArgumentException($"HyperRTS: {recipePath} is not an {Extension} file.");
         }
 
-        return recipePath.Substring(0, recipePath.Length - Extension.Length) + ".vfx";
+        return recipePath[..^Extension.Length] + ".vfx";
     }
 
     /// <summary>A stamp of the recipe's text that ignores line endings, so a git checkout keeps it.</summary>

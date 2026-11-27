@@ -10,7 +10,7 @@ namespace HyperRTS.Simulation.Destruction;
 /// </summary>
 public struct StretchLayout
 {
-    private static Vector3[] Units() => new[] { Vector3.right, Vector3.up, Vector3.forward };
+    private static Vector3[] Units() => [Vector3.right, Vector3.up, Vector3.forward];
 
     /// <summary>The long axis in the parts' space: +X, +Y or +Z, from the start cap toward the end cap.</summary>
     public float3 Axis;

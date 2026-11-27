@@ -35,7 +35,7 @@ internal sealed class LastingDebrisDraws : IDisposable
     private readonly BatchID _batch;
     private readonly float3x4[] _objectToWorld;
     private readonly float3x4[] _worldToObject;
-    private readonly Dictionary<(Mesh, Material), int> _batchIndex = new();
+    private readonly Dictionary<(Mesh, Material), int> _batchIndex = [];
     private readonly int[] _slotBatch;
     private readonly int[] _listIndex;
     private NativeList<LastingDebrisBatch> _batches = new(Allocator.Persistent);

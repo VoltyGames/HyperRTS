@@ -65,8 +65,8 @@ public class MapHintTests
     private bool Fill(IReadOnlyList<MapSpawn> spawns, List<(Vector2, int)> nodes = null,
         List<(Vector2, float)> crossings = null)
     {
-        var input = new MapHintInput(_nav, spawns, nodes ?? new List<(Vector2, int)>(),
-            crossings ?? new List<(Vector2, float)>(), BaseRadius, CorridorWidth);
+        var input = new MapHintInput(_nav, spawns, nodes ?? [],
+            crossings ?? [], BaseRadius, CorridorWidth);
         return MapHintBuilder.Fill(_hints, input, _issues);
     }
 
@@ -75,11 +75,11 @@ public class MapHintTests
 
     private AIMapHintsAuthoring.SlotHints Slot(int slot) => _hints.slots.Single(s => s.slot == slot);
 
-    private List<MapSpawn> Duel() => new() { Spawn(1, 1, -60f, 0f), Spawn(2, 2, 60f, 0f) };
+    private List<MapSpawn> Duel() => [Spawn(1, 1, -60f, 0f), Spawn(2, 2, 60f, 0f)];
 
     /// <summary>The duel with one resource field beside each base.</summary>
     private bool FillDuel() =>
-        Fill(Duel(), new List<(Vector2, int)> { (new Vector2(-55f, 5f), 1), (new Vector2(55f, -5f), 2) });
+        Fill(Duel(), [(new Vector2(-55f, 5f), 1), (new Vector2(55f, -5f), 2)]);
 
     private MapHintInput Input(List<(Vector2, float)> crossings) => new(_nav, Duel(),
         new List<(Vector2, int)>(), crossings, BaseRadius, CorridorWidth);
@@ -114,7 +114,7 @@ public class MapHintTests
         var behindWall = (new Vector2(3f, 0f), 0);
         var own2 = (new Vector2(55f, -5f), 2);
 
-        Fill(Duel(), new List<(Vector2, int)> { behindWall, own2, farWest, west, own1 });
+        Fill(Duel(), [behindWall, own2, farWest, west, own1]);
 
         Assert.IsFalse(_issues.HasErrors, _issues.ToString());
         CollectionAssert.AreEqual(new[] { own1.Item1, west.Item1, farWest.Item1, behindWall.Item1, own2.Item1 },
@@ -148,13 +148,13 @@ public class MapHintTests
     {
         _nav = Field(_ => false);
         var cells = Enumerable.Range(40, 121).Select(x => new int2(x, 40)).ToList();
-        var west = new MapHintSlot(Spawn(1, 1, -60f, 0.5f), new int2(40, 40), 40 * 200 + 40, Array.Empty<float>());
-        var east = new MapHintSlot(Spawn(2, 2, 60f, 0.5f), new int2(160, 40), 40 * 200 + 160, Array.Empty<float>());
-        var lane = new MapHintLane(west, east, new MapPath(cells, 120f, 0), new List<Vector2>());
+        var west = new MapHintSlot(Spawn(1, 1, -60f, 0.5f), new int2(40, 40), 40 * 200 + 40, []);
+        var east = new MapHintSlot(Spawn(2, 2, 60f, 0.5f), new int2(160, 40), 40 * 200 + 160, []);
+        var lane = new MapHintLane(west, east, new MapPath(cells, 120f, 0), []);
         var crossings = new List<(Vector2, float)> { (new Vector2(30f, 0.5f), 5f) };
 
         var withCrossing = MapHintDefence.Find(Input(crossings), east, new[] { lane });
-        var without = MapHintDefence.Find(Input(new List<(Vector2, float)>()), east, new[] { lane });
+        var without = MapHintDefence.Find(Input([]), east, new[] { lane });
 
         Assert.AreEqual(1, withCrossing.Count);
         Assert.Less(Vector2.Distance(withCrossing[0], new Vector2(35f, 0.5f)), 1.5f, "the crossing's near edge");
@@ -200,7 +200,7 @@ public class MapHintTests
     {
         _nav = Field(Wall);
 
-        Fill(Duel(), new List<(Vector2, int)>());
+        Fill(Duel(), []);
 
         Assert.IsTrue(_issues.Errors.Any(e => e.Message.Contains("slot 1") && e.Message.Contains("resource")), _issues.ToString());
     }

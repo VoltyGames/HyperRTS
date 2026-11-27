@@ -11,11 +11,11 @@ namespace HyperRTS.Simulation.AI;
 /// </summary>
 public sealed class AIMapHintsData
 {
-    public List<AISlotHint> Slots { get; } = new();
+    public List<AISlotHint> Slots { get; } = [];
 
-    public List<AILaneHint> Lanes { get; } = new();
+    public List<AILaneHint> Lanes { get; } = [];
 
-    public List<AIHintPoint> Points { get; } = new();
+    public List<AIHintPoint> Points { get; } = [];
 
     /// <summary>A slot's expansion order (nearest first) and defence points (nearest its base first).</summary>
     public void AddSlot(int slot, IReadOnlyList<Vector2> expansions, IReadOnlyList<Vector2> defence)

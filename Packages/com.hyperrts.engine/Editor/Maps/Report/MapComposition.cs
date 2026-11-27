@@ -112,27 +112,13 @@ public sealed class MapComposition
 
     private static int ShareIndex(MapLandKind kind)
     {
-        switch (kind)
+        return kind switch
         {
-            case MapLandKind.WoodEdge:
-            case MapLandKind.Belt:
-                return WoodEdge;
-            case MapLandKind.Water:
-            case MapLandKind.Bank:
-            case MapLandKind.Floodplain:
-                return Water;
-            case MapLandKind.Field:
-            case MapLandKind.Margin:
-                return FieldPattern;
-            case MapLandKind.Base:
-            case MapLandKind.Pad:
-            case MapLandKind.Yard:
-            case MapLandKind.Garden:
-            case MapLandKind.Back:
-            case MapLandKind.Area:
-                return Settlement;
-            default:
-                return 0;
-        }
+            MapLandKind.WoodEdge or MapLandKind.Belt => WoodEdge,
+            MapLandKind.Water or MapLandKind.Bank or MapLandKind.Floodplain => Water,
+            MapLandKind.Field or MapLandKind.Margin => FieldPattern,
+            MapLandKind.Base or MapLandKind.Pad or MapLandKind.Yard or MapLandKind.Garden or MapLandKind.Back or MapLandKind.Area => Settlement,
+            _ => 0,
+        };
     }
 }

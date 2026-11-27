@@ -17,7 +17,7 @@ public sealed partial class AssetSet
     private static AssetSet _project;
 
     private readonly Func<Type, string[], IEnumerable<Object>> _load;
-    private readonly Dictionary<string, object> _loaded = new();
+    private readonly Dictionary<string, object> _loaded = [];
 
     private AssetSet(Func<Type, string[], IEnumerable<Object>> load) => _load = load;
 
@@ -32,7 +32,7 @@ public sealed partial class AssetSet
         var key = typeof(T).FullName + "|" + string.Join("|", folders);
         if (!_loaded.TryGetValue(key, out var found))
         {
-            found = _load(typeof(T), folders.Length > 0 ? folders : new[] { "Assets" }).Cast<T>().ToList();
+            found = _load(typeof(T), folders.Length > 0 ? folders : ["Assets"]).Cast<T>().ToList();
             _loaded[key] = found;
         }
 

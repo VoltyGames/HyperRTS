@@ -141,7 +141,7 @@ public class LoopSoundTests
     private SoundCue Cue(int maxInstances, float maxDistance)
     {
         var cue = ScriptableObject.CreateInstance<SoundCue>();
-        cue.clips = new[] { _clip };
+        cue.clips = [_clip];
         cue.maxInstances = maxInstances;
         cue.maxDistance = maxDistance;
         return cue;

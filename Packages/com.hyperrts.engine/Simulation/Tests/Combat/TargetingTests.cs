@@ -20,7 +20,7 @@ namespace HyperRTS.Simulation.Tests.Combat;
 /// <summary>Targeting, stances, attack orders, minimum range, air layers and projectiles, run through the systems.</summary>
 public class TargetingTests : SimulationFixture
 {
-    protected override byte[] Teams => new byte[] { 1, 2, 1 };
+    protected override byte[] Teams => [1, 2, 1];
 
     [Test]
     public void IdleArmedUnit_AcquiresAndKillsNearbyEnemy()

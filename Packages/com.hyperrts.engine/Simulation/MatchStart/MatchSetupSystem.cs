@@ -1,7 +1,7 @@
 using HyperRTS.Simulation.AI;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Match;
 using HyperRTS.Simulation.Replays;
 using HyperRTS.Simulation.Resources;

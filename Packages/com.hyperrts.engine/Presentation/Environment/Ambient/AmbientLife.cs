@@ -49,7 +49,7 @@ public sealed class AmbientLife : PresentationBehaviour
     public GameObject dustDevilRig;
 
     [Tooltip("Ground materials a dust devil may form on.")]
-    public SurfaceMaterial[] dustDevilGround = { SurfaceMaterial.Soil };
+    public SurfaceMaterial[] dustDevilGround = [SurfaceMaterial.Soil];
 
     [Tooltip("Seconds between spawn attempts, min and max.")]
     public Vector2 dustDevilInterval = new(20f, 45f);

@@ -4,9 +4,9 @@ using HyperRTS.Simulation.Air;
 using HyperRTS.Simulation.Buildings;
 using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Combat.Weapons;
+using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Geometry;
-using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources.Gathering;
@@ -98,29 +98,19 @@ namespace HyperRTS.Presentation.Animation.Machines
             {
                 var building = clock.Owner;
                 var offline = Offlines.HasEnabled(building) ? Offlines[building] : default;
-                switch (clock.Run)
+                return clock.Run switch
                 {
-                    case MachineRun.Powered:
-                        return offline.Reasons == OfflineReason.None;
-                    case MachineRun.Producing:
-                        return Producers.TryGetComponent(building, out var working) && working.State == ProducerState.Working;
-                    case MachineRun.Firing:
-                        return clock.ChangedRecently(Shots(building), DeltaTime);
-                    case MachineRun.Releasing:
-                        return Producers.TryGetComponent(building, out var producer) && clock.ChangedRecently(producer.Released, DeltaTime);
-                    case MachineRun.Dropping:
-                        return DropRuns.TryGetComponent(building, out var drop) && drop.Active;
-                    case MachineRun.Building:
-                        return clock.WorkedRecently(Works.HasEnabled(building), DeltaTime);
-                    case MachineRun.Gathering:
-                        return Harvests.TryGetComponent(building, out var gather) && gather.Filling;
-                    case MachineRun.Charged:
-                        return clock.WorkedRecently(Charged(building), DeltaTime);
-                    case MachineRun.Unloading:
-                        return Harvests.TryGetComponent(building, out var unload) && unload.Phase == HarvestPhase.Unloading;
-                    default:
-                        return true;
-                }
+                    MachineRun.Powered => offline.Reasons == OfflineReason.None,
+                    MachineRun.Producing => Producers.TryGetComponent(building, out var working) && working.State == ProducerState.Working,
+                    MachineRun.Firing => clock.ChangedRecently(Shots(building), DeltaTime),
+                    MachineRun.Releasing => Producers.TryGetComponent(building, out var producer) && clock.ChangedRecently(producer.Released, DeltaTime),
+                    MachineRun.Dropping => DropRuns.TryGetComponent(building, out var drop) && drop.Active,
+                    MachineRun.Building => clock.WorkedRecently(Works.HasEnabled(building), DeltaTime),
+                    MachineRun.Gathering => Harvests.TryGetComponent(building, out var gather) && gather.Filling,
+                    MachineRun.Charged => clock.WorkedRecently(Charged(building), DeltaTime),
+                    MachineRun.Unloading => Harvests.TryGetComponent(building, out var unload) && unload.Phase == HarvestPhase.Unloading,
+                    _ => true,
+                };
             }
 
             private bool Charged(Entity building)

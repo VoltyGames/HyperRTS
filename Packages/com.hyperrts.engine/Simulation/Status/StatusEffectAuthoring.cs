@@ -38,7 +38,7 @@ public class StatusEffectAuthoring : AuthoringBehaviour
     public int maxStacks = 1;
 
     [Tooltip("Stat bonuses per stack.")]
-    public List<StatBonus> bonuses = new();
+    public List<StatBonus> bonuses = [];
 
     [Tooltip("Damage per stack, credited to whoever applied the effect.")]
     [Unit("/s")]

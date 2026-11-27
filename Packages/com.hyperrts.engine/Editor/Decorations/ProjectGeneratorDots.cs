@@ -12,7 +12,7 @@ internal sealed class ProjectGeneratorDots
     private const float DotSize = 6f;
     private const float DotMargin = 3f;
 
-    private Dictionary<string, Color> _dots = new();
+    private Dictionary<string, Color> _dots = [];
     private bool _rebuildQueued;
 
     [InitializeOnLoadMethod]

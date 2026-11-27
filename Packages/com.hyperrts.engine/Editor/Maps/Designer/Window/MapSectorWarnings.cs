@@ -20,7 +20,7 @@ public static class MapSectorWarnings
 
     private static readonly Color Warning = new(1f, 0.55f, 0.1f);
     [NoAutoStaticsCleanup]
-    private static readonly List<Vector2> Points = new();
+    private static readonly List<Vector2> Points = [];
 
     public static void Draw(Painter2D painter, MapSpec spec, MapCanvasView view, MapSymmetry symmetry)
     {

@@ -26,7 +26,7 @@ namespace HyperRTS.Presentation.Environment.Ground.Craters
 
         private CraterTerrain _crater;
         private readonly BuildingLevels _levels = new();
-        private readonly Dictionary<Entity, BuildingLevel> _wanted = new();
+        private readonly Dictionary<Entity, BuildingLevel> _wanted = [];
         private Texture _tracks;
         private float _syncedAt = float.NegativeInfinity;
 

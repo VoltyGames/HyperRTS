@@ -16,7 +16,7 @@ public sealed class MapWoodlandKit : MapLibraryItem
     public string surface;
 
     [Tooltip("Canopy trees per hectare.")]
-    public List<MapTreeDensity> trees = new();
+    public List<MapTreeDensity> trees = [];
 
     [Tooltip("Smallest distance between canopy trees (metres).")]
     public float spacing = 4.5f;
@@ -29,7 +29,7 @@ public sealed class MapWoodlandKit : MapLibraryItem
     public string edgeSurface;
 
     [Tooltip("Shrubs and young trees per hectare in the edge band.")]
-    public List<MapTreeDensity> edgeTrees = new();
+    public List<MapTreeDensity> edgeTrees = [];
 
     [Tooltip("Share of the wood left as open glades.")]
     [Range(0f, 0.6f)]

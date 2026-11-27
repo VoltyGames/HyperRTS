@@ -97,15 +97,12 @@ namespace HyperRTS.Simulation.Combat.Projectiles
                     return hit.Value;
                 }
 
-                switch (impact.Surface)
+                return impact.Surface switch
                 {
-                    case ImpactSurface.Water:
-                        return SurfaceMaterial.Water;
-                    case ImpactSurface.Ground when HasGround:
-                        return Ground.At(impact.Position.xz);
-                    default:
-                        return SurfaceMaterial.None;
-                }
+                    ImpactSurface.Water => SurfaceMaterial.Water,
+                    ImpactSurface.Ground when HasGround => Ground.At(impact.Position.xz),
+                    _ => SurfaceMaterial.None,
+                };
             }
 
             /// <summary>A ford's deck lies under the water; a bridge's stands above it.</summary>

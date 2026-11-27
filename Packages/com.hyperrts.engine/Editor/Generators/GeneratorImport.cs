@@ -15,7 +15,7 @@ public sealed class GeneratorImport : AssetPostprocessor
 {
     // Generator name to the names of its touched items; empty for a generator that runs whole.
     [NoAutoStaticsCleanup]
-    internal static readonly Dictionary<string, HashSet<string>> Changed = new();
+    internal static readonly Dictionary<string, HashSet<string>> Changed = [];
 
     private static void OnPostprocessAllAssets(string[] imported, string[] deleted, string[] moved, string[] movedFrom)
     {
@@ -46,7 +46,7 @@ public sealed class GeneratorImport : AssetPostprocessor
         {
             if (paths.Any(generator.Reads))
             {
-                Changed[generator.Name] = new HashSet<string>();
+                Changed[generator.Name] = [];
             }
 
             return;
@@ -60,7 +60,7 @@ public sealed class GeneratorImport : AssetPostprocessor
 
         if (!Changed.TryGetValue(generator.Name, out var names))
         {
-            names = new HashSet<string>();
+            names = [];
             Changed[generator.Name] = names;
         }
 

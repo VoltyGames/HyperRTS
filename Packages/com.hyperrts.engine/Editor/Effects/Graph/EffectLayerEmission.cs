@@ -47,7 +47,7 @@ public sealed class EffectLayerEmission
         var block = streams
             ? _graph.Hlsl(initialize, "Place Along Path", EffectLayerParticles.Blocks + "PlaceAlongPath.hlsl")
             : _graph.Hlsl(initialize, "Place At Burst", EffectLayerParticles.Blocks + "PlaceAtBurst.hlsl");
-        var inputs = streams ? new[] { "from", "to", "normal", "forward", "scale" } : new[] { "origin", "normal", "forward", "scale" };
+        var inputs = streams ? new[] { "from", "to", "normal", "forward", "scale" } : ["origin", "normal", "forward", "scale"];
         var sources = streams ? _inputs.StreamPose : _inputs.BurstPose;
         for (var i = 0; i < inputs.Length; i++)
         {

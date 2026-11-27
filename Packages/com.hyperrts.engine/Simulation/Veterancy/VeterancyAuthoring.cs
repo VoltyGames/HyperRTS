@@ -24,11 +24,11 @@ public class VeterancyAuthoring : AuthoringBehaviour
         public float experience = 100f;
 
         [Tooltip("Bonuses gained at this rank, on top of the lower ranks' bonuses.")]
-        public List<StatBonus> bonuses = new();
+        public List<StatBonus> bonuses = [];
     }
 
     [Tooltip("Ranks in ascending order of experience.")]
-    public List<Rank> ranks = new();
+    public List<Rank> ranks = [];
 
     // Each buffer is filled before the next is added: adding one invalidates earlier buffer handles.
     public static void Add(EntityWriter writer, IReadOnlyList<float> thresholds,

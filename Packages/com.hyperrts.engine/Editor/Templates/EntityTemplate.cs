@@ -18,7 +18,7 @@ public sealed class EntityTemplate
     public string Path { get; }
 
     /// <summary>Last path segment; the created object is named after it.</summary>
-    public string Label => Path.Substring(Path.LastIndexOf('/') + 1);
+    public string Label => Path[(Path.LastIndexOf('/') + 1)..];
 
     public GameObject Create() => Create(Label);
 

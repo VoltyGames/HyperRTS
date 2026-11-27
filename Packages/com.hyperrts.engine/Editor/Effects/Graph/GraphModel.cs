@@ -18,20 +18,20 @@ namespace HyperRTS.Editor.Effects.Graph;
 public sealed class GraphModel
 {
     private const BindingFlags All = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-    private static readonly string[] Sources = { "Unity.VisualEffectGraph.Editor", "Unity.RenderPipelines.Universal.Editor" };
+    private static readonly string[] Sources = ["Unity.VisualEffectGraph.Editor", "Unity.RenderPipelines.Universal.Editor"];
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<string, Type> Types = new();
+    private static readonly Dictionary<string, Type> Types = [];
 
     private readonly string _path;
     private readonly object _resource;
     private readonly object _graph;
-    private readonly List<object> _parameters = new();
+    private readonly List<object> _parameters = [];
 
     private GraphModel(string path, VisualEffectAsset asset)
     {
         _path = path;
-        _resource = Type("UnityEditor.VFX.VisualEffectObjectExtensions").GetMethod("GetResource", All).Invoke(null, new object[] { asset });
-        _graph = Type("UnityEditor.VFX.VisualEffectResourceExtensions").GetMethod("GetGraph", All).Invoke(null, new[] { _resource });
+        _resource = Type("UnityEditor.VFX.VisualEffectObjectExtensions").GetMethod("GetResource", All).Invoke(null, [asset]);
+        _graph = Type("UnityEditor.VFX.VisualEffectResourceExtensions").GetMethod("GetGraph", All).Invoke(null, [_resource]);
     }
 
     /// <summary>The graph at <paramref name="path"/> emptied, or a new one; rebuilding in place keeps its GUID.</summary>
@@ -40,7 +40,7 @@ public sealed class GraphModel
         var asset = AssetDatabase.LoadAssetAtPath<VisualEffectAsset>(path);
         if (asset == null)
         {
-            asset = (VisualEffectAsset)Type("UnityEditor.VisualEffectAssetEditorUtility").GetMethod("CreateNewAsset", All).Invoke(null, new object[] { path });
+            asset = (VisualEffectAsset)Type("UnityEditor.VisualEffectAssetEditorUtility").GetMethod("CreateNewAsset", All).Invoke(null, [path]);
         }
 
         var model = new GraphModel(path, asset);
@@ -98,7 +98,7 @@ public sealed class GraphModel
     }
 
     public void OperandType(object op, int index, Type type) =>
-        op.GetType().GetMethod("SetOperandType", All, null, new[] { typeof(int), typeof(Type) }, null).Invoke(op, new object[] { index, type });
+        op.GetType().GetMethod("SetOperandType", All, null, [typeof(int), typeof(Type)], null).Invoke(op, [index, type]);
 
     public void Flow(object from, object to, int input = 0) => Call(to, "LinkFrom", from, 0, input);
 
@@ -113,11 +113,11 @@ public sealed class GraphModel
     /// <summary>Quads drawn through the VFX-ready Shader Graph at <paramref name="path"/>, its queue moved by <paramref name="queueOffset"/>.</summary>
     public object ShaderGraphOutput(string path, int queueOffset, Vector2 at)
     {
-        var shader = Type("VFXShaderGraphHelpers").GetMethod("LoadShaderGraphAssetAtPath", All).Invoke(null, new object[] { path })
+        var shader = Type("VFXShaderGraphHelpers").GetMethod("LoadShaderGraphAssetAtPath", All).Invoke(null, [path])
             ?? throw new ArgumentException($"HyperRTS: {path} is no Shader Graph for VFX Graph.");
         var output = Add("VFXComposedParticleOutput", at);
         var primitive = Type("VFXPrimitiveType");
-        var quad = Activator.CreateInstance(Type("ParticleTopologyPlanarPrimitive"), All, null, new[] { Enum.Parse(primitive, "Quad") }, null);
+        var quad = Activator.CreateInstance(Type("ParticleTopologyPlanarPrimitive"), All, null, [Enum.Parse(primitive, "Quad")], null);
         Set(output, "m_Topology", quad);
         Set(output, "shaderGraph", shader);
         // The queue lives in the output's copy of the material settings, which has no setter of its own.
@@ -147,8 +147,8 @@ public sealed class GraphModel
             value = field.FieldType.IsEnum ? Enum.Parse(field.FieldType, text) : text;
         }
 
-        model.GetType().GetMethod("SetSettingValue", All, null, new[] { typeof(string), typeof(object) }, null)
-            .Invoke(model, new[] { name, value });
+        model.GetType().GetMethod("SetSettingValue", All, null, [typeof(string), typeof(object)], null)
+            .Invoke(model, [name, value]);
     }
 
     public void Label(object context, string name) => context.GetType().GetProperty("label", All).SetValue(context, name);
@@ -162,7 +162,7 @@ public sealed class GraphModel
         var slot = Slots(from, "outputSlots")[0];
         var target = Find(to, input);
         var link = slot.GetType().GetMethods(All).First(m => m.Name == "Link" && m.GetParameters().Length == 2);
-        if (!(bool)link.Invoke(slot, new[] { target, true }))
+        if (!(bool)link.Invoke(slot, [target, true]))
         {
             throw new ArgumentException($"HyperRTS: could not link {from.GetType().Name} to {to.GetType().Name}.{input}.");
         }
@@ -182,7 +182,7 @@ public sealed class GraphModel
         // A new graph starts at version 0, which import upgrades by turning gradients linear.
         Field(_graph.GetType(), "m_ResourceVersion").SetValue(_graph, _resource.GetType().GetField("CurrentVersion", All).GetValue(null));
         Field(_graph.GetType(), "m_GraphVersion").SetValue(_graph, Type("VFXGraph").GetField("CurrentVersion", All).GetValue(null));
-        Type("UnityEditor.VFX.VisualEffectResourceExtensions").GetMethod("WriteAssetWithSubAssets", All).Invoke(null, new[] { _resource });
+        Type("UnityEditor.VFX.VisualEffectResourceExtensions").GetMethod("WriteAssetWithSubAssets", All).Invoke(null, [_resource]);
         AssetImporter.GetAtPath(_path).userData = stamp;
         AssetDatabase.WriteImportSettingsIfDirty(_path);
         AssetDatabase.ImportAsset(_path, ImportAssetOptions.ForceUpdate);
@@ -278,7 +278,7 @@ public sealed class GraphModel
                 throw new ArgumentException($"HyperRTS: slot {Name(slot)} takes {type.Name}, not {value.GetType().Name}.");
             }
 
-            value = cast.Invoke(null, new[] { value });
+            value = cast.Invoke(null, [value]);
         }
 
         slot.GetType().GetProperty("value", All).SetValue(slot, value);

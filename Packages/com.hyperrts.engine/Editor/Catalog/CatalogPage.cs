@@ -17,7 +17,7 @@ public class CatalogPage : HubPage
     // Asset changes arrive in bursts; one project walk after they settle is enough.
     private const long ReloadDelayMilliseconds = 500;
 
-    private List<GameEntityAuthoring> _prefabs = new();
+    private List<GameEntityAuthoring> _prefabs = [];
     private string _filter = "";
     private bool _reloadPending;
     private bool _treePending;

@@ -32,7 +32,7 @@ public sealed class MapHintSlot
     /// <summary>Metres to walk from the base to each nav cell by index; infinity where unreachable.</summary>
     public float[] Walk { get; }
 
-    public List<Vector2> Expansions { get; } = new();
+    public List<Vector2> Expansions { get; } = [];
 
-    public List<Vector2> Defence { get; } = new();
+    public List<Vector2> Defence { get; } = [];
 }

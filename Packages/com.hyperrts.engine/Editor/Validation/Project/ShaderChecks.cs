@@ -13,7 +13,7 @@ public static class ShaderChecks
     public static List<string> Broken(string folder)
     {
         var broken = new List<string>();
-        foreach (var guid in AssetDatabase.FindAssets("t:Shader", new[] { folder }))
+        foreach (var guid in AssetDatabase.FindAssets("t:Shader", [folder]))
         {
             var path = AssetDatabase.GUIDToAssetPath(guid);
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(path);

@@ -30,7 +30,7 @@ public static class MapTerrainWriter
         data.terrainLayers = climate.layers.Select(l => l.terrainLayer).ToArray();
         textureWeights.WriteTo(data);
         // Grass is the GrassRenderer's: an asset rebuilt in place keeps no terrain details.
-        data.detailPrototypes = System.Array.Empty<DetailPrototype>();
+        data.detailPrototypes = [];
         WriteTrees(data, trees, generation.Scenery, climate, layout, generation.Project.Paths);
         EditorUtility.SetDirty(data);
         return data;
@@ -88,7 +88,7 @@ public static class MapTerrainWriter
         try
         {
             var group = copy.AddComponent<LODGroup>();
-            group.SetLODs(new[] { new LOD(0f, copy.GetComponentsInChildren<Renderer>()) });
+            group.SetLODs([new LOD(0f, copy.GetComponentsInChildren<Renderer>())]);
             group.RecalculateBounds();
             return PrefabUtility.SaveAsPrefabAsset(copy, path);
         }

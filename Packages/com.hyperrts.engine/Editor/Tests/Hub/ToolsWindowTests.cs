@@ -115,7 +115,7 @@ public class ToolsWindowTests : TemplateFixture
             .SelectMany(method => method.GetCustomAttributes<MenuItem>())
             .Select(item => item.menuItem)
             .Where(path => path.StartsWith(prefix, StringComparison.Ordinal))
-            .Select(path => path.Substring(prefix.Length))
+            .Select(path => path[prefix.Length..])
             .ToArray();
     }
 }

@@ -14,7 +14,7 @@ public sealed class RowCrop : ScriptableObject
 
     [Header("Meshes")]
     [Tooltip("The crop's models; each plant draws one, picked from its hash.")]
-    public List<RowCropVariant> variants = new();
+    public List<RowCropVariant> variants = [];
 
     [Tooltip("HyperRTS/RowCrop material of both plant meshes.")]
     public Material material;

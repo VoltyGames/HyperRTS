@@ -21,7 +21,7 @@ namespace HyperRTS.Editor.Maps.Tests;
 internal static class MapFixture
 {
     [NoAutoStaticsCleanup]
-    private static readonly List<UnityEngine.Object> Made = new();
+    private static readonly List<UnityEngine.Object> Made = [];
 
     /// <summary>A 240 m rotate-180 map: the authored sector is z at or under 0, the playable edge is at 120.</summary>
     public static MapSpec Spec() => new()
@@ -29,7 +29,7 @@ internal static class MapFixture
         name = "Test", climate = "Test", weather = "Clear", mode = "1v1", seed = 11,
         size = new MapPoint(240f, 240f), symmetry = MapSymmetry.Rotate180,
         terrain = new MapTerrainSpec { resolution = 257, backdropWidth = 20f, relief = 0f },
-        spawns = new List<MapSpawnSpec> { new() { pos = new MapPoint(0f, -100f) } },
+        spawns = [new() { pos = new MapPoint(0f, -100f) }],
     };
 
     public static MapRoadSpec Road(string kind, params Vector2[] points) => new()

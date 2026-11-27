@@ -44,7 +44,7 @@ public class PathTests : PathFixture
         Assert.AreEqual(PathStatus.Ready, path.Status);
         Assert.IsFalse(path.IsShort, "the goal wasn't snapped");
         var waypoints = Waypoints(unit);
-        Assert.Less(math.distance(waypoints[waypoints.Length - 1].Position.xz, goal.xz), 0.01f, "ends at the goal");
+        Assert.Less(math.distance(waypoints[^1].Position.xz, goal.xz), 0.01f, "ends at the goal");
         var length = math.distance(start.xz, waypoints[0].Position.xz) + path.LengthPastCorner;
         Assert.Greater(length, 1000f, "by way of the wall's north end");
     }

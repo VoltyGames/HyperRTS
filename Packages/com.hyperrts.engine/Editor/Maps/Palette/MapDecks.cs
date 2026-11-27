@@ -6,7 +6,7 @@ namespace HyperRTS.Editor.Maps.Palette;
 /// <summary>Every bridge's <see cref="MapDeck"/> in a palette, read on the main thread so planning never touches a prefab.</summary>
 public sealed class MapDecks
 {
-    private readonly Dictionary<string, MapDeck> _decks = new();
+    private readonly Dictionary<string, MapDeck> _decks = [];
 
     private MapDecks()
     {

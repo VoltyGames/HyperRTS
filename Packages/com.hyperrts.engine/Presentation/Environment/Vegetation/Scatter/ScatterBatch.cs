@@ -12,7 +12,7 @@ public abstract class ScatterBatch : IDisposable
 {
     private const int ThreadGroup = 64;
 
-    private readonly List<ScatterJob> _pending = new();
+    private readonly List<ScatterJob> _pending = [];
     private readonly ScatterDraws _draws;
 
     /// <summary>

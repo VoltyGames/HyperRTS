@@ -80,7 +80,7 @@ public class OverlayRenderer : PresentationBehaviour
         var disc = OverlayMeshes.Disc(48);
         var grid = OverlayMeshes.Grid(MarkerGridCells);
         var rangeGrid = OverlayMeshes.Grid(RangeGridCells);
-        _meshes = new[] { ring, billboard, flat, dial, disc, grid, rangeGrid };
+        _meshes = [ring, billboard, flat, dial, disc, grid, rangeGrid];
         _units = new UnitOverlays(grid, billboard, markerMaterial, barMaterial, pipMaterial);
         _buildings = new BuildingOverlays(dial, disc, billboard);
         _commands = new CommandOverlays(ring, flat);
@@ -116,7 +116,7 @@ public class OverlayRenderer : PresentationBehaviour
     protected override void OnDestroyed()
     {
         // OnAwake may have thrown part way (a missing material), leaving these unbuilt.
-        foreach (var mesh in _meshes ?? Array.Empty<Mesh>())
+        foreach (var mesh in _meshes ?? [])
         {
             Destroy(mesh);
         }

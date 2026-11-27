@@ -58,7 +58,7 @@ public class MapLibraryTests
             w.weedPlant = "Grass";
             w.burnPlant = "Fireweed";
             w.burntLayer = "Stubble";
-            w.shreddedTrees.Add(new MapWarTreeSwap { tree = "Oak", shredded = new List<string> { "OakSnapped" } });
+            w.shreddedTrees.Add(new MapWarTreeSwap { tree = "Oak", shredded = ["OakSnapped"] });
         });
         var scarred = Make<MapClimate>("Scarred", c =>
         {

@@ -13,8 +13,8 @@ namespace HyperRTS.Presentation.Common;
 /// </summary>
 public sealed class TypeCatalog<T> where T : class
 {
-    private readonly Dictionary<int, T> _entries = new();
-    private readonly HashSet<int> _missing = new();
+    private readonly Dictionary<int, T> _entries = [];
+    private readonly HashSet<int> _missing = [];
     private readonly EntityQuery _typed;
     private readonly Func<EntityManager, Entity, T> _read;
     private int _typedVersion;

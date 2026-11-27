@@ -23,7 +23,7 @@ public sealed class MapMetrics
     /// <summary>Renewable fields (clusters of regrowing stacks, see <see cref="MapResourceFields"/>) per player.</summary>
     public float renewableFieldsPerPlayer;
 
-    public List<MapSpawnMetrics> spawns = new();
+    public List<MapSpawnMetrics> spawns = [];
 
     /// <summary>The ground views' mean <see cref="MapViewContrast.LuminanceSpread"/>; the overview is left out.</summary>
     public float viewLuminanceSpread;

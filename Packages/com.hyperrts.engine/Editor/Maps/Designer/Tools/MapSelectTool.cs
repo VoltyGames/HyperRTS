@@ -22,8 +22,8 @@ public sealed class MapSelectTool : IMapTool
     private const int WholeFeature = -1;
 
     private readonly MapToolContext _context;
-    private readonly List<Vector2> _start = new();
-    private readonly List<Vector2> _moved = new();
+    private readonly List<Vector2> _start = [];
+    private readonly List<Vector2> _moved = [];
 
     private bool _dragging;
     private int _handle;

@@ -17,7 +17,7 @@ public class BuildingDecalsAuthoring : AuthoringBehaviour
 {
     [Tooltip("The decals on the apron, in the building's space.")]
     [NoEmptyEntries(Key = nameof(BuildingDecalPlacement.material))]
-    public List<BuildingDecalPlacement> decals = new();
+    public List<BuildingDecalPlacement> decals = [];
 
     [Tooltip("How far each decal reaches above and below its centre, in total; short, so it marks the apron and the "
              + "ground beside it but not the walls.")]

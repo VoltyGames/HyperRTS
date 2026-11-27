@@ -79,7 +79,7 @@ public partial struct PresentationQuality
 
     // Each pipeline asset's own render scale, put back on quit so the editor never saves a player's choice.
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<UniversalRenderPipelineAsset, float> AuthoredScales = new();
+    private static readonly Dictionary<UniversalRenderPipelineAsset, float> AuthoredScales = [];
 
     // No keyword means caustics on, so edit mode and map captures, which run without the game, show them.
     private static readonly GlobalKeyword NoCaustics = GlobalKeyword.Create("_WATER_NO_CAUSTICS");

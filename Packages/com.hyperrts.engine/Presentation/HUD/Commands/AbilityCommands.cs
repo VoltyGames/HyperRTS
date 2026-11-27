@@ -15,8 +15,8 @@ namespace HyperRTS.Presentation.HUD.Commands;
 public sealed class AbilityCommands : ICommandSource
 {
     private readonly CommandKit _kit;
-    private readonly List<Entry> _entries = new();
-    private readonly List<Entity> _casters = new();
+    private readonly List<Entry> _entries = [];
+    private readonly List<Entity> _casters = [];
     private Entity _player;
 
     public AbilityCommands(CommandKit kit)

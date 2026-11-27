@@ -44,7 +44,7 @@ public static class LocalPackages
                 continue;
             }
 
-            var relative = file.Substring(package.resolvedPath.Length).Replace(Path.DirectorySeparatorChar, '/');
+            var relative = file[package.resolvedPath.Length..].Replace(Path.DirectorySeparatorChar, '/');
             AssetDatabase.ImportAsset(package.assetPath + relative);
         }
     }

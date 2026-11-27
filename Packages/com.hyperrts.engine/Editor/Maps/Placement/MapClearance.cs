@@ -19,7 +19,7 @@ public sealed class MapClearance
     private readonly MapLayout _layout;
     private readonly MapShapes _shapes;
     private readonly float _baseRadius;
-    private readonly Dictionary<Vector2Int, List<(Vector2 Position, float Radius)>> _cells = new();
+    private readonly Dictionary<Vector2Int, List<(Vector2 Position, float Radius)>> _cells = [];
 
     public MapClearance(MapLayout layout, MapShapes shapes, float baseRadius)
     {
@@ -127,7 +127,7 @@ public sealed class MapClearance
                 var key = new Vector2Int(x, z);
                 if (!_cells.TryGetValue(key, out var list))
                 {
-                    _cells[key] = list = new List<(Vector2, float)>();
+                    _cells[key] = list = [];
                 }
 
                 list.Add((point, radius));

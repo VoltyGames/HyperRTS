@@ -37,7 +37,7 @@ public class PathChaseTests : SimulationFixture
     private float3 LastWaypoint()
     {
         var waypoints = World.Buffer<PathWaypoint>(_unit);
-        return waypoints[waypoints.Length - 1].Position;
+        return waypoints[^1].Position;
     }
 
     private bool IsReady() => World.Get<PathState>(_unit).Status == PathStatus.Ready;

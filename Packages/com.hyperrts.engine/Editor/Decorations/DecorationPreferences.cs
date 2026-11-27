@@ -11,11 +11,11 @@ internal static class DecorationPreferences
 {
     [NoAutoStaticsCleanup]
     private static readonly (string Label, string Field, Action Repaint)[] Toggles =
-    {
+    [
         ("Hierarchy row icons", nameof(DecorationSettings.hierarchyRowIcons), HierarchyRows.RefreshAll),
         ("Project unit icons", nameof(DecorationSettings.projectUnitIcons), EditorApplication.RepaintProjectWindow),
         ("Project generator states", nameof(DecorationSettings.projectGeneratorStates), EditorApplication.RepaintProjectWindow),
-    };
+    ];
 
     [SettingsProvider]
     private static SettingsProvider Create() => new("Preferences/HyperRTS", SettingsScope.User)

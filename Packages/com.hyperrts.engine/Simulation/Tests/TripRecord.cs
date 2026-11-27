@@ -14,7 +14,7 @@ namespace HyperRTS.Simulation.Tests;
 public sealed class TripRecord
 {
     private readonly TestWorld _world;
-    private readonly List<Tally> _units = new();
+    private readonly List<Tally> _units = [];
 
     public TripRecord(TestWorld world) => _world = world;
 

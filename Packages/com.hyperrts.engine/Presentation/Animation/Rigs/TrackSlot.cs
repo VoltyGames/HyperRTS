@@ -16,7 +16,7 @@ public class TrackSlot
     public Transform part;
 
     [Tooltip("The road wheels the track runs over, in the rig's wheel list; Fill from model pairs Track_L with Wheel_L.")]
-    public List<Transform> wheels = new();
+    public List<Transform> wheels = [];
 
     /// <summary>Why this track can't bake on <paramref name="rig"/>, or null when it can.</summary>
     public string Problem(MotionRigAuthoring rig)

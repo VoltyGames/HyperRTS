@@ -16,7 +16,7 @@ namespace HyperRTS.Editor.Validation.Rules.Effects;
 public sealed class EffectReferencesRule : IAuthoringRule
 {
     private readonly (Type Authoring, Func<Component, IEnumerable<EffectReference>> References)[] _table =
-    {
+    [
         For<SpawnEffectAuthoring>(spawn => new[] { EffectReference.ForRig("Spawn effect", spawn.effect, true) }),
         For<EffectTrailAuthoring>(trail => new[] { EffectReference.ForRig("Trail rig", trail.rig, true) }),
         For<ImpactAuthoring>(ImpactReferences),
@@ -25,7 +25,7 @@ public sealed class EffectReferencesRule : IAuthoringRule
         For<DamageStagesAuthoring>(DamageStageReferences),
         For<LoopEffectsAuthoring>(LoopReferences),
         For<EntityEffectsAuthoring>(EntityReferences),
-    };
+    ];
 
     public bool AppliesTo(Component component) => _table.Any(entry => entry.Authoring.IsInstanceOfType(component));
 

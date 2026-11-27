@@ -14,21 +14,21 @@ public class LastingDebrisCullingTests
     public unsafe void Cull_DropsHiddenPieces_AndJoinsRunsWithOneMask()
     {
         // Split 0 sees x > 0; split 1 sees x < 5.5 and y < 10.
-        using var planes = new NativeArray<float4>(new[] { new float4(1, 0, 0, 0), new float4(-1, 0, 0, 5.5f), new float4(0, -1, 0, 10) }, Allocator.Temp);
-        using var splits = new NativeArray<CullingSplit>(new[]
-        {
+        using var planes = new NativeArray<float4>([new float4(1, 0, 0, 0), new float4(-1, 0, 0, 5.5f), new float4(0, -1, 0, 10)], Allocator.Temp);
+        using var splits = new NativeArray<CullingSplit>(
+        [
             new CullingSplit { cullingPlaneOffset = 0, cullingPlaneCount = 1 },
             new CullingSplit { cullingPlaneOffset = 1, cullingPlaneCount = 2 },
-        }, Allocator.Temp);
+        ], Allocator.Temp);
 
         // Masks 3, none, 3, 2, 1: the hidden piece does not break the first run.
-        using var bounds = new NativeArray<float4>(new[]
-        {
+        using var bounds = new NativeArray<float4>(
+        [
             new float4(1, 0, 0, 0.1f), new float4(-5, 20, 0, 0.1f), new float4(2, 0, 0, 0.1f),
             new float4(-5, 0, 0, 0.1f), new float4(8, 0, 0, 0.1f),
-        }, Allocator.Temp);
-        using var members = new NativeArray<int>(new[] { 0, 1, 2, 3, 4 }, Allocator.Temp);
-        using var batches = new NativeArray<LastingDebrisBatch>(new[] { new LastingDebrisBatch { Count = 5 } }, Allocator.Temp);
+        ], Allocator.Temp);
+        using var members = new NativeArray<int>([0, 1, 2, 3, 4], Allocator.Temp);
+        using var batches = new NativeArray<LastingDebrisBatch>([new LastingDebrisBatch { Count = 5 }], Allocator.Temp);
         using var output = new NativeArray<BatchCullingOutputDrawCommands>(1, Allocator.Temp);
         new LastingDebrisCulling
         {

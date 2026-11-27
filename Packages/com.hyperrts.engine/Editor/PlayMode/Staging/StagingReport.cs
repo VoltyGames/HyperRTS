@@ -15,19 +15,19 @@ public sealed class StagingReport
     /// <summary>"Done", or "Failed: " and why.</summary>
     public string ended;
 
-    public List<Step> steps = new();
-    public List<Group> groups = new();
-    public List<Issue> consoleErrors = new();
-    public List<string> shots = new();
-    public List<string> frames = new();
-    public List<string> clips = new();
-    public List<Sample> samples = new();
+    public List<Step> steps = [];
+    public List<Group> groups = [];
+    public List<Issue> consoleErrors = [];
+    public List<string> shots = [];
+    public List<string> frames = [];
+    public List<string> clips = [];
+    public List<Sample> samples = [];
 
     /// <summary>The contact sheet, empty when the run made no image.</summary>
     public string sheet;
 
     /// <summary>Source image of each sheet tile, left to right, top to bottom.</summary>
-    public List<string> sheetTiles = new();
+    public List<string> sheetTiles = [];
 
     /// <summary>Tiles every shot, then a spread of each burst's frames, into <c>sheet.png</c> in <paramref name="folder"/>.</summary>
     public void WriteSheet(string folder)

@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Common;
 internal sealed class EditorState : UserSettings<EditorState>
 {
     /// <summary>Inspector header groups folded shut, as "Type/Header".</summary>
-    public List<string> closedGroups = new();
+    public List<string> closedGroups = [];
 
     public bool IsGroupClosed(string group) => closedGroups.Contains(group);
 

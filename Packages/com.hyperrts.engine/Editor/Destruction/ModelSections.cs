@@ -68,11 +68,11 @@ public sealed class ModelSections : ScriptableObject
     }
 
     [Tooltip("By mask bit.")]
-    public List<Section> sections = new();
+    public List<Section> sections = [];
 
-    public List<Hole> holes = new();
+    public List<Hole> holes = [];
 
-    public List<MovingPart> parts = new();
+    public List<MovingPart> parts = [];
 
     /// <summary>The sections inside the model at <paramref name="path"/>, or null.</summary>
     public static ModelSections Find(string path) => AssetDatabase.LoadAllAssetsAtPath(path).OfType<ModelSections>().FirstOrDefault();

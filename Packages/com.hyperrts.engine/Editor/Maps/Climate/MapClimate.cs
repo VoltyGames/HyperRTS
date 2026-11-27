@@ -15,51 +15,51 @@ public sealed class MapClimate : MapLibraryItem
     [Header("Land")]
     [Tooltip("Named ground types (Meadow, Wheat, ForestFloor) that land use and spec areas paint.")]
     [MapKey(typeof(MapClimateSurface))]
-    public List<string> surfaceKeys = new();
+    public List<string> surfaceKeys = [];
 
     [MapKey(typeof(MapRoadClass))]
-    public List<string> roadClassKeys = new();
+    public List<string> roadClassKeys = [];
 
     [MapKey(typeof(MapFarmlandKit))]
-    public List<string> farmlandKitKeys = new();
+    public List<string> farmlandKitKeys = [];
 
     [MapKey(typeof(MapBeltKit))]
-    public List<string> beltKitKeys = new();
+    public List<string> beltKitKeys = [];
 
     [MapKey(typeof(MapWoodlandKit))]
-    public List<string> woodlandKitKeys = new();
+    public List<string> woodlandKitKeys = [];
 
     /// <summary>Terrain layers (up to 16) the surfaces and kits use, blended by the HyperRTS terrain shader; filled on assembly.</summary>
     [NonSerialized]
-    public List<MapClimateLayer> layers = new();
+    public List<MapClimateLayer> layers = [];
 
     /// <summary>The items of <see cref="surfaceKeys"/>, filled on assembly, as are the lists below.</summary>
     [NonSerialized]
-    public List<MapClimateSurface> surfaces = new();
+    public List<MapClimateSurface> surfaces = [];
 
     [NonSerialized]
-    public List<MapClimateTree> trees = new();
+    public List<MapClimateTree> trees = [];
 
     [NonSerialized]
-    public List<MapClimatePlant> plants = new();
+    public List<MapClimatePlant> plants = [];
 
     [NonSerialized]
-    public List<MapClimateRowCrop> rowCrops = new();
+    public List<MapClimateRowCrop> rowCrops = [];
 
     [NonSerialized]
-    public List<MapClimateDecal> decals = new();
+    public List<MapClimateDecal> decals = [];
 
     [NonSerialized]
-    public List<MapRoadClass> roadClasses = new();
+    public List<MapRoadClass> roadClasses = [];
 
     [NonSerialized]
-    public List<MapFarmlandKit> farmlandKits = new();
+    public List<MapFarmlandKit> farmlandKits = [];
 
     [NonSerialized]
-    public List<MapBeltKit> beltKits = new();
+    public List<MapBeltKit> beltKits = [];
 
     [NonSerialized]
-    public List<MapWoodlandKit> woodlandKits = new();
+    public List<MapWoodlandKit> woodlandKits = [];
 
     [Tooltip("Old scars for maps with a war age; empty for none.")]
     [MapKey(typeof(MapWarKit), Optional = true)]
@@ -139,7 +139,7 @@ public sealed class MapClimate : MapLibraryItem
     public Material water;
 
     [Tooltip("Weathers a map or match can pick, each an atmosphere prefab (sky, sun, fog, post-processing).")]
-    public List<MapClimateWeather> weathers = new();
+    public List<MapClimateWeather> weathers = [];
 
     [Header("Distances")]
     public float treeDistance = 600f;

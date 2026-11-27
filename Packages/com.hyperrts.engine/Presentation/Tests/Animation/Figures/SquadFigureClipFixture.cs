@@ -12,8 +12,8 @@ namespace HyperRTS.Presentation.Tests.Animation.Figures;
 /// <summary>The clip tables, sets and ranges a fixture's figures play, and the assets it makes and frees.</summary>
 public abstract class SquadFigureClipFixture
 {
-    protected readonly Dictionary<int, BlobAssetReference<FigureClips>> _clips = new();
-    protected readonly List<Object> _made = new();
+    protected readonly Dictionary<int, BlobAssetReference<FigureClips>> _clips = [];
+    protected readonly List<Object> _made = [];
 
     [TearDown]
     public void DisposeClips()

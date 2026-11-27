@@ -91,6 +91,6 @@ public static class TypeSummaries
 
     // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
     private static string Relative(string root, string path) =>
-        Path.GetFullPath(path).Substring(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1)
+        Path.GetFullPath(path)[(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1)..]
             .Replace(Path.DirectorySeparatorChar, '/');
 }

@@ -35,7 +35,7 @@ public class MapLineTests
     [Test]
     public void Distance_OnALineThatDoublesBack_TakesTheFirstPass()
     {
-        var line = new MapLine(new List<Vector2> { new(0f, 0f), new(10f, 0f), new(0f, 0f) }, 1f, 5f);
+        var line = new MapLine([new(0f, 0f), new(10f, 0f), new(0f, 0f)], 1f, 5f);
 
         Assert.AreEqual(3f, line.Distance(new Vector2(5f, 3f), out var along));
         Assert.AreEqual(5f, along);

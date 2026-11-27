@@ -18,7 +18,7 @@ public class ArmorAuthoring : AuthoringBehaviour
 {
     [Tooltip("Per-type multipliers; unlisted types deal full damage.")]
     [NoEmptyEntries(Key = nameof(DamageFactor.damageType))]
-    public List<DamageFactor> modifiers = new();
+    public List<DamageFactor> modifiers = [];
 
     [Header("Directional")]
     [Tooltip("Damage multiplier for hits within 45° of the front.")]

@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Effects.Stages;
 /// <summary>The Effects page's images a rig's stages made, shown under its stages.</summary>
 internal sealed class EffectSheet
 {
-    private readonly List<Texture2D> _images = new();
+    private readonly List<Texture2D> _images = [];
     private readonly VisualElement _root;
 
     public EffectSheet(VisualElement root)

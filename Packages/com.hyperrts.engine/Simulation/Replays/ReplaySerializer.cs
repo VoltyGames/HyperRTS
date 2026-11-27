@@ -157,7 +157,7 @@ public static class ReplaySerializer
                     throw new EndOfStreamException();
                 }
 
-                bytes = bytes.Slice(read);
+                bytes = bytes[read..];
             }
 
             items.AddRange(new ArraySegment<T>(chunk, 0, length));

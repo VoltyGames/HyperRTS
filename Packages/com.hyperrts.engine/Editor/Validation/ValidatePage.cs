@@ -23,8 +23,8 @@ public class ValidatePage : HubPage
     [NoAutoStaticsCleanup]
     private static IssueGroups _last;
 
-    private IssueGroups _groups = new();
-    private IssueGroups _shown = new();
+    private IssueGroups _groups = [];
+    private IssueGroups _shown = [];
     private string _search = "";
     private ToolbarButton _errors;
     private ToolbarButton _warnings;
@@ -71,7 +71,7 @@ public class ValidatePage : HubPage
         root.Require<ToolbarToggle>("selection-only").RegisterValueChangedCallback(change => Show(change.newValue));
         root.WhileAttached(() => Selection.selectionChanged += OnSelectionChanged,
             () => Selection.selectionChanged -= OnSelectionChanged);
-        _groups = _last ?? new IssueGroups();
+        _groups = _last ?? [];
         Show(SelectionOnly);
         return root;
     }

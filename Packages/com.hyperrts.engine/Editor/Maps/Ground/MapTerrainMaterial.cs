@@ -25,10 +25,10 @@ public static class MapTerrainMaterial
     private static readonly int RowMap = Shader.PropertyToID("_RowMap");
 
     private static readonly int[] Controls =
-    {
+    [
         Shader.PropertyToID("_Control0"), Shader.PropertyToID("_Control1"), Shader.PropertyToID("_Control2"),
         Shader.PropertyToID("_Control3"),
-    };
+    ];
 
     /// <summary>
     /// All three textures are linear: <paramref name="groundTint"/> is RGB tint (0.5 neutral) and A wetness,

@@ -21,7 +21,7 @@ public class SurfaceEffects : ScriptableObject
     public GameObject anyMaterial;
 
     [Tooltip("Rigs for particular materials (water splash, metal sparks, masonry chips).")]
-    public Entry[] materials = { };
+    public Entry[] materials = [];
 
     /// <summary>The material's rig, else <see cref="anyMaterial"/>.</summary>
     public GameObject RigFor(SurfaceMaterial material)

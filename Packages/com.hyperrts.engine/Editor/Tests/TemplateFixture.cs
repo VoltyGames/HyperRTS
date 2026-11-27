@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Tests;
 /// <summary>Destroys the objects a test tracked once it finishes.</summary>
 public abstract class TemplateFixture
 {
-    private readonly List<Object> _created = new();
+    private readonly List<Object> _created = [];
 
     [TearDown]
     public void DestroyTracked()

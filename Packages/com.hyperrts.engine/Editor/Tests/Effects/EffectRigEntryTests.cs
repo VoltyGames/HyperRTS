@@ -12,5 +12,5 @@ public class EffectRigEntryTests
     [TestCase("Assets/Game/Prefabs/Effects/Sparks/Welding.prefab", "Sparks")]
     [TestCase("Assets/Game/Prefabs/Effects/Embers_01.prefab", "Effects")]
     public void KindIsTheSecondFxFieldOrTheFolder(string path, string kind) =>
-        Assert.That(new EffectRigEntry(path, new List<string>()).Kind, Is.EqualTo(kind));
+        Assert.That(new EffectRigEntry(path, []).Kind, Is.EqualTo(kind));
 }

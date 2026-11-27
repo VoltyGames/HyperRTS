@@ -21,7 +21,7 @@ public static class MapRoadJoiner
     // An end this close that already meets at a steep angle just moves onto the road: re-laying a curve over a
     // short spur would kink it.
     private const float Snapped = 3f;
-    private static readonly float[] Handles = { 0.4f, 0.2f };
+    private static readonly float[] Handles = [0.4f, 0.2f];
 
     public static void Join(List<MapRefinedRoad> roads, MapSymmetry symmetry, Rect playable)
     {

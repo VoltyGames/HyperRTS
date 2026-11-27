@@ -16,12 +16,12 @@ public sealed class RowCropFields : ScatterField
     [Tooltip("Field id per texel, north up: R low byte, G high byte. Point-sampled, linear.")]
     public Texture2D fieldIds;
 
-    public List<RowCrop> crops = new();
+    public List<RowCrop> crops = [];
 
-    public List<RowCropField> fields = new();
+    public List<RowCropField> fields = [];
 
     [Tooltip("Field indices per tile, each tile's run in turn.")]
-    public List<int> tileFields = new();
+    public List<int> tileFields = [];
 
     /// <summary>The id the picture holds for a field: its index plus one.</summary>
     public static int FieldId(int field) => field + 1;

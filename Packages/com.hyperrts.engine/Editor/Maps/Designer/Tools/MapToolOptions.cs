@@ -32,7 +32,7 @@ public sealed partial class MapToolOptions : VisualElement
     public MapToolOptions()
     {
         AddToClassList("hrts-map-options");
-        _kind = new PopupField<MapFeatureKind>(new List<MapFeatureKind>(), -1, Label, Label)
+        _kind = new PopupField<MapFeatureKind>([], -1, Label, Label)
         {
             tooltip = "The feature kind the tool adds.",
         };

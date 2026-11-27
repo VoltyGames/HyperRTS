@@ -13,7 +13,7 @@ internal sealed class EffectRigList
     private readonly TreeView _tree;
 
     // The tree id of each listed rig, by path.
-    private readonly Dictionary<string, int> _ids = new();
+    private readonly Dictionary<string, int> _ids = [];
 
     public EffectRigList(TreeView tree, VisualTreeAsset row)
     {

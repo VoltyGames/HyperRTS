@@ -14,7 +14,7 @@ internal class StrikesPanel
 
     private readonly CheatsPanel _cheats;
     private readonly VisualElement _rows;
-    private readonly List<StrikeRow> _shown = new();
+    private readonly List<StrikeRow> _shown = [];
     private World _world;
 
     /// <summary>Wires a cloned StrikesPanel.uxml and polls it while the cheats are usable.</summary>

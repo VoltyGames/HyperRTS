@@ -43,7 +43,7 @@ internal class CheatsPanel
         _status = root.Require<HelpBox>("status");
         _controls = root.Require<VisualElement>("controls");
         _player = root.Require<DropdownField>("player");
-        _player.choices = new List<string>();
+        _player.choices = [];
         _control = root.Require<Button>("control");
         _control.clicked += () => Act((manager, player, _) => MatchCheats.MakeLocal(manager, player));
         root.Require<Button>("add").clicked += () => Act((manager, player, _) =>

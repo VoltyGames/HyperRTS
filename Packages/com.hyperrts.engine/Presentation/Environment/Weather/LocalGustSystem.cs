@@ -1,8 +1,8 @@
-using HyperRTS.Presentation.Animation.Rigs;
 using System.Collections.Generic;
+using HyperRTS.Presentation.Animation.Rigs;
 using HyperRTS.Presentation.Common;
-using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Effects.Streams;
+using HyperRTS.Presentation.Environment.Ground.Stamps;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Systems;
@@ -30,7 +30,7 @@ namespace HyperRTS.Presentation.Environment.Weather
         // Smaller splashes, such as grenades on a soldier, push no gust worth drawing.
         private const float MinBlastRadius = 1f;
 
-        private readonly List<LocalGust> _blasts = new();
+        private readonly List<LocalGust> _blasts = [];
         private readonly Vector4[] _packed = new Vector4[LocalGust.Max];
         private CueVisibility _visibility;
 

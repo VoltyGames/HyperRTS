@@ -27,7 +27,7 @@ internal sealed class MapLookSwitches : IDisposable
     // Above every weather and battle haze volume.
     private const float VolumePriority = float.MaxValue;
 
-    private readonly Dictionary<string, Action<bool>> _switches = new();
+    private readonly Dictionary<string, Action<bool>> _switches = [];
     private Volume _noFog;
 
     public MapLookSwitches(Camera camera, Material water)
@@ -43,7 +43,7 @@ internal sealed class MapLookSwitches : IDisposable
 
     public IEnumerable<string> Names => _switches.Keys;
 
-    public List<string> Missing { get; } = new();
+    public List<string> Missing { get; } = [];
 
     public void Set(string feature, bool on) => _switches[feature](on);
 

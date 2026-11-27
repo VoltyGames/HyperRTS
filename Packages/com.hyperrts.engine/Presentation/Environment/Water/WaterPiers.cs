@@ -21,7 +21,7 @@ public sealed class WaterPiers : PresentationBehaviour
     private static readonly int CountId = Shader.PropertyToID("_HyperRTSWaterPierCount");
 
     [Tooltip("Each pier as (x, z, half-width across the flow) in world metres.")]
-    public Vector3[] points = System.Array.Empty<Vector3>();
+    public Vector3[] points = [];
 
     private readonly Vector4[] _piers = new Vector4[Capacity];
 

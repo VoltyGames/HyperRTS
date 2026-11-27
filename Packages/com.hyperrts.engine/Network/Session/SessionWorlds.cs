@@ -18,7 +18,7 @@ internal static class SessionWorlds
 {
     /// <summary>Every world made here and not yet disposed, so none outlives its session when Netcode forgets it.</summary>
     [NoAutoStaticsCleanup]
-    public static readonly HashSet<World> Created = new();
+    public static readonly HashSet<World> Created = [];
 
     /// <summary>Every server, client and presentation system but the <see cref="RemoteClientOnlyAttribute"/> ones.</summary>
     public static NativeList<SystemTypeIndex> HostSystems()

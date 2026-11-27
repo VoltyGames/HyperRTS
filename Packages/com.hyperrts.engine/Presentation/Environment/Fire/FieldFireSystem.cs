@@ -8,8 +8,8 @@ using HyperRTS.Presentation.Environment.Weather;
 using HyperRTS.Presentation.Environment.Weather.Haze;
 using HyperRTS.Presentation.Quality;
 using HyperRTS.Simulation.Common;
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues;
 using HyperRTS.Simulation.Cues.Surfaces;
 using HyperRTS.Simulation.Navigation.Areas;
@@ -39,7 +39,7 @@ namespace HyperRTS.Presentation.Environment.Fire
         private const float Ash = 1f;
         private const float Scorch = 0.6f;
 
-        private readonly List<FieldFireCluster> _clusters = new();
+        private readonly List<FieldFireCluster> _clusters = [];
         private CueVisibility _visibility;
         private EffectPool _pool;
         private FieldFireEffects _effects;

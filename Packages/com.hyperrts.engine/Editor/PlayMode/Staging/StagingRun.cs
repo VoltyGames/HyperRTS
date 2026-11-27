@@ -24,8 +24,8 @@ internal sealed class StagingRun
 
     private readonly StagingFile _file;
     private readonly Vector2Int _resolution;
-    private readonly Dictionary<string, StagingGroup> _groups = new();
-    private readonly List<(StagingActivity activity, StagingReport.Step step)> _active = new();
+    private readonly Dictionary<string, StagingGroup> _groups = [];
+    private readonly List<(StagingActivity activity, StagingReport.Step step)> _active = [];
     private readonly Stack<Action> _undo = new();
     private readonly ConsoleIssues _console = new();
     private readonly double _began = EditorApplication.timeSinceStartup;

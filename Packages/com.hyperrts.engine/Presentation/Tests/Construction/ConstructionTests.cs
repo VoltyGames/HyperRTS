@@ -132,7 +132,7 @@ public class ConstructionTests
         var root = _em.CreateEntity();
         _em.AddComponentData(root, new ConstructionProgress { Value = progress });
         _em.SetComponentEnabled<ConstructionProgress>(root, building);
-        meshes = new[] { _em.CreateEntity(typeof(MaterialMeshInfo)), _em.CreateEntity(typeof(MaterialMeshInfo)) };
+        meshes = [_em.CreateEntity(typeof(MaterialMeshInfo)), _em.CreateEntity(typeof(MaterialMeshInfo))];
         bare = _em.CreateEntity();
         var group = new NativeList<LinkedEntityGroup>(Allocator.Temp) { root, meshes[0], meshes[1], bare };
         _em.AddBuffer<LinkedEntityGroup>(root).AddRange(group.AsArray());

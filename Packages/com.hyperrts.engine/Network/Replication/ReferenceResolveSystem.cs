@@ -1,7 +1,7 @@
-using HyperRTS.Simulation.Common.Systems;
-using HyperRTS.Simulation.Common.Prefabs;
 using System.Collections.Generic;
 using HyperRTS.Network.Common;
+using HyperRTS.Simulation.Common.Prefabs;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Resources;
 using Unity.Entities;
@@ -17,7 +17,7 @@ namespace HyperRTS.Network.Replication
     [UpdateInGroup(typeof(OrderSystemGroup), OrderFirst = true)]
     public partial class ReferenceResolveSystem : SystemBase
     {
-        private readonly Dictionary<int, ResourceType> _resources = new();
+        private readonly Dictionary<int, ResourceType> _resources = [];
         private EntityQuery _queues;
         private EntityQuery _research;
 

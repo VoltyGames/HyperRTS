@@ -14,7 +14,7 @@ internal class DebugPanel
 {
     private const long PollMilliseconds = 250;
 
-    private readonly List<LayerRow> _rows = new();
+    private readonly List<LayerRow> _rows = [];
     private readonly Label _hint;
     private readonly VisualElement _aiGroup;
     private readonly VisualElement _ai;

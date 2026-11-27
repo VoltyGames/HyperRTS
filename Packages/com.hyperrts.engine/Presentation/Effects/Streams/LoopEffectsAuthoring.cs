@@ -32,7 +32,7 @@ public class LoopEffectsAuthoring : AuthoringBehaviour
     }
 
     [Tooltip("Rigs streaming from this entity; entries without a rig are skipped.")]
-    public Entry[] loops = { };
+    public Entry[] loops = [];
 
     public static DynamicBuffer<LoopEffect> Add(EntityWriter writer) =>
         writer.AddBuffer<LoopEffect>();

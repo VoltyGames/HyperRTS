@@ -19,7 +19,7 @@ public class MapSettlementTests
 
     [NoAutoStaticsCleanup]
     private static readonly TestCaseData[] BrokenKits =
-    {
+    [
         new TestCaseData((Action<MapSettlementKit>)(kit => kit.houses[0] = "Nope"), "Nope")
             .SetName("ASettlementKeyThatDoesNotResolve_IsAnErrorNamingTheKitAndKey"),
         new TestCaseData((Action<MapSettlementKit>)(kit => kit.streetPipeArch = string.Empty), "streetPipeArch")
@@ -28,7 +28,7 @@ public class MapSettlementTests
             .SetName("AStreetPipeWithoutMinSections_IsAnErrorNamingTheKit"),
         new TestCaseData((Action<MapSettlementKit>)(kit => kit.gardenSurface = "Mud"), "Mud")
             .SetName("AnUnknownSettlementSurface_IsAnErrorNamingTheKitAndSurface"),
-    };
+    ];
 
     private MapSettlementFixture _fixture;
 

@@ -19,8 +19,8 @@ internal sealed class BoneRig : IDisposable
     private readonly Transform[] _bones;
     private readonly Matrix4x4[] _bindposes;
     private readonly bool[] _upper;
-    private readonly Dictionary<string, int> _index = new();
-    private readonly List<SocketBone> _sockets = new();
+    private readonly Dictionary<string, int> _index = [];
+    private readonly List<SocketBone> _sockets = [];
 
     public BoneRig(GameObject model, string skeleton, string upperRoot, string rootBone,
         IEnumerable<BoneAnimationSet.Socket> sockets)

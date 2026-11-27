@@ -55,7 +55,7 @@ public class EffectRig : PresentationBehaviour
     public float shakeSeconds;
 
     [Tooltip("Alternative rigs, each without variants of its own. Each play picks this rig or one of them.")]
-    public GameObject[] variants = Array.Empty<GameObject>();
+    public GameObject[] variants = [];
 
     private EffectGraph[] _graphs;
     private GraphStreamPool _streams;
@@ -68,7 +68,7 @@ public class EffectRig : PresentationBehaviour
     public List<CameraJolt> Jolts { get; set; }
 
     /// <summary>Set by the pool from <see cref="variants"/>.</summary>
-    public EffectRig[] Alternatives { get; set; } = Array.Empty<EffectRig>();
+    public EffectRig[] Alternatives { get; set; } = [];
 
     /// <summary>The rig's loop light, found when it is first captured; null without one.</summary>
     public LoopLight LoopLight { get; private set; }

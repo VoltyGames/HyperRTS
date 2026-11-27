@@ -51,7 +51,7 @@ public sealed class FbxProperties
     public string[] List(string name)
     {
         var text = String(name);
-        return text.Length == 0 ? Array.Empty<string>() : text.Split(',');
+        return text.Length == 0 ? [] : text.Split(',');
     }
 
     public Vector3 Vector(string name)

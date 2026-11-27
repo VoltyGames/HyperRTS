@@ -11,8 +11,8 @@ namespace HyperRTS.Presentation.Audio;
 /// </summary>
 public sealed class AnnouncerQueue
 {
-    private readonly Dictionary<AnnouncementKind, Throttle> _throttles = new();
-    private readonly List<(SoundCue Cue, double Queued)> _waiting = new();
+    private readonly Dictionary<AnnouncementKind, Throttle> _throttles = [];
+    private readonly List<(SoundCue Cue, double Queued)> _waiting = [];
 
     public int Count => _waiting.Count;
 

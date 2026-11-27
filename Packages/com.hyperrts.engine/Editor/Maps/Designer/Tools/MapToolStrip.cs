@@ -26,7 +26,7 @@ public sealed partial class MapToolStrip : VisualElement
         [MapToolMode.Area] = "square-dashed",
     };
 
-    private readonly Dictionary<MapToolMode, ToolbarButton> _buttons = new();
+    private readonly Dictionary<MapToolMode, ToolbarButton> _buttons = [];
     private MapToolbox _toolbox;
 
     public MapToolStrip()

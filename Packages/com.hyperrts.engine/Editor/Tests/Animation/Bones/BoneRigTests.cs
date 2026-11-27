@@ -37,7 +37,7 @@ public class BoneRigTests : BoneRigFixture
         using var rig = Rig();
         var kit = Model("Kit", Quaternion.Euler(-90f, 0f, 0f));
 
-        var merged = Track(BoneMesh.Merge(new List<Mesh> { rig.Meshes.SkinnedMesh(kit, "Body"), rig.Meshes.SkinnedMesh(kit, "Body") }));
+        var merged = Track(BoneMesh.Merge([rig.Meshes.SkinnedMesh(kit, "Body"), rig.Meshes.SkinnedMesh(kit, "Body")]));
 
         Assert.AreEqual(6, merged.vertexCount);
         Assert.AreEqual(1, merged.subMeshCount);
@@ -94,9 +94,9 @@ public class BoneRigTests : BoneRigFixture
         var weapon = Make("Weapon");
         var mesh = Track(new Mesh
         {
-            vertices = new[] { Vector3.zero, new Vector3(0f, 0f, 1f), new Vector3(0f, 0.1f, 0f) },
-            normals = new[] { Vector3.up, Vector3.up, Vector3.up },
-            triangles = new[] { 0, 1, 2 },
+            vertices = [Vector3.zero, new Vector3(0f, 0f, 1f), new Vector3(0f, 0.1f, 0f)],
+            normals = [Vector3.up, Vector3.up, Vector3.up],
+            triangles = [0, 1, 2],
         });
         weapon.AddComponent<MeshFilter>().sharedMesh = mesh;
 
@@ -135,7 +135,7 @@ public class BoneRigTests : BoneRigFixture
         clip.SetCurve("Hips", typeof(Transform), "localPosition.y", AnimationCurve.Constant(0f, 1f, 1f));
         var plan = new ClipFrames(new BoneAnimationSet.Clip { name = "Shift", source = clip, loop = true }, 1f);
 
-        var texture = Track(BoneFrames.Sample(rig, new List<ClipFrames> { plan }).Texture(rig.BoneNames().Count));
+        var texture = Track(BoneFrames.Sample(rig, [plan]).Texture(rig.BoneNames().Count));
 
         Assert.AreEqual(2f, texture.GetPixel(0 * 3, 0).a, 1e-3f, "the hips keep their own place");
         Assert.AreEqual(0f, texture.GetPixel(1 * 3, 0).a, 1e-3f, "the hand rides on the hips, so it carries no shift of its own");

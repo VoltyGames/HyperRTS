@@ -17,7 +17,7 @@ public sealed class MapLand
     public const int Unclaimed = 0;
 
     private readonly MapValues<ushort> _cells;
-    private readonly List<MapLandRegion> _regions = new() { null };
+    private readonly List<MapLandRegion> _regions = [null];
 
     public MapLand(Rect bounds)
     {

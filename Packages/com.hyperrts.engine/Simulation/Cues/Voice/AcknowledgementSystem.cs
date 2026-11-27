@@ -1,5 +1,5 @@
-using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Common.Players;
+using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -94,23 +94,13 @@ namespace HyperRTS.Simulation.Cues.Voice
 
         private CueSlot Answer(ref SystemState state, in PlayerCommand command, byte owner)
         {
-            switch (command.Type)
+            return command.Type switch
             {
-                case CommandType.Move:
-                case CommandType.ReverseMove:
-                case CommandType.ReturnToBase:
-                    return CueSlot.Move;
-                case CommandType.Attack:
-                case CommandType.AttackMove:
-                case CommandType.Patrol:
-                case CommandType.Escort:
-                case CommandType.FireMission:
-                    return CueSlot.Attack;
-                case CommandType.Smart:
-                    return IsHostile(ref state, command.Target, owner) ? CueSlot.Attack : CueSlot.Move;
-                default:
-                    return CueSlot.None;
-            }
+                CommandType.Move or CommandType.ReverseMove or CommandType.ReturnToBase => CueSlot.Move,
+                CommandType.Attack or CommandType.AttackMove or CommandType.Patrol or CommandType.Escort or CommandType.FireMission => CueSlot.Attack,
+                CommandType.Smart => IsHostile(ref state, command.Target, owner) ? CueSlot.Attack : CueSlot.Move,
+                _ => CueSlot.None,
+            };
         }
 
         private bool IsHostile(ref SystemState state, Entity target, byte owner)

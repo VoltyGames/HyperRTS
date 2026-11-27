@@ -17,11 +17,11 @@ public class MinimapMarkerTests
     public void Job_FillsTheMarker_LeavesTheRestClear_AndLetsTheLaterMarkerCover()
     {
         const int Side = 20;
-        using var markers = new NativeArray<MinimapMarker>(new[]
-        {
+        using var markers = new NativeArray<MinimapMarker>(
+        [
             new MinimapMarker { Point = new float2(0.5f, 0.5f), Color = Red, Radius = 6f, Square = true },
             new MinimapMarker { Point = new float2(0.5f, 0.5f), Color = Blue, Radius = 2f, Square = false },
-        }, Allocator.TempJob);
+        ], Allocator.TempJob);
         using var pixels = new NativeArray<Color32>(Side * Side, Allocator.TempJob);
 
         new MinimapMarkerJob
@@ -39,10 +39,10 @@ public class MinimapMarkerTests
     public void Job_PutsTheTopOfTheMinimapAtTheTopRow()
     {
         const int Side = 20;
-        using var markers = new NativeArray<MinimapMarker>(new[]
-        {
+        using var markers = new NativeArray<MinimapMarker>(
+        [
             new MinimapMarker { Point = new float2(0.5f, 0.1f), Color = Red, Radius = 1f, Square = true },
-        }, Allocator.TempJob);
+        ], Allocator.TempJob);
         using var pixels = new NativeArray<Color32>(Side * Side, Allocator.TempJob);
 
         new MinimapMarkerJob

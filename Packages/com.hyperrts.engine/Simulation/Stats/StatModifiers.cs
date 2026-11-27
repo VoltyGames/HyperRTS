@@ -54,7 +54,7 @@ public struct StatModifiers
 
         var modifiers = new StatModifiers(buffer);
         var untyped = modifiers.Evaluate(Stat.DamageTaken, 1f);
-        var plain = damageType.Equals(default(UnityObjectRef<DamageType>));
+        var plain = damageType.Equals(default);
         return plain ? untyped : untyped * modifiers.Evaluate(Stat.DamageTaken, damageType, 1f);
     }
 

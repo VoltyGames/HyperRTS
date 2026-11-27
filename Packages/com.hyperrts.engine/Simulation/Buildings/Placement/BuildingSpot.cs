@@ -118,15 +118,12 @@ public readonly struct BuildingSpot
     /// <summary>Whether one cell under the spot forbids it on its own, whatever the other cells hold.</summary>
     public bool Forbids(NavSurface cell)
     {
-        switch (Surface)
+        return Surface switch
         {
-            case PlacementSurface.Water:
-                return cell != NavSurface.Water;
-            case PlacementSurface.Shoreline:
-                return cell != NavSurface.Land && cell != NavSurface.Water;
-            default:
-                return cell != NavSurface.Land;
-        }
+            PlacementSurface.Water => cell != NavSurface.Water,
+            PlacementSurface.Shoreline => cell != NavSurface.Land && cell != NavSurface.Water,
+            _ => cell != NavSurface.Land,
+        };
     }
 
     /// <summary>

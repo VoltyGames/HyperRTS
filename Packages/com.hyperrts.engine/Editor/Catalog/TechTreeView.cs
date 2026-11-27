@@ -14,9 +14,9 @@ namespace HyperRTS.Editor.Catalog;
 public sealed partial class TechTreeView : VisualElement
 {
     private readonly VisualTreeAsset _node = EditorAssets.Layout(typeof(TechTreeView), "Node");
-    private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _makes = new();
-    private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _madeBy = new();
-    private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _unlocks = new();
+    private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _makes = [];
+    private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _madeBy = [];
+    private readonly Dictionary<ProducibleAuthoring, List<ProducibleAuthoring>> _unlocks = [];
 
     /// <summary>Shows the <paramref name="visible"/> prefabs with the links of the last <see cref="Link"/>.</summary>
     public void Show(IEnumerable<GameEntityAuthoring> visible)
@@ -85,7 +85,7 @@ public sealed partial class TechTreeView : VisualElement
     {
         if (!map.TryGetValue(key, out var list))
         {
-            map[key] = list = new List<ProducibleAuthoring>();
+            map[key] = list = [];
         }
 
         list.Add(value);

@@ -174,7 +174,7 @@ internal sealed class RigidPoses
 
             if (!found.TryGetValue(binding.path, out var channels))
             {
-                channels = new Dictionary<string, AnimationCurve>();
+                channels = [];
                 found[binding.path] = channels;
             }
 

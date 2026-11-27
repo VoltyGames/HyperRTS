@@ -12,7 +12,7 @@ namespace HyperRTS.Simulation.Cues.Effects;
 public class DebrisSet : ScriptableObject
 {
     [Tooltip("Meshes picked at random per piece, such as rubble chunks or a unit cube scaled into a sandbag.")]
-    public List<Mesh> meshes = new();
+    public List<Mesh> meshes = [];
 
     [Tooltip("Material every piece draws with, usually the prop's own, with GPU instancing on.")]
     public Material material;

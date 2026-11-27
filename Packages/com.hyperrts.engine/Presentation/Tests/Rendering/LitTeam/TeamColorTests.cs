@@ -126,7 +126,7 @@ public class TeamColorTests
         _em.AddComponentData(root, new LocalToWorld { Value = float4x4.identity });
         child = _em.CreateEntity(typeof(MaterialMeshInfo));
         _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
-            new LinkedEntityGroup[] { root, child }, Allocator.Temp));
+            [root, child], Allocator.Temp));
         return root;
     }
 

@@ -17,7 +17,7 @@ public class GeneratorImportTests
     [Test]
     public void AGeneratorWithoutItemsRunsWholeWhenAnInputChanged()
     {
-        GeneratorImport.Collect(new TestGenerator(), new List<string> { Input + "/a.png" });
+        GeneratorImport.Collect(new TestGenerator(), [Input + "/a.png"]);
 
         Assert.IsTrue(GeneratorImport.Changed.TryGetValue(TestGenerator.TestName, out var names));
         Assert.IsEmpty(names);
@@ -26,8 +26,8 @@ public class GeneratorImportTests
     [Test]
     public void PathsOutsideTheInputsMarkNothing()
     {
-        GeneratorImport.Collect(new TestGenerator(), new List<string> { Input + "x/a.png", "Assets/other.png" });
-        GeneratorImport.Collect(WithItems(), new List<string> { "Assets/other.png" });
+        GeneratorImport.Collect(new TestGenerator(), [Input + "x/a.png", "Assets/other.png"]);
+        GeneratorImport.Collect(WithItems(), ["Assets/other.png"]);
 
         Assert.IsFalse(GeneratorImport.Changed.ContainsKey(TestGenerator.TestName));
     }
@@ -37,8 +37,8 @@ public class GeneratorImportTests
     {
         var generator = WithItems();
 
-        GeneratorImport.Collect(generator, new List<string> { "Assets/_GeneratorImportTests/one/m.fbx" });
-        GeneratorImport.Collect(generator, new List<string> { "Assets/_GeneratorImportTests/three/m.fbx" });
+        GeneratorImport.Collect(generator, ["Assets/_GeneratorImportTests/one/m.fbx"]);
+        GeneratorImport.Collect(generator, ["Assets/_GeneratorImportTests/three/m.fbx"]);
 
         CollectionAssert.AreEquivalent(new[] { "one", "three" }, GeneratorImport.Changed[TestGenerator.TestName].ToArray());
     }
@@ -46,7 +46,7 @@ public class GeneratorImportTests
     private static TestGenerator WithItems() => new()
     {
         TestItems = new[] { "one", "two", "three" }.Select(name => new GeneratorItem(
-            name, new[] { "Assets/_GeneratorImportTests/" + name }, Array.Empty<string>(),
+            name, new[] { "Assets/_GeneratorImportTests/" + name }, [],
             "Assets/_GeneratorImportTests/" + name, () => { })).ToList(),
     };
 
@@ -55,7 +55,7 @@ public class GeneratorImportTests
     {
         public const string TestName = "Generator import test";
 
-        public IReadOnlyList<GeneratorItem> TestItems = Array.Empty<GeneratorItem>();
+        public IReadOnlyList<GeneratorItem> TestItems = [];
 
         public override string Name => TestName;
         public override string Group => "Tests";

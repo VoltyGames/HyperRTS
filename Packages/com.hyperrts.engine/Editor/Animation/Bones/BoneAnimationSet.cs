@@ -55,7 +55,7 @@ public class BoneAnimationSet : ScriptableObject, IAnimationSet
         public GameObject model;
 
         [Tooltip("Nodes of the model merged into this one mesh, such as a soldier's body, head and gear: skinned meshes bound to the rig's skeleton, or plain meshes when Socket is set. They share one material.")]
-        public List<string> nodes = new();
+        public List<string> nodes = [];
 
         [Tooltip("Empty for a skinned mesh. Else the socket a plain mesh, such as a weapon, sits at, its origin on the socket's node.")]
         public string socket;
@@ -91,9 +91,9 @@ public class BoneAnimationSet : ScriptableObject, IAnimationSet
     [Tooltip("The node of the rig holding the skinned mesh whose bones and bind poses every skinned part shares.")]
     public string skeleton;
 
-    public List<Part> parts = new();
+    public List<Part> parts = [];
 
-    public List<Clip> clips = new();
+    public List<Clip> clips = [];
 
     [Tooltip("Top bone of the skeleton, such as the hips, and its first bone. Clips play on its parent, in place clips lose its ground travel, and the upper body rides on it.")]
     public string rootBone;
@@ -101,13 +101,13 @@ public class BoneAnimationSet : ScriptableObject, IAnimationSet
     [Tooltip("Bone at the root of the upper body, which plays its own clip; the bones below it join it.")]
     public string upperRoot;
 
-    public List<Socket> sockets = new();
+    public List<Socket> sockets = [];
 
     [Tooltip("Bodies a dying figure falls as, the root body first; empty for none. The context menu fills them from a humanoid avatar or Human Bones.")]
-    public List<RagdollBodyEntry> ragdoll = new();
+    public List<RagdollBodyEntry> ragdoll = [];
 
     [Tooltip("The rig bone for each human body part, for filling the ragdoll on a rig without a humanoid avatar.")]
-    public List<HumanBone> humanBones = new();
+    public List<HumanBone> humanBones = [];
 
     [Tooltip("When the ragdoll takes over from the fall clip, how blasts throw it and when it comes to rest.")]
     public RagdollTuning ragdollTuning = RagdollTuning.Default;

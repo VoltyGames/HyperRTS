@@ -72,7 +72,7 @@ public static class OverlayMeshes
         var start = new Vector3(0f, 1f, 0f);
         var end = new Vector3(Mathf.Sin(angle), Mathf.Cos(angle), 0f);
         var vertices = new[] { start * innerRadius, start, end * innerRadius, end };
-        return Build("Dial Segment", vertices, new[] { 0, 1, 3, 0, 3, 2 });
+        return Build("Dial Segment", vertices, [0, 1, 3, 0, 3, 2]);
     }
 
     /// <summary>Disc of radius 1 on the XY plane; rotate by the camera rotation to face it.</summary>
@@ -95,8 +95,8 @@ public static class OverlayMeshes
     private static Mesh Quad(string name, System.Func<float, float, Vector3> place)
     {
         var vertices = new[] { place(-0.5f, -0.5f), place(0.5f, -0.5f), place(-0.5f, 0.5f), place(0.5f, 0.5f) };
-        var mesh = Build(name, vertices, new[] { 0, 2, 1, 1, 2, 3 });
-        mesh.uv = new[] { Vector2.zero, Vector2.right, Vector2.up, Vector2.one };
+        var mesh = Build(name, vertices, [0, 2, 1, 1, 2, 3]);
+        mesh.uv = [Vector2.zero, Vector2.right, Vector2.up, Vector2.one];
         return mesh;
     }
 

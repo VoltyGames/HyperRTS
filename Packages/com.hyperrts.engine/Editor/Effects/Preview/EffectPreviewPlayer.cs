@@ -23,7 +23,7 @@ public sealed class EffectPreviewPlayer : IDisposable
     private GameObject _root;
     private EffectRig _rig;
     private GraphStream _stream;
-    private VisualEffect[] _graphs = Array.Empty<VisualEffect>();
+    private VisualEffect[] _graphs = [];
 
     public EffectPreviewPlayer(Scene scene) => _scene = scene;
 
@@ -145,7 +145,7 @@ public sealed class EffectPreviewPlayer : IDisposable
         _root = null;
         _rig = null;
         _stream = null;
-        _graphs = Array.Empty<VisualEffect>();
+        _graphs = [];
     }
 
     private void EndStream()

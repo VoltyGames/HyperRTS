@@ -47,7 +47,7 @@ internal struct OpenSet
         }
 
         cell = _heap[0].Cell;
-        _heap[0] = _heap[_heap.Length - 1];
+        _heap[0] = _heap[^1];
         _heap.RemoveAt(_heap.Length - 1);
         SiftDown(0);
         return true;

@@ -24,14 +24,14 @@ public abstract class ProducibleAuthoring : AuthoringBehaviour
     [Header("Production")]
     [Tooltip("Resources spent to produce, place or research this.")]
     [NoEmptyEntries(Key = nameof(ResourceQuantity.type))]
-    public List<ResourceQuantity> cost = new();
+    public List<ResourceQuantity> cost = [];
 
     [Tooltip("Seconds to produce (units), construct (buildings) or research (upgrades).")]
     [Min(0f)]
     public float buildTime = 10f;
 
     [Tooltip("Completed buildings or finished research the owner needs before this can be produced.")]
-    public List<ProducibleAuthoring> prerequisites = new();
+    public List<ProducibleAuthoring> prerequisites = [];
 
     /// <summary>Name shown in the HUD; also the type's identity.</summary>
     public string DisplayName => string.IsNullOrEmpty(displayName) ? name : displayName;
@@ -44,7 +44,7 @@ public abstract class ProducibleAuthoring : AuthoringBehaviour
     protected EntityInfo BakeProducible(IBaker baker, out List<ResourceCost> costs,
         out List<Prerequisite> required)
     {
-        costs = new List<ResourceCost>();
+        costs = [];
         foreach (var quantity in cost)
         {
             if (quantity.type != null)
@@ -53,7 +53,7 @@ public abstract class ProducibleAuthoring : AuthoringBehaviour
             }
         }
 
-        required = new List<Prerequisite>();
+        required = [];
         foreach (var type in prerequisites)
         {
             if (type != null)

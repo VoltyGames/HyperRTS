@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Tests.Build;
 /// <summary>Commands find a map by name or spec path; the gallery marks a map out of date.</summary>
 public class MapPathsTests
 {
-    private static readonly string[] Specs = { "Assets/Maps/Kalyna/Kalyna.map.json", "Assets/Maps/Duel/Duel.map.json" };
+    private static readonly string[] Specs = ["Assets/Maps/Kalyna/Kalyna.map.json", "Assets/Maps/Duel/Duel.map.json"];
 
     [TestCase("Kalyna")]
     [TestCase("Assets/Maps/Kalyna/Kalyna.map.json")]

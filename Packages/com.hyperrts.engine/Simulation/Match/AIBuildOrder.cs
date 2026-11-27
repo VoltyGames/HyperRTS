@@ -24,7 +24,7 @@ public class AIBuildOrder : ScriptableObject
 
     [Tooltip("Each think the AI starts the first unmet step it can afford. Once all are met it trains and " +
              "researches freely.")]
-    public List<Step> steps = new();
+    public List<Step> steps = [];
 
     public List<(Entity Prefab, int Count)> BakeSteps(IBaker baker)
     {

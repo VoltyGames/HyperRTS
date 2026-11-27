@@ -54,7 +54,7 @@ public class AmbientTests
     public void Circling_StaysNearTheAnchorAtFlyingHeight()
     {
         var flock = new BirdFlock(12, Settings, _area, 7u);
-        Run(flock, 20f, ReadOnlySpan<float3>.Empty);
+        Run(flock, 20f, []);
 
         for (var bird = 0; bird < flock.Count; bird++)
         {
@@ -70,14 +70,14 @@ public class AmbientTests
     public void NearbyImpact_ScattersTheFlockAwayAndUp_AFarOneIsIgnored()
     {
         var flock = new BirdFlock(12, Settings, _area, 7u);
-        Run(flock, 5f, ReadOnlySpan<float3>.Empty);
+        Run(flock, 5f, []);
         var center = flock.Center;
 
-        flock.Step(Step, new[] { new float3(center.x + 200f, 0f, center.z) });
+        flock.Step(Step, [new float3(center.x + 200f, 0f, center.z)]);
         Assert.IsFalse(flock.Scattered, "far impact");
 
-        flock.Step(Step, new[] { new float3(center.x + 45f, 0f, center.z) });
-        Run(flock, 2f, ReadOnlySpan<float3>.Empty);
+        flock.Step(Step, [new float3(center.x + 45f, 0f, center.z)]);
+        Run(flock, 2f, []);
 
         Assert.IsTrue(flock.Scattered);
         Assert.Less(flock.Center.x, center.x - 15f, "flies away from the impact");
@@ -90,8 +90,8 @@ public class AmbientTests
         var flock = new BirdFlock(12, Settings, _area, 7u);
         var anchor = flock.Anchor;
 
-        flock.Step(Step, new[] { flock.Center });
-        Run(flock, 4.5f, ReadOnlySpan<float3>.Empty);
+        flock.Step(Step, [flock.Center]);
+        Run(flock, 4.5f, []);
 
         Assert.IsFalse(flock.Scattered);
         Assert.GreaterOrEqual(math.distance(flock.Anchor.xz, anchor.xz), BirdFlock.ResettleDistance);
@@ -117,7 +117,7 @@ public class AmbientTests
         var random = new Random(3u);
 
         var found = DustDevilSites.TryPick(_ground, new float2(100f, 100f), 60f,
-            new[] { SurfaceMaterial.Snow }, ref random, out _);
+            [SurfaceMaterial.Snow], ref random, out _);
 
         Assert.IsFalse(found);
     }

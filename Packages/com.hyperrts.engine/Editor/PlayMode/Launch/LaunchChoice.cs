@@ -15,7 +15,7 @@ public class LaunchChoice
 
     /// <summary>Multiplayer Play Mode Editor instances (0 to 3) that join a hosted match.</summary>
     public int virtualPlayers;
-    public List<LaunchSlot> slots = new();
+    public List<LaunchSlot> slots = [];
 
     /// <summary>Whether virtual players could join: Play hosts this map.</summary>
     public bool CanHostVirtualPlayers => entry == LaunchEntry.Map && network == LaunchNetwork.Host;

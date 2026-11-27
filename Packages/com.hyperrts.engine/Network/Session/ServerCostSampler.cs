@@ -19,12 +19,12 @@ internal sealed class ServerCostSampler : IDisposable
 
     // Process.WorkingSet64 reads 0 in a Mono player; this counter is the process's memory as the OS sees it.
     private ProfilerRecorder _systemMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "System Used Memory");
-    private readonly List<float> _cpu = new();
-    private readonly List<float> _systemMemoryMB = new();
-    private readonly List<float> _usedMemoryMB = new();
-    private readonly List<float> _connections = new();
-    private readonly List<float> _sentKbps = new();
-    private readonly List<float> _entities = new();
+    private readonly List<float> _cpu = [];
+    private readonly List<float> _systemMemoryMB = [];
+    private readonly List<float> _usedMemoryMB = [];
+    private readonly List<float> _connections = [];
+    private readonly List<float> _sentKbps = [];
+    private readonly List<float> _entities = [];
     private TimeSpan _lastCpu;
     private double _lastSeconds;
     private ulong _lastSent;

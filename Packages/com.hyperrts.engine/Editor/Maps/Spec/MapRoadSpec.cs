@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("road", 110, 0.92f, 0.9f, 0.85f)]
 public sealed class MapRoadSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
 
     /// <summary>Road class key in the climate (its width, surface, mesh material, verge and junction rank).</summary>
     [MapKey(typeof(MapRoadClass))]

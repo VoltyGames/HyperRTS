@@ -11,7 +11,7 @@ public abstract class SimulationFixture
     protected TestWorld World { get; private set; }
 
     /// <summary>Team of each player, in order; players are owners 1, 2 and so on.</summary>
-    protected virtual byte[] Teams => new byte[] { 1, 2 };
+    protected virtual byte[] Teams => [1, 2];
 
     /// <summary>Side of the square map in metres.</summary>
     protected virtual float MapSize => 200f;
@@ -23,7 +23,7 @@ public abstract class SimulationFixture
         World.CreateMatch(Teams, MapSize);
     }
 
-    private readonly List<Func<string>> _dumps = new();
+    private readonly List<Func<string>> _dumps = [];
 
     /// <summary>Queues a <see cref="GridDump"/> rendered after the test only if it failed, so a passing run stays quiet.</summary>
     protected void DumpOnFailure(Func<string> dump) => _dumps.Add(dump);

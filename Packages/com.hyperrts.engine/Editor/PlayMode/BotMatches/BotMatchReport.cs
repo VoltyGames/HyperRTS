@@ -16,7 +16,7 @@ internal class BotMatchReport
     public string scene;
     public string started;
     public BotMatchSettings settings;
-    public List<Match> matches = new();
+    public List<Match> matches = [];
 
     /// <summary>One match's outcome.</summary>
     [Serializable]
@@ -26,8 +26,8 @@ internal class BotMatchReport
         public float minutes;
         public bool timedOut;
         public int winningTeam;
-        public List<int> winningSides = new();
-        public List<ServerReport.PlayerResult> players = new();
+        public List<int> winningSides = [];
+        public List<ServerReport.PlayerResult> players = [];
 
         public string Winner()
         {

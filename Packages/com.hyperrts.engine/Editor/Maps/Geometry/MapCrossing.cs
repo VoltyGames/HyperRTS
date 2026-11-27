@@ -32,7 +32,7 @@ public sealed class MapCrossing
     public float ClearSpan { get; set; }
 
     /// <summary>A bridge's piers in map space as (x, z, half-width across the flow); empty for a ford or a single span.</summary>
-    public Vector3[] Piers { get; private set; } = System.Array.Empty<Vector3>();
+    public Vector3[] Piers { get; private set; } = [];
 
     /// <summary>Surface height units cross at: a bridge deck, or just under the water over a ford.</summary>
     public float Height { get; set; }

@@ -20,14 +20,14 @@ internal sealed class UxmlCheck
     private static readonly Regex TagPattern = new(@"<(?![/?!])([\w:.]+)((?:""[^""]*""|'[^']*'|[^>""'])*)>");
     private static readonly Regex AttributePattern = new(@"([\w:.-]+)\s*=\s*(?:""([^""]*)""|'([^']*)')");
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<string> Structural = new() { "UXML", "Style", "Template", "Instance", "AttributeOverrides" };
+    private static readonly HashSet<string> Structural = ["UXML", "Style", "Template", "Instance", "AttributeOverrides"];
 
     private readonly UIFile _file;
     private readonly UIProject _project;
     private readonly HashSet<string> _styled;
     private readonly ValidationIssues _issues;
-    private readonly HashSet<string> _reportedClasses = new();
-    private readonly Dictionary<string, string> _namespaces = new();
+    private readonly HashSet<string> _reportedClasses = [];
+    private readonly Dictionary<string, string> _namespaces = [];
 
     public UxmlCheck(UIFile file, UIProject project, HashSet<string> styled, ValidationIssues issues)
     {
@@ -51,7 +51,7 @@ internal sealed class UxmlCheck
             {
                 if (key == "xmlns" || key.StartsWith("xmlns:"))
                 {
-                    _namespaces[key.Length > 6 ? key.Substring(6) : ""] = value;
+                    _namespaces[key.Length > 6 ? key[6..] : ""] = value;
                 }
             }
         }
@@ -59,8 +59,8 @@ internal sealed class UxmlCheck
         foreach (var (name, index, attributes) in tags)
         {
             var colon = name.IndexOf(':');
-            var local = name.Substring(colon + 1);
-            CheckElement(colon < 0 ? "" : name.Substring(0, colon), local, index);
+            var local = name[(colon + 1)..];
+            CheckElement(colon < 0 ? "" : name[..colon], local, index);
             foreach (var (key, value, at) in attributes)
             {
                 if (key == "src" && (local == "Style" || local == "Template"))

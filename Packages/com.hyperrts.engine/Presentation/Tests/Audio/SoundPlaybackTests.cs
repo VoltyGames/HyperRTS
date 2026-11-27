@@ -27,13 +27,13 @@ public class SoundPlaybackTests
         _voice = Cue(1, 10);
         _clip = AudioClip.Create("Test", 441, 1, 44100, false);
         _set = ScriptableObject.CreateInstance<AnnouncerSet>();
-        _set.lines = new List<AnnouncerSet.Line>
-        {
+        _set.lines =
+        [
             new() { kind = AnnouncementKind.UnitLost, cue = _gun, cooldown = 10f },
             new() { kind = AnnouncementKind.BaseUnderAttack, cue = _voice, cooldown = 30f },
             new() { kind = AnnouncementKind.LowPower, cooldown = 20f },
             new() { kind = GameKind, cue = _gun, cooldown = 5f },
-        };
+        ];
         _set.maxWait = 4f;
     }
 
@@ -116,8 +116,8 @@ public class SoundPlaybackTests
     {
         var near = AudioClip.Create("Near", 441, 1, 44100, false);
         var far = AudioClip.Create("Far", 441, 1, 44100, false);
-        _gun.clips = new[] { near };
-        _gun.distantClips = new[] { far };
+        _gun.clips = [near];
+        _gun.distantClips = [far];
         _gun.distantFrom = 40f;
 
         Assert.IsFalse(_gun.IsDistant(39f));

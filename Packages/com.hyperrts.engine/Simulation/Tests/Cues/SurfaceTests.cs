@@ -18,11 +18,11 @@ public class SurfaceTests
     [SetUp]
     public void SetUp()
     {
-        var cells = new NativeArray<byte>(new[]
-        {
+        var cells = new NativeArray<byte>(
+        [
             (byte)SurfaceMaterial.Soil, (byte)SurfaceMaterial.Grass, (byte)SurfaceMaterial.Mud,
             (byte)SurfaceMaterial.Sand, (byte)SurfaceMaterial.Gravel, (byte)SurfaceMaterial.Water,
-        }, Allocator.Temp);
+        ], Allocator.Temp);
         _materials = GroundMaterials.Create(cells, new int2(3, 2), new float2(10f, 20f), 2f, Allocator.Persistent);
         cells.Dispose();
     }
@@ -79,7 +79,7 @@ public class SurfaceTests
         var effects = ScriptableObject.CreateInstance<SurfaceEffects>();
         var splash = new GameObject("Splash");
         var dust = new GameObject("Dust");
-        effects.materials = new[] { new SurfaceEffects.Entry { material = SurfaceMaterial.Water, rig = splash } };
+        effects.materials = [new SurfaceEffects.Entry { material = SurfaceMaterial.Water, rig = splash }];
 
         Assert.IsNull(effects.RigFor(SurfaceMaterial.Soil), "no entry and no catch-all");
         effects.anyMaterial = dust;

@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Tests;
 /// <summary>Every engine authoring component has its own icon, glyph and Add Component folder.</summary>
 public class ComponentIconTests
 {
-    private static readonly string[] MenuFolders = { HyperRTSMenu.Entity, HyperRTSMenu.Look, HyperRTSMenu.Scene };
+    private static readonly string[] MenuFolders = [HyperRTSMenu.Entity, HyperRTSMenu.Look, HyperRTSMenu.Scene];
 
     private static System.Type[] Components() => TypeCache.GetTypesDerivedFrom<AuthoringBehaviour>()
         .Where(type => !type.IsAbstract && !type.IsGenericType && type.Namespace.StartsWith("HyperRTS.") && !type.Assembly.GetName().Name.EndsWith(".Tests"))

@@ -19,8 +19,8 @@ internal sealed class MapLookCost : IDisposable
     private readonly MapLookSwitches _switches;
     private readonly List<string> _features;
     private readonly FrameTiming[] _timing = new FrameTiming[1];
-    private readonly List<float> _gpu = new();
-    private readonly List<float> _cpu = new();
+    private readonly List<float> _gpu = [];
+    private readonly List<float> _cpu = [];
     private MapLookCostPoint _point;
     private int _variant;
     private int _lastFrame = -1;

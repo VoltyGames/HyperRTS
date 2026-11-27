@@ -33,7 +33,7 @@ public class CursorTests
         _world.World.CreateSystem<ClientSingletonSystem>();
         _intent = _world.World.CreateSystem<CursorIntentSystem>();
         _set = ScriptableObject.CreateInstance<CursorSet>();
-        _set.animations = new[] { Animation(CursorKind.Default, true), Animation(CursorKind.Select, false) };
+        _set.animations = [Animation(CursorKind.Default, true), Animation(CursorKind.Select, false)];
     }
 
     [TearDown]
@@ -179,7 +179,7 @@ public class CursorTests
         Assert.AreEqual(CursorKind.Select, _set.Animation(CursorKind.Select).kind);
         Assert.AreEqual(CursorKind.Default, _set.Animation(CursorKind.Attack).kind);
 
-        _set.animations = new[] { Animation(CursorKind.Select, true) };
+        _set.animations = [Animation(CursorKind.Select, true)];
         Assert.Throws<MissingReferenceException>(() => _set.Animation(CursorKind.Attack));
     }
 
@@ -200,7 +200,7 @@ public class CursorTests
         kind = kind,
         fps = 8f,
         loop = loop,
-        sizes = new[] { Sized(32), Sized(48), Sized(64) },
+        sizes = [Sized(32), Sized(48), Sized(64)],
     };
 
     private static CursorFrames Sized(int size) => new() { size = size, frames = new Texture2D[4] };

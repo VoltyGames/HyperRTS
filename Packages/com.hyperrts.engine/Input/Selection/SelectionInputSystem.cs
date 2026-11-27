@@ -1,5 +1,5 @@
-using HyperRTS.Presentation.Interaction;
 using HyperRTS.Input.Cameras;
+using HyperRTS.Presentation.Interaction;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
@@ -35,7 +35,7 @@ namespace HyperRTS.Input.Selection
         {
             _actions = InputActionsProvider.Actions;
             var selection = _actions.Selection;
-            _groupKeys = new[] { selection.Group1, selection.Group2, selection.Group3, selection.Group4, selection.Group5 };
+            _groupKeys = [selection.Group1, selection.Group2, selection.Group3, selection.Group4, selection.Group5];
 
             RequireForUpdate<SelectionInput>();
             RequireForUpdate<SelectionDragState>();

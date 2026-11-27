@@ -137,7 +137,7 @@ public class PlayPage : HubPage
         _results.Add(Row(true, "Run", "Match", "Minutes", "Winner", "Sides"));
         foreach (var result in Enumerable.Reverse(results))
         {
-            var time = result.run.Length > 11 ? result.run.Substring(11) : result.run;
+            var time = result.run.Length > 11 ? result.run[11..] : result.run;
             _results.Add(Row(false, time, result.match.ToString(), result.minutes.ToString("F1"), result.winner,
                 result.sides));
         }

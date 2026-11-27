@@ -77,7 +77,7 @@ internal sealed partial class StagingJob
         SessionState.SetString(StatusKey, $"Starting '{file.Name}'");
         SessionState.SetBool(ActiveKey, true);
         SessionState.SetFloat(StartedKey, (float)EditorApplication.timeSinceStartup);
-        SessionState.SetIntArray(ResolutionKey, new[] { resolution.x, resolution.y });
+        SessionState.SetIntArray(ResolutionKey, [resolution.x, resolution.y]);
         if (active.path != file.Scene)
         {
             EditorSceneManager.OpenScene(file.Scene, OpenSceneMode.Single);
@@ -127,7 +127,7 @@ internal sealed partial class StagingJob
     {
         try
         {
-            var size = SessionState.GetIntArray(ResolutionKey, new[] { 0, 0 });
+            var size = SessionState.GetIntArray(ResolutionKey, [0, 0]);
             _current = new StagingJob(new StagingRun(StagingFile.Load(path), new Vector2Int(size[0], size[1])));
         }
         catch (Exception exception)

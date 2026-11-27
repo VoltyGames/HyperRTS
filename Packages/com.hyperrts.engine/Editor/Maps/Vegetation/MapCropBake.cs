@@ -24,16 +24,16 @@ public sealed class MapCropBake
     /// <summary>Field index plus one per cell. 0 means no crop.</summary>
     public MapValues<int> Ids { get; }
 
-    public List<RowCrop> Crops { get; } = new();
+    public List<RowCrop> Crops { get; } = [];
 
     /// <summary>Share of sight each of <see cref="Crops"/> takes per metre crossed.</summary>
-    public List<float> SightDensities { get; } = new();
+    public List<float> SightDensities { get; } = [];
 
-    public List<RowCropField> Fields { get; } = new();
+    public List<RowCropField> Fields { get; } = [];
 
-    public List<ScatterTile> Tiles { get; } = new();
+    public List<ScatterTile> Tiles { get; } = [];
 
-    public List<int> TileFields { get; } = new();
+    public List<int> TileFields { get; } = [];
 
     /// <summary>Plants the fields grow at full density.</summary>
     public long Plants { get; set; }

@@ -51,7 +51,7 @@ public static class UnitSilhouetteSettings
         feature.settings.filterSettings.RenderQueueType = RenderQueueType.Opaque;
         // Render Objects starts with no layers, which draws nothing.
         feature.settings.filterSettings.LayerMask = ~0;
-        feature.settings.filterSettings.PassNames = new[] { pass };
+        feature.settings.filterSettings.PassNames = [pass];
         feature.settings.filterSettings.RenderingLayerMask = UnitRenderingLayer.Mask;
         RendererFeatures.Add(data, feature, name);
     }

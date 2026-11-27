@@ -13,7 +13,7 @@ public sealed class GrassPlant
     public string name;
 
     [Tooltip("The plant's models, origin at the root, one submesh each; every plant drawn picks one from its hash.")]
-    public List<Mesh> meshes = new();
+    public List<Mesh> meshes = [];
 
     [Tooltip("HyperRTS/Foliage material the models share.")]
     public Material material;

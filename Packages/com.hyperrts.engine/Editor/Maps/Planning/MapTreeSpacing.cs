@@ -11,7 +11,7 @@ public sealed class MapTreeSpacing
 {
     private const float Cell = 4f;
     private const float MaxSlope = 38f;
-    private readonly Dictionary<Vector2Int, List<Vector2>> _cells = new();
+    private readonly Dictionary<Vector2Int, List<Vector2>> _cells = [];
     private readonly MapShapes _shapes;
     private readonly MapHeights _heights;
     private readonly MapClearance _clearance;
@@ -49,7 +49,7 @@ public sealed class MapTreeSpacing
         var key = Key(point);
         if (!_cells.TryGetValue(key, out var list))
         {
-            _cells[key] = list = new List<Vector2>();
+            _cells[key] = list = [];
         }
 
         list.Add(point);

@@ -34,7 +34,7 @@ internal sealed class MapLookRun
     private readonly int _quality;
     private readonly bool _cost;
     private readonly int _previousQuality;
-    private readonly List<(string weather, MapLookSpec look, float zoom)> _plan = new();
+    private readonly List<(string weather, MapLookSpec look, float zoom)> _plan = [];
     private int _next;
     private int _readyFrame = -1;
     private int _startFrame = -1;

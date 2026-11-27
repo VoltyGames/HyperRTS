@@ -29,15 +29,15 @@ public class AnnouncerSet : ScriptableObject
     }
 
     [Tooltip("One line per alert kind; a kind without a line stays silent.")]
-    public List<Line> lines = new()
-    {
+    public List<Line> lines =
+    [
         new Line { kind = AnnouncementKind.UnitLost, cooldown = 10f },
         new Line { kind = AnnouncementKind.BaseUnderAttack, cooldown = 30f },
         new Line { kind = AnnouncementKind.LowPower, cooldown = 20f },
         new Line { kind = AnnouncementKind.ConstructionComplete, cooldown = 2f },
         new Line { kind = AnnouncementKind.UnitReady, cooldown = 2f },
         new Line { kind = AnnouncementKind.UpgradeComplete, cooldown = 2f },
-    };
+    ];
 
     [Tooltip("Seconds an alert may wait behind others before it is dropped as stale.")]
     [Min(0f)]

@@ -17,7 +17,7 @@ public sealed class MapFarmlandKit : MapLibraryItem
     [Tooltip("Field length along the rows (x) and width across them (y), in metres.")]
     public Vector2 fieldSize = new(160f, 80f);
 
-    public List<MapCropShare> crops = new();
+    public List<MapCropShare> crops = [];
 
     [Tooltip("Weedy strip round each field (metres).")]
     public float marginWidth = 2.5f;
@@ -52,5 +52,5 @@ public sealed class MapFarmlandKit : MapLibraryItem
     public float minFieldWidth = 20f;
 
     [Tooltip("Surfaces for the pieces too small or narrow to farm (fallow, pasture), one picked per field; empty leaves them margin.")]
-    public List<MapCropShare> leftovers = new();
+    public List<MapCropShare> leftovers = [];
 }

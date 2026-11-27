@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Effects.Graph;
 /// </summary>
 public sealed class EffectGraphInputs
 {
-    private static readonly string[] PoseAttributes = { "position", "direction", "axisZ", "scale" };
+    private static readonly string[] PoseAttributes = ["position", "direction", "axisZ", "scale"];
 
     public EffectGraphInputs(GraphModel graph, bool streams)
     {
@@ -25,12 +25,12 @@ public sealed class EffectGraphInputs
 
         Play = Event(graph, GraphStream.PlayEvent, -700f);
         Stop = Event(graph, GraphStream.StopEvent, -1000f);
-        StreamPose = new[]
-        {
+        StreamPose =
+        [
             graph.Parameter(GraphStream.FromProperty, Vector3.zero), graph.Parameter(GraphStream.ToProperty, Vector3.zero),
             graph.Parameter(GraphStream.UpProperty, Vector3.up), graph.Parameter(GraphStream.ForwardProperty, Vector3.forward),
             graph.Parameter(GraphStream.ScaleProperty, 1f),
-        };
+        ];
         Speed = graph.Parameter(GraphStream.SpeedProperty, 0f);
     }
 

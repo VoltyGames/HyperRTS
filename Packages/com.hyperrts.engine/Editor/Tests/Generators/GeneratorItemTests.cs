@@ -73,8 +73,8 @@ public class GeneratorItemTests
     {
         TestItems = new[]
         {
-            new GeneratorItem("first", new[] { First }, Array.Empty<string>(), First, () => { }),
-            new GeneratorItem("second", new[] { Second }, Array.Empty<string>(), Second, () => { }),
+            new GeneratorItem("first", new[] { First }, [], First, () => { }),
+            new GeneratorItem("second", new[] { Second }, [], Second, () => { }),
         },
     };
 
@@ -91,7 +91,7 @@ public class GeneratorItemTests
     {
         public const string TestName = "Generator item test";
 
-        public IReadOnlyList<GeneratorItem> TestItems = Array.Empty<GeneratorItem>();
+        public IReadOnlyList<GeneratorItem> TestItems = [];
 
         public override string Name => TestName;
         public override string Group => "Tests";

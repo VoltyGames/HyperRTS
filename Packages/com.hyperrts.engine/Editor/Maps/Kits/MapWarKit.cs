@@ -55,12 +55,12 @@ public sealed class MapWarKit : MapLibraryItem
     public float weedCoverage = 0.8f;
 
     [Header("Trees")]
-    public List<MapWarTreeSwap> shreddedTrees = new();
+    public List<MapWarTreeSwap> shreddedTrees = [];
 
     [Header("Trenches")]
     [Tooltip("Palette props laid end to end along belts; empty for none.")]
     [MapKey(typeof(MapProp))]
-    public List<string> trenchProps = new();
+    public List<string> trenchProps = [];
 
     [Tooltip("Distance from the belt's edge to the trench (metres).")]
     public float trenchOffset = 5f;
@@ -84,7 +84,7 @@ public sealed class MapWarKit : MapLibraryItem
 
     [Header("Wrecks")]
     [MapKey(typeof(MapProp))]
-    public List<string> wrecks = new();
+    public List<string> wrecks = [];
 
     [Tooltip("Wrecks lie at most this far (metres) from belts and woods, out of the open lanes.")]
     public float wreckCoverDistance = 8f;

@@ -29,10 +29,10 @@ public static class MapReportImage
     private static readonly Color SceneryColor = new(0.85f, 0.8f, 0.7f);
 
     private static readonly Color[] PathColors =
-    {
+    [
         new(1f, 1f, 1f), new(1f, 0.6f, 0.2f), new(0.6f, 1f, 0.3f), new(1f, 0.4f, 0.8f), new(0.5f, 0.8f, 1f),
         new(1f, 1f, 0.4f),
-    };
+    ];
 
     /// <summary>The built map: painted ground, blocked cells and the measured attack paths.</summary>
     public static Texture2D Draw(MapGeneration generation, MapNavGrid nav, List<MapPath> paths)

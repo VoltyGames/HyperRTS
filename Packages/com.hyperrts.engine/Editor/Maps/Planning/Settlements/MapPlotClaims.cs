@@ -17,10 +17,10 @@ internal sealed class MapPlotClaims
 
     /// <summary>What a plot is blocked by, most telling first; any other kind of land ranks last.</summary>
     private static readonly MapLandKind[] Priority =
-    {
+    [
         MapLandKind.Water, MapLandKind.Bank, MapLandKind.Ravine, MapLandKind.RavineRim, MapLandKind.Base,
         MapLandKind.Pad, MapLandKind.Road, MapLandKind.Yard, MapLandKind.Garden, MapLandKind.Back,
-    };
+    ];
 
     private readonly MapPlanContext _context;
     private readonly MapSettlementKit _kit;

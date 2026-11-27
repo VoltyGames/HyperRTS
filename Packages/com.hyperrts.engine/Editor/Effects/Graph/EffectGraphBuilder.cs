@@ -138,7 +138,7 @@ public static class EffectGraphBuilder
             {
                 ComputeShader compute => ShaderUtil.GetComputeShaderMessages(compute),
                 Shader shader => PassMessages(shader),
-                _ => Enumerable.Empty<ShaderMessage>(),
+                _ => [],
             };
             foreach (var message in messages.Where(m => m.severity == ShaderCompilerMessageSeverity.Error))
             {
@@ -158,7 +158,7 @@ public static class EffectGraphBuilder
                 var pass = subshader.GetPass(p);
                 foreach (var stage in new[] { ShaderType.Vertex, ShaderType.Fragment }.Where(pass.HasShaderStage))
                 {
-                    foreach (var message in pass.CompileVariant(stage, Array.Empty<string>(), ShaderCompilerPlatform.D3D, BuildTarget.StandaloneWindows64).Messages)
+                    foreach (var message in pass.CompileVariant(stage, [], ShaderCompilerPlatform.D3D, BuildTarget.StandaloneWindows64).Messages)
                     {
                         yield return message;
                     }

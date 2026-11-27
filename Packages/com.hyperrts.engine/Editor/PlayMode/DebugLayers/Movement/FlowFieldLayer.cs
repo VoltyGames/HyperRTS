@@ -34,7 +34,7 @@ public sealed class FlowFieldLayer : DebugLayer
             return;
         }
 
-        shapes.Cells(grid.Grid, new Colors { Field = fields[fields.Length - 1].Field, Grid = grid.Grid });
+        shapes.Cells(grid.Grid, new Colors { Field = fields[^1].Field, Grid = grid.Grid });
     }
 
     private struct Colors : ICellColors

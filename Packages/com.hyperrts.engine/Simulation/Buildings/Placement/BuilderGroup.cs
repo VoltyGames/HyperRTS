@@ -40,7 +40,7 @@ internal readonly struct BuilderGroup
 
         middle /= _builders.Length;
         var first = math.distancesq(middle.xz, orders[0].Position.xz);
-        if (math.distancesq(middle.xz, orders[orders.Length - 1].Position.xz) < first)
+        if (math.distancesq(middle.xz, orders[^1].Position.xz) < first)
         {
             orders.ReverseFrom(0);
         }

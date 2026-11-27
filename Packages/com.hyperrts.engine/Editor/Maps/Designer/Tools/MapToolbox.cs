@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Designer.Tools;
 /// </summary>
 public sealed class MapToolbox
 {
-    private readonly Dictionary<MapToolMode, MapFeatureKind> _kinds = new();
+    private readonly Dictionary<MapToolMode, MapFeatureKind> _kinds = [];
 
     public MapToolbox()
     {

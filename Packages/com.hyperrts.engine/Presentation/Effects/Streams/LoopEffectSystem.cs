@@ -24,8 +24,8 @@ namespace HyperRTS.Presentation.Effects.Streams
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class LoopEffectSystem : EffectStreamSystem
     {
-        private readonly Dictionary<Entity, double> _firstSeen = new();
-        private readonly List<Entity> _gone = new();
+        private readonly Dictionary<Entity, double> _firstSeen = [];
+        private readonly List<Entity> _gone = [];
         private readonly SmokeShadows _smoke = new();
         private GameObject _lightsRoot;
         private LoopLights _lights;

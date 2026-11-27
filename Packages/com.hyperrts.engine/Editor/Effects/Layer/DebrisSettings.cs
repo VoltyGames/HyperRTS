@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Effects.Layer;
 public sealed class DebrisSettings
 {
     [Tooltip("The chunks a debris layer draws, 1 to 4 meshes.")]
-    public List<Mesh> meshes = new();
+    public List<Mesh> meshes = [];
 
     public float metallic;
     public float smoothness;

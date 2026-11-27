@@ -53,7 +53,7 @@ public static class MeshLods
         var ranges = new MeshLodRange[target.subMeshCount][];
         for (var sub = 0; sub < target.subMeshCount; sub++)
         {
-            indices[sub] = new List<int>();
+            indices[sub] = [];
             ranges[sub] = new MeshLodRange[meshes.Length];
         }
 

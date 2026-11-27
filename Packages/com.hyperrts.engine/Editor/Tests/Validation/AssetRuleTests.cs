@@ -19,7 +19,7 @@ public class AssetRuleTests : TemplateFixture
     {
         var silent = Track(ScriptableObject.CreateInstance<SoundCue>());
         var playing = Track(ScriptableObject.CreateInstance<SoundCue>());
-        playing.clips = new[] { Track(AudioClip.Create("Shot", 441, 1, 44100, false)) };
+        playing.clips = [Track(AudioClip.Create("Shot", 441, 1, 44100, false))];
         var issues = new ValidationIssues();
 
         new SoundCueRule().Check(AssetSet.From(silent, playing), issues);

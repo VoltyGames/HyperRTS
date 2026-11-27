@@ -23,7 +23,7 @@ public sealed class WeatherSet : PresentationBehaviour
     // Dictionaries serialize only with [SerializeField], even when public.
     [SerializeField]
     [Tooltip("Each weather's atmosphere prefab, by key.")]
-    public Dictionary<string, GameObject> atmospheres = new();
+    public Dictionary<string, GameObject> atmospheres = [];
 
     private readonly LiveSingleton<MatchSetup> _setup = new();
     private string _currentKey;

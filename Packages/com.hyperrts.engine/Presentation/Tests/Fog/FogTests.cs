@@ -64,8 +64,8 @@ public class FogTests
     [Test]
     public void Ease_ReachesTheTarget_InTheFadeTime()
     {
-        using var shown = new NativeArray<byte>(new byte[] { 0, 255, 100 }, Allocator.TempJob);
-        using var target = new NativeArray<byte>(new byte[] { 255, 0, 100 }, Allocator.TempJob);
+        using var shown = new NativeArray<byte>([0, 255, 100], Allocator.TempJob);
+        using var target = new NativeArray<byte>([255, 0, 100], Allocator.TempJob);
 
         Assert.IsFalse(FogEase.Step(shown, target, 0.15f, 0.3f), "half way after half the time");
         Assert.That(shown[0], Is.InRange(120, 135));
@@ -163,7 +163,7 @@ public class FogTests
     {
         var part = _em.CreateEntity(typeof(MaterialMeshInfo), typeof(HiddenBy));
         _em.AddBuffer<LinkedEntityGroup>(root).AddRange(new NativeArray<LinkedEntityGroup>(
-            new LinkedEntityGroup[] { root, part }, Allocator.Temp));
+            [root, part], Allocator.Temp));
         return part;
     }
 

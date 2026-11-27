@@ -39,7 +39,7 @@ public struct ReplayStream : IDisposable
                 return 0;
             }
 
-            var last = Frames[Frames.Length - 1];
+            var last = Frames[^1];
             return last.CueStart + last.CueCount;
         }
     }

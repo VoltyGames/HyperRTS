@@ -56,7 +56,7 @@ public static class MapRoadFades
     private static bool TryCovering(MapRoad road, Vector2 end, IReadOnlyList<MapRoad> roads,
         out List<MapRoad> covering)
     {
-        covering = new List<MapRoad>();
+        covering = [];
         foreach (var other in roads)
         {
             if (other == road)

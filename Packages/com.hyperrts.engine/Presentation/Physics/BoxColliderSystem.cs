@@ -28,10 +28,10 @@ namespace HyperRTS.Presentation.Physics
 
         private static readonly ProfilerMarker ScanMarker = new("BoxColliderSystem.Scan");
 
-        private readonly Dictionary<Entity, Entity> _colliders = new();
-        private readonly Dictionary<(float3, float3), BlobAssetReference<Collider>> _shapes = new();
-        private readonly List<Entity> _gone = new();
-        private readonly HashSet<Entity> _current = new();
+        private readonly Dictionary<Entity, Entity> _colliders = [];
+        private readonly Dictionary<(float3, float3), BlobAssetReference<Collider>> _shapes = [];
+        private readonly List<Entity> _gone = [];
+        private readonly HashSet<Entity> _current = [];
         private EntityArchetype _staticArchetype;
         private EntityArchetype _movingArchetype;
         private EntityQuery _sources;

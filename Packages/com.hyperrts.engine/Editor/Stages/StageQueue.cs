@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Stages;
 /// <summary>Runs a tool page's stages one at a time, in the order they were added.</summary>
 public sealed class StageQueue<TSource> where TSource : class
 {
-    private readonly List<(TSource Source, Stage<TSource> Stage)> _waiting = new();
+    private readonly List<(TSource Source, Stage<TSource> Stage)> _waiting = [];
     private readonly Func<TSource, string> _key;
 
     // The key tells two sources apart, such as by asset path, since a page may list fresh copies.

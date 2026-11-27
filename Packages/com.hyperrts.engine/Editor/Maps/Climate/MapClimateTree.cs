@@ -12,10 +12,10 @@ namespace HyperRTS.Editor.Maps.Climate;
 public sealed class MapClimateTree : MapLibraryItem
 {
     [Tooltip("Mesh prefab per variant, ideally with an LOD Group, origin at the base of the trunk.")]
-    public List<GameObject> prefabs = new();
+    public List<GameObject> prefabs = [];
 
     [Tooltip("Destructible entity version of each variant, in the same order, used inside the playable area. Empty keeps terrain trees everywhere.")]
-    public List<GameObject> destructibles = new();
+    public List<GameObject> destructibles = [];
 
     [Tooltip("Random uniform scale range.")]
     public Vector2 scale = new(0.85f, 1.15f);

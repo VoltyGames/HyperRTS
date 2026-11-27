@@ -24,8 +24,8 @@ public class DebrisTests
     public void SetUp()
     {
         _set = ScriptableObject.CreateInstance<DebrisSet>();
-        var triangle = new Mesh { vertices = new[] { Vector3.zero, Vector3.right, Vector3.forward }, triangles = new[] { 0, 1, 2 } };
-        _set.meshes = new List<Mesh> { triangle };
+        var triangle = new Mesh { vertices = [Vector3.zero, Vector3.right, Vector3.forward], triangles = [0, 1, 2] };
+        _set.meshes = [triangle];
         _set.material = new Material(Shader.Find("Hidden/InternalErrorShader")) { enableInstancing = true };
     }
 

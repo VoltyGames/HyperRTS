@@ -18,17 +18,16 @@ public class ModuleLayoutTests
 {
     // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
     private static readonly string[][] Tiers =
-    {
-        new[] { "Common", "Stats" },
-        new[] { "Navigation", "Vision", "Selection", "Orders", "Cues" },
-        new[]
-        {
+    [
+        ["Common", "Stats"],
+        ["Navigation", "Vision", "Selection", "Orders", "Cues"],
+        [
             "Combat", "Destruction", "Transport", "Air", "Movement", "Resources", "Production", "Upgrades", "Buildings",
             "Power", "Abilities", "Auras", "Veterancy", "Capture", "Match", "Status", "Airdrops", "Squads", "Death",
             "Strikes",
-        },
-        new[] { "AI", "GameEntities", "MatchStart", "Commands", "Replays" },
-    };
+        ],
+        ["AI", "GameEntities", "MatchStart", "Commands", "Replays"],
+    ];
 
     private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
     private static readonly Regex PartialType = new(@"\bpartial (?:class|struct)\b");
@@ -123,7 +122,7 @@ public class ModuleLayoutTests
 
             if (!uses.TryGetValue(module, out var targets))
             {
-                uses[module] = targets = new List<string>();
+                uses[module] = targets = [];
             }
 
             targets.Add(used);
@@ -214,7 +213,7 @@ public class ModuleLayoutTests
                 var edge = $"{module} -> {used}";
                 if (!result.TryGetValue(edge, out var files))
                 {
-                    result[edge] = files = new List<string>();
+                    result[edge] = files = [];
                 }
 
                 files.Add(RelativeTo(PackageRoot, path));
@@ -257,11 +256,11 @@ public class ModuleLayoutTests
 
     private static (string Module, string Used) Split(string edge)
     {
-        var modules = edge.Split(new[] { " -> " }, StringSplitOptions.None);
+        var modules = edge.Split([" -> "], StringSplitOptions.None);
         return (modules[0], modules[1]);
     }
 
     // Path.GetRelativePath is missing from the .NET Framework profile editor code may compile against.
     private static string RelativeTo(string root, string path) =>
-        Path.GetFullPath(path).Substring(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1);
+        Path.GetFullPath(path)[(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar).Length + 1)..];
 }

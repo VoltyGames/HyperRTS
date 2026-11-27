@@ -15,8 +15,8 @@ namespace HyperRTS.Presentation.Effects.Streams;
 public sealed class EffectStreams
 {
     private readonly EffectPool _pool;
-    private readonly Dictionary<(Entity, int), StreamState> _states = new();
-    private readonly List<(Entity, int)> _stale = new();
+    private readonly Dictionary<(Entity, int), StreamState> _states = [];
+    private readonly List<(Entity, int)> _stale = [];
     private readonly Stack<StreamState> _free = new();
     private int _frame;
 

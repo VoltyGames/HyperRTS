@@ -1,12 +1,12 @@
+using System.Collections.Generic;
 using HyperRTS.Presentation.Animation.Machines;
 using HyperRTS.Presentation.Animation.Rigs;
-using HyperRTS.Simulation.Combat.Weapons;
-using HyperRTS.Simulation.Cues.Sounds;
-using System.Collections.Generic;
 using HyperRTS.Simulation.Air;
+using HyperRTS.Simulation.Combat.Weapons;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Buildings;
 using HyperRTS.Simulation.Common.Systems;
+using HyperRTS.Simulation.Cues.Sounds;
 using HyperRTS.Simulation.Production;
 using HyperRTS.Simulation.Vision;
 using Unity.Entities;
@@ -26,9 +26,9 @@ namespace HyperRTS.Presentation.Audio
         private const int Voices = 24;
 
         private readonly LoopMixer _mixer = new(Voices);
-        private readonly Dictionary<Entity, LoopSoundState> _states = new();
-        private readonly List<Entity> _gone = new();
-        private readonly HashSet<Entity> _machinesMoving = new();
+        private readonly Dictionary<Entity, LoopSoundState> _states = [];
+        private readonly List<Entity> _gone = [];
+        private readonly HashSet<Entity> _machinesMoving = [];
         private readonly float[] _baseVolume = new float[Voices];
         private readonly float[] _basePitch = new float[Voices];
         private readonly VoiceBank _voices = new("HyperRTS Loops", Voices, loop: true);

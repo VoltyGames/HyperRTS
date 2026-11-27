@@ -70,7 +70,7 @@ public sealed class MapGeneration
     public List<MapScenery> Scenery => _plan.Scenery;
 
     /// <summary>Trees left to the terrain once painted: the backdrop and species without an entity version.</summary>
-    public List<MapTree> TerrainTrees { get; private set; } = new();
+    public List<MapTree> TerrainTrees { get; private set; } = [];
 
     /// <summary>Asset and spec checks. They read prefabs, so they run on the main thread.</summary>
     public static bool Check(MapProject project, MapIssues issues)

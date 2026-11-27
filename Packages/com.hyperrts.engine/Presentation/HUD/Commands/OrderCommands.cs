@@ -23,14 +23,14 @@ public sealed class OrderCommands : ICommandSource
     private static readonly Stance[] Stances = (Stance[])Enum.GetValues(typeof(Stance));
 
     private static readonly (CommandType Order, int Argument)[] Plain =
-    {
+    [
         (CommandType.ReturnToBase, 0), (CommandType.Unload, -1), (CommandType.Deploy, 0),
         (CommandType.PackUp, 0), (CommandType.Sell, 0), (CommandType.ReverseMove, 0), (CommandType.FireMission, 0),
-    };
+    ];
 
     private readonly CommandKit _kit;
-    private readonly List<(CommandButton Button, Stance Stance)> _buttons = new();
-    private readonly List<Entity> _armed = new();
+    private readonly List<(CommandButton Button, Stance Stance)> _buttons = [];
+    private readonly List<Entity> _armed = [];
 
     public OrderCommands(CommandKit kit)
     {

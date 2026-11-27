@@ -22,7 +22,7 @@ public sealed class ShowForKindsDrawer : PropertyDrawer
         }
 
         var path = property.propertyPath;
-        var kind = property.serializedObject.FindProperty(path.Substring(0, path.LastIndexOf('.')) + ".kind");
+        var kind = property.serializedObject.FindProperty(path[..path.LastIndexOf('.')] + ".kind");
         var kinds = ((ShowForKindsAttribute)attribute).Kinds;
         group.SetHidden(!kinds.Contains((EffectLayerKind)kind.enumValueIndex));
         group.TrackPropertyValue(kind, changed => group.SetHidden(!kinds.Contains((EffectLayerKind)changed.enumValueIndex)));

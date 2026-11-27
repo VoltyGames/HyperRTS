@@ -23,10 +23,10 @@ public class NavAreaAuthoring : AuthoringBehaviour
     public NavAreaKind kind = NavAreaKind.Deck;
 
     [Tooltip("Deck only: the renderers of the bridge's two abutments, or empty for a deck with none. The gap between their inner faces along this transform's Z is the open length map building keeps for the river.")]
-    public Renderer[] abutments = System.Array.Empty<Renderer>();
+    public Renderer[] abutments = [];
 
     [Tooltip("Deck only: the renderers of the bridge's piers standing in the water, or empty for a single span. Each makes foam where the current meets it.")]
-    public Renderer[] piers = System.Array.Empty<Renderer>();
+    public Renderer[] piers = [];
 
     /// <summary>The gap between the abutments' inner faces along Z in this transform's space; 0 with no abutments, negative when they overlap.</summary>
     public float ClearSpan()

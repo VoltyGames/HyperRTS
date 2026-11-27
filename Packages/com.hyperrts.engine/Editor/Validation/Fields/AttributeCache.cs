@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Validation.Fields;
 internal static partial class AttributeCache<TAttribute> where TAttribute : Attribute
 {
     [AutoStaticsCleanup]
-    private static readonly Dictionary<Type, TAttribute[]> Cache = new();
+    private static readonly Dictionary<Type, TAttribute[]> Cache = [];
 
     public static TAttribute[] Get(Type type)
     {

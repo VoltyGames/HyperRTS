@@ -72,7 +72,7 @@ public sealed class CommandSpecRule : IAssetRule
             var isKey = binding.path.StartsWith(KeyboardPrefix) && binding.action != RotateBuilding;
             if (isKey)
             {
-                bound[binding.path.Substring(KeyboardPrefix.Length).ToLowerInvariant()] = binding.action;
+                bound[binding.path[KeyboardPrefix.Length..].ToLowerInvariant()] = binding.action;
             }
         }
 

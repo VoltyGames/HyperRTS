@@ -15,9 +15,9 @@ internal sealed class MapLookCostSummary
     public int frames;
 
     /// <summary>Features the scene has no switch for, so they were not measured.</summary>
-    public List<string> skipped = new();
+    public List<string> skipped = [];
 
-    public List<MapLookCostPoint> points = new();
+    public List<MapLookCostPoint> points = [];
 }
 
 /// <summary>A look point at a zoom: its frame time with everything on, and what each feature costs of it.</summary>
@@ -28,7 +28,7 @@ internal sealed class MapLookCostPoint
     public float zoom;
     public float onGpuMs;
     public float onCpuMs;
-    public List<MapLookCostSaving> savings = new();
+    public List<MapLookCostSaving> savings = [];
 }
 
 /// <summary>How much frame time turning one feature off saves; negative when the frame got slower.</summary>

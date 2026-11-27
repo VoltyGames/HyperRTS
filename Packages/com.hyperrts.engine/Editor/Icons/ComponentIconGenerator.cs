@@ -25,7 +25,7 @@ public sealed class ComponentIconGenerator : Generator
 
     // A module's tile colour and the components drawn on it.
     private static readonly (Color Tile, string[] Components)[] Modules =
-    {
+    [
     // Animation
     (new Color(0.55f, 0.85f, 0.45f), new[]
     {
@@ -120,7 +120,7 @@ public sealed class ComponentIconGenerator : Generator
     {
         "CropCoverAuthoring", "DetectorAuthoring", "FogOfWarRenderer", "SightBlockAuthoring", "StealthAuthoring",
     }),
-    };
+    ];
 
     public override string Name => "Component icons";
 

@@ -18,13 +18,13 @@ public sealed class MapBuildObjects
 {
     private readonly string _file;
     private readonly HashSet<string> _recorded;
-    private readonly List<GameObject> _made = new();
+    private readonly List<GameObject> _made = [];
 
     /// <summary>Reads the last build's record at <paramref name="file"/>. A map never built has none.</summary>
     public MapBuildObjects(string file)
     {
         _file = file;
-        var lines = File.Exists(file) ? File.ReadAllLines(file) : Array.Empty<string>();
+        var lines = File.Exists(file) ? File.ReadAllLines(file) : [];
         _recorded = new HashSet<string>(lines, StringComparer.Ordinal);
     }
 

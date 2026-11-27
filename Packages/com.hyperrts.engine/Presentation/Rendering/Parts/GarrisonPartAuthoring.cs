@@ -20,7 +20,7 @@ public class GarrisonPartAuthoring : AuthoringBehaviour
 {
     [Tooltip("Passengers whose presence aboard shows this part; it is hidden with none of them aboard.")]
     [NoEmptyEntries]
-    public List<UnitAuthoring> shownFor = new();
+    public List<UnitAuthoring> shownFor = [];
 
     public static void Add(EntityWriter writer, Entity container, IEnumerable<int> typeIds)
     {

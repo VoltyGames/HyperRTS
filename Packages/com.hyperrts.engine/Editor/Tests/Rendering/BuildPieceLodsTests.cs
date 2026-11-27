@@ -41,8 +41,8 @@ public class BuildPieceLodsTests
         });
         mesh.SetUVs(3, new List<Vector2> { Early, Early, Early, Late, Late, Late });
         mesh.subMeshCount = 2;
-        mesh.SetIndices(new[] { 0, 1, 2, 3, 4, 5, 0, 4, 2 }, MeshTopology.Triangles, 0);
-        mesh.SetIndices(new[] { 3, 4, 5, 3, 4, 5 }, MeshTopology.Triangles, 1);
+        mesh.SetIndices([0, 1, 2, 3, 4, 5, 0, 4, 2], MeshTopology.Triangles, 0);
+        mesh.SetIndices([3, 4, 5, 3, 4, 5], MeshTopology.Triangles, 1);
         mesh.lodCount = 2;
         mesh.SetLods(new[]
         {

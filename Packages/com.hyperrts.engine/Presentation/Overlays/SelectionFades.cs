@@ -10,9 +10,9 @@ namespace HyperRTS.Presentation.Overlays;
 /// </summary>
 public sealed class SelectionFades
 {
-    private readonly Dictionary<Entity, float> _since = new();
-    private readonly HashSet<Entity> _seen = new();
-    private readonly List<Entity> _gone = new();
+    private readonly Dictionary<Entity, float> _since = [];
+    private readonly HashSet<Entity> _seen = [];
+    private readonly List<Entity> _gone = [];
 
     /// <summary>Marker scale and opacity at <paramref name="elapsed"/> seconds into a selection.</summary>
     public static Vector2 ScaleAndAlpha(float elapsed, float duration, float startScale)

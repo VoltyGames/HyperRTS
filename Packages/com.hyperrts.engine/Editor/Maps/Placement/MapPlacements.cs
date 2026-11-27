@@ -22,7 +22,7 @@ public sealed class MapPlacements
         Clearance = new MapClearance(layout, shapes, baseRadius);
     }
 
-    public List<MapPlacement> All { get; } = new();
+    public List<MapPlacement> All { get; } = [];
 
     public MapClearance Clearance { get; }
 

@@ -21,9 +21,9 @@ namespace HyperRTS.Presentation.Environment.Ground.Decals
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     public partial class BuildingDecalSystem : SystemBase
     {
-        private readonly Dictionary<Entity, List<DecalProjector>> _shown = new();
-        private readonly HashSet<Entity> _standing = new();
-        private readonly List<Entity> _gone = new();
+        private readonly Dictionary<Entity, List<DecalProjector>> _shown = [];
+        private readonly HashSet<Entity> _standing = [];
+        private readonly List<Entity> _gone = [];
         private readonly Stack<DecalProjector> _free = new();
         private GameObject _root;
 

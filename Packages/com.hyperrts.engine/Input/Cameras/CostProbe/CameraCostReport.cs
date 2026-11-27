@@ -7,5 +7,5 @@ namespace HyperRTS.Input.Cameras.CostProbe;
 [Serializable]
 public sealed class CameraCostReport
 {
-    public List<CameraCostResult> results = new();
+    public List<CameraCostResult> results = [];
 }

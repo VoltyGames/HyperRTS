@@ -31,8 +31,8 @@ public static class MapSubScenes
                 new SceneSystem.LoadParameters { Flags = flags }));
         using var unregistered = world.EntityManager.CreateEntityQuery(new EntityQueryDesc
         {
-            All = new[] { ComponentType.ReadOnly<MaterialMeshInfo>() },
-            None = new[] { ComponentType.ChunkComponentReadOnly<EntitiesGraphicsChunkInfo>() },
+            All = [ComponentType.ReadOnly<MaterialMeshInfo>()],
+            None = [ComponentType.ChunkComponentReadOnly<EntitiesGraphicsChunkInfo>()],
         });
         using var drawn = world.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<MaterialMeshInfo>());
         var (lastCount, steady) = (-1, 0);

@@ -19,10 +19,10 @@ public class AirfieldAuthoring : AuthoringBehaviour
 {
     [Tooltip("Pads relative to the building; each holds one aircraft of its kind.")]
     public Pad[] pads =
-    {
+    [
         new() { offset = new Vector3(-3f, 0f, 3f) }, new() { offset = new Vector3(3f, 0f, 3f) },
         new() { offset = new Vector3(-3f, 0f, -3f) }, new() { offset = new Vector3(3f, 0f, -3f) },
-    };
+    ];
 
     /// <summary>One landing pad: where it is and which aircraft it takes.</summary>
     [Serializable]

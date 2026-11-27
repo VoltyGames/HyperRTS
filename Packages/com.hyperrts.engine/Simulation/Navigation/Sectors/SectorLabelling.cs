@@ -102,8 +102,10 @@ public struct SectorLabelling
     // Labels one 4-connected component from a seed and returns its cell nearest the centroid.
     private static byte Flood(ref FixedList512Bytes<byte> labelled, int seed, byte label)
     {
-        var members = new FixedList512Bytes<byte>();
-        members.Add((byte)seed);
+        var members = new FixedList512Bytes<byte>
+        {
+            (byte)seed
+        };
         labelled[seed] = label;
         var sum = int2.zero;
         for (var read = 0; read < members.Length; read++)

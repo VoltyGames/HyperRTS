@@ -21,8 +21,8 @@ public sealed class TerrainHoles : IDisposable
     private Material _clipping;
     private readonly bool[,] _original;
     private readonly HoleGrid _grid;
-    private readonly Dictionary<Entity, HoleFootprint> _cut = new();
-    private readonly List<Entity> _gone = new();
+    private readonly Dictionary<Entity, HoleFootprint> _cut = [];
+    private readonly List<Entity> _gone = [];
     private bool _changed;
 
     public TerrainHoles(Terrain terrain)

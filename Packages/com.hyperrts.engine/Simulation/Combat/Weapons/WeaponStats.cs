@@ -33,7 +33,7 @@ public class WeaponStats
     public Transform muzzle;
 
     [Tooltip("More muzzles after the first, such as a launcher's other tubes; shots leave from each in turn.")]
-    public List<Transform> extraMuzzles = new();
+    public List<Transform> extraMuzzles = [];
 
     [Tooltip("Projectile speed.")]
     [Unit("m/s")]

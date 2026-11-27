@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Maps.Spec;
 [MapFeature("river", 70, 0.25f, 0.5f, 0.95f)]
 public sealed class MapRiverSpec : MapFeatureSpec, IMapLine
 {
-    public List<MapPoint> points = new();
+    public List<MapPoint> points = [];
     public float width = 14f;
 
     /// <summary>Depth of the bed below the water level.</summary>
@@ -26,7 +26,7 @@ public sealed class MapRiverSpec : MapFeatureSpec, IMapLine
     /// <summary>How much the width swells and narrows along the river (0 to 1).</summary>
     public float widthVariation = 0.25f;
 
-    public List<MapCrossingSpec> crossings = new();
+    public List<MapCrossingSpec> crossings = [];
 
     public List<MapPoint> Points => points;
 }

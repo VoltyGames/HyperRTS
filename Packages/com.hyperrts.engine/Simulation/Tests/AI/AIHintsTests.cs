@@ -15,9 +15,9 @@ namespace HyperRTS.Simulation.Tests.AI;
 /// <summary>The skirmish AI on a map's hints: attack lanes chosen by seed.</summary>
 public class AIHintsTests
 {
-    private static readonly Vector2[] North = { new(-10f, -40f), new(30f, -40f) };
-    private static readonly Vector2[] South = { new(-10f, 40f), new(30f, 40f) };
-    private static readonly Vector2[] None = Array.Empty<Vector2>();
+    private static readonly Vector2[] North = [new(-10f, -40f), new(30f, -40f)];
+    private static readonly Vector2[] South = [new(-10f, 40f), new(30f, 40f)];
+    private static readonly Vector2[] None = [];
 
     /// <summary>Slots 1 and 2 with the given lanes from 2 to 1 (and the same ones back).</summary>
     private static AIMapHintsData Lanes(params Vector2[][] lanes)

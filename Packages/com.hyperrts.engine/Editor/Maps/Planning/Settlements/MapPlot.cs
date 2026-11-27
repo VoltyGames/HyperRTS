@@ -67,7 +67,7 @@ internal sealed class MapPlot
     public Vector2[] Corners()
     {
         var half = Width * 0.5f;
-        return new[] { Point(-half, 0f), Point(half, 0f), Point(half, Depth), Point(-half, Depth) };
+        return [Point(-half, 0f), Point(half, 0f), Point(half, Depth), Point(-half, Depth)];
     }
 
     /// <summary>The map-space box of this plot in one copy of the sector.</summary>
