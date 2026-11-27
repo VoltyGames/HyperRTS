@@ -264,5 +264,5 @@ public sealed class PurchaseCommands(CommandKit kit) : ICommandSource
     }
 
     /// <param name="Producers">Selected producers that offer it; none for a building a builder places.</param>
-    private sealed record Option(CommandButton Button, Entity Prefab, List<Entity> Producers);
+    private readonly record struct Option(CommandButton Button, Entity Prefab, List<Entity> Producers);
 }

@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Validation.Issues;
 
 /// <summary>One setup problem, the object to fix and, when there is an obvious one, a one-click fix.</summary>
-public sealed record ValidationIssue
+public struct ValidationIssue
 {
     public MessageType Severity;
     public string Message;
