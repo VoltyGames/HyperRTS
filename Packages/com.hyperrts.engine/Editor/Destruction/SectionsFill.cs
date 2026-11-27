@@ -15,7 +15,7 @@ namespace HyperRTS.Editor.Destruction;
 /// Fills a <see cref="SectionsAuthoring"/>'s sections from its parts, or from its model's sections for
 /// <see cref="SectionsModelFill"/>, and measures the boxes their intact models fill in the building's space.
 /// </summary>
-internal sealed class SectionsFill
+internal sealed class SectionsFill(SectionsAuthoring owner)
 {
     /// <summary>Metres between boxes that still touch, and above the lowest box that still stands on the ground.</summary>
     private const float Contact = 0.05f;
@@ -25,10 +25,7 @@ internal sealed class SectionsFill
     private const string BlownOutClip = "Out";
     private const string CollapseClip = "Collapse";
 
-    private readonly SectionsAuthoring _owner;
-    private Transform Root => _owner.transform;
-
-    public SectionsFill(SectionsAuthoring owner) => _owner = owner;
+    private Transform Root => owner.transform;
 
     [InspectorButton("Fill from parts", Glyph = "wand-sparkles")]
     private static void FillFromParts(SectionsAuthoring sections) => new SectionsFill(sections).FromParts();
@@ -37,7 +34,7 @@ internal sealed class SectionsFill
     public void FromParts()
     {
         var found = new List<SectionEntry>();
-        foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
+        foreach (var child in owner.GetComponentsInChildren<Transform>(true))
         {
             if (child.name.EndsWith("_Intact", StringComparison.Ordinal))
             {
@@ -45,20 +42,20 @@ internal sealed class SectionsFill
             }
         }
 
-        _owner.sections = Guess(found).ToArray();
+        owner.sections = Guess(found).ToArray();
     }
 
     /// <summary>The sections kept inside the building's model, with the break clips its pieces play.</summary>
     internal void FromModel()
     {
-        _owner.sections = new SectionEntries(FindSections(), _owner).Build(Measure).ToArray();
-        _owner.clips = BreakClips();
+        owner.sections = new SectionEntries(FindSections(), owner).Build(Measure).ToArray();
+        owner.clips = BreakClips();
     }
 
     // The one model under the building whose import kept sections.
     private ModelSections FindSections()
     {
-        var found = _owner.GetComponentsInChildren<Transform>(true)
+        var found = owner.GetComponentsInChildren<Transform>(true)
             .Select(child => PrefabUtility.GetCorrespondingObjectFromOriginalSource(child.gameObject))
             .Where(source => source != null)
             .Select(AssetDatabase.GetAssetPath)
@@ -68,15 +65,15 @@ internal sealed class SectionsFill
             .ToList();
         return found.Count == 1
             ? found[0]
-            : throw new InvalidOperationException($"HyperRTS: '{_owner.name}' holds {found.Count} models with sections; it needs one.");
+            : throw new InvalidOperationException($"HyperRTS: '{owner.name}' holds {found.Count} models with sections; it needs one.");
     }
 
     private SectionClips BreakClips()
     {
-        var tables = _owner.GetComponentsInChildren<VATAnimatedAuthoring>(true).Select(vat => vat.clips).Where(table => table != null).Distinct().ToList();
+        var tables = owner.GetComponentsInChildren<VATAnimatedAuthoring>(true).Select(vat => vat.clips).Where(table => table != null).Distinct().ToList();
         if (tables.Count != 1)
         {
-            throw new InvalidOperationException($"HyperRTS: '{_owner.name}' plays {tables.Count} VAT clip tables on its pieces; it needs one.");
+            throw new InvalidOperationException($"HyperRTS: '{owner.name}' plays {tables.Count} VAT clip tables on its pieces; it needs one.");
         }
 
         return new SectionClips
@@ -126,7 +123,7 @@ internal sealed class SectionsFill
             broken.localScale = Vector3.zero;
         }
 
-        var entry = Array.Find(_owner.sections, item => item.intact == intact);
+        var entry = Array.Find(owner.sections, item => item.intact == intact);
         entry.intact = intact;
         entry.broken = broken != null ? broken.gameObject : null;
         return entry;

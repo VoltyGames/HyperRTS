@@ -13,16 +13,9 @@ namespace HyperRTS.Editor.Destruction;
 /// Turns a model's imported <see cref="ModelSections"/> into the authoring entries of the <see cref="SectionsAuthoring"/>
 /// that holds the model.
 /// </summary>
-internal sealed class SectionEntries
+internal sealed class SectionEntries(ModelSections data, SectionsAuthoring owner)
 {
-    private readonly ModelSections _data;
-    private readonly SectionsAuthoring _owner;
-
-    public SectionEntries(ModelSections data, SectionsAuthoring owner)
-    {
-        _data = data;
-        _owner = owner;
-    }
+    private readonly SectionsAuthoring _owner = owner;
 
     /// <summary>
     /// The sections as authoring entries, each box measured by <paramref name="measure"/>. Share, deck and
@@ -31,7 +24,7 @@ internal sealed class SectionEntries
     /// </summary>
     public List<SectionEntry> Build(Func<Transform, Bounds> measure)
     {
-        var sections = _data.sections;
+        var sections = data.sections;
         var intacts = sections.ConvertAll(part => FindModel(part.intact));
         var boxes = intacts.ConvertAll(intact => measure(intact.transform));
         var all = boxes[0];
@@ -40,7 +33,7 @@ internal sealed class SectionEntries
             all.Encapsulate(box);
         }
 
-        var markers = new SectionMarkers(_owner, _data).Find(boxes, measure);
+        var markers = new SectionMarkers(_owner, data).Find(boxes, measure);
         var found = new List<SectionEntry>(sections.Count);
         for (var i = 0; i < sections.Count; i++)
         {
@@ -69,7 +62,7 @@ internal sealed class SectionEntries
             floor = part.floor,
             anchored = part.anchored,
             exterior = part.exterior,
-            parts = _data.parts.Where(moving => moving.section == part.name).Select(moving => FindModel(moving.node)).ToArray(),
+            parts = data.parts.Where(moving => moving.section == part.name).Select(moving => FindModel(moving.node)).ToArray(),
             weapons = Weapons(part.name),
             supports = SectionModels(part.supports),
             rests = SectionModels(part.rests),
@@ -94,19 +87,19 @@ internal sealed class SectionEntries
     }
 
     private GameObject[] SectionModels(string[] names) =>
-        names.Select(name => FindModel(_data.sections.Find(other => other.name == name).intact)).ToArray();
+        names.Select(name => FindModel(data.sections.Find(other => other.name == name).intact)).ToArray();
 
     private SectionsAuthoring.Hole[] Holes(ModelSections.Section part, GameObject intact) =>
         part.holed.Select(name => new SectionsAuthoring.Hole
         {
             model = Hidden(name),
-            center = _owner.transform.InverseTransformPoint(intact.transform.TransformPoint(_data.holes.Find(hole => hole.model == name).center)),
+            center = _owner.transform.InverseTransformPoint(intact.transform.TransformPoint(data.holes.Find(hole => hole.model == name).center)),
         }).ToArray();
 
     // The mounts whose muzzle, turret or barrel sit under one of the section's moving parts.
     private int[] Weapons(string sectionName)
     {
-        var carriers = _data.parts.Where(moving => moving.section == sectionName).Select(moving => FindModel(moving.node).transform).ToList();
+        var carriers = data.parts.Where(moving => moving.section == sectionName).Select(moving => FindModel(moving.node).transform).ToList();
         if (!_owner.TryGetComponent<WeaponAuthoring>(out var weapons))
         {
             return [];
@@ -134,7 +127,7 @@ internal sealed class SectionEntries
     // Only the nodes of this model count, so dressing or a base prefab's child with the same name can't be taken.
     private GameObject FindModel(string modelName)
     {
-        var modelPath = AssetDatabase.GetAssetPath(_data);
+        var modelPath = AssetDatabase.GetAssetPath(data);
         GameObject found = null;
         foreach (var child in _owner.GetComponentsInChildren<Transform>(true))
         {

@@ -14,22 +14,14 @@ namespace HyperRTS.Simulation.Tests;
 /// Where squad members away from their cover spots, crew places and a site's work line may stand: on cells open to
 /// their squad and off vehicle hulls. Run it every tick with <see cref="TestWorld.CheckEveryTick"/>.
 /// </summary>
-public sealed class SquadFootingCheck
+public sealed class SquadFootingCheck(TestWorld world)
 {
-    private readonly TestWorld _world;
+    private readonly TestWorld _world = world;
 
     // Made once and read without completing every job, which would invalidate the buffers a test holds across ticks.
-    private readonly EntityQuery _squads;
-    private readonly EntityQuery _units;
-    private readonly EntityQuery _grid;
-
-    public SquadFootingCheck(TestWorld world)
-    {
-        _world = world;
-        _squads = world.Query(typeof(SquadMember), typeof(NavAgent), typeof(LocalTransform));
-        _units = world.Query(typeof(NavAgent), typeof(LocalTransform));
-        _grid = world.Query(typeof(NavGrid));
-    }
+    private readonly EntityQuery _squads = world.Query(typeof(SquadMember), typeof(NavAgent), typeof(LocalTransform));
+    private readonly EntityQuery _units = world.Query(typeof(NavAgent), typeof(LocalTransform));
+    private readonly EntityQuery _grid = world.Query(typeof(NavGrid));
 
     /// <summary>Fails when a member stands in a cell closed to its squad.</summary>
     public void AssertOnOpenGround()

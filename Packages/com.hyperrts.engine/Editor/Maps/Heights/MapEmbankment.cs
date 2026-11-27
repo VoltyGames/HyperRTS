@@ -7,7 +7,7 @@ namespace HyperRTS.Editor.Maps.Heights;
 /// The ground a bridge stands on: an embankment behind each abutment, level under the approach slabs and ramped
 /// down to the ground, with the river's own banks left between the abutments.
 /// </summary>
-public sealed class MapEmbankment
+public sealed class MapEmbankment(MapHeights heights, MapCrossing crossing)
 {
     private const float RampEdge = 3f;
     private const float CutEdge = 8f;
@@ -15,16 +15,9 @@ public sealed class MapEmbankment
     private const float LandingDrop = 0.05f;
     private const float AbutmentDrop = 0.4f;
 
-    private readonly MapCrossing _crossing;
-    private readonly Ramp _ahead;
-    private readonly Ramp _behind;
-
-    public MapEmbankment(MapHeights heights, MapCrossing crossing)
-    {
-        _crossing = crossing;
-        _ahead = Ramp.Measure(heights, crossing, 1f);
-        _behind = Ramp.Measure(heights, crossing, -1f);
-    }
+    private readonly MapCrossing _crossing = crossing;
+    private readonly Ramp _ahead = Ramp.Measure(heights, crossing, 1f);
+    private readonly Ramp _behind = Ramp.Measure(heights, crossing, -1f);
 
     /// <summary>
     /// Raises both embankments into <paramref name="heights"/>. Under the span the ground goes back to

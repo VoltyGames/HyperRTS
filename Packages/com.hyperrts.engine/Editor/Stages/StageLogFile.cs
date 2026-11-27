@@ -5,18 +5,13 @@ using System.Linq;
 namespace HyperRTS.Editor.Stages;
 
 /// <summary>A stage's log, a file from the project folder whose last line is <c>exit code N</c> once its run ends.</summary>
-public sealed class StageLogFile
+public sealed class StageLogFile(string path)
 {
     public const string ExitLine = "exit code ";
 
     private const int TailBytes = 512;
 
-    public StageLogFile(string path)
-    {
-        Path = path;
-    }
-
-    public string Path { get; }
+    public string Path { get; } = path;
 
     public bool Exists => File.Exists(Path);
 

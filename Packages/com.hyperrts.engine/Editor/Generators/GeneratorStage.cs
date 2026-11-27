@@ -8,13 +8,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Generators;
 
 /// <summary>A stage that runs generator items in the Editor, taking its state and log from the generator run log.</summary>
-public abstract class GeneratorStage<TSource> : Stage<TSource> where TSource : class
+public abstract class GeneratorStage<TSource>(string title) : Stage<TSource>(title) where TSource : class
 {
-    protected GeneratorStage(string title)
-        : base(title)
-    {
-    }
-
     /// <summary>The generator items the stage runs.</summary>
     protected abstract (Generator Generator, IReadOnlyList<GeneratorItem> Items) Items(TSource source);
 

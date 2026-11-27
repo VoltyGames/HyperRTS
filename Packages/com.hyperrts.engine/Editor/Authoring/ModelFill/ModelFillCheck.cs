@@ -6,14 +6,12 @@ using UnityEngine;
 namespace HyperRTS.Editor.Authoring.ModelFill;
 
 /// <summary>Finds a component's first value off from what its model gives, filling it and putting everything back.</summary>
-public sealed class ModelFillCheck
+public sealed class ModelFillCheck(Component component)
 {
     // Float rounding alone moves a refilled value by less than this.
     private const float Tolerance = 1e-4f;
 
-    private readonly Component _component;
-
-    public ModelFillCheck(Component component) => _component = component;
+    private readonly Component _component = component;
 
     /// <summary>
     /// The property path of the first value off from the model, or null when it matches. Throws as the fill does when

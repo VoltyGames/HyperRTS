@@ -12,7 +12,7 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// Runs a straight access track from each prop's pad to the nearest road it can reach without crossing water or a
 /// ravine; nearby props share one track (<see cref="MapAccessGroups"/>).
 /// </summary>
-public sealed class MapAccessPlanner : MapLandPass
+public sealed class MapAccessPlanner(MapPlanContext context) : MapLandPass(context)
 {
     /// <summary>The track starts this far inside the pad's edge, so it grows out of the pad.</summary>
     private const float PadOverlap = 2f;
@@ -21,10 +21,6 @@ public sealed class MapAccessPlanner : MapLandPass
     private const float Beside = 1.5f;
 
     private const float TrackStep = 3f;
-
-    public MapAccessPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

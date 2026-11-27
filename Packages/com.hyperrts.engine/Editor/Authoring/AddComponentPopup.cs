@@ -13,17 +13,11 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Authoring;
 
 /// <summary>A searchable list of the authoring components the object lacks, grouped by their Add Component folder.</summary>
-public sealed class AddComponentPopup : PopupWindowContent
+public sealed class AddComponentPopup(GameObject target) : PopupWindowContent
 {
     private const string NoFolder = "Other";
 
-    private readonly GameObject _target;
     private readonly List<(VisualElement Group, List<Button> Items)> _groups = [];
-
-    public AddComponentPopup(GameObject target)
-    {
-        _target = target;
-    }
 
     public override Vector2 GetWindowSize() => new(260f, 340f);
 
@@ -62,7 +56,7 @@ public sealed class AddComponentPopup : PopupWindowContent
     {
         foreach (var type in TypeCache.GetTypesDerivedFrom<AuthoringBehaviour>())
         {
-            if (type.IsAbstract || type.IsGenericType || IsHidden(type) || _target.GetComponent(type) != null)
+            if (type.IsAbstract || type.IsGenericType || IsHidden(type) || target.GetComponent(type) != null)
             {
                 continue;
             }
@@ -110,7 +104,7 @@ public sealed class AddComponentPopup : PopupWindowContent
 
     private void Add(Type type)
     {
-        Undo.AddComponent(_target, type);
+        Undo.AddComponent(target, type);
         editorWindow.Close();
     }
 }

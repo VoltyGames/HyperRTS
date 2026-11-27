@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// What grows or lies on each surface by itself (lone trees, willows, rocks, bales, scrub), skipping lands that
 /// plant their own trees. Backdrop props become scenery when they have a scenery model.
 /// </summary>
-public sealed class MapSurfacePlanter : MapLandPass
+public sealed class MapSurfacePlanter(MapPlanContext context) : MapLandPass(context)
 {
     private const int PropAttempts = 30;
     private const float RowSpacing = 16f;
@@ -24,10 +24,6 @@ public sealed class MapSurfacePlanter : MapLandPass
     // Metres between a prop's footprint and the centre of the nearest tree, so props fit between wood trees.
     private const float TreeClearance = 0.5f;
     private MapValues<float> _edges;
-
-    public MapSurfacePlanter(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

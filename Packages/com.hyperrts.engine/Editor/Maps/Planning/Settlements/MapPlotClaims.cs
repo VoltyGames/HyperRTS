@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// Checks that only open ground and road verge lie under a plot, and claims its yard, garden and back in every
 /// copy of the sector.
 /// </summary>
-internal sealed class MapPlotClaims
+internal sealed class MapPlotClaims(MapPlanContext context, MapSettlementKit kit)
 {
     /// <summary>Plots may overlap a neighbour's edge by this much (metres) before it counts as overlap.</summary>
     private const float Inset = 0.6f;
@@ -22,16 +22,7 @@ internal sealed class MapPlotClaims
         MapLandKind.Pad, MapLandKind.Road, MapLandKind.Yard, MapLandKind.Garden, MapLandKind.Back,
     ];
 
-    private readonly MapPlanContext _context;
-    private readonly MapSettlementKit _kit;
-
-    public MapPlotClaims(MapPlanContext context, MapSettlementKit kit)
-    {
-        _context = context;
-        _kit = kit;
-    }
-
-    private MapLand Land => _context.Land;
+    private MapLand Land => context.Land;
 
     /// <summary>Why the land under a plot is taken (the most telling use found), or null when it is free.</summary>
     public string Blocked(MapPlot plot)
@@ -65,10 +56,10 @@ internal sealed class MapPlotClaims
     /// <summary>Claims the plot's free cells for its yard, garden and back, in every copy.</summary>
     public void Claim(MapPlot plot, int seed)
     {
-        var yard = _context.Region(MapLandKind.Yard, _kit.yardSurface, seed);
-        var back = _context.Region(MapLandKind.Back, _kit.backSurface, seed);
-        var garden = _context.Region(MapLandKind.Garden, _kit.gardenSurface, seed, plot.RunYaw);
-        foreach (var copy in _context.Layout.Symmetry.Copies)
+        var yard = context.Region(MapLandKind.Yard, kit.yardSurface, seed);
+        var back = context.Region(MapLandKind.Back, kit.backSurface, seed);
+        var garden = context.Region(MapLandKind.Garden, kit.gardenSurface, seed, plot.RunYaw);
+        foreach (var copy in context.Layout.Symmetry.Copies)
         {
             Land.ForEachIn(plot.Bounds(copy), (x, z, center) =>
             {

@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// Marches along both sides of each street laying plot rectangles at the kit's frontage and keeping those the
 /// settlement can hold, nearest the centre first. Land claims are checked later.
 /// </summary>
-internal sealed class MapPlotFinder
+internal sealed class MapPlotFinder(MapSettlement settlement)
 {
     private const float Shortest = 0.5f;
 
@@ -18,15 +18,9 @@ internal sealed class MapPlotFinder
     private const float SeamGap = 2f;
     private static readonly float[] Depths = [1f, 0.8f, 0.65f, Shortest];
 
-    private readonly MapSettlement _settlement;
-    private readonly MapPlanContext _context;
+    private readonly MapSettlement _settlement = settlement;
+    private readonly MapPlanContext _context = settlement.Context;
     private readonly List<MapPlot> _found = [];
-
-    public MapPlotFinder(MapSettlement settlement)
-    {
-        _settlement = settlement;
-        _context = settlement.Context;
-    }
 
     public List<MapPlot> Find()
     {

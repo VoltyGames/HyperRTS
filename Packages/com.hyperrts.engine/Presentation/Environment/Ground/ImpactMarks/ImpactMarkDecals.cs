@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks;
 /// One mark kind's URP decal projectors, a projector per <see cref="ImpactMarkRing"/> slot, made as the ring first
 /// fills and reused after.
 /// </summary>
-public sealed class ImpactMarkDecals
+public sealed class ImpactMarkDecals(ImpactMark mark, Transform root)
 {
     /// <summary>Smallest fade change pushed to a projector; each push re-uploads the decal's data.</summary>
     private const float FadeStep = 1f / 64f;
@@ -18,21 +18,11 @@ public sealed class ImpactMarkDecals
     public const float StartAngleFade = 50f;
     public const float EndAngleFade = 75f;
 
-    private readonly ImpactMark _mark;
-    private readonly Transform _root;
-    private readonly DecalProjector[] _projectors;
-    private readonly float[] _shown;
+    private readonly ImpactMark _mark = mark;
+    private readonly DecalProjector[] _projectors = new DecalProjector[mark.maxCount];
+    private readonly float[] _shown = new float[mark.maxCount];
 
-    public ImpactMarkDecals(ImpactMark mark, Transform root)
-    {
-        _mark = mark;
-        _root = root;
-        Ring = new ImpactMarkRing(mark.maxCount);
-        _projectors = new DecalProjector[mark.maxCount];
-        _shown = new float[mark.maxCount];
-    }
-
-    public ImpactMarkRing Ring { get; }
+    public ImpactMarkRing Ring { get; } = new ImpactMarkRing(mark.maxCount);
 
     /// <summary>Lays a fresh mark in the next slot; the projector is off while it changes, so it registers once.</summary>
     public void Place(float now, Material decal, Vector3 position, Quaternion rotation, float diameter, bool mirror)
@@ -94,7 +84,7 @@ public sealed class ImpactMarkDecals
     {
         var go = new GameObject($"{_mark.name} {slot}") { hideFlags = HideFlags.DontSave };
         go.SetActive(false);
-        go.transform.SetParent(_root, false);
+        go.transform.SetParent(root, false);
         var projector = go.AddComponent<DecalProjector>();
         projector.enabled = false;
         projector.pivot = Vector3.zero;

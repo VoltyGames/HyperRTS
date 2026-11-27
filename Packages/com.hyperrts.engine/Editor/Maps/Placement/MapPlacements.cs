@@ -12,19 +12,13 @@ namespace HyperRTS.Editor.Maps.Placement;
 /// Every palette prefab the map will instantiate, and the room they take: each placement reserves its footprint
 /// so later ones keep clear of it.
 /// </summary>
-public sealed class MapPlacements
+public sealed class MapPlacements(MapLayout layout, MapShapes shapes, float baseRadius)
 {
-    private readonly MapLayout _layout;
-
-    public MapPlacements(MapLayout layout, MapShapes shapes, float baseRadius)
-    {
-        _layout = layout;
-        Clearance = new MapClearance(layout, shapes, baseRadius);
-    }
+    private readonly MapLayout _layout = layout;
 
     public List<MapPlacement> All { get; } = [];
 
-    public MapClearance Clearance { get; }
+    public MapClearance Clearance { get; } = new MapClearance(layout, shapes, baseRadius);
 
     public void Add(MapPlacement placement)
     {

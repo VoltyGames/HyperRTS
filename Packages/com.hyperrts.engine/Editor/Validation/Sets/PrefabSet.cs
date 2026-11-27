@@ -9,7 +9,7 @@ using UnityEngine;
 namespace HyperRTS.Editor.Validation.Sets;
 
 /// <summary>The project's authoring prefabs, gathered once for every <see cref="Rules.IPrefabRule"/>.</summary>
-public sealed partial class PrefabSet
+public sealed partial class PrefabSet(IReadOnlyList<GameObject> prefabs)
 {
     // Finding the authoring prefabs scans every prefab's dependencies, most of a validation pass.
     [AutoStaticsCleanup]
@@ -17,16 +17,10 @@ public sealed partial class PrefabSet
 
     private HashSet<GameObject> _bases;
 
-    public PrefabSet(IReadOnlyList<GameObject> prefabs)
-    {
-        All = prefabs;
-        Entities = EditorAssets.EntityPrefabs(prefabs);
-    }
-
-    public IReadOnlyList<GameObject> All { get; }
+    public IReadOnlyList<GameObject> All { get; } = prefabs;
 
     /// <summary>The unit and building prefabs among <see cref="All"/>.</summary>
-    public IReadOnlyList<GameEntityAuthoring> Entities { get; }
+    public IReadOnlyList<GameEntityAuthoring> Entities { get; } = EditorAssets.EntityPrefabs(prefabs);
 
     /// <summary>Whether a prefab in the set is a variant of <paramref name="prefab"/>, which then exists to be derived from.</summary>
     public bool IsBase(GameObject prefab)

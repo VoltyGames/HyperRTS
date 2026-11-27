@@ -5,18 +5,10 @@ using HyperRTS.Editor.PlayMode.Capture;
 namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 
 /// <summary>A <see cref="FrameCapture"/> in progress; hands its PNG paths to the step when it ends.</summary>
-internal sealed class CaptureActivity : StagingActivity
+internal sealed class CaptureActivity(FrameCapture capture, Action<string[]> done) : StagingActivity
 {
-    private readonly FrameCapture _capture;
-    private readonly Task<string[]> _recording;
-    private readonly Action<string[]> _done;
-
-    public CaptureActivity(FrameCapture capture, Action<string[]> done)
-    {
-        _capture = capture;
-        _recording = capture.Record();
-        _done = done;
-    }
+    private readonly FrameCapture _capture = capture;
+    private readonly Task<string[]> _recording = capture.Record();
 
     public override bool Records => true;
 
@@ -27,7 +19,7 @@ internal sealed class CaptureActivity : StagingActivity
             return false;
         }
 
-        _done(_recording.GetAwaiter().GetResult());
+        done(_recording.GetAwaiter().GetResult());
         return true;
     }
 

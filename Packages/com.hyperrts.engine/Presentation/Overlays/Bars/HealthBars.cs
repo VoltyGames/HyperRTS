@@ -3,7 +3,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Overlays.Bars;
 
 /// <summary>One frame's screen-aligned health bars, all in one draw.</summary>
-public sealed class HealthBars : OverlayBatch<HealthBarInstance>
+public sealed class HealthBars(Mesh billboard, Material material) : OverlayBatch<HealthBarInstance>(billboard, material)
 {
     private static readonly int OffsetId = Shader.PropertyToID("_Offset");
     private static readonly int BackId = Shader.PropertyToID("_Back");
@@ -17,10 +17,6 @@ public sealed class HealthBars : OverlayBatch<HealthBarInstance>
     private static readonly int RetreatId = Shader.PropertyToID("_Retreat");
     private static readonly int HeavyCoverId = Shader.PropertyToID("_HeavyCover");
     private static readonly int LightCoverId = Shader.PropertyToID("_LightCover");
-
-    public HealthBars(Mesh billboard, Material material) : base(billboard, material)
-    {
-    }
 
     public void Add(Vector3 anchor, in HealthBarData bar, OverlayStyle style)
     {

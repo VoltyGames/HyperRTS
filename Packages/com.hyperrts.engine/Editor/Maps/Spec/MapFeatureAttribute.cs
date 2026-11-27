@@ -9,21 +9,14 @@ namespace HyperRTS.Editor.Maps.Spec;
 /// geometry comes from <see cref="IMapPoint"/> or <see cref="IMapLine"/>.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class)]
-public sealed class MapFeatureAttribute : Attribute
+public sealed class MapFeatureAttribute(string name, int order, float red, float green, float blue) : Attribute
 {
-    public MapFeatureAttribute(string name, int order, float red, float green, float blue)
-    {
-        Name = name;
-        Order = order;
-        Color = new Color(red, green, blue);
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 
     /// <summary>The Map Editor draws features of a higher order over those of a lower one.</summary>
-    public int Order { get; }
+    public int Order { get; } = order;
 
-    public Color Color { get; }
+    public Color Color { get; } = new Color(red, green, blue);
 
     /// <summary>Lines only: the points close into a polygon.</summary>
     public bool Closed { get; set; }

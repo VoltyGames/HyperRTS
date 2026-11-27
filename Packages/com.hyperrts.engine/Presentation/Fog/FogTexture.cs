@@ -10,23 +10,15 @@ namespace HyperRTS.Presentation.Fog;
 /// One byte per fog cell as a texture, refilled from the local team's fog whenever its view changes. An eased
 /// texture fills a target array and fades toward it; a plain one is filled directly.
 /// </summary>
-public sealed class FogTexture : IDisposable
+public sealed class FogTexture(string name, TextureFormat format, bool eased) : IDisposable
 {
-    private readonly string _name;
-    private readonly TextureFormat _format;
-    private readonly bool _eased;
+    private readonly string _name = name;
+    private readonly bool _eased = eased;
     private NativeArray<byte> _target;
     private int _version = -1;
 
     // Whether the texture has reached the last fill; always true for a plain texture.
     private bool _settled = true;
-
-    public FogTexture(string name, TextureFormat format, bool eased)
-    {
-        _name = name;
-        _format = format;
-        _eased = eased;
-    }
 
     public Texture2D Texture { get; private set; }
 
@@ -47,7 +39,7 @@ public sealed class FogTexture : IDisposable
         if (created)
         {
             Dispose();
-            Texture = new Texture2D(size.x, size.y, _format, false, true)
+            Texture = new Texture2D(size.x, size.y, format, false, true)
             {
                 name = _name,
                 filterMode = FilterMode.Bilinear,

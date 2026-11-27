@@ -5,15 +5,10 @@ using System.Threading.Tasks;
 namespace HyperRTS.Editor.Stages;
 
 /// <summary>One step a tool page runs for a source, such as a model recipe or an effect rig, with its state, log and sheets.</summary>
-public abstract class Stage<TSource> where TSource : class
+public abstract class Stage<TSource>(string title) where TSource : class
 {
-    protected Stage(string title)
-    {
-        Title = title;
-    }
-
     /// <summary>One word, which also names the stage's log file.</summary>
-    public string Title { get; }
+    public string Title { get; } = title;
 
     public virtual bool CanRun(TSource source) => true;
 

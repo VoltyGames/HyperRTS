@@ -12,15 +12,12 @@ namespace HyperRTS.Presentation.Effects.Streams;
 /// Stream state per entity and entry, kept only while the entity streams every frame: a stream that skipped a
 /// frame (hidden, out of range, gone) stops its graphs and starts afresh instead of drawing a segment across the gap.
 /// </summary>
-public sealed class EffectStreams
+public sealed class EffectStreams(EffectPool pool)
 {
-    private readonly EffectPool _pool;
     private readonly Dictionary<(Entity, int), StreamState> _states = [];
     private readonly List<(Entity, int)> _stale = [];
     private readonly Stack<StreamState> _free = new();
     private int _frame;
-
-    public EffectStreams(EffectPool pool) => _pool = pool;
 
     /// <summary>Stable per entity, so its stream keeps one look.</summary>
     public static uint Key(Entity entity, int index) => math.hash(new int3(entity.Index, entity.Version, index));
@@ -34,8 +31,8 @@ public sealed class EffectStreams
     /// </summary>
     public StreamState Step(GameObject prefab, Entity entity, int index, Vector3 position, float reach = 1f)
     {
-        var rig = _pool.Get(prefab);
-        if (rig == null || !_pool.InRange(rig, position, reach))
+        var rig = pool.Get(prefab);
+        if (rig == null || !pool.InRange(rig, position, reach))
         {
             return null;
         }

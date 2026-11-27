@@ -10,13 +10,11 @@ namespace HyperRTS.Presentation.Effects.Streams;
 /// A rig's copies of its stream graphs, one set per playing stream. A stopped set waits until its particles have
 /// died before it serves another stream, so stopping never cuts a trail or a loop short.
 /// </summary>
-public sealed class GraphStreamPool
+public sealed class GraphStreamPool(VisualEffect[] effects)
 {
-    private readonly VisualEffect[] _templates;
+    private readonly VisualEffect[] _templates = Array.FindAll(effects, GraphStream.Streams);
     private readonly Stack<GraphStream> _idle = new();
     private readonly List<GraphStream> _stopping = [];
-
-    public GraphStreamPool(VisualEffect[] effects) => _templates = Array.FindAll(effects, GraphStream.Streams);
 
     /// <summary>Whether the rig has any graph that streams by rate.</summary>
     public bool HasStreams => _templates.Length > 0;

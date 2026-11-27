@@ -5,26 +5,18 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Placement;
 
 /// <summary>One palette prefab to instantiate: where, which way, how big and for whom.</summary>
-public sealed class MapPlacement
+public sealed class MapPlacement(MapProp entry, Vector2 position, float yaw, float stretch)
 {
-    public MapPlacement(MapProp entry, Vector2 position, float yaw, float stretch)
-    {
-        Entry = entry;
-        Position = position;
-        Yaw = yaw;
-        Stretch = stretch;
-    }
+    public MapProp Entry { get; } = entry;
 
-    public MapProp Entry { get; }
+    public Vector2 Position { get; } = position;
 
-    public Vector2 Position { get; }
-
-    public float Yaw { get; }
+    public float Yaw { get; } = yaw;
 
     public float Scale { get; set; } = 1f;
 
     /// <summary>Extra stretch along the entry's long side (an arch spanning its gap), on top of <see cref="Scale"/>.</summary>
-    public float Stretch { get; }
+    public float Stretch { get; } = stretch;
 
     /// <summary>The long side is local Z when the entry's size is deeper than wide, else local X.</summary>
     private bool LongSideAlongZ => Entry.size.y >= Entry.size.x;

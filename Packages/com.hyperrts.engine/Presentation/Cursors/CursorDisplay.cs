@@ -8,17 +8,12 @@ namespace HyperRTS.Presentation.Cursors;
 /// Animates the hardware cursor from a <see cref="CursorSet"/>. Hardware rather than drawn, so the cursor never lags
 /// the frame rate.
 /// </summary>
-public sealed class CursorDisplay
+public sealed class CursorDisplay(CursorSet set)
 {
-    private readonly CursorSet _set;
+    private readonly CursorSet _set = set;
     private CursorAnimation _animation;
     private float _started;
     private Texture2D _shown;
-
-    public CursorDisplay(CursorSet set)
-    {
-        _set = set;
-    }
 
     /// <summary>Multiplies the set's base size; the closest drawn size is shown.</summary>
     public float Scale { get; set; } = 1f;

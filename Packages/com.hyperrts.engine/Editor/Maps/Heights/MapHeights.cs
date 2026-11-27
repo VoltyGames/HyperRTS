@@ -4,14 +4,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Heights;
 
 /// <summary>World ground heights (metres) on a square grid of samples covering the map, row by row from the south.</summary>
-public sealed class MapHeights
+public sealed class MapHeights(int resolution, Rect bounds)
 {
-    private readonly MapValues<float> _samples;
-
-    public MapHeights(int resolution, Rect bounds)
-    {
-        _samples = new MapValues<float>(MapGrid.Corners(bounds, resolution));
-    }
+    private readonly MapValues<float> _samples = new MapValues<float>(MapGrid.Corners(bounds, resolution));
 
     public int Resolution => _samples.Grid.Width;
 

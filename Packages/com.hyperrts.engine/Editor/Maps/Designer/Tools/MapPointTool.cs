@@ -10,26 +10,18 @@ namespace HyperRTS.Editor.Maps.Designer.Tools;
 /// The Map Editor's Point tool: each click adds a feature of the picked kind that copies the list's last one. One
 /// undo step per feature.
 /// </summary>
-public sealed class MapPointTool : IMapTool
+public sealed class MapPointTool(MapToolContext context, MapToolbox toolbox) : IMapTool
 {
     private const float MarkerRadius = 6f;
 
-    private readonly MapToolContext _context;
-    private readonly MapToolbox _toolbox;
     private Vector2? _cursor;
-
-    public MapPointTool(MapToolContext context, MapToolbox toolbox)
-    {
-        _context = context;
-        _toolbox = toolbox;
-    }
 
     public void Down(Vector2 local, EventModifiers modifiers, int clickCount)
     {
-        var kind = _toolbox.Kind;
-        var position = _context.Place(local, SharedLikeLast(kind));
-        var added = MapFeatureEdits.Add(_context.Document, kind, new[] { position });
-        _context.Selection.Set(added);
+        var kind = toolbox.Kind;
+        var position = context.Place(local, SharedLikeLast(kind));
+        var added = MapFeatureEdits.Add(context.Document, kind, new[] { position });
+        context.Selection.Set(added);
     }
 
     public void Move(Vector2 local) => _cursor = local;
@@ -50,9 +42,9 @@ public sealed class MapPointTool : IMapTool
             return;
         }
 
-        var kind = _toolbox.Kind;
-        var world = _context.Place(_cursor.Value, SharedLikeLast(kind));
-        MapFeaturePainter.Circle(painter, _context.View.ToLocal(world), MarkerRadius);
+        var kind = toolbox.Kind;
+        var world = context.Place(_cursor.Value, SharedLikeLast(kind));
+        MapFeaturePainter.Circle(painter, context.View.ToLocal(world), MarkerRadius);
         painter.strokeColor = kind.Color;
         painter.lineWidth = 1.5f;
         painter.Stroke();
@@ -61,7 +53,7 @@ public sealed class MapPointTool : IMapTool
     /// <summary>New features copy the last one, so they are shared when it is.</summary>
     private bool SharedLikeLast(MapFeatureKind kind)
     {
-        var spec = _context.Document.Spec;
+        var spec = context.Document.Spec;
         var count = kind.Count(spec);
         return count > 0 && kind.IsShared(spec, count - 1);
     }

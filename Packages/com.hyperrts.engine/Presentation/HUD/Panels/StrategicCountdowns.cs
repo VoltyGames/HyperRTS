@@ -10,20 +10,14 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Panels;
 
 /// <summary>The map-wide strategic asset countdowns: one row per player holding one, in the owner's colour.</summary>
-public sealed class StrategicCountdowns : HUDPanel
+public sealed class StrategicCountdowns(VisualElement root, HUDPanelLayouts layouts) : HUDPanel(root)
 {
     private readonly List<Row> _rows = [];
-    private readonly VisualTreeAsset _rowTemplate;
+    private readonly VisualTreeAsset _rowTemplate = layouts.StrategicCountdownRow;
 
     private readonly LiveQuery _charges = new(entityManager => entityManager.CreateEntityQuery(
         ComponentType.ReadOnly<Player>(),
         ComponentType.ReadOnly<StrategicCharge>()));
-
-    public StrategicCountdowns(VisualElement root, HUDPanelLayouts layouts)
-        : base(root)
-    {
-        _rowTemplate = layouts.StrategicCountdownRow;
-    }
 
     public override bool BlocksPointer => false;
 
@@ -62,18 +56,13 @@ public sealed class StrategicCountdowns : HUDPanel
     }
 
     /// <summary>One countdown line, rewritten only when its player, whole second or readiness changes.</summary>
-    private sealed class Row
+    private sealed class Row(Label label)
     {
         private int _owner = -1;
         private int _seconds = -1;
         private bool _ready;
 
-        public Row(Label label)
-        {
-            Label = label;
-        }
-
-        public Label Label { get; }
+        public Label Label { get; } = label;
 
         public void Show(in Player player, in StrategicCharge charge, HUDContext context)
         {

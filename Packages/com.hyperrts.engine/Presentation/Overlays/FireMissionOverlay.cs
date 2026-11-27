@@ -20,7 +20,7 @@ namespace HyperRTS.Presentation.Overlays;
 /// range and, at the pointer, the circle one salvo covers: filled when a launcher reaches it from where it
 /// stands, an outline when every launcher would first drive into range.
 /// </summary>
-public sealed class FireMissionOverlay : IDisposable
+public sealed class FireMissionOverlay(Mesh grid, Material markerMaterial) : IDisposable
 {
     private readonly LiveQuery _launchers = new(entityManager => entityManager.CreateEntityQuery(
         ComponentType.ReadOnly<Selected>(),
@@ -29,12 +29,7 @@ public sealed class FireMissionOverlay : IDisposable
         ComponentType.ReadOnly<LocalToWorld>()));
 
     private readonly LiveSingleton<HoveredEntity> _hovered = new();
-    private readonly GroundMarkers _markers;
-
-    public FireMissionOverlay(Mesh grid, Material markerMaterial)
-    {
-        _markers = new GroundMarkers(grid, markerMaterial);
-    }
+    private readonly GroundMarkers _markers = new GroundMarkers(grid, markerMaterial);
 
     public void Gather(MatchView view, OverlayStyle style)
     {

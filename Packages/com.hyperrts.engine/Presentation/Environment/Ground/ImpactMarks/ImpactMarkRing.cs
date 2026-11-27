@@ -4,12 +4,10 @@ namespace HyperRTS.Presentation.Environment.Ground.ImpactMarks;
 /// One mark kind's slots as a ring: each new mark takes the next slot, so once the kind's cap is reached the oldest
 /// mark is reused. Remembers when each was placed, so its fade follows from the clock.
 /// </summary>
-public sealed class ImpactMarkRing
+public sealed class ImpactMarkRing(int capacity)
 {
-    private readonly float[] _placed;
+    private readonly float[] _placed = new float[capacity];
     private int _next;
-
-    public ImpactMarkRing(int capacity) => _placed = new float[capacity];
 
     public int Capacity => _placed.Length;
 

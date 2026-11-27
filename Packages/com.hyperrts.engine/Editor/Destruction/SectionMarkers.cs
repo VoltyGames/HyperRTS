@@ -11,19 +11,13 @@ namespace HyperRTS.Editor.Destruction;
 /// The team markers fixed to a sectioned building beside its model (a banner on a wall, a panel on a roof) and the
 /// section each sits on, so they go when it breaks. A marker standing clear of every section is left out.
 /// </summary>
-internal sealed class SectionMarkers
+internal sealed class SectionMarkers(SectionsAuthoring owner, ModelSections model)
 {
     /// <summary>Metres a marker may stand off a section's box and still sit on it.</summary>
     private const float Touch = 0.1f;
 
-    private readonly Transform _owner;
-    private readonly string _modelPath;
-
-    public SectionMarkers(SectionsAuthoring owner, ModelSections model)
-    {
-        _owner = owner.transform;
-        _modelPath = AssetDatabase.GetAssetPath(model);
-    }
+    private readonly Transform _owner = owner.transform;
+    private readonly string _modelPath = AssetDatabase.GetAssetPath(model);
 
     /// <summary>Each marker's topmost object and the index of the box in <paramref name="boxes"/> it sits on.</summary>
     public List<(GameObject Marker, int Section)> Find(List<Bounds> boxes, System.Func<Transform, Bounds> measure)

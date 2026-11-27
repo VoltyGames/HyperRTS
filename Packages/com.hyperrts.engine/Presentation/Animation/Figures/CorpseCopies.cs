@@ -12,19 +12,12 @@ using Unity.Transforms;
 namespace HyperRTS.Presentation.Animation.Figures;
 
 /// <summary>Makes corpses as copies of a figure's renderers, and the falls of figures whose squad is gone.</summary>
-internal sealed class CorpseCopies
+internal sealed class CorpseCopies(EntityManager entities, CorpseBudget budget)
 {
     /// <summary>Seconds a figure of a gone squad waits for its corpse before it hides with its squad.</summary>
     public const float FallWait = 0.1f;
 
-    private readonly EntityManager _entities;
-    private readonly CorpseBudget _budget;
-
-    public CorpseCopies(EntityManager entities, CorpseBudget budget)
-    {
-        _entities = entities;
-        _budget = budget;
-    }
+    private readonly CorpseBudget _budget = budget;
 
     // Nearest the camera first; what the budget leaves waits, and past the wait it is dropped.
     public void MakeWaitingFalls(float now)
@@ -56,7 +49,7 @@ internal sealed class CorpseCopies
     public Entity Create(Entity source, Entity model, Corpse corpse, byte owner)
     {
         var parts = new NativeList<Entity>(Allocator.Temp);
-        foreach (var renderer in _entities.GetBuffer<FigureRenderer>(source))
+        foreach (var renderer in entities.GetBuffer<FigureRenderer>(source))
         {
             if (renderer.Model == model)
             {
@@ -64,25 +57,25 @@ internal sealed class CorpseCopies
             }
         }
 
-        var root = _entities.CreateEntity(typeof(Corpse), typeof(CorpseBody), typeof(CorpseJoint), typeof(CorpseBone),
+        var root = entities.CreateEntity(typeof(Corpse), typeof(CorpseBody), typeof(CorpseJoint), typeof(CorpseBone),
             typeof(LinkedEntityGroup));
         var copies = new NativeList<Entity>(Allocator.Temp) { root };
         foreach (var part in parts)
         {
-            var copy = VisualPrefab.Copy(_entities, part);
-            _entities.SetComponentData(copy, LocalTransform.FromMatrix(corpse.World));
-            _entities.SetComponentData(copy, new LocalToWorld { Value = corpse.World });
+            var copy = VisualPrefab.Copy(entities, part);
+            entities.SetComponentData(copy, LocalTransform.FromMatrix(corpse.World));
+            entities.SetComponentData(copy, new LocalToWorld { Value = corpse.World });
             copies.Add(copy);
         }
 
-        _entities.GetBuffer<LinkedEntityGroup>(root).AddRange(copies.AsArray().Reinterpret<LinkedEntityGroup>());
+        entities.GetBuffer<LinkedEntityGroup>(root).AddRange(copies.AsArray().Reinterpret<LinkedEntityGroup>());
         corpse.Slot = -1;
-        corpse.Reach = math.cmax(_entities.GetComponentData<RenderBounds>(copies[1]).Value.Extents);
-        _entities.SetComponentData(root, corpse);
-        _entities.AddComponentData(root, new TeamColorSource { Owner = owner });
-        if (_entities.HasComponent<TeamStripBand>(source))
+        corpse.Reach = math.cmax(entities.GetComponentData<RenderBounds>(copies[1]).Value.Extents);
+        entities.SetComponentData(root, corpse);
+        entities.AddComponentData(root, new TeamColorSource { Owner = owner });
+        if (entities.HasComponent<TeamStripBand>(source))
         {
-            _entities.AddComponentData(root, _entities.GetComponentData<TeamStripBand>(source));
+            entities.AddComponentData(root, entities.GetComponentData<TeamStripBand>(source));
         }
 
         return root;
@@ -92,9 +85,9 @@ internal sealed class CorpseCopies
     // they were.
     public void QueueShownFigures(Entity squad, Entity prefab, in SquadEnd end, float now)
     {
-        using var shown = _entities.GetBuffer<ShownFigure>(squad).ToNativeArray(Allocator.Temp);
-        using var figures = _entities.GetBuffer<SquadFigure>(prefab).ToNativeArray(Allocator.Temp);
-        var dieHold = _entities.GetComponentData<SquadFigures>(prefab).DieHold;
+        using var shown = entities.GetBuffer<ShownFigure>(squad).ToNativeArray(Allocator.Temp);
+        using var figures = entities.GetBuffer<SquadFigure>(prefab).ToNativeArray(Allocator.Temp);
+        var dieHold = entities.GetComponentData<SquadFigures>(prefab).DieHold;
         for (var i = 0; i < shown.Length; i++)
         {
             if (shown[i].Shown)
@@ -129,14 +122,14 @@ internal sealed class CorpseCopies
         var root = Create(waiting.Prefab, model.Figure, corpse, waiting.Owner);
         var direction = new float3(shown.BlastDirection.x, 0f, shown.BlastDirection.y);
         var fall = new PlayingClip { Value = clips.Fall(shown.Posture, death, direction, shown.World).Packed(start) };
-        using var group = _entities.GetBuffer<LinkedEntityGroup>(root).ToNativeArray(Allocator.Temp);
+        using var group = entities.GetBuffer<LinkedEntityGroup>(root).ToNativeArray(Allocator.Temp);
         for (var i = 1; i < group.Length; i++)
         {
             var copy = group[i].Value;
-            _entities.SetComponentData(copy, new LowerClip { Clip = fall });
-            _entities.SetComponentData(copy, new UpperClip { Clip = fall });
-            _entities.SetComponentData(copy, new LowerFade { Fade = ClipFade.None });
-            _entities.SetComponentData(copy, new UpperFade { Fade = ClipFade.None });
+            entities.SetComponentData(copy, new LowerClip { Clip = fall });
+            entities.SetComponentData(copy, new UpperClip { Clip = fall });
+            entities.SetComponentData(copy, new LowerFade { Fade = ClipFade.None });
+            entities.SetComponentData(copy, new UpperFade { Fade = ClipFade.None });
         }
     }
 }

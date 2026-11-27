@@ -9,27 +9,17 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland;
 /// The land regions one farmland lays down, made once per field: its crop, its headland and, for pieces too small
 /// or narrow to farm, a leftover surface. All are picked from the field's key, so every copy matches.
 /// </summary>
-public sealed class MapFieldRegions
+public sealed class MapFieldRegions(MapPlanContext context, MapFarmlandKit kit, int index, float angle)
 {
-    private readonly MapPlanContext _context;
-    private readonly MapFarmlandKit _kit;
-    private readonly int _seed;
-    private readonly float _angle;
+    private readonly MapPlanContext _context = context;
+    private readonly MapFarmlandKit _kit = kit;
+    private readonly int _seed = context.Random(MapRandomChannel.Farmlands, index).Next();
     private readonly Dictionary<int, (string Surface, int Seed, int Region)> _fields = [];
     private readonly Dictionary<int, int> _headlands = [];
     private readonly Dictionary<int, int> _leftovers = [];
 
-    public MapFieldRegions(MapPlanContext context, MapFarmlandKit kit, int index, float angle)
-    {
-        _context = context;
-        _kit = kit;
-        _seed = context.Random(MapRandomChannel.Farmlands, index).Next();
-        _angle = angle;
-        Margin = context.Region(MapLandKind.Margin, kit.marginSurface, index);
-    }
-
     /// <summary>The weedy band round every field.</summary>
-    public int Margin { get; }
+    public int Margin { get; } = context.Region(MapLandKind.Margin, kit.marginSurface, index);
 
     public int Field(int field) => Sown(field).Region;
 
@@ -39,7 +29,7 @@ public sealed class MapFieldRegions
         if (!_headlands.TryGetValue(field, out var region))
         {
             var (surface, seed, _) = Sown(field);
-            _headlands[field] = region = _context.Region(MapLandKind.Field, surface, seed, _angle + 90f);
+            _headlands[field] = region = _context.Region(MapLandKind.Field, surface, seed, angle + 90f);
         }
 
         return region;
@@ -52,7 +42,7 @@ public sealed class MapFieldRegions
             var random = MapRandom.Stream(_seed, MapRandomChannel.FieldCrops, field);
             var surface = random.Pick(_kit.crops, c => c.weight).surface;
             var seed = random.Next();
-            _fields[field] = sown = (surface, seed, _context.Region(MapLandKind.Field, surface, seed, _angle));
+            _fields[field] = sown = (surface, seed, _context.Region(MapLandKind.Field, surface, seed, angle));
         }
 
         return sown;

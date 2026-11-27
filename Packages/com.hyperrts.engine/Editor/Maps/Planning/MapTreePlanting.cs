@@ -10,20 +10,12 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning;
 
 /// <summary>Plants trees at authored-sector points in every symmetry copy, clear of roads, water, steep ground and placements.</summary>
-public sealed class MapTreePlanting
+public sealed class MapTreePlanting(MapSymmetry symmetry, MapClimate climate, MapTreeSpacing spacing)
 {
     private const int ScatterAttempts = 6;
     private const float EntityFootprint = 1.5f;
-    private readonly MapSymmetry _symmetry;
-    private readonly MapClimate _climate;
-    private readonly MapTreeSpacing _spacing;
-
-    public MapTreePlanting(MapSymmetry symmetry, MapClimate climate, MapTreeSpacing spacing)
-    {
-        _symmetry = symmetry;
-        _climate = climate;
-        _spacing = spacing;
-    }
+    private readonly MapSymmetry _symmetry = symmetry;
+    private readonly MapTreeSpacing _spacing = spacing;
 
     /// <summary>Every tree planted so far, copies included.</summary>
     public List<MapTree> Planted { get; } = [];
@@ -36,7 +28,7 @@ public sealed class MapTreePlanting
 
     public void PlantCopies(int tree, Vector2 sectorPoint, float scale, float yaw)
     {
-        var variant = _climate.trees[tree].Variant(MapTree.SeedAt(sectorPoint));
+        var variant = climate.trees[tree].Variant(MapTree.SeedAt(sectorPoint));
         foreach (var copy in _symmetry.Copies)
         {
             var placed = copy.Apply(sectorPoint);
@@ -55,7 +47,7 @@ public sealed class MapTreePlanting
         var entries = new Dictionary<(int, int), MapProp>();
         foreach (var tree in Planted)
         {
-            var species = _climate.trees[tree.Species];
+            var species = climate.trees[tree.Species];
             if (!species.HasEntities || !playArea.Contains(tree.Position))
             {
                 terrain.Add(tree);
@@ -79,7 +71,7 @@ public sealed class MapTreePlanting
 
     public float Scale(int tree, System.Random random)
     {
-        var range = _climate.trees[tree].scale;
+        var range = climate.trees[tree].scale;
         return random.Range(range.x, range.y);
     }
 
@@ -99,7 +91,7 @@ public sealed class MapTreePlanting
         Func<Vector2> candidate, Func<Vector2, bool> inside)
     {
         var wanted = random.Count(density.perHectare * hectares);
-        Scatter(_climate.TreeIndex(density.tree), wanted, spacing, random, candidate, inside);
+        Scatter(climate.TreeIndex(density.tree), wanted, spacing, random, candidate, inside);
     }
 
     private void Scatter(int tree, int wanted, float spacing, System.Random random, Func<Vector2> candidate,

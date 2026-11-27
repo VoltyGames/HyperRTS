@@ -1,16 +1,10 @@
 namespace HyperRTS.Editor.Maps.Geometry;
 
 /// <summary>One value per sample of a <see cref="MapGrid"/>, row by row from the south-west.</summary>
-public sealed class MapValues<T>
+public sealed class MapValues<T>(MapGrid grid)
 {
-    public readonly MapGrid Grid;
-    public readonly T[] Values;
-
-    public MapValues(MapGrid grid)
-    {
-        Grid = grid;
-        Values = new T[grid.Count];
-    }
+    public readonly MapGrid Grid = grid;
+    public readonly T[] Values = new T[grid.Count];
 
     public T this[int x, int z]
     {

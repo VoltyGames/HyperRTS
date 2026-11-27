@@ -3,13 +3,11 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Lights;
 
 /// <summary>Flash lights: shadowless point lights shared by every rig's bursts; when all are lit the oldest is reused.</summary>
-public sealed class EffectLights
+public sealed class EffectLights(Transform root)
 {
-    private readonly LightSlots _slots;
+    private readonly LightSlots _slots = new LightSlots(root, "Flash");
     private readonly EffectLight[] _sources = new EffectLight[LightSlots.Capacity];
     private readonly float[] _ages = new float[LightSlots.Capacity];
-
-    public EffectLights(Transform root) => _slots = new LightSlots(root, "Flash");
 
     public void Flash(EffectLight source, Vector3 position)
     {

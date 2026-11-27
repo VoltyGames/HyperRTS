@@ -8,24 +8,12 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Animation.Bones;
 
 /// <summary>Turns a model's nodes into meshes skinned to a <see cref="BoneRig"/>'s bones, with the skin in vertex channels.</summary>
-internal sealed class BoneSkin
+internal sealed class BoneSkin(string rigName, int skeletonBones, Matrix4x4[] binds, bool[] upper, Func<string, int> boneIndex)
 {
     private const float BindTolerance = 1e-3f;
 
-    private readonly string _rigName;
-    private readonly int _skeletonBones;
-    private readonly Matrix4x4[] _binds;
-    private readonly bool[] _upper;
-    private readonly Func<string, int> _boneIndex;
-
-    public BoneSkin(string rigName, int skeletonBones, Matrix4x4[] binds, bool[] upper, Func<string, int> boneIndex)
-    {
-        _rigName = rigName;
-        _skeletonBones = skeletonBones;
-        _binds = binds;
-        _upper = upper;
-        _boneIndex = boneIndex;
-    }
+    private readonly Matrix4x4[] _binds = binds;
+    private readonly bool[] _upper = upper;
 
     /// <summary>
     /// A skinned node's mesh moved into the skeleton mesh's rest space, with its skin in vertex channels.
@@ -39,7 +27,7 @@ internal sealed class BoneSkin
         var remap = new int[renderer.bones.Length];
         for (var i = 0; i < remap.Length; i++)
         {
-            remap[i] = _boneIndex(renderer.bones[i].name);
+            remap[i] = boneIndex(renderer.bones[i].name);
         }
 
         var into = _binds[remap[0]].inverse * bindposes[0];
@@ -66,10 +54,10 @@ internal sealed class BoneSkin
     {
         var filter = BoneRig.Find(model, node).GetComponent<MeshFilter>();
         var source = (filter != null ? filter.sharedMesh : null).OrThrow($"Node '{node}' of '{model.name}' has no mesh.");
-        var bone = _boneIndex(socket);
-        if (bone < _skeletonBones)
+        var bone = boneIndex(socket);
+        if (bone < skeletonBones)
         {
-            throw new InvalidOperationException($"'{socket}' of '{_rigName}' is a skeleton bone, not a socket of the set.");
+            throw new InvalidOperationException($"'{socket}' of '{rigName}' is a skeleton bone, not a socket of the set.");
         }
 
         var mesh = Object.Instantiate(source);

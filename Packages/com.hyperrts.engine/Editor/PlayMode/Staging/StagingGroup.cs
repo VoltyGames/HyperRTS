@@ -8,20 +8,13 @@ using Unity.Transforms;
 namespace HyperRTS.Editor.PlayMode.Staging;
 
 /// <summary>The units one spawn step made, under the label later steps use for them.</summary>
-internal sealed class StagingGroup
+internal sealed class StagingGroup(string name, byte owner, List<Entity> units)
 {
-    private readonly List<Entity> _units;
+    private readonly List<Entity> _units = units;
 
-    public StagingGroup(string name, byte owner, List<Entity> units)
-    {
-        Name = name;
-        Owner = owner;
-        _units = units;
-    }
+    public string Name { get; } = name;
 
-    public string Name { get; }
-
-    public byte Owner { get; }
+    public byte Owner { get; } = owner;
 
     public int Total => _units.Count;
 

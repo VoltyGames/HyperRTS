@@ -9,12 +9,8 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// Spec rows of a climate tree (a row of poplars along a road, an avenue of oaks): one tree every spacing
 /// metres with a little jitter. Prop rows (poles, fences) are the prop placer's.
 /// </summary>
-public sealed class MapRowPlanter : MapLandPass
+public sealed class MapRowPlanter(MapPlanContext context) : MapLandPass(context)
 {
-    public MapRowPlanter(MapPlanContext context) : base(context)
-    {
-    }
-
     public override void Plan()
     {
         foreach (var row in Context.Layout.Rows.Where(l => l.Copy == 0 && Climate.HasTree(l.Authored.kind)))

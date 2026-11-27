@@ -18,7 +18,7 @@ namespace HyperRTS.Presentation.Overlays;
 /// With squads selected and the pointer over open ground, rings on the cover spots a move there would use (green
 /// heavy, yellow light), or a red ring when it would find none. Uses the search of <c>SquadCoverSystem</c>.
 /// </summary>
-public sealed class CoverPreview : IDisposable
+public sealed class CoverPreview(Mesh ring) : IDisposable
 {
     private const float SpotRadius = 0.45f;
     private const float NoneRadius = 0.9f;
@@ -34,14 +34,8 @@ public sealed class CoverPreview : IDisposable
     private readonly LiveSingleton<CoverRules> _rules = new();
     private readonly LiveSingleton<SquadRules> _squadRules = new();
     private readonly LiveSingleton<HoveredEntity> _hovered = new();
-    private readonly InstanceBuffer<OverlayInstance> _rings;
-    private NativeList<int> _near;
-
-    public CoverPreview(Mesh ring)
-    {
-        _rings = new InstanceBuffer<OverlayInstance>(ring);
-        _near = new NativeList<int>(32, Allocator.Persistent);
-    }
+    private readonly InstanceBuffer<OverlayInstance> _rings = new InstanceBuffer<OverlayInstance>(ring);
+    private NativeList<int> _near = new NativeList<int>(32, Allocator.Persistent);
 
     public void Gather(MatchView view, OverlayStyle style)
     {

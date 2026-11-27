@@ -11,7 +11,11 @@ namespace HyperRTS.Presentation.Environment.Fire;
 /// Grass and crop fires on a 1 m grid that spread downwind and burn out. Every random choice is hashed, so clients that
 /// see the same impacts burn the same fields.
 /// </summary>
-public sealed class FieldFires
+/// <remarks>
+/// A grid of <paramref name="size"/> cells from <paramref name="min"/>, all bare until marked dry. Each ignition
+/// spreads at most a <paramref name="reach"/> (metres, min and max) from where it started.
+/// </remarks>
+public sealed class FieldFires(float2 min, int2 size, float2 burnSeconds, float2 reach)
 {
     public const float CellSize = 1f;
     public const float StepSeconds = 0.25f;
@@ -41,28 +45,15 @@ public sealed class FieldFires
         new(1, 0), new(-1, 0), new(0, 1), new(0, -1), new(1, 1), new(1, -1), new(-1, 1), new(-1, -1),
     ];
 
-    private readonly CellGrid _grid;
-    private readonly float2 _burnSeconds;
-    private readonly float2 _reach;
-    private readonly FieldCell[] _cells;
+    private readonly CellGrid _grid = new CellGrid(min, CellSize, size);
+    private readonly float2 _reach = reach;
+    private readonly FieldCell[] _cells = new FieldCell[size.x * size.y];
     private readonly float[] _chances = new float[8];
     private readonly List<Flame> _flames = [];
     private readonly List<Flame> _lit = [];
     private readonly List<float2> _burntOut = [];
     private readonly Dictionary<int, float3> _clusterSums = [];
     private float _carry;
-
-    /// <summary>
-    /// A grid of <paramref name="size"/> cells from <paramref name="min"/>, all bare until marked dry. Each ignition
-    /// spreads at most a <paramref name="reach"/> (metres, min and max) from where it started.
-    /// </summary>
-    public FieldFires(float2 min, int2 size, float2 burnSeconds, float2 reach)
-    {
-        _grid = new CellGrid(min, CellSize, size);
-        _burnSeconds = burnSeconds;
-        _reach = reach;
-        _cells = new FieldCell[size.x * size.y];
-    }
 
     public int2 Size => _grid.Size;
 
@@ -258,7 +249,7 @@ public sealed class FieldFires
         }
 
         _cells[index] = FieldCell.Burning;
-        var seconds = math.lerp(_burnSeconds.x, _burnSeconds.y, Fraction(seed, index, BurnSalt));
+        var seconds = math.lerp(burnSeconds.x, burnSeconds.y, Fraction(seed, index, BurnSalt));
         into.Add(new Flame { Cell = index, Seed = seed, Origin = origin, Reach = reach, Left = seconds });
     }
 

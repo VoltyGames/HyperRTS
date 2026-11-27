@@ -7,7 +7,7 @@ namespace HyperRTS.Presentation.Effects.Rig;
 /// <summary>
 /// One VFX Graph of a rig. Bursts sent before the graph has run once are dropped, so those in its spawn frame wait.
 /// </summary>
-public sealed class EffectGraph
+public sealed class EffectGraph(VisualEffect effect)
 {
     public const string BurstEvent = "Burst";
     public const string DensityProperty = "Density";
@@ -21,16 +21,10 @@ public sealed class EffectGraph
     private static readonly int ScaleYId = Shader.PropertyToID("scaleY");
     private static readonly int ScaleZId = Shader.PropertyToID("scaleZ");
 
-    private readonly VisualEffect _effect;
-    private readonly VFXEventAttribute _attributes;
+    private readonly VisualEffect _effect = effect;
+    private readonly VFXEventAttribute _attributes = effect.CreateVFXEventAttribute();
     private readonly int _spawnFrame = Time.frameCount;
     private readonly List<(Vector3 Position, Quaternion Rotation, float Scale)> _waiting = [];
-
-    public EffectGraph(VisualEffect effect)
-    {
-        _effect = effect;
-        _attributes = effect.CreateVFXEventAttribute();
-    }
 
     private bool HasRun => Time.frameCount > _spawnFrame;
 

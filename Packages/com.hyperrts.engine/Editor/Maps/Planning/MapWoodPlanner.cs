@@ -13,15 +13,11 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// Spec woods: forest floor under the canopy, a shrubby band round the edge and in glades, canopy trees inside
 /// and shrubs with young trees at the edge, so a wood fades into the open instead of stopping at a wall.
 /// </summary>
-public sealed class MapWoodPlanner : MapLandPass
+public sealed class MapWoodPlanner(MapPlanContext context) : MapLandPass(context)
 {
     private const float EdgeWander = 2.5f;
     private const float ClearingWavelength = 35f;
     private MapNoise _clearings;
-
-    public MapWoodPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

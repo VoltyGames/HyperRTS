@@ -7,12 +7,8 @@ using HyperRTS.Editor.Maps.Palette;
 namespace HyperRTS.Editor.Maps.Checks;
 
 /// <summary>Checks the palette's sides: ids 1 to 255 listed once and kit pieces that are entity entries.</summary>
-public sealed class MapSideCheck : MapCheck
+public sealed class MapSideCheck(MapClimate climate, MapPalette palette, MapIssues issues) : MapCheck(climate, palette, issues)
 {
-    public MapSideCheck(MapClimate climate, MapPalette palette, MapIssues issues) : base(climate, palette, issues)
-    {
-    }
-
     public void Check()
     {
         var ids = new HashSet<int>();

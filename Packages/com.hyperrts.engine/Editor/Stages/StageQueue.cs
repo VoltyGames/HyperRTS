@@ -8,16 +8,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Stages;
 
 /// <summary>Runs a tool page's stages one at a time, in the order they were added.</summary>
-public sealed class StageQueue<TSource> where TSource : class
+public sealed class StageQueue<TSource>(Func<TSource, string> key) where TSource : class
 {
     private readonly List<(TSource Source, Stage<TSource> Stage)> _waiting = [];
-    private readonly Func<TSource, string> _key;
-
-    // The key tells two sources apart, such as by asset path, since a page may list fresh copies.
-    public StageQueue(Func<TSource, string> key)
-    {
-        _key = key;
-    }
 
     /// <summary>Raised after each stage ends, with the source it ran for.</summary>
     public event Action<TSource> Finished;
@@ -28,7 +21,7 @@ public sealed class StageQueue<TSource> where TSource : class
     public bool Busy => Running != null || _waiting.Count > 0;
 
     /// <summary>True when <paramref name="a"/> and <paramref name="b"/> are the same source.</summary>
-    public bool Same(TSource a, TSource b) => a != null && b != null && _key(a) == _key(b);
+    public bool Same(TSource a, TSource b) => a != null && b != null && key(a) == key(b);
 
     /// <summary>Queues <paramref name="stage"/> for <paramref name="source"/> unless it is already waiting or running.</summary>
     public void Add(TSource source, Stage<TSource> stage)

@@ -227,17 +227,11 @@ public sealed class MapLibrary : IDisposable
     }
 
     /// <summary>An indexed item: its asset path (or the item itself when made in memory) and the copy once loaded.</summary>
-    private sealed class Entry
+    private sealed class Entry(string path, MapLibraryItem item)
     {
-        public Entry(string path, MapLibraryItem item)
-        {
-            Path = path;
-            Item = item;
-        }
+        public string Path { get; } = path;
 
-        public string Path { get; }
-
-        public MapLibraryItem Item { get; }
+        public MapLibraryItem Item { get; } = item;
 
         public MapLibraryItem Copy { get; set; }
     }

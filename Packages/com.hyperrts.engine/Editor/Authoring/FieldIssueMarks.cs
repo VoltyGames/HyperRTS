@@ -9,24 +9,18 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.Authoring;
 
 /// <summary>Marks the inspector field an issue names with a severity edge and shows the message under it.</summary>
-public sealed class FieldIssueMarks
+public sealed class FieldIssueMarks(VisualElement root)
 {
     private const string MessageClass = "hrts-field-issue";
 
-    private readonly VisualElement _root;
     private readonly List<VisualElement> _marked = [];
-
-    public FieldIssueMarks(VisualElement root)
-    {
-        _root = root;
-    }
 
     /// <summary>Replaces the marks with those of <paramref name="issues"/>; issues without a path are left to the badge.</summary>
     public void Show(IEnumerable<ValidationIssue> issues)
     {
         Clear();
         var drawn = new Dictionary<string, PropertyField>();
-        _root.Query<PropertyField>().ForEach(field =>
+        root.Query<PropertyField>().ForEach(field =>
         {
             if (!string.IsNullOrEmpty(field.bindingPath))
             {
@@ -79,7 +73,7 @@ public sealed class FieldIssueMarks
             field.RemoveFromClassList("hrts-field--warning");
         }
 
-        _root.Query(className: MessageClass).ToList().ForEach(message => message.RemoveFromHierarchy());
+        root.Query(className: MessageClass).ToList().ForEach(message => message.RemoveFromHierarchy());
         _marked.Clear();
     }
 }

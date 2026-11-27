@@ -8,12 +8,8 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// fences and street furniture. Runs after roads, banks, bases, pads and ravines and before woods, belts and
 /// farmland.
 /// </summary>
-public sealed class MapSettlementPlanner : MapLandPass
+public sealed class MapSettlementPlanner(MapPlanContext context) : MapLandPass(context)
 {
-    public MapSettlementPlanner(MapPlanContext context) : base(context)
-    {
-    }
-
     public override void Plan()
     {
         foreach (var settlement in Context.Layout.Settlements)

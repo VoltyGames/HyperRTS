@@ -10,16 +10,12 @@ namespace HyperRTS.Editor.Maps.Planning;
 
 /// <summary>Ground decals: each surface's per-hectare mix, laid in the authored sector and copied (wet-only ones
 /// apart), then one under each prop that names one.</summary>
-public sealed class MapDecalPlanner : MapLandPass
+public sealed class MapDecalPlanner(MapPlanContext context) : MapLandPass(context)
 {
     private const int Attempts = 10;
 
     /// <summary>How far an along-road decal's yaw strays from the road's heading (degrees either way).</summary>
     private const float RoadJitter = 6f;
-
-    public MapDecalPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

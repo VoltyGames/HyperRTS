@@ -6,11 +6,9 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 
 /// <summary>Hides or shows every UI panel, the unit overlays (markers, health bars, rally lines) and the silhouettes of hidden units, for clean footage.</summary>
-internal sealed class CleanStep : StagingStep
+internal sealed class CleanStep(bool clean) : StagingStep
 {
-    private readonly bool _clean;
-
-    public CleanStep(bool clean) => _clean = clean;
+    private readonly bool _clean = clean;
 
     public override void Run(StagingRun run)
     {

@@ -6,17 +6,11 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Commands;
 
 /// <summary>The specs and the button template that <see cref="ICommandSource"/>s build their entries from.</summary>
-public sealed class CommandKit
+public sealed class CommandKit(VisualTreeAsset buttonParts, CommandCatalog catalog)
 {
-    public CommandKit(VisualTreeAsset buttonParts, CommandCatalog catalog)
-    {
-        ButtonParts = buttonParts;
-        Catalog = catalog;
-    }
+    public VisualTreeAsset ButtonParts { get; } = buttonParts;
 
-    public VisualTreeAsset ButtonParts { get; }
-
-    public CommandCatalog Catalog { get; }
+    public CommandCatalog Catalog { get; } = catalog;
 
     /// <summary>
     /// A button for <paramref name="spec"/>. The spec's label and icon win over <paramref name="name"/> and

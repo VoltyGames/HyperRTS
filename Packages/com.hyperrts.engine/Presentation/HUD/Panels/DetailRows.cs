@@ -4,17 +4,11 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Panels;
 
 /// <summary>A column of <see cref="DetailRow"/>s: rows are cloned from a template as needed and extras are hidden.</summary>
-public sealed class DetailRows
+public sealed class DetailRows(VisualElement column, VisualTreeAsset template)
 {
-    private readonly VisualElement _column;
-    private readonly VisualTreeAsset _template;
+    private readonly VisualElement _column = column;
+    private readonly VisualTreeAsset _template = template;
     private readonly List<(VisualElement Row, Label Name, Label Value, VisualElement Chevrons)> _rows = [];
-
-    public DetailRows(VisualElement column, VisualTreeAsset template)
-    {
-        _column = column;
-        _template = template;
-    }
 
     public void Show(List<DetailRow> rows)
     {

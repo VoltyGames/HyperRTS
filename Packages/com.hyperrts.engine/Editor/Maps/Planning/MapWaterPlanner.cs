@@ -3,12 +3,8 @@ using HyperRTS.Editor.Maps.Land;
 namespace HyperRTS.Editor.Maps.Planning;
 
 /// <summary>River channels and ponds, claimed first: nothing builds in water.</summary>
-public sealed class MapWaterPlanner : MapLandPass
+public sealed class MapWaterPlanner(MapPlanContext context) : MapLandPass(context)
 {
-    public MapWaterPlanner(MapPlanContext context) : base(context)
-    {
-    }
-
     public override void Plan()
     {
         var shapes = Context.Shapes;

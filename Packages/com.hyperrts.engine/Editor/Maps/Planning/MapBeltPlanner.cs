@@ -11,14 +11,10 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// Shelterbelts and hedgerows: a strip of trees and shrubs along a polyline, with breaks where tracks cut
 /// through. Farmland uses <see cref="PlanLine"/> for its field-end belts.
 /// </summary>
-public sealed class MapBeltPlanner : MapLandPass
+public sealed class MapBeltPlanner(MapPlanContext context) : MapLandPass(context)
 {
     private const float Jitter = 0.25f;
     private const float MinSpacing = 2f;
-
-    public MapBeltPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

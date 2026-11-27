@@ -13,36 +13,23 @@ namespace HyperRTS.Presentation.HUD.Panels;
 /// A selected squad's soldiers as cards, its suppression with the level it has reached, and while it retreats or
 /// reinforces, that state with the progress of the soldier being brought back.
 /// </summary>
-public sealed class SquadView
+public sealed class SquadView(VisualElement root, VisualTreeAsset cardTemplate)
 {
     private static readonly string[] StatusKeys = ["", "squad.retreating", "squad.reinforcing", "squad.building"];
 
     private const string LevelClass = "hud-squad__suppression--";
 
-    private readonly VisualElement _root;
-    private readonly VisualTreeAsset _cardTemplate;
-    private readonly VisualElement _members;
-    private readonly HUDBar _suppression;
-    private readonly Label _level;
-    private readonly VisualElement _status;
-    private readonly Label _statusText;
-    private readonly HUDBar _progress;
+    private readonly VisualElement _root = root;
+    private readonly VisualElement _members = root.Require<VisualElement>("members");
+    private readonly HUDBar _suppression = root.Require<HUDBar>("suppression");
+    private readonly Label _level = root.Require<Label>("level");
+    private readonly VisualElement _status = root.Require<VisualElement>("status");
+    private readonly Label _statusText = root.Require<Label>("status-text");
+    private readonly HUDBar _progress = root.Require<HUDBar>("progress");
     private readonly List<SquadMemberCard> _cards = [];
     private readonly Dictionary<FixedString32Bytes, string> _weaponNames = [];
     private int _shownLevel = -1;
     private int _shownStatus = -1;
-
-    public SquadView(VisualElement root, VisualTreeAsset cardTemplate)
-    {
-        _root = root;
-        _cardTemplate = cardTemplate;
-        _members = root.Require<VisualElement>("members");
-        _suppression = root.Require<HUDBar>("suppression");
-        _level = root.Require<Label>("level");
-        _status = root.Require<VisualElement>("status");
-        _statusText = root.Require<Label>("status-text");
-        _progress = root.Require<HUDBar>("progress");
-    }
 
     public void Refresh(HUDContext context, Entity entity)
     {
@@ -89,7 +76,7 @@ public sealed class SquadView
     {
         while (_cards.Count < count)
         {
-            var card = new SquadMemberCard(_cardTemplate);
+            var card = new SquadMemberCard(cardTemplate);
             _cards.Add(card);
             _members.Add(card.Root);
         }

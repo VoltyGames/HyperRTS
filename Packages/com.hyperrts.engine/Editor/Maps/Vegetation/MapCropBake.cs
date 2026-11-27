@@ -7,13 +7,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Vegetation;
 
 /// <summary>Where a map's row crops grow, before <see cref="MapCropWriter"/> saves it.</summary>
-public sealed class MapCropBake
+public sealed class MapCropBake(MapGrid grid)
 {
-    public MapCropBake(MapGrid grid)
-    {
-        Ids = new MapValues<int>(grid);
-    }
-
     /// <summary>World XZ rectangle the cells cover, one metre each.</summary>
     public Rect Area => Ids.Grid.Bounds;
 
@@ -22,7 +17,7 @@ public sealed class MapCropBake
     public int Height => Ids.Grid.Height;
 
     /// <summary>Field index plus one per cell. 0 means no crop.</summary>
-    public MapValues<int> Ids { get; }
+    public MapValues<int> Ids { get; } = new MapValues<int>(grid);
 
     public List<RowCrop> Crops { get; } = [];
 

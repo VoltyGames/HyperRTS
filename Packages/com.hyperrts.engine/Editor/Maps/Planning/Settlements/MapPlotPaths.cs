@@ -11,49 +11,40 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// A plot's worn paths, from the gate to the house front and round the house to each outbuilding and yard extra,
 /// worn into its yard and garden in every copy.
 /// </summary>
-internal sealed class MapPlotPaths
+internal sealed class MapPlotPaths(MapPlanContext context, MapSettlementKit kit)
 {
     // Metres the path keeps off the house walls as it goes round them.
     private const float WallGap = 1f;
 
-    private readonly MapPlanContext _context;
-    private readonly MapSettlementKit _kit;
-
-    public MapPlotPaths(MapPlanContext context, MapSettlementKit kit)
-    {
-        _context = context;
-        _kit = kit;
-    }
-
     /// <summary>Lays the door decal at the house front in every copy.</summary>
     public void MarkDoor(MapPlot plot, MapPlacement house)
     {
-        if (string.IsNullOrEmpty(_kit.doorDecal))
+        if (string.IsNullOrEmpty(kit.doorDecal))
         {
             return;
         }
 
-        var decal = _context.Climate.Decal(_kit.doorDecal);
+        var decal = context.Climate.Decal(kit.doorDecal);
         var door = Door(plot, house);
-        foreach (var copy in _context.Layout.Symmetry.Copies)
+        foreach (var copy in context.Layout.Symmetry.Copies)
         {
             var yaw = copy.ApplyYaw(plot.FacingYaw);
-            _context.Decals.Add(new MapDecal(decal, copy.Apply(door), _kit.doorDecalSize, yaw, copy.Mirrored));
+            context.Decals.Add(new MapDecal(decal, copy.Apply(door), kit.doorDecalSize, yaw, copy.Mirrored));
         }
     }
 
     public void Wear(MapPlot plot, MapPlacement house, Vector2 gate, IReadOnlyList<Vector2> spots, int seed)
     {
-        if (string.IsNullOrEmpty(_kit.pathSurface))
+        if (string.IsNullOrEmpty(kit.pathSurface))
         {
             return;
         }
 
         var paths = Lines(plot, house, gate, spots);
-        var region = _context.Region(MapLandKind.Yard, _kit.pathSurface, seed);
-        var half = _kit.pathWidth * 0.5f;
-        var land = _context.Land;
-        foreach (var copy in _context.Layout.Symmetry.Copies)
+        var region = context.Region(MapLandKind.Yard, kit.pathSurface, seed);
+        var half = kit.pathWidth * 0.5f;
+        var land = context.Land;
+        foreach (var copy in context.Layout.Symmetry.Copies)
         {
             land.ForEachIn(plot.Bounds(copy), (x, z, center) =>
             {

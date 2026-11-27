@@ -8,7 +8,7 @@ namespace HyperRTS.Editor.Maps.Ground;
 /// Wander for land-use border lookups: a fine wave for a small wander turning into a slow one as it grows, so
 /// field edges ripple and meadow edges meander.
 /// </summary>
-public sealed class MapEdgeWander
+public sealed class MapEdgeWander(MapLayout layout)
 {
     private const float FineWavelength = 6f;
     private const float CoarseWavelength = 22f;
@@ -22,12 +22,7 @@ public sealed class MapEdgeWander
     /// </summary>
     private const float TypicalPeak = 0.35f;
 
-    private readonly MapNoise _noise;
-
-    public MapEdgeWander(MapLayout layout)
-    {
-        _noise = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.LandEdges);
-    }
+    private readonly MapNoise _noise = new MapNoise(layout.Symmetry, layout.Spec.seed, MapNoiseChannel.LandEdges);
 
     /// <summary>Offset of up to <paramref name="amplitude"/> metres to look the land up at.</summary>
     public Vector2 Offset(Vector2 point, float amplitude)

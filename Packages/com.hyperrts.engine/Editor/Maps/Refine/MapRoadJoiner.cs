@@ -203,23 +203,15 @@ public static class MapRoadJoiner
         return reversed;
     }
 
-    private sealed class Target
+    private sealed class Target(Vector2 point, Vector2 tangent, float distance, bool continues)
     {
-        public Target(Vector2 point, Vector2 tangent, float distance, bool continues)
-        {
-            Point = point;
-            Tangent = tangent;
-            Distance = distance;
-            Continues = continues;
-        }
+        public Vector2 Point { get; } = point;
 
-        public Vector2 Point { get; }
+        public Vector2 Tangent { get; } = tangent;
 
-        public Vector2 Tangent { get; }
-
-        public float Distance { get; }
+        public float Distance { get; } = distance;
 
         /// <summary>The point is the end of the other road: this road carries on from it.</summary>
-        public bool Continues { get; }
+        public bool Continues { get; } = continues;
     }
 }

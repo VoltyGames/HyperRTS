@@ -11,12 +11,10 @@ namespace HyperRTS.Simulation.Tests;
 /// Steps a <see cref="TestWorld"/> and records how named units drove: metres, turning, loops, tight legs, stops,
 /// give-ups and sideways speed, so movement quality is a number a later change can beat.
 /// </summary>
-public sealed class TripRecord
+public sealed class TripRecord(TestWorld world)
 {
-    private readonly TestWorld _world;
+    private readonly TestWorld _world = world;
     private readonly List<Tally> _units = [];
-
-    public TripRecord(TestWorld world) => _world = world;
 
     public IReadOnlyList<Tally> Units => _units;
     public int Steps { get; private set; }

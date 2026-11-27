@@ -13,15 +13,9 @@ using UnityEngine;
 namespace HyperRTS.Editor.Animation.Rigs;
 
 /// <summary>Fills a Motion Rig's slots and the weapons' pivots from the parts the art names.</summary>
-internal sealed class MotionRigFill
+internal sealed class MotionRigFill(MotionRigAuthoring rig)
 {
-    private readonly MotionRigAuthoring _rig;
-
-    public MotionRigFill(MotionRigAuthoring rig)
-    {
-        _rig = rig;
-    }
-
+    private readonly MotionRigAuthoring _rig = rig;
     private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
 
     private static readonly Regex TrackName = new(@"^Track_([LR])$");

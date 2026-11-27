@@ -12,20 +12,17 @@ namespace HyperRTS.Editor.Effects.Preview;
 /// Plays one effect rig the way the pool does, in edit mode, with bursts at the pivot, streams moving along a
 /// short path and fog clear.
 /// </summary>
-public sealed class EffectPreviewPlayer : IDisposable
+public sealed class EffectPreviewPlayer(Scene scene) : IDisposable
 {
     public const float StepSeconds = 1f / 30f;
     public const float PathLength = 4f;
     public const float PathSpeed = 2f;
 
-    private readonly Scene _scene;
     private readonly EffectPreviewEnvironment _environment = new();
     private GameObject _root;
     private EffectRig _rig;
     private GraphStream _stream;
     private VisualEffect[] _graphs = [];
-
-    public EffectPreviewPlayer(Scene scene) => _scene = scene;
 
     /// <summary>Where the rig plays; a stream's path is centred on it.</summary>
     public Vector3 Pivot { get; set; }
@@ -53,7 +50,7 @@ public sealed class EffectPreviewPlayer : IDisposable
 
         _root = Object.Instantiate(prefab);
         _root.name = prefab.name;
-        SceneManager.MoveGameObjectToScene(_root, _scene);
+        SceneManager.MoveGameObjectToScene(_root, scene);
         foreach (var part in _root.GetComponentsInChildren<Transform>(true))
         {
             part.gameObject.hideFlags = HideFlags.DontSave;

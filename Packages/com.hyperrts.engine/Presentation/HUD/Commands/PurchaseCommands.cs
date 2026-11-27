@@ -15,20 +15,13 @@ namespace HyperRTS.Presentation.HUD.Commands;
 /// Build, train and research cards, showing why the purchase rules refuse one, what the selected producers have
 /// queued and whether low power slows them.
 /// </summary>
-public sealed class PurchaseCommands : ICommandSource
+public sealed class PurchaseCommands(CommandKit kit) : ICommandSource
 {
     private readonly List<Option> _options = [];
     private readonly List<Entity> _producers = [];
     private readonly HashSet<(Entity Producer, Entity Prefab)> _offers = [];
     private readonly HashSet<Entity> _unpowered = [];
     private readonly Dictionary<Entity, QueuedOption> _queued = [];
-
-    private readonly CommandKit _kit;
-
-    public PurchaseCommands(CommandKit kit)
-    {
-        _kit = kit;
-    }
 
     private static QueuedOption Idle => new(0, QueuedOption.Idle);
 
@@ -144,13 +137,13 @@ public sealed class PurchaseCommands : ICommandSource
         var entityManager = context.EntityManager;
         var name = HUDText.EntityName(entityManager, prefab);
         var info = entityManager.GetComponentData<EntityInfo>(prefab);
-        var spec = _kit.Catalog.FindPrefab(card, info.TypeId, name);
+        var spec = kit.Catalog.FindPrefab(card, info.TypeId, name);
         if (spec == null)
         {
             return;
         }
 
-        var entry = _kit.Create(spec, name, info.Icon.Value, invoke);
+        var entry = kit.Create(spec, name, info.Icon.Value, invoke);
         if (entityManager.HasBuffer<ResourceCost>(prefab))
         {
             entry.Button.ShowPrice(entityManager.GetBuffer<ResourceCost>(prefab, true));
@@ -270,19 +263,12 @@ public sealed class PurchaseCommands : ICommandSource
         }
     }
 
-    private readonly struct Option
+    private readonly struct Option(CommandButton button, Entity prefab, List<Entity> producers)
     {
-        public Option(CommandButton button, Entity prefab, List<Entity> producers)
-        {
-            Button = button;
-            Prefab = prefab;
-            Producers = producers;
-        }
-
-        public CommandButton Button { get; }
-        public Entity Prefab { get; }
+        public CommandButton Button { get; } = button;
+        public Entity Prefab { get; } = prefab;
 
         /// <summary>Selected producers that offer it; none for a building a builder places.</summary>
-        public List<Entity> Producers { get; }
+        public List<Entity> Producers { get; } = producers;
     }
 }

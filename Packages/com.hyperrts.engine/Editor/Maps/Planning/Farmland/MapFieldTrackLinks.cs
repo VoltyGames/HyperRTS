@@ -8,19 +8,12 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland;
 /// Ties field-end tracks into the road net (within <see cref="MapFarmlandKit.trackJoinDistance"/>) and drops runs
 /// that lead nowhere. The symmetry seam doesn't count.
 /// </summary>
-public sealed class MapFieldTrackLinks
+/// <remarks>Links to the roads laid so far; a run end within <paramref name="joinDistance"/> of a road's edge is carried onto it.</remarks>
+public sealed class MapFieldTrackLinks(MapPlanContext context, float joinDistance)
 {
-    private readonly MapPlanContext _context;
-    private readonly float _joinDistance;
-    private readonly MapAccessRoutes _routes;
-
-    /// <summary>Links to the roads laid so far; a run end within <paramref name="joinDistance"/> of a road's edge is carried onto it.</summary>
-    public MapFieldTrackLinks(MapPlanContext context, float joinDistance)
-    {
-        _context = context;
-        _joinDistance = joinDistance;
-        _routes = new MapAccessRoutes(context.Shapes, context.Layout.Symmetry);
-    }
+    private readonly MapPlanContext _context = context;
+    private readonly float _joinDistance = joinDistance;
+    private readonly MapAccessRoutes _routes = new MapAccessRoutes(context.Shapes, context.Layout.Symmetry);
 
     /// <summary>Snaps the run's ends onto roads within the join distance; false when the run should be dropped.</summary>
     public bool Link(List<Vector2> run)

@@ -8,11 +8,9 @@ using Unity.Entities;
 namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 
 /// <summary>Selects a group for the local player and clears the selection before it, so rings, markers and previews show.</summary>
-internal sealed class SelectStep : StagingStep
+internal sealed class SelectStep(string units) : StagingStep
 {
-    private readonly string _units;
-
-    public SelectStep(string units) => _units = units;
+    private readonly string _units = units;
 
     public override IEnumerable<string> Uses => new[] { _units };
 

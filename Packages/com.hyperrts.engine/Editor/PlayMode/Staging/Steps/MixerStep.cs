@@ -9,15 +9,11 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 /// Sets exposed audio mixer parameters by name, such as a channel's volume in decibels, so footage that gets its
 /// own music records without the match's.
 /// </summary>
-internal sealed class MixerStep : StagingStep
+internal sealed class MixerStep(Dictionary<string, float> values) : StagingStep
 {
-    private readonly Dictionary<string, float> _values;
-
-    public MixerStep(Dictionary<string, float> values) => _values = values;
-
     public override void Check()
     {
-        if (_values.Count == 0)
+        if (values.Count == 0)
         {
             throw new InvalidOperationException("names no mixer parameter");
         }
@@ -26,7 +22,7 @@ internal sealed class MixerStep : StagingStep
     public override void Run(StagingRun run)
     {
         var mixers = Resources.FindObjectsOfTypeAll<AudioMixer>();
-        foreach (var (name, value) in _values)
+        foreach (var (name, value) in values)
         {
             // Every mixer that exposes the name takes the value; SetFloat answers false on the rest.
             var exposed = false;

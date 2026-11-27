@@ -7,36 +7,26 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Planning;
 
 /// <summary>Keeps trees apart and off roads, water, steep ground, bases and placed objects.</summary>
-public sealed class MapTreeSpacing
+public sealed class MapTreeSpacing(MapShapes shapes, MapHeights heights, MapClearance clearance)
 {
     private const float Cell = 4f;
     private const float MaxSlope = 38f;
     private readonly Dictionary<Vector2Int, List<Vector2>> _cells = [];
-    private readonly MapShapes _shapes;
-    private readonly MapHeights _heights;
-    private readonly MapClearance _clearance;
-
-    public MapTreeSpacing(MapShapes shapes, MapHeights heights, MapClearance clearance)
-    {
-        _shapes = shapes;
-        _heights = heights;
-        _clearance = clearance;
-    }
 
     /// <summary>Whether a tree may grow here, at least <paramref name="spacing"/> metres from other trees.</summary>
     public bool Fits(Vector2 point, float spacing)
     {
-        if (_clearance.InBase(point, 2f) || !_clearance.IsFree(point, 1.5f))
+        if (clearance.InBase(point, 2f) || !clearance.IsFree(point, 1.5f))
         {
             return false;
         }
 
-        if (_shapes.WaterEdgeDistance(point) < 1f || _shapes.RoadEdgeDistance(point) < 1.5f)
+        if (shapes.WaterEdgeDistance(point) < 1f || shapes.RoadEdgeDistance(point) < 1.5f)
         {
             return false;
         }
 
-        if (_heights.Slope(point) > MaxSlope || !_heights.Bounds.Contains(point))
+        if (heights.Slope(point) > MaxSlope || !heights.Bounds.Contains(point))
         {
             return false;
         }

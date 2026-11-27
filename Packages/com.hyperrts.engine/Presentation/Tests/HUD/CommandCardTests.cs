@@ -211,18 +211,11 @@ public class CommandCardTests : HUDFixture
     private static string Caption(VisualElement button) => button.Q<Label>(className: "hud-command__caption").text;
 
     // Adds a text button for each spec, which records its label when pressed.
-    private sealed class SpecSource : ICommandSource
+    private sealed class SpecSource(CommandKit kit, List<(CommandSpec Spec, string Label)> specs, List<string> pressed) : ICommandSource
     {
-        private readonly CommandKit _kit;
-        private readonly List<(CommandSpec Spec, string Label)> _specs;
-        private readonly List<string> _pressed;
-
-        public SpecSource(CommandKit kit, List<(CommandSpec Spec, string Label)> specs, List<string> pressed)
-        {
-            _kit = kit;
-            _specs = specs;
-            _pressed = pressed;
-        }
+        private readonly CommandKit _kit = kit;
+        private readonly List<(CommandSpec Spec, string Label)> _specs = specs;
+        private readonly List<string> _pressed = pressed;
 
         public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
         {

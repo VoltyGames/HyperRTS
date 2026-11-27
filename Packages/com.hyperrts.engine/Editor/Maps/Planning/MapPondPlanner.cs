@@ -11,14 +11,10 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// The land round each pond: the dam's body and track, then the wet margin whose surface grows willows. Fails a
 /// pond that reaches a river, a road or a base.
 /// </summary>
-public sealed class MapPondPlanner : MapLandPass
+public sealed class MapPondPlanner(MapPlanContext context) : MapLandPass(context)
 {
     private const float CheckStep = 3f;
     private const float Clearance = 2f;
-
-    public MapPondPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

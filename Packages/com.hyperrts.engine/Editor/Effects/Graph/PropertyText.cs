@@ -12,12 +12,8 @@ namespace HyperRTS.Editor.Effects.Graph;
 /// A recipe field read, written and scaled as command-line text: numbers, names, colours as <c>r,g,b[,a]</c>, vectors
 /// as <c>x,y,z</c>, ranges as <c>min..max</c>, curves as <c>t:v</c> pairs, textures by asset name or path, and bursts.
 /// </summary>
-internal sealed class PropertyText
+internal sealed class PropertyText(SerializedProperty property)
 {
-    private readonly SerializedProperty _property;
-
-    public PropertyText(SerializedProperty property) => _property = property;
-
     public static string Text(float value) => value.ToString("0.###", CultureInfo.InvariantCulture);
 
     public static string Text(Color color) => $"{Text(color.r)},{Text(color.g)},{Text(color.b)},{Text(color.a)}";
@@ -47,67 +43,67 @@ internal sealed class PropertyText
 
     public string Read()
     {
-        return _property.propertyType switch
+        return property.propertyType switch
         {
-            SerializedPropertyType.Float => Text(_property.floatValue),
-            SerializedPropertyType.Integer => _property.intValue.ToString(CultureInfo.InvariantCulture),
-            SerializedPropertyType.Boolean => _property.boolValue ? "true" : "false",
-            SerializedPropertyType.String => _property.stringValue,
-            SerializedPropertyType.Enum => _property.enumNames[_property.enumValueIndex],
-            SerializedPropertyType.Color => Text(_property.colorValue),
-            SerializedPropertyType.Vector3 => Text(_property.vector3Value),
-            SerializedPropertyType.AnimationCurve => Text(_property.animationCurveValue),
-            SerializedPropertyType.ObjectReference => _property.objectReferenceValue == null ? "none" : _property.objectReferenceValue.name,
+            SerializedPropertyType.Float => Text(property.floatValue),
+            SerializedPropertyType.Integer => property.intValue.ToString(CultureInfo.InvariantCulture),
+            SerializedPropertyType.Boolean => property.boolValue ? "true" : "false",
+            SerializedPropertyType.String => property.stringValue,
+            SerializedPropertyType.Enum => property.enumNames[property.enumValueIndex],
+            SerializedPropertyType.Color => Text(property.colorValue),
+            SerializedPropertyType.Vector3 => Text(property.vector3Value),
+            SerializedPropertyType.AnimationCurve => Text(property.animationCurveValue),
+            SerializedPropertyType.ObjectReference => property.objectReferenceValue == null ? "none" : property.objectReferenceValue.name,
             SerializedPropertyType.Generic when IsRange => Text(Range()),
-            SerializedPropertyType.Generic when _property.isArray => Bursts().Read(),
+            SerializedPropertyType.Generic when property.isArray => Bursts().Read(),
             _ => throw Unsupported(),
         };
     }
 
     public void Write(string text)
     {
-        switch (_property.propertyType)
+        switch (property.propertyType)
         {
-            case SerializedPropertyType.Float: _property.floatValue = ParseFloat(text, Field()); break;
-            case SerializedPropertyType.Integer: _property.intValue = Mathf.RoundToInt(ParseFloat(text, Field())); break;
-            case SerializedPropertyType.Boolean: _property.boolValue = ParseBool(text); break;
-            case SerializedPropertyType.String: _property.stringValue = text; break;
-            case SerializedPropertyType.Enum: _property.enumValueIndex = EnumIndex(text); break;
-            case SerializedPropertyType.Color: _property.colorValue = ParseColor(text); break;
-            case SerializedPropertyType.Vector3: _property.vector3Value = ParseVector(text); break;
-            case SerializedPropertyType.AnimationCurve: _property.animationCurveValue = ParseCurve(text); break;
-            case SerializedPropertyType.ObjectReference: _property.objectReferenceValue = Asset(text); break;
+            case SerializedPropertyType.Float: property.floatValue = ParseFloat(text, Field()); break;
+            case SerializedPropertyType.Integer: property.intValue = Mathf.RoundToInt(ParseFloat(text, Field())); break;
+            case SerializedPropertyType.Boolean: property.boolValue = ParseBool(text); break;
+            case SerializedPropertyType.String: property.stringValue = text; break;
+            case SerializedPropertyType.Enum: property.enumValueIndex = EnumIndex(text); break;
+            case SerializedPropertyType.Color: property.colorValue = ParseColor(text); break;
+            case SerializedPropertyType.Vector3: property.vector3Value = ParseVector(text); break;
+            case SerializedPropertyType.AnimationCurve: property.animationCurveValue = ParseCurve(text); break;
+            case SerializedPropertyType.ObjectReference: property.objectReferenceValue = Asset(text); break;
             case SerializedPropertyType.Generic when IsRange: WriteRange(text); break;
-            case SerializedPropertyType.Generic when _property.isArray: Bursts().Write(text); break;
+            case SerializedPropertyType.Generic when property.isArray: Bursts().Write(text); break;
             default: throw Unsupported();
         }
     }
 
     public void Scale(float factor)
     {
-        switch (_property.propertyType)
+        switch (property.propertyType)
         {
-            case SerializedPropertyType.Float: _property.floatValue *= factor; break;
-            case SerializedPropertyType.Integer: _property.intValue = Mathf.RoundToInt(_property.intValue * factor); break;
+            case SerializedPropertyType.Float: property.floatValue *= factor; break;
+            case SerializedPropertyType.Integer: property.intValue = Mathf.RoundToInt(property.intValue * factor); break;
             case SerializedPropertyType.Generic when IsRange:
-                _property.FindPropertyRelative("min").floatValue *= factor;
-                _property.FindPropertyRelative("max").floatValue *= factor;
+                property.FindPropertyRelative("min").floatValue *= factor;
+                property.FindPropertyRelative("max").floatValue *= factor;
                 break;
-            default: throw new ArgumentException($"HyperRTS: '{Field()}' is a {_property.propertyType} and cannot be scaled; use a number or a range.");
+            default: throw new ArgumentException($"HyperRTS: '{Field()}' is a {property.propertyType} and cannot be scaled; use a number or a range.");
         }
     }
 
-    private string Field() => _property.propertyPath;
+    private string Field() => property.propertyPath;
 
     private bool IsRange =>
-        _property.propertyType == SerializedPropertyType.Generic
-        && _property.FindPropertyRelative("min")?.propertyType == SerializedPropertyType.Float
-        && _property.FindPropertyRelative("max")?.propertyType == SerializedPropertyType.Float;
+        property.propertyType == SerializedPropertyType.Generic
+        && property.FindPropertyRelative("min")?.propertyType == SerializedPropertyType.Float
+        && property.FindPropertyRelative("max")?.propertyType == SerializedPropertyType.Float;
 
-    private BurstText Bursts() => new(_property);
+    private BurstText Bursts() => new(property);
 
     private FloatRange Range() =>
-        new(_property.FindPropertyRelative("min").floatValue, _property.FindPropertyRelative("max").floatValue);
+        new(property.FindPropertyRelative("min").floatValue, property.FindPropertyRelative("max").floatValue);
 
     private void WriteRange(string text)
     {
@@ -118,12 +114,12 @@ internal sealed class PropertyText
         }
 
         var min = ParseFloat(ends[0], Field());
-        _property.FindPropertyRelative("min").floatValue = min;
-        _property.FindPropertyRelative("max").floatValue = ends.Length == 2 ? ParseFloat(ends[1], Field()) : min;
+        property.FindPropertyRelative("min").floatValue = min;
+        property.FindPropertyRelative("max").floatValue = ends.Length == 2 ? ParseFloat(ends[1], Field()) : min;
     }
 
     private ArgumentException Unsupported() =>
-        new($"HyperRTS: '{Field()}' is a {_property.propertyType} group or list; set one of its fields, such as '{Field()}.min'.");
+        new($"HyperRTS: '{Field()}' is a {property.propertyType} group or list; set one of its fields, such as '{Field()}.min'.");
 
     private bool ParseBool(string text) =>
         text.Trim().ToLowerInvariant() switch
@@ -135,7 +131,7 @@ internal sealed class PropertyText
 
     private int EnumIndex(string text)
     {
-        var names = _property.enumNames;
+        var names = property.enumNames;
         var index = Array.FindIndex(names, name => string.Equals(name, text.Trim(), StringComparison.OrdinalIgnoreCase));
         return index >= 0 ? index : throw new ArgumentException($"HyperRTS: '{text}' is not a value of '{Field()}': {string.Join(", ", names)}.");
     }
@@ -205,7 +201,7 @@ internal sealed class PropertyText
     // PPtr<$Texture2D> names the field's type.
     private string FindAsset(string name)
     {
-        var type = _property.type;
+        var type = property.type;
         var typeName = type[(type.IndexOf('<') + 1)..].TrimEnd('>').TrimStart('$');
         var paths = AssetDatabase.FindAssets($"{name} t:{typeName}")
             .Select(AssetDatabase.GUIDToAssetPath)

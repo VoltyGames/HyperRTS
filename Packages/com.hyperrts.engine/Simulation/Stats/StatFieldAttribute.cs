@@ -11,14 +11,9 @@ namespace HyperRTS.Simulation.Stats;
 /// when the entity spawns and StatSystem rewrites it from the <see cref="StatModifier"/>s. Games add stats this way.
 /// </summary>
 [AttributeUsage(AttributeTargets.Field)]
-public sealed class StatFieldAttribute : Attribute
+public sealed class StatFieldAttribute(Stat stat) : Attribute
 {
-    public StatFieldAttribute(Stat stat)
-    {
-        Stat = stat;
-    }
-
-    public Stat Stat { get; }
+    public Stat Stat { get; } = stat;
 
     /// <summary>Every marked field, by component; component types are fixed once loaded, so they are scanned once.</summary>
     [NoAutoStaticsCleanup]

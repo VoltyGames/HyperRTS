@@ -9,20 +9,15 @@ namespace HyperRTS.Editor.Maps.Land;
 /// Land use of the whole terrain on a 1 m grid. Planners claim cells in priority order, so a later claim never
 /// overwrites an earlier one.
 /// </summary>
-public sealed class MapLand
+public sealed class MapLand(Rect bounds)
 {
     public const float CellSize = 1f;
 
     /// <summary>The region index of a cell nothing has claimed.</summary>
     public const int Unclaimed = 0;
 
-    private readonly MapValues<ushort> _cells;
+    private readonly MapValues<ushort> _cells = new MapValues<ushort>(MapGrid.Centres(bounds, CellSize));
     private readonly List<MapLandRegion> _regions = [null];
-
-    public MapLand(Rect bounds)
-    {
-        _cells = new MapValues<ushort>(MapGrid.Centres(bounds, CellSize));
-    }
 
     public MapGrid Grid => _cells.Grid;
 

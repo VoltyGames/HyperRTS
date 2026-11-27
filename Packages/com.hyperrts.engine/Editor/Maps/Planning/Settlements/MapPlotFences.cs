@@ -10,19 +10,12 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// A plot's fences: front fence with a gate gap, and side fences. A side next to an already fenced plot is left
 /// to it. Fences are not clearance-tested.
 /// </summary>
-internal sealed class MapPlotFences
+internal sealed class MapPlotFences(MapSettlement settlement)
 {
     private const float NeighbourProbe = 1f;
-    private readonly MapSettlementEntries _entries;
-    private readonly MapLand _land;
-    private readonly MapPlacements _placements;
-
-    public MapPlotFences(MapSettlement settlement)
-    {
-        _entries = settlement.Entries;
-        _land = settlement.Context.Land;
-        _placements = settlement.Context.Placements;
-    }
+    private readonly MapSettlementEntries _entries = settlement.Entries;
+    private readonly MapLand _land = settlement.Context.Land;
+    private readonly MapPlacements _placements = settlement.Context.Placements;
 
     /// <summary>Fences the plot, its gate across from <paramref name="gateU"/> along the front; returns the gate, if any.</summary>
     public Vector2? Build(MapPlot plot, float gateU)

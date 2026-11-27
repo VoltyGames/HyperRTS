@@ -12,7 +12,7 @@ using Match = System.Text.RegularExpressions.Match;
 /// Checks one UXML file: <c>Style</c> and <c>Template</c> links that name no asset, custom element tags whose
 /// type is gone, and classes no style sheet styles (a warning, unless a C# file uses the class).
 /// </summary>
-internal sealed class UxmlCheck
+internal sealed class UxmlCheck(UIFile file, UIProject project, HashSet<string> styled, ValidationIssues issues)
 {
     // Unity's own classes live in its built-in sheets, which this project does not hold.
     private const string UnityClassPrefix = "unity-";
@@ -22,20 +22,11 @@ internal sealed class UxmlCheck
     [NoAutoStaticsCleanup]
     private static readonly HashSet<string> Structural = ["UXML", "Style", "Template", "Instance", "AttributeOverrides"];
 
-    private readonly UIFile _file;
-    private readonly UIProject _project;
-    private readonly HashSet<string> _styled;
-    private readonly ValidationIssues _issues;
+    private readonly UIFile _file = file;
+    private readonly UIProject _project = project;
+    private readonly HashSet<string> _styled = styled;
     private readonly HashSet<string> _reportedClasses = [];
     private readonly Dictionary<string, string> _namespaces = [];
-
-    public UxmlCheck(UIFile file, UIProject project, HashSet<string> styled, ValidationIssues issues)
-    {
-        _file = file;
-        _project = project;
-        _styled = styled;
-        _issues = issues;
-    }
 
     public void Run()
     {
@@ -129,11 +120,11 @@ internal sealed class UxmlCheck
         var context = _project.AssetAt(_file.Path);
         if (error)
         {
-            _issues.Error(context, text);
+            issues.Error(context, text);
         }
         else
         {
-            _issues.Warn(context, text);
+            issues.Warn(context, text);
         }
     }
 }

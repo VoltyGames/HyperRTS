@@ -12,17 +12,12 @@ namespace HyperRTS.Editor.Effects.Stages;
 /// A stage the Effects page runs for a rig. The engine's are the graph build and the capture; a game adds its own,
 /// such as making the rig's sheets, by subclassing, and every subclass is found.
 /// </summary>
-public abstract class EffectRigStage : Stage<EffectRigEntry>
+public abstract class EffectRigStage(string title) : Stage<EffectRigEntry>(title)
 {
     public const string LogRoot = "Logs/Effects";
 
     /// <summary>Where the engine's stages sit in <see cref="Order"/>; a game's stage that makes what they read comes first.</summary>
     public const int GraphOrder = 200, CaptureOrder = 300;
-
-    protected EffectRigStage(string title)
-        : base(title)
-    {
-    }
 
     /// <summary>The stages that apply to <paramref name="rig"/>, in the order they run.</summary>
     public static List<EffectRigStage> For(EffectRigEntry rig) =>

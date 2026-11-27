@@ -16,20 +16,15 @@ namespace HyperRTS.Presentation.Overlays.Ghosts;
 /// The building being placed drawn as its real model in a see-through ghost material, one visual-only copy per
 /// spot, tinted by whether the server would accept it.
 /// </summary>
-public sealed class PlacementGhosts : IDisposable
+public sealed class PlacementGhosts(Material material) : IDisposable
 {
-    private readonly Material _material;
+    private readonly Material _material = material;
     private readonly List<Entity> _ghosts = [];
     private readonly List<(BuildingSpot Spot, bool Valid)> _spots = [];
     private World _world;
     private Entity _source;
     private Entity _ghostPrefab;
     private LocalTransform _sourceTransform;
-
-    public PlacementGhosts(Material material)
-    {
-        _material = material;
-    }
 
     /// <summary>Matches the ghosts to this frame's placement: one per spot, gone once placement ends.</summary>
     public void Update(MatchView view, OverlayStyle style)

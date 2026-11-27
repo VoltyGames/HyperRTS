@@ -3,19 +3,12 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Effects.Lights;
 
 /// <summary>The lights of both flash and loop lighting: a fixed set of shadowless point lights, each made on first use under a root.</summary>
-public sealed class LightSlots
+public sealed class LightSlots(Transform root, string name)
 {
     public const int Capacity = 8;
 
     private readonly Light[] _lights = new Light[Capacity];
-    private readonly Transform _root;
-    private readonly string _name;
-
-    public LightSlots(Transform root, string name)
-    {
-        _root = root;
-        _name = name;
-    }
+    private readonly Transform _root = root;
 
     /// <summary>The slot's light, made when first asked for.</summary>
     public Light Get(int slot)
@@ -25,7 +18,7 @@ public sealed class LightSlots
             return _lights[slot];
         }
 
-        var host = new GameObject($"{_name} {slot}") { hideFlags = HideFlags.DontSave };
+        var host = new GameObject($"{name} {slot}") { hideFlags = HideFlags.DontSave };
         host.transform.SetParent(_root);
         var light = host.AddComponent<Light>();
         light.type = LightType.Point;

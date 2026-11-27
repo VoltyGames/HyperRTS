@@ -9,20 +9,11 @@ namespace HyperRTS.Editor.Common;
 /// One FBX node's custom properties as an import postprocessor gets them, read by name. Integers, decimals, strings
 /// and three-number vectors come through; a missing or mistyped one throws naming the node.
 /// </summary>
-public sealed class FbxProperties
+public sealed class FbxProperties(string node, string[] names, object[] values)
 {
-    private readonly string _node;
-    private readonly string[] _names;
-    private readonly object[] _values;
+    private readonly string _node = node;
 
-    public FbxProperties(string node, string[] names, object[] values)
-    {
-        _node = node;
-        _names = names;
-        _values = values;
-    }
-
-    public bool Has(string name) => Array.IndexOf(_names, name) >= 0;
+    public bool Has(string name) => Array.IndexOf(names, name) >= 0;
 
     public bool TryInt(string name, out int value)
     {
@@ -77,8 +68,8 @@ public sealed class FbxProperties
 
     private bool TryFind(string name, out object value)
     {
-        var at = Array.IndexOf(_names, name);
-        value = at >= 0 ? _values[at] : null;
+        var at = Array.IndexOf(names, name);
+        value = at >= 0 ? values[at] : null;
         return at >= 0;
     }
 

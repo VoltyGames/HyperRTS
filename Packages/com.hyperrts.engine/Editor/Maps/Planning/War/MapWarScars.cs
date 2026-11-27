@@ -13,12 +13,8 @@ namespace HyperRTS.Editor.Maps.Planning.War;
 /// The old craters and burnt patches a war age left, copies included. Planning digs the craters; painting burns
 /// the ground and grows the plants back round them.
 /// </summary>
-public sealed class MapWarScars
+public sealed class MapWarScars(MapNoise edges)
 {
-    private readonly MapNoise _edges;
-
-    public MapWarScars(MapNoise edges) => _edges = edges;
-
     public List<MapWarCrater> Craters { get; } = [];
 
     public List<MapBurntGround> Burns { get; } = [];
@@ -43,7 +39,7 @@ public sealed class MapWarScars
         {
             ForEachTexel(area, textureWeights.Resolution, patch.Center, patch.Reach, (x, z, p) =>
             {
-                var coverage = patch.Coverage(p, _edges);
+                var coverage = patch.Coverage(p, edges);
                 // The burnt layer is stored once per texel, so it is rounded to a byte once.
                 for (var l = 0; l < layers; l++)
                 {
@@ -100,7 +96,7 @@ public sealed class MapWarScars
             ForEachTexel(grass.Area, grass.Resolution, patch.Center, patch.Reach, (x, z, p) =>
             {
                 var i = z * grass.Resolution + x;
-                var coverage = patch.Coverage(p, _edges) * kit.burnCoverage * 255f;
+                var coverage = patch.Coverage(p, edges) * kit.burnCoverage * 255f;
                 plants[i] = (byte)Mathf.Max(plants[i], Mathf.RoundToInt(coverage));
             });
         }

@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Planning.War;
 /// Scars the land for the spec's war age from the climate's war kit: shredded trees, wrecks, trenches, craters
 /// and burnt patches on open land clear of roads, bases, pads, resources and settlements.
 /// </summary>
-public sealed class MapWarScarsPlanner : MapLandPass
+public sealed class MapWarScarsPlanner(MapPlanContext context) : MapLandPass(context)
 {
     private const int Attempts = 10;
     private const float TreeClearance = 0.5f;
@@ -29,10 +29,6 @@ public sealed class MapWarScarsPlanner : MapLandPass
 
     /// <summary>Distance in cells from every land cell to the nearest belt or wood.</summary>
     private MapValues<float> _cover;
-
-    public MapWarScarsPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     private MapClearance Clearance => Context.Placements.Clearance;
 

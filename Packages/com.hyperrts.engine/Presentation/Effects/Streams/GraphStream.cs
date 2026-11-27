@@ -8,7 +8,7 @@ namespace HyperRTS.Presentation.Effects.Streams;
 /// One stream's copy of a rig's stream graphs: the Play event starts their rate layers, properties carry this
 /// frame's path, pose, speed and density, and the Stop event ends emission while live particles finish their lives.
 /// </summary>
-public sealed class GraphStream
+public sealed class GraphStream(VisualEffect[] effects)
 {
     public const string PlayEvent = "Play";
     public const string StopEvent = "Stop";
@@ -29,12 +29,9 @@ public sealed class GraphStream
     private static readonly int SpeedId = Shader.PropertyToID(SpeedProperty);
     private static readonly int DensityId = Shader.PropertyToID(EffectGraph.DensityProperty);
 
-    private readonly VisualEffect[] _effects;
     private int _startFrame;
     private bool _started;
     private bool _playing;
-
-    public GraphStream(VisualEffect[] effects) => _effects = effects;
 
     /// <summary>Whether the graph streams by rate: the builder exposes Speed only on graphs with rate layers.</summary>
     public static bool Streams(VisualEffect effect) => effect.HasFloat(SpeedId);
@@ -54,7 +51,7 @@ public sealed class GraphStream
     public void Move(Vector3 from, Vector3 to, Quaternion rotation, float deltaTime, float density, float poseScale)
     {
         var speed = deltaTime > 0f ? Vector3.Distance(from, to) / deltaTime : 0f;
-        foreach (var effect in _effects)
+        foreach (var effect in effects)
         {
             effect.SetVector3(FromId, from);
             effect.SetVector3(ToId, to);
@@ -84,7 +81,7 @@ public sealed class GraphStream
 
     private void Send(int eventId)
     {
-        foreach (var effect in _effects)
+        foreach (var effect in effects)
         {
             effect.SendEvent(eventId);
         }
@@ -92,7 +89,7 @@ public sealed class GraphStream
 
     private bool AnyAwake()
     {
-        foreach (var effect in _effects)
+        foreach (var effect in effects)
         {
             if (effect.HasAnySystemAwake())
             {

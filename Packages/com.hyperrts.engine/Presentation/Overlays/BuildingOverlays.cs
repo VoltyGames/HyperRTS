@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Overlays;
 /// Capture dials and garrison pips over buildings, always on top and the same size at every zoom. Hidden where the
 /// building is fogged.
 /// </summary>
-public sealed class BuildingOverlays : IDisposable
+public sealed class BuildingOverlays(Mesh dialSegment, Mesh disc, Mesh billboard) : IDisposable
 {
     private const int DialSteps = 64;
     private const float DialStepDegrees = 360f / DialSteps;
@@ -48,10 +48,10 @@ public sealed class BuildingOverlays : IDisposable
     private readonly LiveSingleton<FogOfWar> _fogGrid = new();
     private readonly LiveSingleton<LocalFogView> _fogView = new();
 
-    private readonly InstanceBuffer<OverlayInstance> _dialBacks;
-    private readonly InstanceBuffer<OverlayInstance> _dialSteps;
-    private readonly InstanceBuffer<OverlayInstance> _pipBacks;
-    private readonly InstanceBuffer<OverlayInstance> _pips;
+    private readonly InstanceBuffer<OverlayInstance> _dialBacks = new InstanceBuffer<OverlayInstance>(disc);
+    private readonly InstanceBuffer<OverlayInstance> _dialSteps = new InstanceBuffer<OverlayInstance>(dialSegment);
+    private readonly InstanceBuffer<OverlayInstance> _pipBacks = new InstanceBuffer<OverlayInstance>(billboard);
+    private readonly InstanceBuffer<OverlayInstance> _pips = new InstanceBuffer<OverlayInstance>(billboard);
     private readonly EntityExtent _extent = new();
     private LocalFogView _view;
     private FogOfWar _fog;
@@ -59,14 +59,6 @@ public sealed class BuildingOverlays : IDisposable
     private Vector3 _cameraRight;
     private Quaternion _cameraRotation;
     private ReferencePixels _pixels;
-
-    public BuildingOverlays(Mesh dialSegment, Mesh disc, Mesh billboard)
-    {
-        _dialBacks = new InstanceBuffer<OverlayInstance>(disc);
-        _dialSteps = new InstanceBuffer<OverlayInstance>(dialSegment);
-        _pipBacks = new InstanceBuffer<OverlayInstance>(billboard);
-        _pips = new InstanceBuffer<OverlayInstance>(billboard);
-    }
 
     public static Mesh DialSegment() => OverlayMeshes.DialSegment(DialSteps, DialInner);
 

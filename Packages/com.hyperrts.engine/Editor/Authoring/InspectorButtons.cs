@@ -14,17 +14,8 @@ using Object = UnityEngine.Object;
 namespace HyperRTS.Editor.Authoring;
 
 /// <summary>Builds an inspector's <see cref="InspectorButtonAttribute"/> buttons and runs a press on every selected component.</summary>
-internal sealed class InspectorButtons
+internal sealed class InspectorButtons(Object[] targets, HelpBox error)
 {
-    private readonly Object[] _targets;
-    private readonly HelpBox _error;
-
-    public InspectorButtons(Object[] targets, HelpBox error)
-    {
-        _targets = targets;
-        _error = error;
-    }
-
     public void Build(VisualElement buttons, Type type)
     {
         foreach (var (label, glyph, action) in Discover(type))
@@ -96,8 +87,8 @@ internal sealed class InspectorButtons
     // A method that throws InvalidOperationException names what is missing, so the inspector shows it.
     private void Press(string label, Action<Component> action)
     {
-        _error.SetHidden(true);
-        foreach (var selected in _targets)
+        error.SetHidden(true);
+        foreach (var selected in targets)
         {
             var component = (Component)selected;
             try
@@ -106,8 +97,8 @@ internal sealed class InspectorButtons
             }
             catch (InvalidOperationException problem)
             {
-                _error.text = problem.Message;
-                _error.SetHidden(false);
+                error.text = problem.Message;
+                error.SetHidden(false);
                 return;
             }
         }

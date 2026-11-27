@@ -4,15 +4,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects.Graph;
 
 /// <summary>Writes the Set Attribute blocks that pick a value per particle, in VFX Graph's own terms.</summary>
-public sealed class AttributePicker
+public sealed class AttributePicker(GraphModel graph)
 {
-    private readonly GraphModel _graph;
-
-    public AttributePicker(GraphModel graph)
-    {
-        _graph = graph;
-    }
-
     public void Pick(object context, string attribute, FloatRange range)
     {
         Values(Block(context, attribute), range.IsConstant, range.min, range.max);
@@ -33,16 +26,16 @@ public sealed class AttributePicker
     public void PickChannel(object context, string attribute, string channel, FloatRange range)
     {
         var block = Block(context, attribute);
-        _graph.Set(block, "channels", channel);
+        graph.Set(block, "channels", channel);
         Values(block, range.IsConstant, range.min, range.max);
     }
 
     public void PickPerAxis(object context, string attribute, FloatRange range)
     {
         var block = Block(context, attribute);
-        _graph.Set(block, "Random", "PerComponent");
-        _graph.Slot(block, "A", Vector3.one * range.min);
-        _graph.Slot(block, "B", Vector3.one * range.max);
+        graph.Set(block, "Random", "PerComponent");
+        graph.Slot(block, "A", Vector3.one * range.min);
+        graph.Slot(block, "B", Vector3.one * range.max);
     }
 
     public void PickColor(object context, ColorRange range)
@@ -61,8 +54,8 @@ public sealed class AttributePicker
 
     private object Block(object context, string attribute)
     {
-        var block = _graph.Block(context, "SetAttribute");
-        _graph.Set(block, "attribute", attribute);
+        var block = graph.Block(context, "SetAttribute");
+        graph.Set(block, "attribute", attribute);
         return block;
     }
 
@@ -70,12 +63,12 @@ public sealed class AttributePicker
     {
         if (constant)
         {
-            _graph.SlotAt(block, 0, min);
+            graph.SlotAt(block, 0, min);
             return;
         }
 
-        _graph.Set(block, "Random", "Uniform");
-        _graph.Slot(block, "A", min);
-        _graph.Slot(block, "B", max);
+        graph.Set(block, "Random", "Uniform");
+        graph.Slot(block, "A", min);
+        graph.Slot(block, "B", max);
     }
 }

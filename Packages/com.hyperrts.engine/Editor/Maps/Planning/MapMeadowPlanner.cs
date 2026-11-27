@@ -3,12 +3,8 @@ using HyperRTS.Editor.Maps.Land;
 namespace HyperRTS.Editor.Maps.Planning;
 
 /// <summary>Open meadow on every cell the other passes left.</summary>
-public sealed class MapMeadowPlanner : MapLandPass
+public sealed class MapMeadowPlanner(MapPlanContext context) : MapLandPass(context)
 {
-    public MapMeadowPlanner(MapPlanContext context) : base(context)
-    {
-    }
-
     public override void Plan()
     {
         var meadow = Context.Region(MapLandKind.Meadow, Climate.groundSurface);

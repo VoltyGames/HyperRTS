@@ -12,7 +12,7 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Fire;
 
 /// <summary>Plays the flames and battle haze of the burning clusters the local player sees.</summary>
-public sealed class FieldFireEffects
+public sealed class FieldFireEffects(EffectPool pool)
 {
     private const float HazeReach = 10f;
     // A full cluster adds about a fiftieth of a shell's puff each second: a light smudge.
@@ -21,12 +21,10 @@ public sealed class FieldFireEffects
     // Burning cells at which a cluster's fire plays at full strength.
     private const float FullFireCells = 24f;
 
-    private readonly EffectStreams _streams;
+    private readonly EffectStreams _streams = new EffectStreams(pool);
     private Camera _camera;
     private float2 _eye;
     private Comparison<FieldFireCluster> _nearer;
-
-    public FieldFireEffects(EffectPool pool) => _streams = new EffectStreams(pool);
 
     // Nearest the camera first, so the effect cap drops the far fires.
     public void SortNearest(List<FieldFireCluster> clusters)

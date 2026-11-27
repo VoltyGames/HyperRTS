@@ -5,23 +5,16 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Geometry;
 
 /// <summary>A river in map space: its channel line and a width that swells and narrows along it.</summary>
-public sealed class MapRiver
+public sealed class MapRiver(MapLine line, MapRiverSpec spec, MapNoise width)
 {
     private const float WidthWavelength = 70f;
     private const float PinReach = 30f;
-    private readonly MapNoise _width;
+    private readonly MapNoise _width = width;
     private readonly List<Vector2> _pins = [];
 
-    public MapRiver(MapLine line, MapRiverSpec spec, MapNoise width)
-    {
-        Line = line;
-        Spec = spec;
-        _width = width;
-    }
+    public MapLine Line { get; } = line;
 
-    public MapLine Line { get; }
-
-    public MapRiverSpec Spec { get; }
+    public MapRiverSpec Spec { get; } = spec;
 
     /// <summary>Keeps the authored width round a point (a crossing), so bridges and fords fit the river.</summary>
     public void Pin(Vector2 point) => _pins.Add(point);

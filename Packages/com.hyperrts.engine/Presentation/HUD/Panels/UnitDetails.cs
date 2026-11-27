@@ -6,20 +6,14 @@ using UnityEngine.UIElements;
 namespace HyperRTS.Presentation.HUD.Panels;
 
 /// <summary>The facts block beside a single selected entity, read a few times a second since it changes slowly.</summary>
-public sealed class UnitDetails
+public sealed class UnitDetails(VisualElement root, VisualTreeAsset rowTemplate)
 {
     private const float RefreshSeconds = 0.25f;
 
     private readonly UnitFacts _facts = new();
-    private readonly DetailRows _weapons;
-    private readonly DetailRows _stats;
+    private readonly DetailRows _weapons = new DetailRows(root.Require<VisualElement>("weapons"), rowTemplate);
+    private readonly DetailRows _stats = new DetailRows(root.Require<VisualElement>("facts"), rowTemplate);
     private float _nextRefresh;
-
-    public UnitDetails(VisualElement root, VisualTreeAsset rowTemplate)
-    {
-        _weapons = new DetailRows(root.Require<VisualElement>("weapons"), rowTemplate);
-        _stats = new DetailRows(root.Require<VisualElement>("facts"), rowTemplate);
-    }
 
     /// <summary>Reads again at the next <see cref="Refresh"/>, as for a new selection.</summary>
     public void Invalidate() => _nextRefresh = 0f;

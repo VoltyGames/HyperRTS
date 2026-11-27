@@ -11,22 +11,14 @@ namespace HyperRTS.Editor.Maps.Designer.Tools;
 /// The Map Editor's Line and Area tools: click adds a vertex, Enter or double-click finishes the feature, Escape
 /// drops it. One undo step per feature.
 /// </summary>
-public sealed class MapPathTool : IMapTool
+public sealed class MapPathTool(MapToolContext context, MapToolbox toolbox) : IMapTool
 {
     private const float LineWidth = 2f;
     private const float VertexRadius = 3f;
     private const float ClosingAlpha = 0.4f;
 
-    private readonly MapToolContext _context;
-    private readonly MapToolbox _toolbox;
     private readonly List<Vector2> _points = [];
     private Vector2? _cursor;
-
-    public MapPathTool(MapToolContext context, MapToolbox toolbox)
-    {
-        _context = context;
-        _toolbox = toolbox;
-    }
 
     public void Down(Vector2 local, EventModifiers modifiers, int clickCount)
     {
@@ -36,7 +28,7 @@ public sealed class MapPathTool : IMapTool
             return;
         }
 
-        var point = _context.Place(local, false);
+        var point = context.Place(local, false);
         var repeated = _points.Count > 0 && _points[^1] == point;
         if (!repeated)
         {
@@ -79,8 +71,8 @@ public sealed class MapPathTool : IMapTool
             return;
         }
 
-        var kind = _toolbox.Kind;
-        var view = _context.View;
+        var kind = toolbox.Kind;
+        var view = context.View;
         painter.strokeColor = kind.Color;
         painter.lineWidth = LineWidth;
         painter.BeginPath();
@@ -90,7 +82,7 @@ public sealed class MapPathTool : IMapTool
             painter.LineTo(view.ToLocal(_points[i]));
         }
 
-        var band = _cursor == null ? (Vector2?)null : view.ToLocal(_context.Place(_cursor.Value, false));
+        var band = _cursor == null ? (Vector2?)null : view.ToLocal(context.Place(_cursor.Value, false));
         if (band != null)
         {
             painter.LineTo(band.Value);
@@ -113,7 +105,7 @@ public sealed class MapPathTool : IMapTool
         painter.strokeColor = new Color(color.r, color.g, color.b, ClosingAlpha);
         painter.BeginPath();
         painter.MoveTo(band.Value);
-        painter.LineTo(_context.View.ToLocal(_points[0]));
+        painter.LineTo(context.View.ToLocal(_points[0]));
         painter.Stroke();
     }
 
@@ -122,7 +114,7 @@ public sealed class MapPathTool : IMapTool
         painter.fillColor = color;
         foreach (var point in _points)
         {
-            MapFeaturePainter.Circle(painter, _context.View.ToLocal(point), VertexRadius);
+            MapFeaturePainter.Circle(painter, context.View.ToLocal(point), VertexRadius);
             painter.Fill();
         }
     }
@@ -130,14 +122,14 @@ public sealed class MapPathTool : IMapTool
     /// <summary>Adds the drawn feature once it has enough points; with too few, keeps drawing.</summary>
     private void Finish()
     {
-        var kind = _toolbox.Kind;
+        var kind = toolbox.Kind;
         if (_points.Count < MapVertexRules.MinPoints(kind.Geometry))
         {
             return;
         }
 
-        var added = MapFeatureEdits.Add(_context.Document, kind, _points);
+        var added = MapFeatureEdits.Add(context.Document, kind, _points);
         _points.Clear();
-        _context.Selection.Set(added);
+        context.Selection.Set(added);
     }
 }

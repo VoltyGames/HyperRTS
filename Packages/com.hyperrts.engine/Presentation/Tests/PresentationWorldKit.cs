@@ -14,14 +14,12 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Tests;
 
 /// <summary>A test world whose players, cue queue and prefab registry come from the systems and setups a match uses.</summary>
-public sealed class PresentationWorldKit : IDisposable
+public sealed class PresentationWorldKit(string name) : IDisposable
 {
     private SystemHandle _cueClear;
     private SystemHandle _registry;
 
-    public PresentationWorldKit(string name) => World = new World(name);
-
-    public World World { get; }
+    public World World { get; } = new World(name);
 
     public EntityManager EntityManager => World.EntityManager;
 

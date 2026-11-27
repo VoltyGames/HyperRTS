@@ -12,17 +12,11 @@ namespace HyperRTS.Presentation.HUD.Commands;
 /// Command-card buttons for the selection's abilities and the local player's support powers, greyed out with a
 /// countdown while cooling down. Aimed abilities start targeting for the next world click.
 /// </summary>
-public sealed class AbilityCommands : ICommandSource
+public sealed class AbilityCommands(CommandKit kit) : ICommandSource
 {
-    private readonly CommandKit _kit;
     private readonly List<Entry> _entries = [];
     private readonly List<Entity> _casters = [];
     private Entity _player;
-
-    public AbilityCommands(CommandKit kit)
-    {
-        _kit = kit;
-    }
 
     private sealed class Entry
     {
@@ -93,7 +87,7 @@ public sealed class AbilityCommands : ICommandSource
         }
 
         var name = HUDText.AbilityName(ability.Name.ToString());
-        var spec = _kit.Catalog.FindAbility(card, ability.Id, name);
+        var spec = kit.Catalog.FindAbility(card, ability.Id, name);
         if (spec == null)
         {
             return;
@@ -102,7 +96,7 @@ public sealed class AbilityCommands : ICommandSource
         var type = isPower ? CommandType.UsePower : CommandType.UseAbility;
         var target = ability.Target;
         var id = ability.Id;
-        var entry = _kit.Create(spec, name, ability.Icon.Value, () => Use(context, type, target, id));
+        var entry = kit.Create(spec, name, ability.Icon.Value, () => Use(context, type, target, id));
         entries.Add(entry);
         _entries.Add(new Entry { Button = entry.Button, Id = id, IsPower = isPower });
     }

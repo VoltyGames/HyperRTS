@@ -7,13 +7,8 @@ namespace HyperRTS.Simulation.Common.Authoring;
 /// 0 or an object reference that is assigned.
 /// </summary>
 [AttributeUsage(AttributeTargets.Field)]
-public sealed class ShowIfAttribute : Attribute
+public sealed class ShowIfAttribute(string field) : Attribute
 {
-    public ShowIfAttribute(string field)
-    {
-        Field = field;
-    }
-
     /// <summary>Name of the serialized field the condition reads, e.g. <c>nameof(splashRadius)</c>.</summary>
-    public string Field { get; }
+    public string Field { get; } = field;
 }

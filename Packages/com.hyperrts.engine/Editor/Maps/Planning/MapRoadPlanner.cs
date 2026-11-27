@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// The land of every road: the carriageway, then the grass and weed verge either side. Passes that lay tracks
 /// (field ends, access to a pad) lay them through <see cref="LayTrack"/>.
 /// </summary>
-public sealed class MapRoadPlanner : MapLandPass
+public sealed class MapRoadPlanner(MapPlanContext context) : MapLandPass(context)
 {
     /// <summary>Track ends this close (metres) are the same end: on a symmetry axis a copy lands on the track itself.</summary>
     private const float SameEnd = 0.5f;
@@ -18,10 +18,6 @@ public sealed class MapRoadPlanner : MapLandPass
     /// <summary>How far a verge's outer edge wanders, as a share of its width, and over how many metres.</summary>
     private const float VergeWear = 0.6f;
     private const float VergeWearWavelength = 9f;
-
-    public MapRoadPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

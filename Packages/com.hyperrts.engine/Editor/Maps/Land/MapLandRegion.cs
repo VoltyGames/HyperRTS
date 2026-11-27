@@ -6,18 +6,9 @@ namespace HyperRTS.Editor.Maps.Land;
 /// One piece of land the planners laid out (a field, a plot's garden, a wood, a road's verge): its use, the
 /// climate surface it paints and, for crops and gardens, which way the rows run.
 /// </summary>
-public sealed class MapLandRegion
+public sealed class MapLandRegion(MapLandKind kind, string surface, int seed = 0, float? rowAngle = null)
 {
-    private readonly float? _rowAngle;
     private readonly string _impactClass;
-
-    public MapLandRegion(MapLandKind kind, string surface, int seed = 0, float? rowAngle = null)
-    {
-        Kind = kind;
-        Surface = surface;
-        Seed = seed;
-        _rowAngle = rowAngle;
-    }
 
     private MapLandRegion(string surface, string impactClass) : this(MapLandKind.Road, surface)
     {
@@ -27,20 +18,20 @@ public sealed class MapLandRegion
     /// <summary>A road's land, carrying its class's impact class so junction cells keep their owner's.</summary>
     public static MapLandRegion Road(string surface, string impactClass) => new(surface, impactClass);
 
-    public MapLandKind Kind { get; }
+    public MapLandKind Kind { get; } = kind;
 
-    public string Surface { get; }
+    public string Surface { get; } = surface;
 
     /// <summary>Stable per region in every symmetry copy, so tints and choices made from it match.</summary>
-    public int Seed { get; }
+    public int Seed { get; } = seed;
 
-    public bool HasRows => _rowAngle.HasValue;
+    public bool HasRows => rowAngle.HasValue;
 
     /// <summary>
     /// Direction of the crop or garden rows in the authored sector, degrees clockwise from north. Regions are
     /// shared by every symmetry copy, so a copy moves it through its own transform.
     /// </summary>
-    public float RowAngle => _rowAngle
+    public float RowAngle => rowAngle
         ?? throw new InvalidOperationException($"HyperRTS: the {Kind} region painting '{Surface}' has no rows.");
 
     /// <summary>The road class's impact class; only road regions carry one.</summary>

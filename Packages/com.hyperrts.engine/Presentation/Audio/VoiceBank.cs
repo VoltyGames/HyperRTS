@@ -10,23 +10,14 @@ namespace HyperRTS.Presentation.Audio;
 /// A fixed set of audio sources under one DontSave root, made on first use, each shaping a 3D cue by distance with
 /// its <see cref="DistanceCurves"/>. The root outlives scene reloads, so its owner disposes it with the world.
 /// </summary>
-public sealed class VoiceBank : IDisposable
+public sealed class VoiceBank(string name, int count, bool loop = false) : IDisposable
 {
-    private readonly string _name;
-    private readonly int _count;
-    private readonly bool _loop;
+    private readonly bool _loop = loop;
     private readonly Dictionary<SoundCue, DistanceCurves> _curves = [];
     private GameObject _root;
     private AudioSource[] _sources;
     private AudioLowPassFilter[] _filters;
     private DistanceCurves[] _shaped;
-
-    public VoiceBank(string name, int count, bool loop = false)
-    {
-        _name = name;
-        _count = count;
-        _loop = loop;
-    }
 
     public AudioSource this[int voice] => Sources()[voice];
 
@@ -85,10 +76,10 @@ public sealed class VoiceBank : IDisposable
             return _sources;
         }
 
-        _root = new GameObject(_name) { hideFlags = HideFlags.DontSave };
-        _sources = new AudioSource[_count];
-        _filters = new AudioLowPassFilter[_count];
-        _shaped = new DistanceCurves[_count];
+        _root = new GameObject(name) { hideFlags = HideFlags.DontSave };
+        _sources = new AudioSource[count];
+        _filters = new AudioLowPassFilter[count];
+        _shaped = new DistanceCurves[count];
         for (var i = 0; i < _sources.Length; i++)
         {
             var voice = new GameObject($"Voice {i}") { hideFlags = HideFlags.DontSave };

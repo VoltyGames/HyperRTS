@@ -6,14 +6,12 @@ using UnityEngine;
 namespace HyperRTS.Editor.Animation.Bones;
 
 /// <summary>A first ragdoll for a humanoid rig, read from its avatar's bone map, for hand tuning after.</summary>
-internal sealed class HumanRagdoll
+internal sealed class HumanRagdoll(BoneAnimationSet set)
 {
     private const float HeadHeight = 0.2f;
     private const float HeadRadius = 0.1f;
 
-    private readonly BoneAnimationSet _set;
-
-    public HumanRagdoll(BoneAnimationSet set) => _set = set;
+    private readonly BoneAnimationSet _set = set;
 
     /// <summary>How a body is made: capsule radius as a share of its length, mass share and joint limits in degrees.</summary>
     private readonly struct BodySettings

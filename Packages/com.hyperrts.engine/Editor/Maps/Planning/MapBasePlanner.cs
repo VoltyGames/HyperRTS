@@ -10,7 +10,7 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// The ground of each base, a worn rectangular yard turned with its spawn, and the pads under props whose entry
 /// asks for one.
 /// </summary>
-public sealed class MapBasePlanner : MapLandPass
+public sealed class MapBasePlanner(MapPlanContext context) : MapLandPass(context)
 {
     /// <summary>A yard's half width and half depth as shares of the base radius: corners stay where it flattens.</summary>
     private static readonly Vector2 YardHalf = new(0.86f, 0.69f);
@@ -20,10 +20,6 @@ public sealed class MapBasePlanner : MapLandPass
     private const float YardCorner = 0.18f;
     private const float BaseWavelength = 22f;
     private const float PadWavelength = 6f;
-
-    public MapBasePlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

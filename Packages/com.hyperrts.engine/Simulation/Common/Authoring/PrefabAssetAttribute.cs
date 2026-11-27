@@ -7,10 +7,8 @@ namespace HyperRTS.Simulation.Common.Authoring;
 /// scene bakes. Validation offers to swap a list entry for the prefab it came from.
 /// </summary>
 [AttributeUsage(AttributeTargets.Field)]
-public sealed class PrefabAssetAttribute : Attribute
+public sealed class PrefabAssetAttribute(string label) : Attribute
 {
-    public PrefabAssetAttribute(string label) => Label = label;
-
     /// <summary>How a warning names one entry, e.g. "Production option".</summary>
-    public string Label { get; }
+    public string Label { get; } = label;
 }

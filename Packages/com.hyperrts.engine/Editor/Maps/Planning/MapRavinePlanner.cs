@@ -13,15 +13,11 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// Ravines (balkas): the steep cut and the grassy rim slope round it, and woods in groves on the floor and lower
 /// walls, as much of it as the spec's <c>wooded</c> share says — never filled to the brim.
 /// </summary>
-public sealed class MapRavinePlanner : MapLandPass
+public sealed class MapRavinePlanner(MapPlanContext context) : MapLandPass(context)
 {
     private const float WoodedReach = 0.75f;
     private const float GroveSize = 28f;
     private const float ThresholdStep = 2f;
-
-    public MapRavinePlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

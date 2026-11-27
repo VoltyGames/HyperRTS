@@ -11,23 +11,17 @@ namespace HyperRTS.Presentation.Common;
 /// Per entity type presentation data, read from the type's prefab or any instance and cached, since the source may
 /// be gone when its event plays and on a client the event names a type the server resolved.
 /// </summary>
-public sealed class TypeCatalog<T> where T : class
+/// <remarks>
+/// <paramref name="typed"/> is over entities with <see cref="EntityInfo"/> and the data, prefabs included: an
+/// entity it matches has data. <paramref name="read"/> builds the entry from such an entity.
+/// </remarks>
+public sealed class TypeCatalog<T>(EntityQuery typed, Func<EntityManager, Entity, T> read) where T : class
 {
     private readonly Dictionary<int, T> _entries = [];
     private readonly HashSet<int> _missing = [];
-    private readonly EntityQuery _typed;
-    private readonly Func<EntityManager, Entity, T> _read;
+    private readonly EntityQuery _typed = typed;
+    private readonly Func<EntityManager, Entity, T> _read = read;
     private int _typedVersion;
-
-    /// <summary>
-    /// <paramref name="typed"/> is over entities with <see cref="EntityInfo"/> and the data, prefabs included: an
-    /// entity it matches has data. <paramref name="read"/> builds the entry from such an entity.
-    /// </summary>
-    public TypeCatalog(EntityQuery typed, Func<EntityManager, Entity, T> read)
-    {
-        _typed = typed;
-        _read = read;
-    }
 
     /// <summary>
     /// The type's entry, or null. A type with a loaded prefab is cached for good; one found only by its instances

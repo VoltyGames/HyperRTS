@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Maps.Planning.Farmland;
 /// Farmland: land nothing else took, split into fields on a grid with a crop, margin and headlands each, and
 /// shelterbelts at field ends. Decided in the authored sector, so every copy of a field grows the same crop.
 /// </summary>
-public sealed class MapFarmlandPlanner : MapLandPass
+public sealed class MapFarmlandPlanner(MapPlanContext context) : MapLandPass(context)
 {
     /// <summary>How much a field's margin narrows and widens along its edge: little, as a plough runs straight.</summary>
     private const float MarginWander = 0.12f;
@@ -25,10 +25,6 @@ public sealed class MapFarmlandPlanner : MapLandPass
 
     // Shorter stretches, in headland depths, keep straight rows.
     private const float HeadlandBody = 3f;
-
-    public MapFarmlandPlanner(MapPlanContext context) : base(context)
-    {
-    }
 
     public override void Plan()
     {

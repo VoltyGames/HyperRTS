@@ -4,27 +4,17 @@ using Unity.Mathematics;
 namespace HyperRTS.Presentation.Environment.Ambient;
 
 /// <summary>One live dust devil: drifts downwind with a sideways wander, easing in and out over its lifetime.</summary>
-public sealed class DustDevil
+public sealed class DustDevil(int id, float3 position, float lifetime, float wanderPhase)
 {
     private const float FadeShare = 0.2f;
     private const float WanderShare = 0.5f;
     private const float WanderPeriod = 6f;
 
-    private readonly float _wanderPhase;
-
-    public DustDevil(int id, float3 position, float lifetime, float wanderPhase)
-    {
-        Id = id;
-        Position = position;
-        Lifetime = lifetime;
-        _wanderPhase = wanderPhase;
-    }
-
     /// <summary>Unique among live devils, so each keeps its own stream.</summary>
-    public int Id { get; }
+    public int Id { get; } = id;
 
-    public float3 Position { get; private set; }
-    public float Lifetime { get; }
+    public float3 Position { get; private set; } = position;
+    public float Lifetime { get; } = lifetime;
     public float Age { get; private set; }
 
     public bool Done => Age >= Lifetime;
@@ -44,7 +34,7 @@ public sealed class DustDevil
     {
         Age += deltaTime;
         var side = new float2(-downwind.y, downwind.x);
-        var wander = math.sin(_wanderPhase + Age * 2f * math.PI / WanderPeriod) * WanderShare;
+        var wander = math.sin(wanderPhase + Age * 2f * math.PI / WanderPeriod) * WanderShare;
         var xz = Position.xz + (downwind + side * wander) * speed * deltaTime;
         Position = new float3(xz.x, terrain.Height(xz), xz.y);
     }

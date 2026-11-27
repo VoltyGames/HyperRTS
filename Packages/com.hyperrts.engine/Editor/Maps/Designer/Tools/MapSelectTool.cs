@@ -13,7 +13,7 @@ namespace HyperRTS.Editor.Maps.Designer.Tools;
 /// The Map Editor's Select tool: click selects, drags move a feature or handle, Alt+click adds a vertex,
 /// Ctrl+click removes one, Delete removes the selection. Each gesture is one undo step.
 /// </summary>
-public sealed class MapSelectTool : IMapTool
+public sealed class MapSelectTool(MapToolContext context) : IMapTool
 {
     public const string Help = "Select (V): click selects, drag moves, drag a handle to reshape. Alt+click the " +
         "selected line or area's edge adds a vertex; Ctrl+click a vertex removes it; Delete removes the feature.";
@@ -21,7 +21,6 @@ public sealed class MapSelectTool : IMapTool
     private const float MinRadius = 1f;
     private const int WholeFeature = -1;
 
-    private readonly MapToolContext _context;
     private readonly List<Vector2> _start = [];
     private readonly List<Vector2> _moved = [];
 
@@ -30,27 +29,22 @@ public sealed class MapSelectTool : IMapTool
     private Vector2 _grab;
     private int _undoGroup;
 
-    public MapSelectTool(MapToolContext context)
-    {
-        _context = context;
-    }
+    private MapSpecDocument Document => context.Document;
 
-    private MapSpecDocument Document => _context.Document;
-
-    private MapFeatureRef Current => _context.Selection.Current;
+    private MapFeatureRef Current => context.Selection.Current;
 
     public void Down(Vector2 local, EventModifiers modifiers, int clickCount)
     {
         // A feature picked in the list stays selected when its category is locked, but the canvas can't edit it.
         var current = Current;
-        var editable = !current.IsNone && _context.Layers.CanPick(current.Kind);
+        var editable = !current.IsNone && context.Layers.CanPick(current.Kind);
         var adding = (modifiers & EventModifiers.Alt) != 0;
         if (adding && editable && InsertVertex(current, local))
         {
             return;
         }
 
-        _handle = editable ? MapHitTest.HandleAt(Document.Spec, _context.View, current, local) : -1;
+        _handle = editable ? MapHitTest.HandleAt(Document.Spec, context.View, current, local) : -1;
         var removing = (modifiers & (EventModifiers.Control | EventModifiers.Command)) != 0;
         if (removing && _handle >= 0)
         {
@@ -60,7 +54,7 @@ public sealed class MapSelectTool : IMapTool
 
         if (_handle < 0)
         {
-            _context.Selection.Set(MapHitTest.FeatureAt(Document.Spec, _context.View, _context.Layers, local));
+            context.Selection.Set(MapHitTest.FeatureAt(Document.Spec, context.View, context.Layers, local));
             _handle = WholeFeature;
         }
 
@@ -80,7 +74,7 @@ public sealed class MapSelectTool : IMapTool
             return;
         }
 
-        var world = _context.View.ToWorld(local);
+        var world = context.View.ToWorld(local);
         if (_handle == WholeFeature)
         {
             MoveFeature(MapSnap.Grid(world - _grab));
@@ -128,10 +122,10 @@ public sealed class MapSelectTool : IMapTool
             return;
         }
 
-        _context.Selection.Clear();
+        context.Selection.Clear();
         if (MapFeatureEdits.Delete(Document, current))
         {
-            _context.Warn($"Deleted {current}. Later {current.Kind.Label} moved up a place, so their details " +
+            context.Warn($"Deleted {current}. Later {current.Kind.Label} moved up a place, so their details " +
                 "change (Undo restores them).");
         }
     }
@@ -139,7 +133,7 @@ public sealed class MapSelectTool : IMapTool
     /// <summary>Adds a vertex where the cursor is on the selected feature's edge and starts dragging it.</summary>
     private bool InsertVertex(MapFeatureRef feature, Vector2 local)
     {
-        var segment = MapHitTest.SegmentAt(Document.Spec, _context.View, feature, local);
+        var segment = MapHitTest.SegmentAt(Document.Spec, context.View, feature, local);
         if (segment < 0)
         {
             return false;
@@ -147,7 +141,7 @@ public sealed class MapSelectTool : IMapTool
 
         StartUndoGroup();
         _handle = segment + 1;
-        MapFeatureEdits.InsertPoint(Document, feature, _handle, _context.Place(local, false), false);
+        MapFeatureEdits.InsertPoint(Document, feature, _handle, context.Place(local, false), false);
         BeginDrag(local);
         return true;
     }
@@ -172,7 +166,7 @@ public sealed class MapSelectTool : IMapTool
     private void BeginDrag(Vector2 local)
     {
         MapHitTest.Handles(Document.Spec, Current, _start);
-        _grab = _context.View.ToWorld(local);
+        _grab = context.View.ToWorld(local);
         _dragging = true;
     }
 
@@ -182,7 +176,7 @@ public sealed class MapSelectTool : IMapTool
         _moved.Clear();
         if (!feature.Kind.HasPoints)
         {
-            _moved.Add(MapSnap.Position(_start[0] + delta, IsShared(feature), _context.Symmetry));
+            _moved.Add(MapSnap.Position(_start[0] + delta, IsShared(feature), context.Symmetry));
             MapFeatureEdits.SetPoints(Document, feature, _moved, false);
             return;
         }
@@ -206,7 +200,7 @@ public sealed class MapSelectTool : IMapTool
             return;
         }
 
-        var placed = MapSnap.Position(world, IsShared(feature) && !feature.Kind.HasPoints, _context.Symmetry);
+        var placed = MapSnap.Position(world, IsShared(feature) && !feature.Kind.HasPoints, context.Symmetry);
         var points = feature.Kind.HasPoints ? _start.Count : 1;
         _moved.Clear();
         for (var i = 0; i < points; i++)

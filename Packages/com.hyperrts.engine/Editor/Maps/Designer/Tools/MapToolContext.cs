@@ -9,14 +9,8 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Designer.Tools;
 
 /// <summary>What every canvas tool works on: the document, the selection, the canvas view and the symmetry.</summary>
-public sealed class MapToolContext
+public sealed class MapToolContext(MapCanvasView view, Action<string> warn)
 {
-    public MapToolContext(MapCanvasView view, Action<string> warn)
-    {
-        View = view;
-        Warn = warn;
-    }
-
     /// <summary>The open spec; the canvas sets it with the selection when it binds one.</summary>
     public MapSpecDocument Document { get; set; }
 
@@ -25,10 +19,10 @@ public sealed class MapToolContext
     /// <summary>Which categories the canvas shows and lets tools pick; the canvas sets it when it binds one.</summary>
     public MapLayers Layers { get; set; } = new();
 
-    public MapCanvasView View { get; }
+    public MapCanvasView View { get; } = view;
 
     /// <summary>Shows a passing warning over the canvas, such as what a deletion changed.</summary>
-    public Action<string> Warn { get; }
+    public Action<string> Warn { get; } = warn;
 
     /// <summary>The spec's symmetry, or null while it names an unknown one.</summary>
     public MapSymmetry Symmetry { get; set; }

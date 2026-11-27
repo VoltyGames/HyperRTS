@@ -11,7 +11,8 @@ namespace HyperRTS.Editor.Maps.Meshes;
 /// One road class's ribbons over the terrain as one mesh. UV X runs across the road, UV Y is metres along it, and
 /// vertex alpha fades the ends.
 /// </summary>
-public sealed class MapRoadMesh
+/// <remarks><paramref name="groundLevel"/> is the terrain height of world y = 0.</remarks>
+public sealed class MapRoadMesh(MapHeights heights, float groundLevel)
 {
     private const float Step = 2f;
     public const float Lift = 0.05f;
@@ -22,15 +23,7 @@ public sealed class MapRoadMesh
     private const float SpillIn = 3f;
     private const float SpillOut = 2f;
 
-    private readonly MapHeights _heights;
-    private readonly float _groundLevel;
-
-    /// <summary><paramref name="groundLevel"/> is the terrain height of world y = 0.</summary>
-    public MapRoadMesh(MapHeights heights, float groundLevel)
-    {
-        _heights = heights;
-        _groundLevel = groundLevel;
-    }
+    private readonly float _groundLevel = groundLevel;
 
     public List<Vector3> Vertices { get; } = [];
 
@@ -168,10 +161,10 @@ public sealed class MapRoadMesh
         {
             var across = (float)c / (columns - 1);
             var point = center + right * ((across - 0.5f) * width);
-            var normal = _heights.Normal(point);
+            var normal = heights.Normal(point);
             var side = new Vector3(right.x, 0f, right.y);
             var tangent = (side - normal * Vector3.Dot(side, normal)).normalized;
-            Vertices.Add(new Vector3(point.x, _heights.Height(point) - _groundLevel + Lift, point.y));
+            Vertices.Add(new Vector3(point.x, heights.Height(point) - _groundLevel + Lift, point.y));
             Normals.Add(normal);
             Tangents.Add(new Vector4(tangent.x, tangent.y, tangent.z, -1f));
             Uvs.Add(new Vector2(across, along));

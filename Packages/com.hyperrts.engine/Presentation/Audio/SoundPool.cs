@@ -9,24 +9,16 @@ namespace HyperRTS.Presentation.Audio;
 /// cue's instance limit and cooldown and, when all are busy, lets a sound take the voice of a less important or
 /// quieter one.
 /// </summary>
-public sealed class SoundPool
+public sealed class SoundPool(int capacity)
 {
     /// <summary>Sounds heard quieter than this (about -40 dB) are not worth a voice.</summary>
     public const float Inaudible = 0.01f;
 
-    private readonly SoundCue[] _cues;
-    private readonly int[] _priorities;
-    private readonly float[] _loudness;
-    private readonly double[] _ends;
+    private readonly SoundCue[] _cues = new SoundCue[capacity];
+    private readonly int[] _priorities = new int[capacity];
+    private readonly float[] _loudness = new float[capacity];
+    private readonly double[] _ends = new double[capacity];
     private readonly Dictionary<SoundCue, Throttle> _rested = [];
-
-    public SoundPool(int capacity)
-    {
-        _cues = new SoundCue[capacity];
-        _priorities = new int[capacity];
-        _loudness = new float[capacity];
-        _ends = new double[capacity];
-    }
 
     public int Capacity => _cues.Length;
 

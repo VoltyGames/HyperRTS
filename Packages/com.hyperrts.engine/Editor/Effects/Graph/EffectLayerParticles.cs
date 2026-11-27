@@ -8,26 +8,16 @@ namespace HyperRTS.Editor.Effects.Graph;
 /// particles that start in rig space and move to where the spawn came from, their forces, and the output for the
 /// layer's kind.
 /// </summary>
-public sealed class EffectLayerParticles
+public sealed class EffectLayerParticles(GraphModel graph, EffectLayer layer, float x, EffectGraphInputs inputs)
 {
     public const string Blocks = "Packages/com.hyperrts.engine/Presentation/Effects/Blocks/";
 
-    private readonly GraphModel _graph;
-    private readonly EffectLayer _layer;
-    private readonly float _x;
-    private readonly EffectLayerEmission _emission;
-    private readonly EffectLayerUpdate _update;
-    private readonly AttributePicker _picker;
-
-    public EffectLayerParticles(GraphModel graph, EffectLayer layer, float x, EffectGraphInputs inputs)
-    {
-        _graph = graph;
-        _layer = layer;
-        _x = x;
-        _emission = new EffectLayerEmission(graph, layer, x, inputs);
-        _update = new EffectLayerUpdate(graph, layer, x);
-        _picker = new AttributePicker(graph);
-    }
+    private readonly GraphModel _graph = graph;
+    private readonly EffectLayer _layer = layer;
+    private readonly float _x = x;
+    private readonly EffectLayerEmission _emission = new EffectLayerEmission(graph, layer, x, inputs);
+    private readonly EffectLayerUpdate _update = new EffectLayerUpdate(graph, layer, x);
+    private readonly AttributePicker _picker = new AttributePicker(graph);
 
     /// <summary>Writes the system; a child layer takes its parent's update. Returns this layer's update.</summary>
     public object Write(object parentUpdate)

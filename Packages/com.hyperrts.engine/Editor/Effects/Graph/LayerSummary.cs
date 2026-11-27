@@ -10,23 +10,16 @@ namespace HyperRTS.Editor.Effects.Graph;
 /// One layer's fields that matter as a few lines of <c>field=value</c>, written as <c>effect set</c> reads them, so a
 /// line can be edited and pasted back.
 /// </summary>
-internal sealed class LayerSummary
+internal sealed class LayerSummary(EffectLayer layer, int index)
 {
-    private readonly EffectLayer _layer;
-    private readonly int _index;
-
-    public LayerSummary(EffectLayer layer, int index)
-    {
-        _layer = layer;
-        _index = index;
-    }
+    private readonly EffectLayer _layer = layer;
 
     public List<string> Lines()
     {
         var layer = _layer;
         var lines = new List<string>
         {
-            $"[{_index}] {layer.name}: kind={layer.kind} capacity={layer.capacity}{(layer.HasParent ? " parent=" + layer.parent : string.Empty)}",
+            $"[{index}] {layer.name}: kind={layer.kind} capacity={layer.capacity}{(layer.HasParent ? " parent=" + layer.parent : string.Empty)}",
             Emission(),
             $"  lifetime={Text(layer.lifetime)} size={Text(layer.size)} aspect={Text(layer.aspect)} rotation={Text(layer.rotation)} spin={Text(layer.spin)}",
             $"  color.min={Text(layer.color.min)} color.max={Text(layer.color.max)}",

@@ -23,7 +23,8 @@ namespace HyperRTS.Presentation.Overlays;
 /// Ground markers under selected and hovered entities, owner-coloured pips over small visible
 /// mobile units, and health bars over the ones the visibility setting picks. All read the drawn pose.
 /// </summary>
-public sealed class UnitOverlays : IDisposable
+public sealed class UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial,
+    Material pipMaterial) : IDisposable
 {
     // A hovered unit's marker line, as a share of a selected one's.
     private const float HoverLine = 0.6f;
@@ -38,19 +39,11 @@ public sealed class UnitOverlays : IDisposable
     private readonly LiveSingleton<HoveredEntity> _hovered = new();
     private readonly LiveSingleton<SquadRules> _squadRules = new();
 
-    private readonly GroundMarkers _markers;
-    private readonly UnitPips _pips;
-    private readonly HealthBars _bars;
+    private readonly GroundMarkers _markers = new GroundMarkers(grid, markerMaterial);
+    private readonly UnitPips _pips = new UnitPips(billboard, pipMaterial);
+    private readonly HealthBars _bars = new HealthBars(billboard, barMaterial);
     private readonly SelectionFades _fades = new();
     private readonly EntityExtent _extent = new();
-
-    public UnitOverlays(Mesh grid, Mesh billboard, Material markerMaterial, Material barMaterial,
-        Material pipMaterial)
-    {
-        _markers = new GroundMarkers(grid, markerMaterial);
-        _pips = new UnitPips(billboard, pipMaterial);
-        _bars = new HealthBars(billboard, barMaterial);
-    }
 
     public void Gather(MatchView view, OverlayStyle style, HealthBarVisibility visibility, in ReferencePixels pixels,
         float now)

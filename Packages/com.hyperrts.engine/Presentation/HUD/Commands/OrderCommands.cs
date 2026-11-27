@@ -17,7 +17,7 @@ namespace HyperRTS.Presentation.HUD.Commands;
 /// Buttons for plain orders when some owned entity can take them: return, unload, deploy, pack up, sell and
 /// reverse move and fire mission, and a stance each for armed units with the one they all share highlighted.
 /// </summary>
-public sealed class OrderCommands : ICommandSource
+public sealed class OrderCommands(CommandKit kit) : ICommandSource
 {
     private const string ActiveClass = "hud-command--active";
     private static readonly Stance[] Stances = (Stance[])Enum.GetValues(typeof(Stance));
@@ -28,14 +28,8 @@ public sealed class OrderCommands : ICommandSource
         (CommandType.PackUp, 0), (CommandType.Sell, 0), (CommandType.ReverseMove, 0), (CommandType.FireMission, 0),
     ];
 
-    private readonly CommandKit _kit;
     private readonly List<(CommandButton Button, Stance Stance)> _buttons = [];
     private readonly List<Entity> _armed = [];
-
-    public OrderCommands(CommandKit kit)
-    {
-        _kit = kit;
-    }
 
     public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
     {
@@ -85,13 +79,13 @@ public sealed class OrderCommands : ICommandSource
                 continue;
             }
 
-            var spec = _kit.Catalog.FindOrder(EntityInfo.GetTypeId(entityManager, entity), order, argument);
+            var spec = kit.Catalog.FindOrder(EntityInfo.GetTypeId(entityManager, entity), order, argument);
             if (spec == null)
             {
                 return null;
             }
 
-            var entry = _kit.Create(spec, "", null, () => Press(context, order, argument));
+            var entry = kit.Create(spec, "", null, () => Press(context, order, argument));
             entries.Add(entry);
             return entry.Button;
         }

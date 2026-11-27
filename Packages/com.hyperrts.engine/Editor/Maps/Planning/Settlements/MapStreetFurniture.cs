@@ -9,19 +9,13 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// What lines a settlement's streets: poles on the left of each road and pipe sections on the right, in runs of
 /// at least the kit's minimum, where the verge is clear.
 /// </summary>
-internal sealed class MapStreetFurniture
+internal sealed class MapStreetFurniture(MapSettlement settlement)
 {
     private const float EdgeOffset = 1.5f;
     private const float SpotClearance = 0.3f;
 
-    private readonly MapSettlement _settlement;
-    private readonly MapPlanContext _context;
-
-    public MapStreetFurniture(MapSettlement settlement)
-    {
-        _settlement = settlement;
-        _context = settlement.Context;
-    }
+    private readonly MapSettlement _settlement = settlement;
+    private readonly MapPlanContext _context = settlement.Context;
 
     public void Place()
     {

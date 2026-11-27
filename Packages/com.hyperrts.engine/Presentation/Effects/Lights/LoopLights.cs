@@ -7,11 +7,9 @@ namespace HyperRTS.Presentation.Effects.Lights;
 /// Loop lighting: shadowless, flickering point lights given each frame to the streamed loops nearest the camera whose rigs carry a
 /// <see cref="LoopLight"/>, such as burning wrecks and buildings. High detail only, beside <see cref="EffectLights"/>.
 /// </summary>
-public sealed class LoopLights
+public sealed class LoopLights(Transform root)
 {
-    private readonly LightSlots _slots;
-
-    public LoopLights(Transform root) => _slots = new LightSlots(root, "Loop Light");
+    private readonly LightSlots _slots = new LightSlots(root, "Loop Light");
 
     /// <summary>The loops offered this frame; cleared by <see cref="Show"/>.</summary>
     public LoopOffers<LoopLight> Offers { get; } = new();

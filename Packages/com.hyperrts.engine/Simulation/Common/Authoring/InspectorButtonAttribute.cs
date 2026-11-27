@@ -7,14 +7,9 @@ namespace HyperRTS.Simulation.Common.Authoring;
 /// parameterless method of the component, or on a static editor method that takes the component.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method)]
-public sealed class InspectorButtonAttribute : Attribute
+public sealed class InspectorButtonAttribute(string label) : Attribute
 {
-    public InspectorButtonAttribute(string label)
-    {
-        Label = label;
-    }
-
-    public string Label { get; }
+    public string Label { get; } = label;
 
     /// <summary>Name of a glyph (such as "wand-sparkles") drawn left of the label; empty for none.</summary>
     public string Glyph { get; set; } = "";

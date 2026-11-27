@@ -8,11 +8,9 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 /// Switches to a quality level by name with the game's settings for it, so later shots show what that level
 /// draws. The run puts the level and the settings back when it ends.
 /// </summary>
-internal sealed class QualityStep : StagingStep
+internal sealed class QualityStep(string name) : StagingStep
 {
-    private readonly string _name;
-
-    public QualityStep(string name) => _name = name;
+    private readonly string _name = name;
 
     public override void Check() => Level();
 

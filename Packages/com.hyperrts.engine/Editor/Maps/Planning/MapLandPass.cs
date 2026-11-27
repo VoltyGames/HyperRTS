@@ -12,11 +12,9 @@ namespace HyperRTS.Editor.Maps.Planning;
 /// One step of land planning: claims the land earlier passes left and may place props and trees, chosen in the
 /// authored sector. Work happens in <see cref="Plan"/>, in <see cref="MapLandPlanner"/>'s order.
 /// </summary>
-public abstract class MapLandPass
+public abstract class MapLandPass(MapPlanContext context)
 {
-    protected MapLandPass(MapPlanContext context) => Context = context;
-
-    protected MapPlanContext Context { get; }
+    protected MapPlanContext Context { get; } = context;
 
     protected MapLand Land => Context.Land;
 

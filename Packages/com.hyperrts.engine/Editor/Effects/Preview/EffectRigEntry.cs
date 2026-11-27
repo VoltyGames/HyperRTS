@@ -9,23 +9,16 @@ using UnityEngine;
 namespace HyperRTS.Editor.Effects.Preview;
 
 /// <summary>An effect rig prefab in the project, with the kind it is listed under and the recipes of its graphs.</summary>
-public sealed class EffectRigEntry
+public sealed class EffectRigEntry(string path, List<string> recipes)
 {
-    public EffectRigEntry(string path, List<string> recipes)
-    {
-        Path = path;
-        Kind = ReadKind(path);
-        Recipes = recipes;
-    }
-
-    public string Path { get; }
+    public string Path { get; } = path;
 
     public string Name => System.IO.Path.GetFileNameWithoutExtension(Path);
 
     /// <summary>The second field of an <c>FX_&lt;Kind&gt;_...</c> name, or the prefab's folder name for any other name.</summary>
-    public string Kind { get; }
+    public string Kind { get; } = ReadKind(path);
 
-    public List<string> Recipes { get; }
+    public List<string> Recipes { get; } = recipes;
 
     private static string ReadKind(string path)
     {

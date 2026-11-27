@@ -11,12 +11,8 @@ namespace HyperRTS.Editor.Common.Json;
 /// Reads the public fields JsonUtility writes, not the properties that wrap them. It can also require every field
 /// of a non-nullable value type, so a nullable field is the optional one.
 /// </summary>
-internal sealed class JsonUtilityResolver : DefaultContractResolver
+internal sealed class JsonUtilityResolver(bool requireValues) : DefaultContractResolver
 {
-    private readonly bool _requireValues;
-
-    public JsonUtilityResolver(bool requireValues) => _requireValues = requireValues;
-
     protected override List<MemberInfo> GetSerializableMembers(Type objectType) => objectType
         .GetFields(BindingFlags.Public | BindingFlags.Instance)
         .Where(field => !field.IsNotSerialized)
@@ -27,7 +23,7 @@ internal sealed class JsonUtilityResolver : DefaultContractResolver
     {
         var property = base.CreateProperty(member, memberSerialization);
         var plainValue = property.PropertyType is { IsValueType: true } type && Nullable.GetUnderlyingType(type) == null;
-        if (_requireValues && plainValue)
+        if (requireValues && plainValue)
         {
             property.Required = Required.Always;
         }

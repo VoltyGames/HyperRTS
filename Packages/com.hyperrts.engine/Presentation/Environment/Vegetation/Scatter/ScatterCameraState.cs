@@ -5,13 +5,11 @@ using UnityEngine;
 namespace HyperRTS.Presentation.Environment.Vegetation.Scatter;
 
 /// <summary>One camera's scatter batches and the view they were last grown for, so a still camera only redraws.</summary>
-internal sealed class ScatterCameraState<TBatch> : IDisposable where TBatch : ScatterBatch
+internal sealed class ScatterCameraState<TBatch>(List<TBatch> batches) : IDisposable where TBatch : ScatterBatch
 {
     private readonly ScatterView _view = new();
 
-    public ScatterCameraState(List<TBatch> batches) => Batches = batches;
-
-    public List<TBatch> Batches { get; }
+    public List<TBatch> Batches { get; } = batches;
 
     public bool Holds(Vector3 position, ScatterSettings settings, List<int> tiles) =>
         _view.Holds(position, settings, tiles);

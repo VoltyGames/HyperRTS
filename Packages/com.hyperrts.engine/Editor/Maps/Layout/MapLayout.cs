@@ -5,17 +5,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.Maps.Layout;
 
 /// <summary>The whole map after <see cref="MapSymmetryCopier"/> copied the authored sector: every feature in map space.</summary>
-public sealed class MapLayout
+public sealed class MapLayout(MapSpec spec, MapSymmetry symmetry)
 {
-    public MapLayout(MapSpec spec, MapSymmetry symmetry)
-    {
-        Spec = spec;
-        Symmetry = symmetry;
-    }
+    public MapSpec Spec { get; } = spec;
 
-    public MapSpec Spec { get; }
-
-    public MapSymmetry Symmetry { get; }
+    public MapSymmetry Symmetry { get; } = symmetry;
 
     public Vector2 Size => Spec.size.ToVector2();
 

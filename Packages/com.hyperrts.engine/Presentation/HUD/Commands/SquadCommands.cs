@@ -15,24 +15,18 @@ namespace HyperRTS.Presentation.HUD.Commands;
 /// <summary>
 /// Retreat and Reinforce for selected squads. A button that can't act stays on the card, refused, and its tooltip says why.
 /// </summary>
-public sealed class SquadCommands : ICommandSource
+public sealed class SquadCommands(CommandKit kit) : ICommandSource
 {
     private const string ActiveClass = "hud-command--active";
 
     private readonly LiveQuery _retreatPoints = PointQuery<RetreatPoint>();
     private readonly LiveQuery _reinforcePoints = PointQuery<ReinforcePoint>();
 
-    private readonly CommandKit _kit;
     private readonly List<Entity> _squads = [];
     private CommandButton _retreat;
     private CommandButton _reinforce;
     private SquadRefusal _retreatReason;
     private SquadRefusal _reinforceReason;
-
-    public SquadCommands(CommandKit kit)
-    {
-        _kit = kit;
-    }
 
     public void Build(HUDContext context, IReadOnlyList<Entity> owned, List<CommandEntry> entries)
     {
@@ -53,7 +47,7 @@ public sealed class SquadCommands : ICommandSource
         }
 
         var card = EntityInfo.GetTypeId(context.EntityManager, _squads[0]);
-        var catalog = _kit.Catalog;
+        var catalog = kit.Catalog;
         var retreat = catalog.FindOrder(card, CommandType.Retreat, 0);
         var reinforce = catalog.FindOrder(card, CommandType.Reinforce, 0);
         if (retreat == null || reinforce == null)
@@ -70,7 +64,7 @@ public sealed class SquadCommands : ICommandSource
         System.Action<HUDTooltip> describe)
     {
         var command = new PlayerCommand { Type = spec.Order, Argument = spec.Argument };
-        var entry = _kit.Create(spec, "", null, () => context.Issue(command));
+        var entry = kit.Create(spec, "", null, () => context.Issue(command));
         entry.Button.Description = describe;
         entries.Add(entry);
         return entry.Button;

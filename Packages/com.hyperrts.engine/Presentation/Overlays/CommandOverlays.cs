@@ -21,7 +21,7 @@ namespace HyperRTS.Presentation.Overlays;
 /// The placement footprint outline with red cells where the spot is blocked, and rally markers of selected
 /// producers. The building's own ghost is <see cref="PlacementGhosts"/>.
 /// </summary>
-public sealed class CommandOverlays : IDisposable
+public sealed class CommandOverlays(Mesh ring, Mesh flatQuad) : IDisposable
 {
     private const float RallyRadius = 0.6f;
     private const float RallyLineWidth = 0.12f;
@@ -40,17 +40,10 @@ public sealed class CommandOverlays : IDisposable
         ComponentType.ReadOnly<LocalToWorld>()));
 
     // Footprint outlines and rally lines: flat strips on the ground, tested against depth.
-    private readonly InstanceBuffer<OverlayInstance> _strips;
-    private readonly InstanceBuffer<OverlayInstance> _blockedCells;
-    private readonly InstanceBuffer<OverlayInstance> _rallyRings;
+    private readonly InstanceBuffer<OverlayInstance> _strips = new InstanceBuffer<OverlayInstance>(flatQuad);
+    private readonly InstanceBuffer<OverlayInstance> _blockedCells = new InstanceBuffer<OverlayInstance>(flatQuad);
+    private readonly InstanceBuffer<OverlayInstance> _rallyRings = new InstanceBuffer<OverlayInstance>(ring);
     private int _blockedCount;
-
-    public CommandOverlays(Mesh ring, Mesh flatQuad)
-    {
-        _strips = new InstanceBuffer<OverlayInstance>(flatQuad);
-        _blockedCells = new InstanceBuffer<OverlayInstance>(flatQuad);
-        _rallyRings = new InstanceBuffer<OverlayInstance>(ring);
-    }
 
     public void Gather(MatchView view, OverlayStyle style)
     {

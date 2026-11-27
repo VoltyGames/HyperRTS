@@ -9,29 +9,20 @@ namespace HyperRTS.Editor.Maps.Planning.Settlements;
 /// One settlement plot in authored-sector space: a rectangle with <c>u</c> along the street and <c>v</c> back
 /// from the front fence.
 /// </summary>
-internal sealed class MapPlot
+internal sealed class MapPlot(Vector2 front, Vector2 run, Vector2 back, float width, float depth)
 {
-    public MapPlot(Vector2 front, Vector2 run, Vector2 back, float width, float depth)
-    {
-        Front = front;
-        Run = run;
-        Back = back;
-        Width = width;
-        Depth = depth;
-    }
-
     /// <summary>Middle of the front edge.</summary>
-    public Vector2 Front { get; }
+    public Vector2 Front { get; } = front;
 
     /// <summary>Unit direction along the street.</summary>
-    public Vector2 Run { get; }
+    public Vector2 Run { get; } = run;
 
     /// <summary>Unit direction from the street into the plot.</summary>
-    public Vector2 Back { get; }
+    public Vector2 Back { get; } = back;
 
-    public float Width { get; }
+    public float Width { get; } = width;
 
-    public float Depth { get; }
+    public float Depth { get; } = depth;
 
     /// <summary>Where the yard ends and the garden starts, as a depth from the front.</summary>
     public float YardEnd { get; set; }

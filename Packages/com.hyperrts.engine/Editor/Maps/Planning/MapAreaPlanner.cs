@@ -4,12 +4,8 @@ using HyperRTS.Editor.Maps.Land;
 namespace HyperRTS.Editor.Maps.Planning;
 
 /// <summary>Spec areas: hand-drawn polygons of one surface, for the odd patch the other passes don't make.</summary>
-public sealed class MapAreaPlanner : MapLandPass
+public sealed class MapAreaPlanner(MapPlanContext context) : MapLandPass(context)
 {
-    public MapAreaPlanner(MapPlanContext context) : base(context)
-    {
-    }
-
     public override void Plan()
     {
         foreach (var area in Context.Layout.Areas)
