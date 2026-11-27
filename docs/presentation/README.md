@@ -54,8 +54,9 @@ only a camera at the controller's position fades, so scene views and capture cam
 
 A command press on ground, or a pending Move or AttackMove confirmed on ground, issues on release: dragging past
 `FacingDrag.ThresholdPixels` first makes it a faced move along the drag. A press on an entity issues at once.
-While the drag is held, `FacingDragState` carries it and `FacingPreview` draws an arrow and each selected unit's
-slot outline, from the same `FormationSlots` the order uses.
+While the drag is held, `FacingDragState` carries it and `FacingPreview` draws a line across the formation's front
+with a chevron pointing the way and brackets round each slot, from the same `FormationSlots` the order uses; the
+drag turns it but never stretches it.
 
 Clicks over the HUD, while placing, or while a command is pending never reach selection. Escape undoes the topmost
 client mode through `InteractionState.Cancel`: placement, then a pending command, then the card page. A front end that
