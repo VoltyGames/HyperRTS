@@ -132,7 +132,9 @@ targets a right-click skips, such as destructible scenery for Attack. A unit who
 an attack as a fire mission at the target's position. A game command registered in `OrderTraitTable` gives its order
 with no checks; the game's order system handles a bad target.
 
-Orders with the `Formation` trait spread a group into a box formation. A `Loops` order adds a leg back to where the
+Orders with the `Formation` trait spread a group into a box formation (`FormationSlots`), front row toward the
+group's travel. A faced command (`PlayerCommand.Faced`, with `Yaw`) turns the box to its facing instead, and
+Smart, Move, AttackMove and Deploy carry the facing into `Order.Facing`; aircraft that can't hover get none. A `Loops` order adds a leg back to where the
 unit would otherwise end up, and Shift-queued onto a looping leg it joins that loop instead.
 
 ## Selection

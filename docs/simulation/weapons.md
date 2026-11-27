@@ -50,7 +50,8 @@ shoot.
 A `firingArc` (half angle, 0 for all round) restricts fire to a cone about `Deployable.DeployedHeading`, or the unit's
 facing when it never deploys. Auto-targeting skips targets outside it. For an ordered attack, `DeployFacingSystem` packs
 up a deployed unit whose target is outside the cone, turns it to face the target and deploys again. It applies only
-to weapons with a firing arc. A deployable squad is a weapon team ([squads](squads.md#squads-and-members)).
+to weapons with a firing arc. A faced move or faced Deploy sets `Deployable.OrderedHeading`: once idle and packed, the
+unit turns to it and deploys, its arc centred on it. A deployable squad is a weapon team ([squads](squads.md#squads-and-members)).
 
 ## Fire missions
 

@@ -83,7 +83,7 @@ Cover means protection; what hides a unit from sight is concealment ([vision](co
 - **Index.** `CoverSpotSystem` keeps the `CoverSpots` singleton: every spot in world space, with a `Reservation`,
   rebuilt when cover entities appear, vanish or move. A spot is named by `CoverSpotKey`, which survives a rebuild.
 - **Taking a spot.** When a squad halts, `SquadCoverSystem` gives each member the best free spot within
-  `CoverRules.SearchRadius`: heavy over light, facing the squad's front, nearest its ring place. No two share one.
+  `CoverRules.SearchRadius`: heavy over light, facing the squad's front (its order's facing, if it has one), nearest its ring place. No two share one.
   `SquadMember.Cover` is set once the member stands in the spot, and `CoverHeading` is the way it faces.
 - **Concealing ground.** A halted member with no spot on a concealing cell (woods, tall crops) has `Light` cover from
   every side, with no arc.

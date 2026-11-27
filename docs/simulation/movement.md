@@ -85,7 +85,7 @@ A moving unit steers by sampling (`Steering`): it scores candidate velocities ag
   neighbour than standing.
 
 The chosen velocity goes to `Locomotion` as the heading and speed to drive ([driving](driving.md)). Layers that can't
-block each other ignore each other: aircraft meet only aircraft, and only those near their own height. The same query feeds the overlap push, which moves foot units and moving vehicles apart along the line between their closest points until the larger of their spacings lies between them. Hulls never
+block each other ignore each other: aircraft meet only aircraft, and only those near their own height. The same query feeds the overlap push, which parts foot units and moving vehicles until the larger of their spacings lies between them. Hulls never
 meet: each unit's whole move closes on a neighbour by at most half the room between hulls (`HullClearance`). Each
 formation slot is sized by its own unit's footprint, a squad's with its members' spread, and a slot in a building or off the unit's ground moves to the
 nearest spot the unit fits and can reach.
@@ -120,10 +120,11 @@ in tonnes, sets each unit's weight.
 - **Groups.** A formation move gives its units one group (`MoveDestination.Group`) and the span of its slots
   (`Extent`). A unit near its slot touching an arrived groupmate toward its goal has arrived too, so arrival passes
   through a crowded group by contact. A groupmate that stopped that way (`ArrivalReason.AtGroupmate`) doesn't count,
-  so a group crossing a bridge never stops in a chain onto the deck.
-- **Arrival.** A move ends at the goal, against an arrived groupmate, or when the unit stops getting on.
+  so a group crossing a bridge never chains onto the deck.
+- **Arrival.** A move ends at the goal, against an arrived groupmate, or when the unit stalls.
   `MoveDestination` is then disabled and `Arrival` enabled, its `Reason` saying which, and `MoveOrderSystem` finishes
-  its order. If anything else halts the unit, it points the unit at the goal again.
+  its order. If anything else halts the unit, it points the unit at the goal again. A faced order first waits for
+  its whole group, so no groupmate shoves a turned unit, then turns it through `FacingGoal`; a weapon's aim wins.
 - **Stuck.** `MoveProgress` measures improvement in the shortest remaining path distance. Turning earns a bounded allowance, which only getting closer renews. Without progress the whole path is planned again, with waits doubling. Near the path's end the unit gives up and
   the goal is taken; a reversing vehicle first backs out (`MoveProgress.TryTurnOut`). Farther out a jam is traffic.
 
