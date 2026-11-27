@@ -11,235 +11,234 @@ using UnityEngine;
 
 [assembly: InternalsVisibleTo("HyperRTS.Network.Tests")]
 
-namespace HyperRTS.Network.Session
+namespace HyperRTS.Network.Session;
+
+/// <summary>
+/// Starts and stops a networked match: replaces the single-player world with a host, server or client world and
+/// loads a scene (by default the active one, see <see cref="SessionScene"/>) so its SubScene streams into them.
+/// </summary>
+public static partial class NetworkSession
 {
+    public const ushort DefaultPort = 7979;
+
+    /// <summary>Snapshots per second; the simulation still ticks at Netcode's default 60 Hz.</summary>
+    public const int SnapshotRate = 20;
+
+    /// <summary>The scene load the last start or <see cref="LoadScene"/> began, for loading screens; null if none.</summary>
+    public static AsyncOperation SceneLoad => SessionSceneLoader.Current;
+
     /// <summary>
-    /// Starts and stops a networked match: replaces the single-player world with a host, server or client world and
-    /// loads a scene (by default the active one, see <see cref="SessionScene"/>) so its SubScene streams into them.
+    /// The slot, or observer seat, to ask for when joining. Updated to what was granted when the client world
+    /// closes, so a reconnecting client asks for its old one.
     /// </summary>
-    public static partial class NetworkSession
+    [NoAutoStaticsCleanup]
+    public static JoinPreference Preference { get; set; }
+
+    /// <summary>This process's identity, sent with every join: the server gives the slot it owns back to it.</summary>
+    [NoAutoStaticsCleanup]
+    public static ulong Token { get; private set; } = NewToken();
+
+    /// <summary>Whether <see cref="Rejoin"/> has a direct endpoint: the last session was a direct join.</summary>
+    public static bool CanRejoin => _rejoin.IsValid;
+
+    [NoAutoStaticsCleanup]
+    private static NetworkEndpoint _rejoin;
+
+    public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
+
+    [NoAutoStaticsCleanup]
+    public static NetworkStatus Status { get; private set; }
+
+    /// <summary>Why the connection closed, while <see cref="Status"/> is <see cref="NetworkStatus.Disconnected"/>.</summary>
+    [NoAutoStaticsCleanup]
+    public static NetworkStreamDisconnectReason DisconnectReason { get; private set; }
+
+    /// <summary>One world that serves remote clients and plays the local player, as for custom lobbies and LAN games.</summary>
+    public static bool StartHost(ushort port = DefaultPort, SessionScene scene = default) =>
+        Host(port, null, scene);
+
+    /// <summary>
+    /// Player-hosted match over a relay allocation the game obtained (Unity Relay, Steam, its own backend): remote
+    /// players join through the relay.
+    /// </summary>
+    public static bool StartRelayHost(RelayServerData hostRelay, ushort port = DefaultPort,
+        SessionScene scene = default) =>
+        Host(port, new RelayDriverConstructor(hostRelay), scene);
+
+    /// <summary>Dedicated server: no local player. A port that can't be opened changes nothing and returns false.</summary>
+    public static bool StartServer(ushort port = DefaultPort, SessionScene scene = default) =>
+        Listen(SessionWorlds.CreateServer(), port, null, scene);
+
+    public static bool StartClient(string address, ushort port = DefaultPort, SessionScene scene = default)
     {
-        public const ushort DefaultPort = 7979;
-
-        /// <summary>Snapshots per second; the simulation still ticks at Netcode's default 60 Hz.</summary>
-        public const int SnapshotRate = 20;
-
-        /// <summary>The scene load the last start or <see cref="LoadScene"/> began, for loading screens; null if none.</summary>
-        public static AsyncOperation SceneLoad => SessionSceneLoader.Current;
-
-        /// <summary>
-        /// The slot, or observer seat, to ask for when joining. Updated to what was granted when the client world
-        /// closes, so a reconnecting client asks for its old one.
-        /// </summary>
-        [NoAutoStaticsCleanup]
-        public static JoinPreference Preference { get; set; }
-
-        /// <summary>This process's identity, sent with every join: the server gives the slot it owns back to it.</summary>
-        [NoAutoStaticsCleanup]
-        public static ulong Token { get; private set; } = NewToken();
-
-        /// <summary>Whether <see cref="Rejoin"/> has a direct endpoint: the last session was a direct join.</summary>
-        public static bool CanRejoin => _rejoin.IsValid;
-
-        [NoAutoStaticsCleanup]
-        private static NetworkEndpoint _rejoin;
-
-        public static bool IsRunning => ClientServerBootstrap.ServerWorld != null || ClientServerBootstrap.ClientWorld != null;
-
-        [NoAutoStaticsCleanup]
-        public static NetworkStatus Status { get; private set; }
-
-        /// <summary>Why the connection closed, while <see cref="Status"/> is <see cref="NetworkStatus.Disconnected"/>.</summary>
-        [NoAutoStaticsCleanup]
-        public static NetworkStreamDisconnectReason DisconnectReason { get; private set; }
-
-        /// <summary>One world that serves remote clients and plays the local player, as for custom lobbies and LAN games.</summary>
-        public static bool StartHost(ushort port = DefaultPort, SessionScene scene = default) =>
-            Host(port, null, scene);
-
-        /// <summary>
-        /// Player-hosted match over a relay allocation the game obtained (Unity Relay, Steam, its own backend): remote
-        /// players join through the relay.
-        /// </summary>
-        public static bool StartRelayHost(RelayServerData hostRelay, ushort port = DefaultPort,
-            SessionScene scene = default) =>
-            Host(port, new RelayDriverConstructor(hostRelay), scene);
-
-        /// <summary>Dedicated server: no local player. A port that can't be opened changes nothing and returns false.</summary>
-        public static bool StartServer(ushort port = DefaultPort, SessionScene scene = default) =>
-            Listen(SessionWorlds.CreateServer(), port, null, scene);
-
-        public static bool StartClient(string address, ushort port = DefaultPort, SessionScene scene = default)
+        if (!NetworkEndpoint.TryParse(address, port, out var endpoint))
         {
-            if (!NetworkEndpoint.TryParse(address, port, out var endpoint))
-            {
-                Debug.LogError($"[HyperRTS] Invalid server address '{address}:{port}'.");
-                return false;
-            }
-
-            Join(endpoint, null, scene);
-            return true;
+            Debug.LogError($"[HyperRTS] Invalid server address '{address}:{port}'.");
+            return false;
         }
 
-        /// <summary>Joins a player-hosted match through the relay allocation the game joined with the host's code.</summary>
-        public static bool StartRelayClient(RelayServerData clientRelay, SessionScene scene = default)
-        {
-            if (!clientRelay.Endpoint.IsValid)
-            {
-                Debug.LogError("[HyperRTS] Invalid relay server data.");
-                return false;
-            }
+        Join(endpoint, null, scene);
+        return true;
+    }
 
-            Join(clientRelay.Endpoint, new RelayDriverConstructor(clientRelay), scene);
-            return true;
+    /// <summary>Joins a player-hosted match through the relay allocation the game joined with the host's code.</summary>
+    public static bool StartRelayClient(RelayServerData clientRelay, SessionScene scene = default)
+    {
+        if (!clientRelay.Endpoint.IsValid)
+        {
+            Debug.LogError("[HyperRTS] Invalid relay server data.");
+            return false;
         }
 
-        /// <summary>
-        /// Joins the last <see cref="StartClient"/> server again after a drop. The scene must reload the map, as a SubScene only
-        /// streams into worlds that exist when it loads.
-        /// </summary>
-        public static bool Rejoin(SessionScene scene)
-        {
-            if (!CanRejoin)
-            {
-                Debug.LogError("[HyperRTS] Nothing to rejoin: the last session was not a direct join.");
-                return false;
-            }
+        Join(clientRelay.Endpoint, new RelayDriverConstructor(clientRelay), scene);
+        return true;
+    }
 
-            Join(_rejoin, null, scene);
-            return true;
+    /// <summary>
+    /// Joins the last <see cref="StartClient"/> server again after a drop. The scene must reload the map, as a SubScene only
+    /// streams into worlds that exist when it loads.
+    /// </summary>
+    public static bool Rejoin(SessionScene scene)
+    {
+        if (!CanRejoin)
+        {
+            Debug.LogError("[HyperRTS] Nothing to rejoin: the last session was not a direct join.");
+            return false;
         }
 
-        /// <summary>Back to a single-player world, reloading the active scene.</summary>
-        public static void Stop() => StartLocal(SessionScene.ReloadActive);
+        Join(_rejoin, null, scene);
+        return true;
+    }
 
-        /// <summary>Replaces every world with a fresh single-player world and loads <paramref name="scene"/> into it.</summary>
-        public static void StartLocal(SessionScene scene)
+    /// <summary>Back to a single-player world, reloading the active scene.</summary>
+    public static void Stop() => StartLocal(SessionScene.ReloadActive);
+
+    /// <summary>Replaces every world with a fresh single-player world and loads <paramref name="scene"/> into it.</summary>
+    public static void StartLocal(SessionScene scene)
+    {
+        DisposeWorlds(null);
+        DefaultWorldInitialization.Initialize("Default World");
+        SetStatus(NetworkStatus.Idle);
+        LoadScene(scene);
+    }
+
+    /// <summary>Loads a map into the running session's worlds, as when a lobby that started with
+    /// <see cref="SessionScene.Keep"/> launches its match.</summary>
+    public static void LoadScene(SessionScene scene)
+    {
+        if (scene.Setup.HasValue)
         {
-            DisposeWorlds(null);
-            DefaultWorldInitialization.Initialize("Default World");
-            SetStatus(NetworkStatus.Idle);
-            LoadScene(scene);
+            SessionWorlds.PutSetup(scene.Setup.Value);
         }
 
-        /// <summary>Loads a map into the running session's worlds, as when a lobby that started with
-        /// <see cref="SessionScene.Keep"/> launches its match.</summary>
-        public static void LoadScene(SessionScene scene)
-        {
-            if (scene.Setup.HasValue)
-            {
-                SessionWorlds.PutSetup(scene.Setup.Value);
-            }
+        SessionSceneLoader.Load(scene);
+    }
 
-            SessionSceneLoader.Load(scene);
+    internal static void SetStatus(NetworkStatus status, NetworkStreamDisconnectReason reason = default)
+    {
+        Status = status;
+        DisconnectReason = reason;
+    }
+
+    private static bool Host(ushort port, INetworkStreamDriverConstructor drivers, SessionScene scene) =>
+        Listen(SessionWorlds.CreateHost(SessionWorlds.HostSystems()), port, drivers, scene);
+
+    /// <summary>Opens the port on a new world that replaces the running ones; on failure they stay untouched.</summary>
+    private static bool Listen(NetcodeWorld world, ushort port, INetworkStreamDriverConstructor drivers,
+        SessionScene scene)
+    {
+        if (!SessionWorlds.TryListen(world, port, drivers))
+        {
+            return false;
         }
 
-        internal static void SetStatus(NetworkStatus status, NetworkStreamDisconnectReason reason = default)
+        DisposeWorlds(world);
+        World.PushWorldStack(world);
+        SetStatus(NetworkStatus.Connected);
+        LoadScene(scene);
+        return true;
+    }
+
+    private static void Join(NetworkEndpoint server, INetworkStreamDriverConstructor drivers, SessionScene scene)
+    {
+        DisposeWorlds(null);
+        if (drivers == null)
         {
-            Status = status;
-            DisconnectReason = reason;
+            _rejoin = server;
         }
 
-        private static bool Host(ushort port, INetworkStreamDriverConstructor drivers, SessionScene scene) =>
-            Listen(SessionWorlds.CreateHost(SessionWorlds.HostSystems()), port, drivers, scene);
+        var world = SessionWorlds.CreateClient(SessionWorlds.ClientSystems());
+        SessionWorlds.Connect(world, server, drivers);
+        World.PushWorldStack(world);
+        SetStatus(NetworkStatus.Connecting);
+        LoadScene(scene);
+    }
 
-        /// <summary>Opens the port on a new world that replaces the running ones; on failure they stay untouched.</summary>
-        private static bool Listen(NetcodeWorld world, ushort port, INetworkStreamDriverConstructor drivers,
-            SessionScene scene)
+    /// <summary>Disposes every simulation world but <paramref name="keep"/>, and forgets the rejoin endpoint.</summary>
+    private static void DisposeWorlds(World keep)
+    {
+        RememberSlot();
+        _rejoin = default;
+        SessionWorlds.DisposeAllBut(keep);
+    }
+
+    /// <summary>Keeps the closing client's slot, or its observer seat, for the next join.</summary>
+    private static void RememberSlot()
+    {
+        var client = ClientServerBootstrap.ClientWorld;
+        if (client == null || !client.IsCreated)
         {
-            if (!SessionWorlds.TryListen(world, port, drivers))
-            {
-                return false;
-            }
-
-            DisposeWorlds(world);
-            World.PushWorldStack(world);
-            SetStatus(NetworkStatus.Connected);
-            LoadScene(scene);
-            return true;
+            return;
         }
 
-        private static void Join(NetworkEndpoint server, INetworkStreamDriverConstructor drivers, SessionScene scene)
+        using var seated = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(),
+            ComponentType.ReadOnly<Player>());
+        if (seated.TryGetSingleton(out Player player))
         {
-            DisposeWorlds(null);
-            if (drivers == null)
-            {
-                _rejoin = server;
-            }
-
-            var world = SessionWorlds.CreateClient(SessionWorlds.ClientSystems());
-            SessionWorlds.Connect(world, server, drivers);
-            World.PushWorldStack(world);
-            SetStatus(NetworkStatus.Connecting);
-            LoadScene(scene);
+            Preference = JoinPreference.Rejoining(player.Owner);
+            return;
         }
 
-        /// <summary>Disposes every simulation world but <paramref name="keep"/>, and forgets the rejoin endpoint.</summary>
-        private static void DisposeWorlds(World keep)
+        using var watching = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalObserver>());
+        if (!watching.IsEmpty)
         {
-            RememberSlot();
-            _rejoin = default;
-            SessionWorlds.DisposeAllBut(keep);
+            Preference = JoinPreference.Rejoining(Owner.Neutral);
+            return;
         }
 
-        /// <summary>Keeps the closing client's slot, or its observer seat, for the next join.</summary>
-        private static void RememberSlot()
+        // Dropped before the server answered: ask again for what this client asked for.
+        using var asked = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<JoinPreference>());
+        if (asked.TryGetSingleton(out JoinPreference wanted))
         {
-            var client = ClientServerBootstrap.ClientWorld;
-            if (client == null || !client.IsCreated)
-            {
-                return;
-            }
-
-            using var seated = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalPlayer>(),
-                ComponentType.ReadOnly<Player>());
-            if (seated.TryGetSingleton(out Player player))
-            {
-                Preference = JoinPreference.Rejoining(player.Owner);
-                return;
-            }
-
-            using var watching = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<LocalObserver>());
-            if (!watching.IsEmpty)
-            {
-                Preference = JoinPreference.Rejoining(Owner.Neutral);
-                return;
-            }
-
-            // Dropped before the server answered: ask again for what this client asked for.
-            using var asked = client.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<JoinPreference>());
-            if (asked.TryGetSingleton(out JoinPreference wanted))
-            {
-                Preference = wanted;
-            }
+            Preference = wanted;
         }
+    }
 
-        /// <summary>
-        /// Session worlds end with their Play session: domain reload is off, so one left behind would run on. The
-        /// statics reset after, so the slot the closing client remembers doesn't carry into the new session.
-        /// </summary>
-        [OnEnteringPlayMode]
-        internal static void EndSessionWithPlay()
-        {
-            DisposeWorlds(World.DefaultGameObjectInjectionWorld);
-            ResetStatics();
-            Application.quitting -= EndSession;
-            Application.quitting += EndSession;
-        }
+    /// <summary>
+    /// Session worlds end with their Play session: domain reload is off, so one left behind would run on. The
+    /// statics reset after, so the slot the closing client remembers doesn't carry into the new session.
+    /// </summary>
+    [OnEnteringPlayMode]
+    internal static void EndSessionWithPlay()
+    {
+        DisposeWorlds(World.DefaultGameObjectInjectionWorld);
+        ResetStatics();
+        Application.quitting -= EndSession;
+        Application.quitting += EndSession;
+    }
 
-        private static void EndSession() => DisposeWorlds(null);
+    private static void EndSession() => DisposeWorlds(null);
 
-        // Never 0, which a join request sends when it owns no slot.
-        private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;
+    // Never 0, which a join request sends when it owns no slot.
+    private static ulong NewToken() => BitConverter.ToUInt64(Guid.NewGuid().ToByteArray(), 0) | 1;
 
-        internal static void ResetStatics()
-        {
-            Preference = default;
-            Token = NewToken();
-            _rejoin = default;
-            SessionWorlds.ResetBase();
-            Status = NetworkStatus.Idle;
-            DisconnectReason = default;
-        }
+    internal static void ResetStatics()
+    {
+        Preference = default;
+        Token = NewToken();
+        _rejoin = default;
+        SessionWorlds.ResetBase();
+        Status = NetworkStatus.Idle;
+        DisconnectReason = default;
     }
 }

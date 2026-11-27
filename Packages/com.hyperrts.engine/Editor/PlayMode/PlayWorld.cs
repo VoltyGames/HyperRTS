@@ -9,142 +9,141 @@ using Unity.Netcode;
 using Unity.Scripting.LifecycleManagement;
 using UnityEngine;
 
-namespace HyperRTS.Editor.PlayMode
+namespace HyperRTS.Editor.PlayMode;
+
+/// <summary>The running game worlds for Play-mode tools, with their jobs completed so data is safe to read.</summary>
+internal static partial class PlayWorld
 {
-    /// <summary>The running game worlds for Play-mode tools, with their jobs completed so data is safe to read.</summary>
-    internal static partial class PlayWorld
+    [AutoStaticsCleanup]
+    private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> SingletonQueries = [];
+
+    /// <summary>The world that owns game state: the host or server when one runs, else the single-player world. Cheats write here.</summary>
+    public static bool TryGetAuthoritative(out EntityManager entityManager) =>
+        TryGet(SimulationWorlds.Authoritative, out entityManager);
+
+    /// <summary>The world the local player looks at: the host or client when one runs, else the single-player world.</summary>
+    public static bool TryGetPresented(out EntityManager entityManager) =>
+        TryGet(SimulationWorlds.Presented, out entityManager);
+
+    /// <summary>Every running game world, without thin clients or the worlds SubScenes load into.</summary>
+    public static IEnumerable<World> Running =>
+        Application.isPlaying ? World.All.Where(world => GetRole(world) != 0) : [];
+
+    /// <summary>The first running world with one of <paramref name="roles"/>, preferring a networked one.</summary>
+    public static bool TryGet(WorldSystemFilterFlags roles, out EntityManager entityManager)
     {
-        [AutoStaticsCleanup]
-        private static readonly Dictionary<World, Dictionary<Type, EntityQuery>> SingletonQueries = [];
-
-        /// <summary>The world that owns game state: the host or server when one runs, else the single-player world. Cheats write here.</summary>
-        public static bool TryGetAuthoritative(out EntityManager entityManager) =>
-            TryGet(SimulationWorlds.Authoritative, out entityManager);
-
-        /// <summary>The world the local player looks at: the host or client when one runs, else the single-player world.</summary>
-        public static bool TryGetPresented(out EntityManager entityManager) =>
-            TryGet(SimulationWorlds.Presented, out entityManager);
-
-        /// <summary>Every running game world, without thin clients or the worlds SubScenes load into.</summary>
-        public static IEnumerable<World> Running =>
-            Application.isPlaying ? World.All.Where(world => GetRole(world) != 0) : [];
-
-        /// <summary>The first running world with one of <paramref name="roles"/>, preferring a networked one.</summary>
-        public static bool TryGet(WorldSystemFilterFlags roles, out EntityManager entityManager)
+        entityManager = default;
+        var world = Application.isPlaying ? Find(roles) : null;
+        if (world == null)
         {
-            entityManager = default;
-            var world = Application.isPlaying ? Find(roles) : null;
-            if (world == null)
-            {
-                return false;
-            }
-
-            entityManager = world.EntityManager;
-            entityManager.CompleteAllTrackedJobs();
-            return true;
+            return false;
         }
 
-        /// <summary>Every player entity of the world, in a Temp array.</summary>
-        public static NativeArray<Entity> Players(EntityManager entityManager)
+        entityManager = world.EntityManager;
+        entityManager.CompleteAllTrackedJobs();
+        return true;
+    }
+
+    /// <summary>Every player entity of the world, in a Temp array.</summary>
+    public static NativeArray<Entity> Players(EntityManager entityManager)
+    {
+        using var query = entityManager.CreateEntityQuery(typeof(Player));
+        return query.ToEntityArray(Allocator.Temp);
+    }
+
+    public static bool TryGetSingleton<T>(EntityManager entityManager, out T value) where T : unmanaged, IComponentData
+    {
+        var queries = GetQueries(entityManager.World);
+        if (!queries.TryGetValue(typeof(T), out var query))
         {
-            using var query = entityManager.CreateEntityQuery(typeof(Player));
-            return query.ToEntityArray(Allocator.Temp);
+            queries[typeof(T)] = query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
         }
 
-        public static bool TryGetSingleton<T>(EntityManager entityManager, out T value) where T : unmanaged, IComponentData
+        return query.TryGetSingleton(out value);
+    }
+
+    /// <summary>Writes the singleton of <typeparamref name="T"/> if the world has one.</summary>
+    public static void SetSingleton<T>(EntityManager entityManager, in T value) where T : unmanaged, IComponentData
+    {
+        using var query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
+        if (query.TryGetSingletonEntity<T>(out var entity))
         {
-            var queries = GetQueries(entityManager.World);
-            if (!queries.TryGetValue(typeof(T), out var query))
+            entityManager.SetComponentData(entity, value);
+        }
+    }
+
+    // A local world is the fallback for a session's host, server or client world. A match started from a menu
+    // leaves the emptied world it replaced at the bottom of Unity's world stack, so the injection world wins.
+    private static World Find(WorldSystemFilterFlags roles)
+    {
+        World local = null;
+        foreach (var world in World.All)
+        {
+            var role = GetRole(world);
+            if ((role & roles) == 0)
             {
-                queries[typeof(T)] = query = entityManager.CreateEntityQuery(ComponentType.ReadOnly<T>());
+                continue;
             }
 
-            return query.TryGetSingleton(out value);
+            if (role != WorldSystemFilterFlags.LocalSimulation)
+            {
+                return world;
+            }
+
+            if (local == null || world == World.DefaultGameObjectInjectionWorld)
+            {
+                local = world;
+            }
         }
 
-        /// <summary>Writes the singleton of <typeparamref name="T"/> if the world has one.</summary>
-        public static void SetSingleton<T>(EntityManager entityManager, in T value) where T : unmanaged, IComponentData
+        return local;
+    }
+
+    private static WorldSystemFilterFlags GetRole(World world)
+    {
+        if (!world.IsCreated || world.IsThinClient())
         {
-            using var query = entityManager.CreateEntityQuery(ComponentType.ReadWrite<T>());
-            if (query.TryGetSingletonEntity<T>(out var entity))
-            {
-                entityManager.SetComponentData(entity, value);
-            }
+            return 0;
         }
 
-        // A local world is the fallback for a session's host, server or client world. A match started from a menu
-        // leaves the emptied world it replaced at the bottom of Unity's world stack, so the injection world wins.
-        private static World Find(WorldSystemFilterFlags roles)
+        if (world.IsHost())
         {
-            World local = null;
-            foreach (var world in World.All)
-            {
-                var role = GetRole(world);
-                if ((role & roles) == 0)
-                {
-                    continue;
-                }
-
-                if (role != WorldSystemFilterFlags.LocalSimulation)
-                {
-                    return world;
-                }
-
-                if (local == null || world == World.DefaultGameObjectInjectionWorld)
-                {
-                    local = world;
-                }
-            }
-
-            return local;
+            return WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation;
         }
 
-        private static WorldSystemFilterFlags GetRole(World world)
+        if (world.IsServer())
         {
-            if (!world.IsCreated || world.IsThinClient())
-            {
-                return 0;
-            }
-
-            if (world.IsHost())
-            {
-                return WorldSystemFilterFlags.ServerSimulation | WorldSystemFilterFlags.ClientSimulation;
-            }
-
-            if (world.IsServer())
-            {
-                return WorldSystemFilterFlags.ServerSimulation;
-            }
-
-            if (world.IsClient())
-            {
-                return WorldSystemFilterFlags.ClientSimulation;
-            }
-
-            var isGame = (world.Flags & WorldFlags.Game) == WorldFlags.Game;
-            return isGame ? WorldSystemFilterFlags.LocalSimulation : 0;
+            return WorldSystemFilterFlags.ServerSimulation;
         }
 
-        // Queries belong to their world, so each world keeps its own and disposed worlds are dropped.
-        private static Dictionary<Type, EntityQuery> GetQueries(World world)
+        if (world.IsClient())
         {
-            if (SingletonQueries.TryGetValue(world, out var queries))
-            {
-                return queries;
-            }
+            return WorldSystemFilterFlags.ClientSimulation;
+        }
 
-            var disposed = new List<World>();
-            foreach (var cached in SingletonQueries.Keys)
-            {
-                if (!cached.IsCreated)
-                {
-                    disposed.Add(cached);
-                }
-            }
+        var isGame = (world.Flags & WorldFlags.Game) == WorldFlags.Game;
+        return isGame ? WorldSystemFilterFlags.LocalSimulation : 0;
+    }
 
-            disposed.ForEach(stale => SingletonQueries.Remove(stale));
-            SingletonQueries[world] = queries = [];
+    // Queries belong to their world, so each world keeps its own and disposed worlds are dropped.
+    private static Dictionary<Type, EntityQuery> GetQueries(World world)
+    {
+        if (SingletonQueries.TryGetValue(world, out var queries))
+        {
             return queries;
         }
+
+        var disposed = new List<World>();
+        foreach (var cached in SingletonQueries.Keys)
+        {
+            if (!cached.IsCreated)
+            {
+                disposed.Add(cached);
+            }
+        }
+
+        disposed.ForEach(stale => SingletonQueries.Remove(stale));
+        SingletonQueries[world] = queries = [];
+        return queries;
     }
 }
