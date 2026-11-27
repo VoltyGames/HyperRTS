@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using HyperRTS.Input.Cameras;
-using Newtonsoft.Json;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -18,9 +18,9 @@ internal sealed class ViewStep : StagingStep
     public string on;
     public float[] at;
     public float? lift;
-    [JsonProperty("from")]
+    [JsonPropertyName("from")]
     public ViewAim start;
-    [JsonProperty("to")]
+    [JsonPropertyName("to")]
     public ViewAim end;
     public float? seconds;
     public float? fov;

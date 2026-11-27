@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
 using HyperRTS.Editor.PlayMode.Cheats;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Cues.Surfaces;
-using Newtonsoft.Json;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -15,7 +15,7 @@ internal sealed class SpawnStep : StagingStep
 {
     private const float SearchStep = 8f;
 
-    [JsonProperty("as")]
+    [JsonPropertyName("as")]
     public string group;
     public string prefab;
     public int owner;

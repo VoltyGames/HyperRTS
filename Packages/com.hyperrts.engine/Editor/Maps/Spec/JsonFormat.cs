@@ -1,16 +1,14 @@
 using System;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace HyperRTS.Editor.Maps.Spec;
 
 /// <summary>
-/// The one layout map specs are written in, so saves diff cleanly. Parses with Newtonsoft,
-/// keeping member order and strings as strings.
+/// The one layout map specs are written in, so saves diff cleanly. Reads the text as a document, which keeps
+/// member order and every string and number as written.
 /// </summary>
 public static class JsonFormat
 {
@@ -18,23 +16,13 @@ public static class JsonFormat
     private const int MaxInlineArray = 100;
     private const int MaxInlinePoint = 4;
 
-    /// <summary>Parses one JSON value; malformed or trailing text throws a <see cref="FormatException"/>.</summary>
-    private static JToken Parse(string json)
+    /// <summary>Lays out any JSON text; malformed or trailing text throws a <see cref="FormatException"/>.</summary>
+    public static string Format(string json)
     {
-        using var reader = new JsonTextReader(new StringReader(json))
-        {
-            DateParseHandling = DateParseHandling.None,
-            FloatParseHandling = FloatParseHandling.Double,
-        };
         try
         {
-            var token = JToken.ReadFrom(reader);
-            if (reader.Read())
-            {
-                throw new FormatException($"JSON: trailing text at line {reader.LineNumber}, position {reader.LinePosition}.");
-            }
-
-            return token;
+            using var document = JsonDocument.Parse(json);
+            return Write(document.RootElement);
         }
         catch (JsonException e)
         {
@@ -42,43 +30,40 @@ public static class JsonFormat
         }
     }
 
-    /// <summary>Lays out any JSON text.</summary>
-    public static string Format(string json) => Write(Parse(json));
-
     /// <summary>Lays out a value as a file, ending in a newline.</summary>
-    private static string Write(JToken token)
+    private static string Write(JsonElement element)
     {
         var output = new StringBuilder();
-        Append(output, token, 0);
+        Append(output, element, 0);
         return output.Append('\n').ToString();
     }
 
-    private static void Append(StringBuilder output, JToken token, int depth)
+    private static void Append(StringBuilder output, JsonElement element, int depth)
     {
-        var inline = Inline(token);
-        if (inline != null && Fits(output, token, inline))
+        var inline = Inline(element);
+        if (inline != null && Fits(output, element, inline))
         {
             output.Append(inline);
             return;
         }
 
-        if (token is JObject obj)
+        if (element.ValueKind == JsonValueKind.Object)
         {
-            AppendObject(output, obj, depth);
+            AppendObject(output, element, depth);
             return;
         }
 
-        AppendArray(output, (JArray)token, depth);
+        AppendArray(output, element, depth);
     }
 
-    private static void AppendObject(StringBuilder output, JObject obj, int depth)
+    private static void AppendObject(StringBuilder output, JsonElement obj, int depth)
     {
         output.Append('{');
-        var properties = obj.Properties().ToList();
+        var properties = obj.EnumerateObject().ToList();
         for (var i = 0; i < properties.Count; i++)
         {
             NewLine(output, depth + 1);
-            output.Append(JsonConvert.ToString(properties[i].Name)).Append(": ");
+            output.Append(Quote(properties[i].Name)).Append(": ");
             Append(output, properties[i].Value, depth + 1);
             output.Append(i < properties.Count - 1 ? "," : string.Empty);
         }
@@ -87,14 +72,15 @@ public static class JsonFormat
         output.Append('}');
     }
 
-    private static void AppendArray(StringBuilder output, JArray array, int depth)
+    private static void AppendArray(StringBuilder output, JsonElement array, int depth)
     {
         output.Append('[');
-        for (var i = 0; i < array.Count; i++)
+        var items = array.EnumerateArray().ToList();
+        for (var i = 0; i < items.Count; i++)
         {
             NewLine(output, depth + 1);
-            Append(output, array[i], depth + 1);
-            output.Append(i < array.Count - 1 ? "," : string.Empty);
+            Append(output, items[i], depth + 1);
+            output.Append(i < items.Count - 1 ? "," : string.Empty);
         }
 
         NewLine(output, depth);
@@ -102,53 +88,98 @@ public static class JsonFormat
     }
 
     /// <summary>The value on one line when it is a scalar, empty, a point or a scalar array; otherwise null.</summary>
-    private static string Inline(JToken token)
+    private static string Inline(JsonElement element)
     {
-        if (token is JObject obj)
+        if (element.ValueKind == JsonValueKind.Object)
         {
-            return obj.Count == 0 ? "{}" : InlinePoint(obj);
+            return element.GetPropertyCount() == 0 ? "{}" : InlinePoint(element);
         }
 
-        if (token is not JArray array)
+        if (element.ValueKind != JsonValueKind.Array)
         {
-            return Scalar(token);
+            return Scalar(element);
         }
 
-        if (array.Count == 0)
+        var items = element.EnumerateArray().ToList();
+        if (items.Count == 0)
         {
             return "[]";
         }
 
-        var scalars = array.All(item => item is JValue);
-        return scalars ? "[" + string.Join(", ", array.Select(Scalar)) + "]" : null;
+        var scalars = items.All(item => item.ValueKind is not (JsonValueKind.Object or JsonValueKind.Array));
+        return scalars ? "[" + string.Join(", ", items.Select(Scalar)) + "]" : null;
     }
 
-    private static string InlinePoint(JObject obj)
+    private static string InlinePoint(JsonElement obj)
     {
-        var numeric = obj.Properties().All(property => IsNumber(property.Value));
-        if (!numeric || obj.Count > MaxInlinePoint)
+        var properties = obj.EnumerateObject().ToList();
+        var numeric = properties.All(property => property.Value.ValueKind == JsonValueKind.Number);
+        if (!numeric || properties.Count > MaxInlinePoint)
         {
             return null;
         }
 
-        var members = obj.Properties().Select(property => JsonConvert.ToString(property.Name) + ": " + Scalar(property.Value));
+        var members = properties.Select(property => Quote(property.Name) + ": " + Scalar(property.Value));
         return "{ " + string.Join(", ", members) + " }";
     }
 
     /// <summary>
     /// A scalar's JSON text. Map data is single precision, so a float is written in the shortest form that reads
-    /// back as the same float: 20.0 → 20, and JsonUtility's 0.34999999403953552 → 0.35.
+    /// back as the same float: 20.0 to 20, and JsonUtility's 0.34999999403953552 to 0.35. A number with no point or
+    /// exponent keeps its digits.
     /// </summary>
-    private static string Scalar(JToken token) => token.Type == JTokenType.Float
-        ? token.Value<float>().ToString("R", CultureInfo.InvariantCulture)
-        : token.ToString(Formatting.None);
+    private static string Scalar(JsonElement element)
+    {
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.String:
+                return Quote(element.GetString());
+            case JsonValueKind.Number:
+                var text = element.GetRawText();
+                if (text.AsSpan().IndexOfAny('.', 'e', 'E') >= 0)
+                {
+                    return ((float)double.Parse(text, CultureInfo.InvariantCulture)).ToString("R", CultureInfo.InvariantCulture);
+                }
 
-    private static bool IsNumber(JToken token) => token.Type is JTokenType.Integer or JTokenType.Float;
+                return text == "-0" ? "0" : text;
+            case JsonValueKind.True:
+                return "true";
+            case JsonValueKind.False:
+                return "false";
+            default:
+                return "null";
+        }
+    }
+
+    /// <summary>A string as JSON, escaping only what JSON requires, plus the line separators U+0085, U+2028 and U+2029.</summary>
+    private static string Quote(string text)
+    {
+        var quoted = new StringBuilder(text.Length + 2).Append('"');
+        foreach (var c in text)
+        {
+            switch (c)
+            {
+                case '"': quoted.Append("\\\""); break;
+                case '\\': quoted.Append("\\\\"); break;
+                case '\n': quoted.Append("\\n"); break;
+                case '\r': quoted.Append("\\r"); break;
+                case '\t': quoted.Append("\\t"); break;
+                case '\b': quoted.Append("\\b"); break;
+                case '\f': quoted.Append("\\f"); break;
+                case < (char)32 or (char)0x85 or (char)0x2028 or (char)0x2029:
+                    quoted.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
+                    break;
+                default: quoted.Append(c); break;
+            }
+        }
+
+        return quoted.Append('"').ToString();
+    }
 
     /// <summary>Scalars, points and empty containers always stay inline; scalar arrays only while the line is short.</summary>
-    private static bool Fits(StringBuilder output, JToken token, string inline)
+    private static bool Fits(StringBuilder output, JsonElement element, string inline)
     {
-        if (token is not JArray)
+        if (element.ValueKind != JsonValueKind.Array)
         {
             return true;
         }

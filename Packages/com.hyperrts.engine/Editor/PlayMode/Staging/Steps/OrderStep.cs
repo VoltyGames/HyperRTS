@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Orders;
-using Newtonsoft.Json.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -17,7 +18,7 @@ internal sealed class OrderStep : StagingStep
     public string attack;
     public float[] attackGround;
     public string ability;
-    public JToken command;
+    public JsonNode command;
     public bool? stop;
     public int? argument;
     public float[] at;
@@ -115,13 +116,14 @@ internal sealed class OrderStep : StagingStep
     private CommandType ReadCommand()
     {
         var advice = $"give a CommandType name or a game command number from {(int)CommandType.GameFirst}";
-        if (command.Type is JTokenType.Integer or JTokenType.Float)
+        var kind = command.GetValueKind();
+        if (kind == JsonValueKind.Number)
         {
-            var number = (int)command;
+            var number = (int)command.GetValue<double>();
             return IsGameCommand(number) ? (CommandType)number : throw new InvalidOperationException($"has a 'command' of {number}: {advice}");
         }
 
-        var name = command.Type == JTokenType.String ? (string)command : string.Empty;
+        var name = kind == JsonValueKind.String ? (string)command : string.Empty;
         var parsed = CommandType.None;
         var named = name.Length > 0 && Enum.TryParse(name, true, out parsed) && !char.IsDigit(name[0]);
         return named && parsed != CommandType.None ? parsed : throw new InvalidOperationException($"has a 'command' of '{name}': {advice}");

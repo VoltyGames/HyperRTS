@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
 using HyperRTS.Simulation.Common.Players;
-using Newtonsoft.Json;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -17,7 +17,7 @@ namespace HyperRTS.Editor.PlayMode.Staging.Steps;
 /// </summary>
 internal sealed class GroupStep : StagingStep
 {
-    [JsonProperty("as")]
+    [JsonPropertyName("as")]
     public string group;
     public float[] at;
     public float radius;
