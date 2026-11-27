@@ -10,7 +10,8 @@ using Unity.Transforms;
 namespace HyperRTS.Simulation.Tests.Combat;
 
 /// <summary>
-/// Deployable units: deploy and pack-up timing, fire and turret held while packed, launchers raised while deployed, moves that wait for packing up.
+/// Deployable units: deploy and pack-up timing, fire and turret held while packed, launchers raised while deployed, moves that wait for packing up,
+/// and a faced Deploy that turns in place first.
 /// </summary>
 public class DeployTests : SimulationFixture
 {
@@ -127,6 +128,23 @@ public class DeployTests : SimulationFixture
 
         Assert.IsFalse(World.IsEnabled<ActiveOrder>(launcher));
         Assert.AreEqual(stopped, World.Get<LocalTransform>(launcher).Position.x, 1e-3f);
+    }
+
+    [Test]
+    public void FacedDeploy_TurnsInPlace_ThenDeploysWithItsArcOnTheFacing()
+    {
+        var launcher = Deployed(arcDegrees: 30f);
+
+        World.Command(1, new PlayerCommand
+        {
+            Type = CommandType.Deploy, Unit = launcher, Faced = true, Yaw = math.radians(-90f),
+        });
+        World.Tick();
+        Assert.AreEqual(DeployState.Packing, State(launcher), "deployed the other way, it packs up first");
+
+        Assert.IsTrue(World.RunUntil(() => State(launcher) == DeployState.Deployed, 10f), "then deploys again");
+        Assert.AreEqual(-1f, World.Get<Deployable>(launcher).DeployedHeading.x, 0.01f, "arc on the facing");
+        Assert.AreEqual(0f, math.length(World.Get<LocalTransform>(launcher).Position.xz), 0.05f, "in place");
     }
 
     [Test]

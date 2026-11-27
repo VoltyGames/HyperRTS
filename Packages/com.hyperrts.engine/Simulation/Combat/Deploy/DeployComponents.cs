@@ -27,6 +27,9 @@ public struct Deployable : IComponentData
     /// <summary>Unit XZ direction it faced when it finished deploying, which its weapons' firing arcs are about.</summary>
     public float2 DeployedHeading;
 
+    /// <summary>Unit XZ direction a faced order asked it to deploy facing, turned to once it is idle; zero for none.</summary>
+    public float2 OrderedHeading;
+
     /// <summary>From the start of deploying until packing up begins, when the weapon's crew stands at its places.</summary>
     public readonly bool Emplaced => State is DeployState.Deploying or DeployState.Deployed;
 
@@ -41,6 +44,23 @@ public struct Deployable : IComponentData
         }
 
         State = DeployState.Deploying;
+        OrderedHeading = float2.zero;
+        return true;
+    }
+
+    /// <summary>
+    /// Asks it to deploy facing <paramref name="heading"/>, packing up first unless already deployed that way; true
+    /// when it will turn and deploy again.
+    /// </summary>
+    public bool DeployToward(float2 heading)
+    {
+        if (Deployed && math.dot(DeployedHeading, heading) >= math.cos(DeployFacingSystem.FacingTolerance))
+        {
+            return false;
+        }
+
+        PackUp();
+        OrderedHeading = heading;
         return true;
     }
 

@@ -5,13 +5,15 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
 using Unity.Entities;
+using Unity.Mathematics;
 using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Combat.Deploy
 {
     /// <summary>
     /// Handles Deploy and Pack Up commands for the commanded or selected <see cref="Deployable"/> units and moves each
-    /// toward deployed or packed up. Deploying clears the unit's orders, so it halts where it stands.
+    /// toward deployed or packed up. Deploying clears the unit's orders, so it halts where it stands; a faced Deploy
+    /// leaves <see cref="DeployFacingSystem"/> to turn it first.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
@@ -49,27 +51,28 @@ namespace HyperRTS.Simulation.Combat.Deploy
             _writer.Update(ref state, SystemAPI.GetSingleton<OrderTraitTable>());
             foreach (var each in issued)
             {
-                var deploy = each.Command.Type == CommandType.Deploy;
                 foreach (var unit in _commands.Subjects(ref state, each))
                 {
                     if (SystemAPI.HasComponent<Deployable>(unit))
                     {
-                        Apply(ref state, unit, deploy);
+                        Apply(ref state, unit, each.Command);
                     }
                 }
             }
         }
 
-        private void Apply(ref SystemState state, Entity unit, bool deploy)
+        private void Apply(ref SystemState state, Entity unit, in PlayerCommand command)
         {
             ref var deployable = ref SystemAPI.GetComponentRW<Deployable>(unit).ValueRW;
-            if (!deploy)
+            if (command.Type == CommandType.PackUp)
             {
                 deployable.PackUp();
+                deployable.OrderedHeading = float2.zero;
                 return;
             }
 
-            if (deployable.Deploy())
+            var deploys = command.Faced ? deployable.DeployToward(command.Facing) : deployable.Deploy();
+            if (deploys)
             {
                 _writer.Stop(unit);
             }

@@ -1,4 +1,5 @@
 using System.Linq;
+using HyperRTS.Simulation.Combat.Deploy;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
@@ -7,7 +8,10 @@ using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Tests.Movement;
 
-/// <summary>Moves that name a facing: the unit turns to it before the order finishes, each queued leg keeps its own, and aircraft that can't hover ignore it.</summary>
+/// <summary>
+/// Moves that name a facing: the unit turns to it before the order finishes, each queued leg keeps its own, a
+/// deployable deploys along it, and aircraft that can't hover ignore it.
+/// </summary>
 public class MoveFacingTests : LocomotionFixture
 {
     private static readonly float2 East = new(1f, 0f);
@@ -85,6 +89,24 @@ public class MoveFacingTests : LocomotionFixture
 
         Assert.IsTrue(World.RunUntil(() => Finished(tank), 30f), "the order finishes");
         AssertFacing(tank, new float2(0f, 1f));
+    }
+
+    [Test]
+    public void Deployable_GivenAFacedMove_DeploysAlongIt_AndALaterPlainMoveLeavesItPacked()
+    {
+        var team = World.AddWeapon(SpawnTank(float3.zero), new TestWeapon { Range = 6f, Damage = 10f });
+        World.AddDeployable(team, 1f, 0.6f);
+
+        Move(team, new float3(0f, 0f, 20f), math.radians(90f));
+        Assert.IsTrue(World.RunUntil(() => World.Get<Deployable>(team).Deployed, 40f), "it deploys on arrival");
+        var off = TurnBetween(World.Get<Deployable>(team).DeployedHeading, East);
+        Assert.LessOrEqual(off, DeployFacingSystem.FacingTolerance + 1e-3f, $"arc {math.degrees(off)} degrees off");
+
+        World.Command(1, new PlayerCommand { Type = CommandType.PackUp, Unit = team });
+        Move(team, new float3(-20f, 0f, 20f), 0f, faced: false);
+        Assert.IsTrue(World.RunUntil(() => Finished(team), 40f), "the plain move finishes");
+        World.Run(2f);
+        Assert.AreEqual(DeployState.Packed, World.Get<Deployable>(team).State, "the old facing is not reused");
     }
 
     [Test]

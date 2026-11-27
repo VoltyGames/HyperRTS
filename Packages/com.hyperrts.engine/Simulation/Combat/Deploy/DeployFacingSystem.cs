@@ -15,6 +15,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
 {
     /// <summary>
     /// Packs up and turns a <see cref="Deployable"/> so an ordered target or fire mission point in range sits in the centre of its weapon's firing arc.
+    /// A faced order's <see cref="Order.Facing"/> becomes its <see cref="Deployable.OrderedHeading"/>, which it turns to and deploys along once idle.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(TargetingSystemGroup))]
@@ -32,6 +33,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
                 Transforms = SystemAPI.GetComponentLookup<LocalTransform>(true),
             }.ScheduleParallel();
             new FacePointJob().ScheduleParallel();
+            new FaceHeadingJob().ScheduleParallel();
         }
 
         [BurstCompile]
@@ -73,6 +75,32 @@ namespace HyperRTS.Simulation.Combat.Deploy
 
                 var toPoint = math.normalizesafe((aim.Value - transform.Position).xz);
                 Face(ref deployable, weapon, transform, toPoint, ref goal, facing);
+            }
+        }
+
+        [BurstCompile]
+        [WithPresent(typeof(ActiveOrder), typeof(FacingGoal))]
+        private partial struct FaceHeadingJob : IJobEntity
+        {
+            private void Execute(ref Deployable deployable, in ActiveOrder order, EnabledRefRO<ActiveOrder> busy,
+                in DynamicBuffer<QueuedOrder> queue, in LocalTransform transform, ref FacingGoal goal,
+                EnabledRefRW<FacingGoal> facing)
+            {
+                // Each order replaces the heading, so a plain move leaves none behind.
+                if (busy.ValueRO)
+                {
+                    deployable.OrderedHeading = order.Value.Facing;
+                    return;
+                }
+
+                var heading = deployable.OrderedHeading;
+                var idle = queue.Length == 0 && deployable.State == DeployState.Packed;
+                if (!idle || math.all(heading == 0f))
+                {
+                    return;
+                }
+
+                TurnAndDeploy(ref deployable, transform, heading, ref goal, facing);
             }
         }
 
