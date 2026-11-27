@@ -148,7 +148,7 @@ public class MapPlantTests
     }
 
     private static MapClimateTree Species(int variants) =>
-        MapFixture.Item<MapClimateTree>("Oak", i => i.prefabs = new List<GameObject>(new GameObject[variants]));
+        MapFixture.Item<MapClimateTree>("Oak", i => i.prefabs = [.. new GameObject[variants]]);
 
     private static MapClimate Climate(MapClimateTree species)
     {

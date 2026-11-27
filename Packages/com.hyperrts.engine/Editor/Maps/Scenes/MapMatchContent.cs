@@ -36,7 +36,7 @@ public static class MapMatchContent
             team = spawn.Team,
             color = PlayerSlot.Palette[(spawn.Slot - 1) % PlayerSlot.Palette.Length],
             control = spawn.Slot == 1 ? PlayerControl.LocalHuman : PlayerControl.AI,
-            startingResources = new List<ResourceQuantity>(palette.startingResources),
+            startingResources = [.. palette.startingResources],
             side = sides.Count > 0 ? (byte)sides[(spawn.Slot - 1) % sides.Count].side : (byte)0,
             spawnPosition = new Vector3(spawn.Position.x, ground(spawn.Position), spawn.Position.y),
             spawnYaw = spawn.Yaw,

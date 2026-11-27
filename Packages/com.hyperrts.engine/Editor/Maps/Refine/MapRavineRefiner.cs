@@ -51,7 +51,7 @@ public static class MapRavineRefiner
         var bend = MapGeometry.Rotate(heading, -angle * 0.35f);
         var middle = start + heading * (reach * 0.5f);
         var end = middle + bend * (reach * 0.5f);
-        var points = MapCurves.Spline(new List<Vector2> { start, middle, end }, Step);
+        var points = MapCurves.Spline([start, middle, end], Step);
         if (!points.TrueForAll(symmetry.InSector))
         {
             return null;

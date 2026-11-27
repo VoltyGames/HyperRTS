@@ -112,7 +112,7 @@ public class SessionTests
         Assert.AreEqual(10.5f, stat.mean, 1e-4f);
         Assert.AreEqual(19f, stat.p95);
         Assert.AreEqual(20f, stat.max);
-        Assert.AreEqual(0f, ServerReport.Stat.Summarize(new List<float>()).max, "nothing summarizes to zero");
+        Assert.AreEqual(0f, ServerReport.Stat.Summarize([]).max, "nothing summarizes to zero");
     }
 
     [Test]
@@ -120,7 +120,7 @@ public class SessionTests
     {
         var report = new ServerReport { outcome = ServerReport.Ended, winningTeam = 2, samples = 3 };
         report.players.Add(new ServerReport.PlayerResult { slot = 1, team = 1, unitsBuilt = 4 });
-        report.sentKbps = ServerReport.Stat.Summarize(new List<float> { 1f, 2f, 3f });
+        report.sentKbps = ServerReport.Stat.Summarize([1f, 2f, 3f]);
 
         var json = JsonUtility.ToJson(report);
         foreach (var key in new[] { "outcome", "exitCode", "matchMinutes", "winningTeam", "players", "unitsBuilt",

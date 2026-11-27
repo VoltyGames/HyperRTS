@@ -45,11 +45,16 @@ public class SectionDeathTests : SimulationFixture
     {
         var wall = new Section
         {
-            Center = new float3(0f, 1.5f, 0f), HalfSize = new float3(2f, 1.5f, 0.15f), Health = 100f, MaxHealth = 100f,
-            Anchored = true, Exterior = true, Outward = math.forward(),
+            Center = new float3(0f, 1.5f, 0f),
+            HalfSize = new float3(2f, 1.5f, 0.15f),
+            Health = 100f,
+            MaxHealth = 100f,
+            Anchored = true,
+            Exterior = true,
+            Outward = math.forward(),
         };
         var hut = World.SpawnBuilding(1, float3.zero, new float2(4f, 1f));
-        SectionsSetup.Add(World.Writer(hut), new List<Section> { wall }, new List<SectionFactor>(), default);
+        SectionsSetup.Add(World.Writer(hut), [wall], [], default);
         var health = World.Get<Health>(hut);
         health.Max = health.Current = 100f;
         World.Set(hut, health);

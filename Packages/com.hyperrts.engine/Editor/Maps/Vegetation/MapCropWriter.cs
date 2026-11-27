@@ -22,10 +22,10 @@ public static class MapCropWriter
 
         fields.fieldIds = picture;
         fields.area = bake.Area;
-        fields.crops = new(bake.Crops);
-        fields.fields = new(bake.Fields);
-        fields.tiles = new(bake.Tiles);
-        fields.tileFields = new(bake.TileFields);
+        fields.crops = [.. bake.Crops];
+        fields.fields = [.. bake.Fields];
+        fields.tiles = [.. bake.Tiles];
+        fields.tileFields = [.. bake.TileFields];
         EditorUtility.SetDirty(fields);
         AssetDatabase.SaveAssetIfDirty(fields);
     }

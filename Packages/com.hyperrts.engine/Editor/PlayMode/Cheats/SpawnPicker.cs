@@ -35,7 +35,7 @@ internal sealed class SpawnPicker : AdvancedDropdown
     public static void Open(EntityManager entityManager, Rect below, Action<int> picked)
     {
         var grouping = TypeDiscovery.Instances<ISpawnGrouping>().FirstOrDefault();
-        var headings = grouping?.Headings ?? new List<string>();
+        var headings = grouping?.Headings ?? [];
         var choices = new List<Choice>();
         foreach (var prefab in SpawnCheat.Prefabs(entityManager))
         {

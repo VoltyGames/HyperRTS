@@ -26,8 +26,13 @@ internal static class MapFixture
     /// <summary>A 240 m rotate-180 map: the authored sector is z at or under 0, the playable edge is at 120.</summary>
     public static MapSpec Spec() => new()
     {
-        name = "Test", climate = "Test", weather = "Clear", mode = "1v1", seed = 11,
-        size = new MapPoint(240f, 240f), symmetry = MapSymmetry.Rotate180,
+        name = "Test",
+        climate = "Test",
+        weather = "Clear",
+        mode = "1v1",
+        seed = 11,
+        size = new MapPoint(240f, 240f),
+        symmetry = MapSymmetry.Rotate180,
         terrain = new MapTerrainSpec { resolution = 257, backdropWidth = 20f, relief = 0f },
         spawns = [new() { pos = new MapPoint(0f, -100f) }],
     };
@@ -35,7 +40,7 @@ internal static class MapFixture
     public static MapRoadSpec Road(string kind, params Vector2[] points) => new()
     {
         kind = kind,
-        points = new List<MapPoint>(System.Array.ConvertAll(points, p => new MapPoint(p.x, p.y))),
+        points = [.. System.Array.ConvertAll(points, p => new MapPoint(p.x, p.y))],
     };
 
     /// <summary>A library item made in memory, keyed and named <paramref name="key"/> as the library would.</summary>
@@ -146,7 +151,7 @@ internal static class MapFixture
     }
 
     public static MapRoad RoadShape(MapRoadClass roadClass, bool generated, params Vector2[] points) =>
-        new(new MapLine(new List<Vector2>(points), roadClass.width, roadClass.width * 0.5f + MapShapes.RoadShoulder),
+        new(new MapLine([.. points], roadClass.width, roadClass.width * 0.5f + MapShapes.RoadShoulder),
             roadClass, generated);
 
     /// <summary>The smallest radius round any three consecutive points of a line.</summary>

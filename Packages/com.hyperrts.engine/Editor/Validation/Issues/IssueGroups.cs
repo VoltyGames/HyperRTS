@@ -18,7 +18,7 @@ public sealed class IssueGroups : List<IssueGroup>
 
     public int Tally(MessageType severity) => this.Count(group => group.Issue.Severity == severity);
 
-    public IssueGroups Filter(Predicate<IssueGroup> keep) => new(this.Where(group => keep(group)));
+    public IssueGroups Filter(Predicate<IssueGroup> keep) => [.. this.Where(group => keep(group))];
 
     public bool HasFix => this.Any(group => group.Issue.Fix != null);
 

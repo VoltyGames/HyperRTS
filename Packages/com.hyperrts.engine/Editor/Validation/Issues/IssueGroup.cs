@@ -9,7 +9,7 @@ namespace HyperRTS.Editor.Validation.Issues;
 public readonly struct IssueGroup(ValidationIssue issue, IReadOnlyList<ValidationIssue> variants = null)
 {
     public readonly ValidationIssue Issue = issue;
-    public readonly IReadOnlyList<ValidationIssue> Variants = variants ?? new List<ValidationIssue>();
+    public readonly IReadOnlyList<ValidationIssue> Variants = variants ?? [];
 
     /// <summary>"and 2 variants"; empty when there are none.</summary>
     public string VariantText => Variants.Count == 0 ? "" : "and " + IssueBadge.CountText(Variants.Count, "variant");

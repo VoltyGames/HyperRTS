@@ -70,7 +70,7 @@ public sealed class MapAccessPlanner(MapPlanContext context) : MapLandPass(conte
             var start = placement.Position + direction * Mathf.Max(placement.Radius, padRadius - PadOverlap);
             if (routes.Clear(start, point))
             {
-                roads.LayTrack(track, MapCurves.Resample(new List<Vector2> { start, point }, TrackStep));
+                roads.LayTrack(track, MapCurves.Resample([start, point], TrackStep));
                 return true;
             }
         }

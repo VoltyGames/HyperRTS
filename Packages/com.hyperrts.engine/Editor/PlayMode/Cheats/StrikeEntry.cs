@@ -76,7 +76,7 @@ internal sealed class StrikeEntry
             }
         }
 
-        var headings = grouping?.Headings ?? new List<string>();
+        var headings = grouping?.Headings ?? [];
         return found.OrderBy(entry => SpawnPicker.HeadingIndex(headings, entry.Heading))
             .ThenBy(entry => entry.Title).ToList();
     }

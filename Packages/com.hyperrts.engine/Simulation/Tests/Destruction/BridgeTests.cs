@@ -41,15 +41,21 @@ public class BridgeTests : SimulationFixture
 
             sections.Add(new Section
             {
-                Center = Span(i), HalfSize = new float3(4.5f, 0.3f, SpanLength * 0.5f), Health = 100f,
-                MaxHealth = 100f, Anchored = onBank, Deck = true, Holders = holders, Outward = math.up(),
+                Center = Span(i),
+                HalfSize = new float3(4.5f, 0.3f, SpanLength * 0.5f),
+                Health = 100f,
+                MaxHealth = 100f,
+                Anchored = onBank,
+                Deck = true,
+                Holders = holders,
+                Outward = math.up(),
             });
         }
 
         var bridge = World.SpawnBuilding(0, float3.zero, new float2(9f, SpanCount * SpanLength));
         var writer = World.Writer(bridge);
         NavSetup.AddArea(writer, new float2(9f, SpanCount * SpanLength), NavAreaKind.Deck);
-        SectionsSetup.Add(writer, sections, new List<SectionFactor>(), Entity.Null);
+        SectionsSetup.Add(writer, sections, [], Entity.Null);
         SectionsSetup.AddRepairable(writer, SectionTime);
         World.Set(bridge, new Health { Current = 100f * SpanCount, Max = 100f * SpanCount });
         return bridge;

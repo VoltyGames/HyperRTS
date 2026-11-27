@@ -125,7 +125,9 @@ public static class MapHintBuilder
         {
             target.slots.Add(new AIMapHintsAuthoring.SlotHints
             {
-                slot = origin.Slot, expansions = origin.Expansions, defence = origin.Defence,
+                slot = origin.Slot,
+                expansions = origin.Expansions,
+                defence = origin.Defence,
             });
         }
 
@@ -133,11 +135,15 @@ public static class MapHintBuilder
         {
             target.lanes.Add(new AIMapHintsAuthoring.LaneHints
             {
-                from = lane.From.Slot, to = lane.To.Slot, waypoints = new List<Vector2>(lane.Waypoints),
+                from = lane.From.Slot,
+                to = lane.To.Slot,
+                waypoints = [.. lane.Waypoints],
             });
             target.lanes.Add(new AIMapHintsAuthoring.LaneHints
             {
-                from = lane.To.Slot, to = lane.From.Slot, waypoints = Enumerable.Reverse(lane.Waypoints).ToList(),
+                from = lane.To.Slot,
+                to = lane.From.Slot,
+                waypoints = Enumerable.Reverse(lane.Waypoints).ToList(),
             });
         }
     }

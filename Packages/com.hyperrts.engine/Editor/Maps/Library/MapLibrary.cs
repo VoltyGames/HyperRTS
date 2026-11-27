@@ -50,7 +50,7 @@ public sealed class MapLibrary : IDisposable
     {
         foreach (var type in Types)
         {
-            _entries[type] = new SortedDictionary<string, Entry>(StringComparer.Ordinal);
+            _entries[type] = new(StringComparer.Ordinal);
         }
     }
 

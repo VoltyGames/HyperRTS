@@ -51,7 +51,7 @@ public sealed class MapClimatePlant : MapLibraryItem
     public GrassPlant Plant() => new()
     {
         name = key,
-        meshes = new List<Mesh>(meshes),
+        meshes = [.. meshes],
         material = material,
         width = width,
         height = height,

@@ -60,7 +60,7 @@ public sealed partial class MapToolOptions : VisualElement
     {
         var kinds = MapToolbox.KindsFor(_toolbox.Mode);
         _kind.SetHidden(kinds.Count == 0);
-        _kind.choices = new List<MapFeatureKind>(kinds);
+        _kind.choices = [.. kinds];
         _kind.SetValueWithoutNotify(_toolbox.Kind);
         _tip.text = Tip(_toolbox.Mode);
     }
