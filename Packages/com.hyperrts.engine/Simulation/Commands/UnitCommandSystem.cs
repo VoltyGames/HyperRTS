@@ -34,8 +34,8 @@ namespace HyperRTS.Simulation.Commands
         private CommandReader _commands;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<NavAgent> _agents;
-        private BufferLookup<SquadMember> _members;
         private ComponentLookup<CombatStance> _stances;
+        private BufferLookup<SquadMember> _members;
 
         // Last formation group handed out; 0 means no group.
         private int _lastGroup;
@@ -50,8 +50,8 @@ namespace HyperRTS.Simulation.Commands
             _commands = new CommandReader(ref state, UnitCommands, selected);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
-            _members = state.GetBufferLookup<SquadMember>(true);
             _stances = state.GetComponentLookup<CombatStance>();
+            _members = state.GetBufferLookup<SquadMember>(true);
             state.RequireForUpdate<PlayerCommand>();
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
@@ -73,8 +73,8 @@ namespace HyperRTS.Simulation.Commands
             _resolver.Update(ref state, _targetQueries);
             _transforms.Update(ref state);
             _agents.Update(ref state);
-            _members.Update(ref state);
             _stances.Update(ref state);
+            _members.Update(ref state);
 
             var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var map = SystemAPI.GetSingleton<MapSettings>();

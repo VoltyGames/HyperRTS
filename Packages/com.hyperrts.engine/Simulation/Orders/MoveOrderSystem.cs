@@ -23,9 +23,6 @@ namespace HyperRTS.Simulation.Orders
     [UpdateAfter(typeof(OrderDispatchSystem))]
     public partial struct MoveOrderSystem : ISystem
     {
-        /// <summary>Radians off its ordered facing an arrived unit may be and finish the order.</summary>
-        public const float FacingTolerance = 0.05f;
-
         // A turn a weapon keeps overriding, or a hull that can't turn, gives up after this long.
         private const float MaxTurnSeconds = 10f;
 
@@ -130,7 +127,7 @@ namespace HyperRTS.Simulation.Orders
                     return true;
                 }
 
-                var aligned = math.dot(Rotations.Facing(transform.Rotation), facing) >= math.cos(FacingTolerance);
+                var aligned = Planar.SameFacing(Rotations.Facing(transform.Rotation), facing);
                 if (aligned || drive.Turned >= MaxTurnSeconds)
                 {
                     return true;

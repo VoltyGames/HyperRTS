@@ -127,9 +127,6 @@ public struct PlayerCommand : IBufferElementData
 
     public int Argument;
 
-    /// <summary>The unit XZ direction a <see cref="Faced"/> Smart, Move, AttackMove or Deploy ends facing; zero otherwise.</summary>
-    public readonly float2 Facing => Faced && TakesFacing ? new float2(math.sin(Yaw), math.cos(Yaw)) : float2.zero;
-
-    private readonly bool TakesFacing =>
-        Type is CommandType.Smart or CommandType.Move or CommandType.AttackMove or CommandType.Deploy;
+    /// <summary>The unit XZ direction a <see cref="Faced"/> command ends facing; zero otherwise.</summary>
+    public readonly float2 Facing => Faced ? new float2(math.sin(Yaw), math.cos(Yaw)) : float2.zero;
 }

@@ -22,9 +22,6 @@ namespace HyperRTS.Simulation.Combat.Deploy
     [UpdateAfter(typeof(FireMissionSystem))]
     public partial struct DeployFacingSystem : ISystem
     {
-        /// <summary>Radians off the target a packed unit may be and still deploy.</summary>
-        public const float FacingTolerance = 0.05f;
-
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
@@ -121,7 +118,7 @@ namespace HyperRTS.Simulation.Combat.Deploy
         private static void TurnAndDeploy(ref Deployable deployable, in LocalTransform transform, float2 toTarget,
             ref FacingGoal goal, EnabledRefRW<FacingGoal> facing)
         {
-            if (math.dot(Rotations.Facing(transform.Rotation), toTarget) >= math.cos(FacingTolerance))
+            if (Planar.SameFacing(Rotations.Facing(transform.Rotation), toTarget))
             {
                 deployable.Deploy();
                 return;

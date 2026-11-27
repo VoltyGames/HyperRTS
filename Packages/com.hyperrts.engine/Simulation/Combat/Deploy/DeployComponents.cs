@@ -54,7 +54,7 @@ public struct Deployable : IComponentData
     /// </summary>
     public bool DeployToward(float2 heading)
     {
-        if (Deployed && math.dot(DeployedHeading, heading) >= math.cos(DeployFacingSystem.FacingTolerance))
+        if (Deployed && Planar.SameFacing(DeployedHeading, heading))
         {
             return false;
         }

@@ -10,9 +10,6 @@ public struct FacingDragState : IComponentData
     /// <summary>The pointer has left the press point by more than the drag threshold, so release issues a faced move.</summary>
     public bool Aimed;
 
-    /// <summary>The command the release issues: Smart, Move or AttackMove.</summary>
-    public CommandType Type;
-
     /// <summary>Ground point the button went down on, where the units go.</summary>
     public float3 Press;
 

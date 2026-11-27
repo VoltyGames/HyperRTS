@@ -35,7 +35,7 @@ public struct FacingDrag
 
     public readonly FacingDragState State(float2 screen) => new()
     {
-        Aimed = IsAimed(PressScreen, screen), Type = Type, Press = Press, Pointer = Pointer,
+        Aimed = IsAimed(PressScreen, screen), Press = Press, Pointer = Pointer,
     };
 
     /// <summary>The order release issues: a plain move below the threshold, a faced one past it.</summary>

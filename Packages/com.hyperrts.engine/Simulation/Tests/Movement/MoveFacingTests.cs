@@ -1,5 +1,6 @@
 using System.Linq;
 using HyperRTS.Simulation.Combat.Deploy;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using NUnit.Framework;
@@ -30,7 +31,7 @@ public class MoveFacingTests : LocomotionFixture
     private void AssertFacing(Entity unit, float2 expected)
     {
         var off = TurnBetween(Facing(unit), expected);
-        Assert.LessOrEqual(off, MoveOrderSystem.FacingTolerance + 1e-3f, $"{math.degrees(off)} degrees off");
+        Assert.LessOrEqual(off, Planar.FacingTolerance + 1e-3f, $"{math.degrees(off)} degrees off");
     }
 
     [Test]
@@ -60,7 +61,7 @@ public class MoveFacingTests : LocomotionFixture
 
         Assert.IsTrue(World.RunUntil(() => tanks.All(Finished), 60f), "every order finishes");
         var off = tanks.Select(tank => math.degrees(TurnBetween(Facing(tank), East))).ToArray();
-        Assert.IsTrue(off.All(degrees => degrees <= math.degrees(MoveOrderSystem.FacingTolerance) + 0.1f),
+        Assert.IsTrue(off.All(degrees => degrees <= math.degrees(Planar.FacingTolerance) + 0.1f),
             $"degrees off: {string.Join(", ", off)}");
     }
 
@@ -100,7 +101,7 @@ public class MoveFacingTests : LocomotionFixture
         Move(team, new float3(0f, 0f, 20f), math.radians(90f));
         Assert.IsTrue(World.RunUntil(() => World.Get<Deployable>(team).Deployed, 40f), "it deploys on arrival");
         var off = TurnBetween(World.Get<Deployable>(team).DeployedHeading, East);
-        Assert.LessOrEqual(off, DeployFacingSystem.FacingTolerance + 1e-3f, $"arc {math.degrees(off)} degrees off");
+        Assert.LessOrEqual(off, Planar.FacingTolerance + 1e-3f, $"arc {math.degrees(off)} degrees off");
 
         World.Command(1, new PlayerCommand { Type = CommandType.PackUp, Unit = team });
         Move(team, new float3(-20f, 0f, 20f), 0f, faced: false);

@@ -3,6 +3,7 @@ using HyperRTS.Presentation.Common;
 using HyperRTS.Presentation.Interaction;
 using HyperRTS.Presentation.Overlays.Markers;
 using HyperRTS.Simulation.Common;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Commands;
@@ -31,7 +32,7 @@ public sealed class FacingPreview(Mesh grid, Material markerMaterial) : IDisposa
 
     private const float ChevronLength = 1.6f;
 
-    // How far each chevron arm turns back from the facing.
+    // How far each side of the chevron turns back from the facing.
     private const float ChevronAngle = math.PI / 4f;
 
     // Slot brackets show where units stand without competing with the line.
@@ -68,11 +69,6 @@ public sealed class FacingPreview(Mesh grid, Material markerMaterial) : IDisposa
 
     public void Dispose() => _markers.Dispose();
 
-    /// <summary>The slots a move to the drag's press point facing along it gives <paramref name="members"/>.</summary>
-    public static void Slots(NativeArray<FormationMember> members, in FacingDragState drag, in MapSettings map,
-        in NavGrid navGrid, NativeArray<float3> slots) =>
-        new FormationSlots(members).Assign(drag.Press, drag.Facing, map, navGrid, slots);
-
     private void AddFormation(MatchView view, in FacingDragState drag, in NavGrid navGrid, OverlayStyle style)
     {
         using var members = Members(view);
@@ -82,7 +78,8 @@ public sealed class FacingPreview(Mesh grid, Material markerMaterial) : IDisposa
         }
 
         using var slots = new NativeArray<float3>(members.Length, Allocator.Temp);
-        Slots(members.AsArray(), drag, view.Map, navGrid, slots);
+        new FormationSlots(members.AsArray()).Assign(drag.Press, drag.Facing, view.Map, navGrid, slots);
+        var yaw = drag.Yaw;
         var faint = style.rally;
         faint.a *= SlotOpacity;
         var front = new FrontEdge(drag);
@@ -90,7 +87,7 @@ public sealed class FacingPreview(Mesh grid, Material markerMaterial) : IDisposa
         {
             var outline = MarkerFootprint.Agent(members[i].Agent, style.markerMargin);
             var brackets = new MarkerFootprint(outline.HalfSize, BracketCorner, MarkerShape.Brackets);
-            _markers.Add(new MarkerPose(slots[i], drag.Yaw), brackets, faint, style.Outline);
+            _markers.Add(new MarkerPose(slots[i], yaw), brackets, faint, style.Outline);
             front.Include(slots[i], outline.HalfSize);
         }
 
@@ -129,9 +126,14 @@ public sealed class FacingPreview(Mesh grid, Material markerMaterial) : IDisposa
         AddBar(left, right, color);
 
         var tip = front.Point((front.Left + front.Right) * 0.5f, LineGap + ChevronLength);
-        var back = new float3(-drag.Facing.x, 0f, -drag.Facing.y);
-        AddBar(tip, tip + math.mul(quaternion.RotateY(ChevronAngle), back) * ChevronLength, color);
-        AddBar(tip, tip + math.mul(quaternion.RotateY(-ChevronAngle), back) * ChevronLength, color);
+        AddBar(tip, tip + ChevronSide(-drag.Facing, ChevronAngle), color);
+        AddBar(tip, tip + ChevronSide(-drag.Facing, -ChevronAngle), color);
+    }
+
+    private static float3 ChevronSide(float2 back, float angle)
+    {
+        var side = Planar.Rotate(back, angle) * ChevronLength;
+        return new float3(side.x, 0f, side.y);
     }
 
     private void AddBar(float3 from, float3 to, Color color)

@@ -1,6 +1,5 @@
 using HyperRTS.Input.Commands;
 using HyperRTS.Presentation.Interaction;
-using HyperRTS.Presentation.Overlays;
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Commands;
 using HyperRTS.Simulation.Navigation.Agents;
@@ -62,7 +61,7 @@ public class FacingPreviewTests
         using var actual = new NativeArray<float3>(5, Allocator.Temp);
 
         Formation.Assign(positions, drag.Press, drag.Facing, spacings, expected);
-        FacingPreview.Slots(members, drag, map, default, actual);
+        new FormationSlots(members).Assign(drag.Press, drag.Facing, map, default, actual);
 
         for (var i = 0; i < members.Length; i++)
         {

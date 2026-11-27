@@ -103,7 +103,6 @@ namespace HyperRTS.Input.Commands
             if (rightClick && pending.Type != CommandType.None)
             {
                 pending.Type = CommandType.None;
-                _drag = default;
                 return;
             }
 

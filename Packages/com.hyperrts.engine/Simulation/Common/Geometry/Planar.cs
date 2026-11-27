@@ -5,6 +5,12 @@ namespace HyperRTS.Simulation.Common.Geometry;
 /// <summary>Direction and segment math on the XZ plane, angles counter-clockwise from x toward y.</summary>
 public static class Planar
 {
+    /// <summary>Radians apart two directions may be and still count as one facing.</summary>
+    public const float FacingTolerance = 0.05f;
+
+    /// <summary>True when unit directions <paramref name="a"/> and <paramref name="b"/> lie within <see cref="FacingTolerance"/>.</summary>
+    public static bool SameFacing(float2 a, float2 b) => math.dot(a, b) >= math.cos(FacingTolerance);
+
     /// <summary>The direction a quarter turn to the left.</summary>
     public static float2 Left(float2 direction) => new(-direction.y, direction.x);
 

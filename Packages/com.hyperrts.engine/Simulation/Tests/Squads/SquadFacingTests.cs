@@ -1,3 +1,4 @@
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Orders;
 using NUnit.Framework;
 using Unity.Mathematics;
@@ -24,6 +25,6 @@ public class SquadFacingTests : SquadFixture
         Assert.IsTrue(World.RunUntil(() => !World.IsEnabled<ActiveOrder>(squad), 30f), "the order finishes");
         var heading = math.normalize(World.Get<LocalTransform>(squad).Forward().xz);
         var off = math.acos(math.clamp(heading.x, -1f, 1f));
-        Assert.LessOrEqual(off, MoveOrderSystem.FacingTolerance + 1e-3f, $"heading {heading}, {math.degrees(off)} degrees off");
+        Assert.LessOrEqual(off, Planar.FacingTolerance + 1e-3f, $"heading {heading}, {math.degrees(off)} degrees off");
     }
 }
