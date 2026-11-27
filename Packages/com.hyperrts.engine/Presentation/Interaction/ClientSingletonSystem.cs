@@ -18,6 +18,7 @@ namespace HyperRTS.Presentation.Interaction
         {
             var entityManager = state.EntityManager;
             entityManager.CreateSingleton<SelectionDragState>();
+            entityManager.CreateSingleton<FacingDragState>();
             entityManager.CreateSingleton<PendingCommand>();
             var placement = entityManager.CreateSingleton<PlacementState>();
             entityManager.AddBuffer<PlacementSegment>(placement);

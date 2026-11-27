@@ -31,11 +31,11 @@ public readonly struct MarkerPose
         Floor = layer == NavLayer.Air ? NoFloor : Position.y - FloorDrop;
     }
 
-    /// <summary>A marker on the ground at <paramref name="point"/>, facing north.</summary>
-    public MarkerPose(float3 point)
+    /// <summary>A marker on the ground at <paramref name="point"/>, turned <paramref name="yaw"/> from north (+Z) towards +X.</summary>
+    public MarkerPose(float3 point, float yaw = 0f)
     {
         Position = point;
-        Facing = quaternion.identity;
+        Facing = quaternion.RotateY(yaw);
         Floor = point.y - FloorDrop;
     }
 

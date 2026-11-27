@@ -6,7 +6,6 @@ using HyperRTS.Simulation.Common.Players;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Agents;
 using HyperRTS.Simulation.Navigation.Grid;
-using HyperRTS.Simulation.Navigation.Paths;
 using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Selection;
 using Unity.Burst;
@@ -35,8 +34,8 @@ namespace HyperRTS.Simulation.Commands
         private CommandReader _commands;
         private ComponentLookup<LocalTransform> _transforms;
         private ComponentLookup<NavAgent> _agents;
-        private ComponentLookup<CombatStance> _stances;
         private BufferLookup<SquadMember> _members;
+        private ComponentLookup<CombatStance> _stances;
 
         // Last formation group handed out; 0 means no group.
         private int _lastGroup;
@@ -51,8 +50,8 @@ namespace HyperRTS.Simulation.Commands
             _commands = new CommandReader(ref state, UnitCommands, selected);
             _transforms = state.GetComponentLookup<LocalTransform>(true);
             _agents = state.GetComponentLookup<NavAgent>(true);
-            _stances = state.GetComponentLookup<CombatStance>();
             _members = state.GetBufferLookup<SquadMember>(true);
+            _stances = state.GetComponentLookup<CombatStance>();
             state.RequireForUpdate<PlayerCommand>();
             state.RequireForUpdate<OwnerRelations>();
             state.RequireForUpdate<MapSettings>();
@@ -74,8 +73,8 @@ namespace HyperRTS.Simulation.Commands
             _resolver.Update(ref state, _targetQueries);
             _transforms.Update(ref state);
             _agents.Update(ref state);
-            _stances.Update(ref state);
             _members.Update(ref state);
+            _stances.Update(ref state);
 
             var relations = SystemAPI.GetSingleton<OwnerRelations>();
             var map = SystemAPI.GetSingleton<MapSettings>();
@@ -181,26 +180,30 @@ namespace HyperRTS.Simulation.Commands
                 return;
             }
 
-            var positions = new NativeArray<float3>(movers.Length, Allocator.Temp);
-            var spacings = new NativeArray<float2>(movers.Length, Allocator.Temp);
-            var slots = new NativeArray<float3>(movers.Length, Allocator.Temp);
+            var members = new NativeArray<FormationMember>(movers.Length, Allocator.Temp);
             for (var i = 0; i < movers.Length; i++)
             {
-                positions[i] = _transforms[movers[i]].Position;
-                spacings[i] = SlotSpacing(movers[i]);
+                members[i] = Member(movers[i]);
             }
 
-            Formation.Assign(positions, command.Position, command.Facing, spacings, slots);
+            var slots = new NativeArray<float3>(movers.Length, Allocator.Temp);
+            var extent = new FormationSlots(members).Assign(command.Position, command.Facing, map, grid, slots);
             _lastGroup++;
-            var extent = Formation.Extent(slots, command.Position);
             for (var i = 0; i < movers.Length; i++)
             {
                 var order = orders[i];
-                order.Position = Fit(movers[i], map.Clamp(slots[i]), grid);
+                order.Position = slots[i];
                 order.Group = _lastGroup;
                 order.Extent = extent;
                 Issue(movers[i], order, command.Queue);
             }
+        }
+
+        private FormationMember Member(Entity unit)
+        {
+            var agent = _agents.TryGetComponent(unit, out var own) ? own : new NavAgent { Radius = EntityRadius.Default };
+            var spread = _members.TryGetBuffer(unit, out var squad) ? new SquadRoster(squad).Spread() : 0f;
+            return new FormationMember(_transforms[unit].Position, agent, spread);
         }
 
         private void Issue(Entity unit, in Order order, bool queue)
@@ -213,41 +216,6 @@ namespace HyperRTS.Simulation.Commands
             {
                 _writer.Issue(unit, order, queue);
             }
-        }
-
-        // A squad's slot holds its members too, so they stand clear of the slots beside it.
-        private float2 SlotSpacing(Entity unit) => Agent(unit).SlotSpacing +
-            (_members.TryGetBuffer(unit, out var members) ? new SquadRoster(members).Spread() * 2f : 0f);
-
-        private NavAgent Agent(Entity unit) =>
-            _agents.TryGetComponent(unit, out var own) ? own : new NavAgent { Radius = EntityRadius.Default };
-
-        /// <summary>The nearest spot to the slot the unit fits and can reach, so no slot lands in a building.</summary>
-        private float3 Fit(Entity unit, float3 slot, in NavGrid grid)
-        {
-            var agent = Agent(unit);
-            // Aircraft fly over everything.
-            if (agent.Layer == NavLayer.Air)
-            {
-                return slot;
-            }
-
-            // A unit spawned this frame has no class until the field system runs; the pathfinder fits it then.
-            if (!agent.TryAccess(grid, out var access))
-            {
-                return slot;
-            }
-
-            var cell = grid.Grid.Cell(slot);
-            if (!access.TryFindNearest(cell, GridPathfinder.NearestSearchRadius, out var found) || found.Equals(cell))
-            {
-                return slot;
-            }
-
-            // Ground the unit can't reach is left to the pathfinder, which snaps the goal into the unit's region.
-            var center = grid.Grid.CenterPoint(found);
-            var fitted = new float3(center.x, slot.y, center.z);
-            return grid.IsReachable(agent, _transforms[unit].Position, fitted) ? fitted : slot;
         }
 
         /// <summary>

@@ -9,7 +9,7 @@ namespace HyperRTS.Presentation.Overlays;
 
 /// <summary>
 /// Draws ground markers, health bars, small-unit pips, capture dials, garrison pips, the placement
-/// outline and rally points, the cover preview and fire mission ranges with instanced meshes, and keeps the
+/// outline and rally points, the cover preview, the facing drag's arrow and slots and fire mission ranges with instanced meshes, and keeps the
 /// placement ghost's model copies.
 /// </summary>
 [AddComponentMenu(HyperRTSMenu.Scene + "Rig/Overlay Renderer")]
@@ -54,6 +54,7 @@ public class OverlayRenderer : PresentationBehaviour
     private BuildingOverlays _buildings;
     private CommandOverlays _commands;
     private FireMissionOverlay _fireMissions;
+    private FacingPreview _facing;
     private CoverPreview _cover;
     private PlacementGhosts _ghosts;
 
@@ -85,6 +86,7 @@ public class OverlayRenderer : PresentationBehaviour
         _buildings = new BuildingOverlays(dial, disc, billboard);
         _commands = new CommandOverlays(ring, flat);
         _fireMissions = new FireMissionOverlay(rangeGrid, markerMaterial);
+        _facing = new FacingPreview(grid, markerMaterial);
         _cover = new CoverPreview(ring);
         _ghosts = new PlacementGhosts(ghostMaterial);
     }
@@ -104,11 +106,13 @@ public class OverlayRenderer : PresentationBehaviour
         _buildings.Gather(view, style, camera, pixels);
         _commands.Gather(view, style);
         _fireMissions.Gather(view, style);
+        _facing.Gather(view, style);
         _cover.Gather(view, style);
         _ghosts.Update(view, style);
         _units.Draw(style, UIScale, gameObject.layer);
         _buildings.Draw(_materials, gameObject.layer);
         _commands.Draw(_materials, gameObject.layer);
+        _facing.Draw(gameObject.layer);
         _cover.Draw(_materials, gameObject.layer);
         _fireMissions.Draw(gameObject.layer);
     }
@@ -125,6 +129,7 @@ public class OverlayRenderer : PresentationBehaviour
         _buildings?.Dispose();
         _commands?.Dispose();
         _fireMissions?.Dispose();
+        _facing?.Dispose();
         _cover?.Dispose();
         _ghosts?.Dispose();
         _materials?.Dispose();
