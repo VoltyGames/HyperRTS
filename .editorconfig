@@ -30,6 +30,12 @@ csharp_new_line_before_finally = true
 csharp_prefer_braces = true:suggestion
 
 csharp_style_namespace_declarations = file_scoped:warning
+csharp_style_prefer_primary_constructors = true:suggestion
+dotnet_style_prefer_collection_expression = when_types_loosely_match:suggestion
+csharp_style_prefer_switch_expression = true:suggestion
+csharp_style_prefer_pattern_matching = true:suggestion
+csharp_style_prefer_index_operator = true:suggestion
+csharp_style_prefer_range_operator = true:suggestion
 
 dotnet_style_require_accessibility_modifiers = for_non_interface_members:suggestion
 
