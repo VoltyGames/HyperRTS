@@ -18,8 +18,8 @@ public static class StrictJson
     private static readonly JsonSerializerOptions Complete = Options(true);
 
     /// <summary>
-    /// Throws naming <paramref name="what"/> and the bad key's path. With <paramref name="requireValues"/>, every
-    /// non-nullable value-type field must be given, so a nullable field is the optional one.
+    /// Throws naming <paramref name="what"/> and the bad key's path. A <c>[JsonRequired]</c> field must be given, and
+    /// with <paramref name="requireValues"/> so must every non-nullable value-type field.
     /// </summary>
     public static T Read<T>(string json, string what, bool requireValues)
     {
@@ -37,7 +37,6 @@ public static class StrictJson
 
     private static JsonSerializerOptions Options(bool requireValues) => new()
     {
-        IncludeFields = true,
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
         PropertyNameCaseInsensitive = true,
         ReadCommentHandling = JsonCommentHandling.Skip,
@@ -65,7 +64,8 @@ public static class StrictJson
                 var property = info.CreateJsonPropertyInfo(field.FieldType, field.Name);
                 property.Get = field.GetValue;
                 property.Set = field.SetValue;
-                property.IsRequired = requireValues && field.FieldType.IsValueType && Nullable.GetUnderlyingType(field.FieldType) == null;
+                property.IsRequired = field.IsDefined(typeof(JsonRequiredAttribute))
+                    || (requireValues && field.FieldType.IsValueType && Nullable.GetUnderlyingType(field.FieldType) == null);
                 info.Properties.Add(property);
             }
 
