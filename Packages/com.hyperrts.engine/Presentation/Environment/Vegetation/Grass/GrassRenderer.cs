@@ -48,7 +48,8 @@ namespace HyperRTS.Presentation.Environment.Vegetation.Grass
             _materials = field.plants.ConvertAll(Instanced).ToArray();
         }
 
-        private protected override ScatterField Field => field;
+        // C# 14 reads a bare `field` in an accessor as the property's own backing field.
+        private protected override ScatterField Field => this.field;
 
         private protected override List<GrassBatch> NewBatches() => new() { new GrassBatch(field, _inputs, _materials) };
 
