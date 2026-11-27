@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using HyperRTS.Editor.Validation.Issues;
@@ -12,15 +13,17 @@ using Match = System.Text.RegularExpressions.Match;
 /// Checks one UXML file: <c>Style</c> and <c>Template</c> links that name no asset, custom element tags whose
 /// type is gone, and classes no style sheet styles (a warning, unless a C# file uses the class).
 /// </summary>
-internal sealed class UxmlCheck(UIFile file, UIProject project, HashSet<string> styled, ValidationIssues issues)
+internal sealed partial class UxmlCheck(UIFile file, UIProject project, HashSet<string> styled, ValidationIssues issues)
 {
     // Unity's own classes live in its built-in sheets, which this project does not hold.
     private const string UnityClassPrefix = "unity-";
 
-    private static readonly Regex TagPattern = new("""<(?![/?!])([\w:.]+)((?:"[^"]*"|'[^']*'|[^>"'])*)>""");
-    private static readonly Regex AttributePattern = new("""([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""");
+    [GeneratedRegex("""<(?![/?!])([\w:.]+)((?:"[^"]*"|'[^']*'|[^>"'])*)>""")]
+    private static partial Regex TagPattern();
+    [GeneratedRegex("""([\w:.-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')""")]
+    private static partial Regex AttributePattern();
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<string> Structural = ["UXML", "Style", "Template", "Instance", "AttributeOverrides"];
+    private static readonly FrozenSet<string> Structural = new[] { "UXML", "Style", "Template", "Instance", "AttributeOverrides" }.ToFrozenSet();
 
     private readonly UIFile _file = file;
     private readonly UIProject _project = project;
@@ -31,7 +34,7 @@ internal sealed class UxmlCheck(UIFile file, UIProject project, HashSet<string> 
     public void Run()
     {
         var tags = new List<(string Name, int Index, List<(string Key, string Value, int Index)> Attributes)>();
-        foreach (Match tag in TagPattern.Matches(_file.Code))
+        foreach (Match tag in TagPattern().Matches(_file.Code))
         {
             tags.Add((tag.Groups[1].Value, tag.Index, ReadAttributes(tag.Groups[2])));
         }
@@ -69,7 +72,7 @@ internal sealed class UxmlCheck(UIFile file, UIProject project, HashSet<string> 
     private static List<(string, string, int)> ReadAttributes(Group text)
     {
         var attributes = new List<(string, string, int)>();
-        foreach (Match attribute in AttributePattern.Matches(text.Value))
+        foreach (Match attribute in AttributePattern().Matches(text.Value))
         {
             var value = attribute.Groups[2].Success ? attribute.Groups[2].Value : attribute.Groups[3].Value;
             attributes.Add((attribute.Groups[1].Value, value, text.Index + attribute.Index));

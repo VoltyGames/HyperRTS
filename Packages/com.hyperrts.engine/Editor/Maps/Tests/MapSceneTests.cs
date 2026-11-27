@@ -15,7 +15,7 @@ using UnityEngine.SceneManagement;
 namespace HyperRTS.Editor.Maps.Tests;
 
 /// <summary>What a map build writes into its scenes: Match sides and players, owned objects and terrain trees.</summary>
-public class MapSceneTests : TemplateFixture
+public partial class MapSceneTests : TemplateFixture
 {
     private const string Folder = "Assets/MapSceneTest";
 
@@ -134,17 +134,23 @@ public class MapSceneTests : TemplateFixture
         return (palette, prefab);
     }
 
+    [GeneratedRegex(@"&(\d+)")]
+    private static partial Regex AnchorId();
+
+    [GeneratedRegex(@"(&|fileID: )(\d+)")]
+    private static partial Regex FileIdReference();
+
     // What converting a prefab to a variant does: same GUID, every object under a new local file ID.
     private static void RenumberFileIds(string path)
     {
         var text = File.ReadAllText(path);
         var renumbered = new Dictionary<string, string>();
-        foreach (Match anchor in Regex.Matches(text, @"&(\d+)"))
+        foreach (Match anchor in AnchorId().Matches(text))
         {
             renumbered[anchor.Groups[1].Value] = (900001 + renumbered.Count).ToString();
         }
 
-        text = Regex.Replace(text, @"(&|fileID: )(\d+)", match =>
+        text = FileIdReference().Replace(text, match =>
             renumbered.TryGetValue(match.Groups[2].Value, out var id) ? match.Groups[1].Value + id : match.Value);
 
         File.WriteAllText(path, text);

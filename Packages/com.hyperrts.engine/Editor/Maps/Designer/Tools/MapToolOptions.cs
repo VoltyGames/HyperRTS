@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using HyperRTS.Editor.Maps.Designer.Features;
 using HyperRTS.Presentation.HUD;
@@ -14,7 +15,7 @@ namespace HyperRTS.Editor.Maps.Designer.Tools;
 public sealed partial class MapToolOptions : VisualElement
 {
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<MapToolMode, string> Tips = new()
+    private static readonly FrozenDictionary<MapToolMode, string> Tips = new Dictionary<MapToolMode, string>()
     {
         [MapToolMode.Select] = MapSelectTool.Help,
         [MapToolMode.Point] = "Point (P): each click adds the picked point or circle feature, copying the last " +
@@ -23,7 +24,7 @@ public sealed partial class MapToolOptions : VisualElement
             "Escape cancels.",
         [MapToolMode.Area] = "Area (A): click to add vertices; Enter or double-click finishes (3+ points), " +
             "Escape cancels.",
-    };
+    }.ToFrozenDictionary();
 
     private readonly PopupField<MapFeatureKind> _kind;
     private readonly Label _tip = new();

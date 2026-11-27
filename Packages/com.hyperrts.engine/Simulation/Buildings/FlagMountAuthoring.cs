@@ -24,11 +24,7 @@ public class FlagMountAuthoring : AuthoringBehaviour
     public static void AddFlagMount(EntityWriter writer, Entity flag, float flagHeight,
         float poleHeight)
     {
-        if (flagHeight <= 0f)
-        {
-            throw new ArgumentOutOfRangeException(nameof(flagHeight), flagHeight, "Flag height must be positive.");
-        }
-
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(flagHeight);
         var drop = poleHeight / flagHeight - 2f;
         if (drop < 0f)
         {

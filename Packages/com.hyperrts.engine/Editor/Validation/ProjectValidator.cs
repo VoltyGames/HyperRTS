@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Validation;
 /// Runs the discovered rules: component rules for one component (inspectors), and component, prefab, asset and
 /// scene rules over the project's prefabs and assets and the open scenes (the validator window, entering Play mode).
 /// </summary>
-public static class ProjectValidator
+public static partial class ProjectValidator
 {
     /// <summary>Session keys for the error and warning counts of the last full run, read by the Tools window badge.</summary>
     public const string ErrorsKey = "HyperRTS.Validate.Errors";
@@ -106,6 +106,9 @@ public static class ProjectValidator
         issues.StampFrom(start, RuleName(rule));
     }
 
+    [GeneratedRegex("(?<=[a-z0-9])(?=[A-Z])")]
+    private static partial Regex WordBreak();
+
     // "MissingCostRule" reads as "Missing Cost".
     private static string RuleName(object rule)
     {
@@ -115,7 +118,7 @@ public static class ProjectValidator
             name = name[..^4];
         }
 
-        return Regex.Replace(name, "(?<=[a-z0-9])(?=[A-Z])", " ");
+        return WordBreak().Replace(name, " ");
     }
 
     private static void CheckComponents(GameObject root, ValidationIssues issues)

@@ -11,7 +11,7 @@ namespace HyperRTS.Editor.Validation.Rules.UI;
 using Match = System.Text.RegularExpressions.Match;
 
 /// <summary>What the UI file rule asks the project: whether an asset or an element type exists, and the asset to point an issue at.</summary>
-public sealed class UIProject
+public sealed partial class UIProject
 {
     public Func<string, bool> AssetExists;
     public Func<string, bool> ElementExists;
@@ -20,16 +20,17 @@ public sealed class UIProject
     /// <summary>The class names the project's C# uses, so a class only code styles or queries counts as used.</summary>
     public HashSet<string> CodeClassNames = [];
 
-    private static readonly Regex ClassName = new("""
+    [GeneratedRegex("""
           (?:AddToClassList|RemoveFromClassList|EnableInClassList|ClassListContains|ToggleInClassList)\(\s*"([^"]+)"
         | \bclassName\s*:\s*"([^"]+)"
         | \.(?:Q|Query)(?:<[^>]*>)?\([^)",]*(?:"[^"]*")?\s*,\s*"([^"]+)"
         | \bconst\s+string\s+\w*Class(?:Name)?\s*=\s*"([^"]+)"
-        """, RegexOptions.IgnorePatternWhitespace);
+        """, RegexOptions.IgnorePatternWhitespace)]
+    private static partial Regex ClassName();
 
     /// <summary>The class names a C# file passes to class list calls and queries, or holds in a const named for a class.</summary>
     public static IEnumerable<string> ClassNamesIn(string code) =>
-        ClassName.Matches(code).Select(FirstGroup);
+        ClassName().Matches(code).Select(FirstGroup);
 
     /// <summary>The text of the first capture group that matched, or empty when none did.</summary>
     public static string FirstGroup(Match match)

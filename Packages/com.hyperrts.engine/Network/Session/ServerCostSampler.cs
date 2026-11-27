@@ -14,7 +14,7 @@ internal sealed class ServerCostSampler : IDisposable
     private const float Megabyte = 1024f * 1024f;
 
     private readonly Process _process = Process.GetCurrentProcess();
-    private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private readonly long _start = Stopwatch.GetTimestamp();
     private ProfilerRecorder _usedMemory = ProfilerRecorder.StartNew(ProfilerCategory.Memory, "Total Used Memory");
 
     // Process.WorkingSet64 reads 0 in a Mono player; this counter is the process's memory as the OS sees it.
@@ -39,7 +39,7 @@ internal sealed class ServerCostSampler : IDisposable
     public void Record(World server)
     {
         var entityManager = server.EntityManager;
-        var seconds = _clock.Elapsed.TotalSeconds;
+        var seconds = Stopwatch.GetElapsedTime(_start).TotalSeconds;
         var interval = seconds - _lastSeconds;
         _lastSeconds = seconds;
 

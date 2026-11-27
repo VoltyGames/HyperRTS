@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using HyperRTS.Network.Joining;
 using HyperRTS.Network.Session;
@@ -28,10 +29,11 @@ public sealed class HostTestKit : IDisposable
 
     // Rendering, input and the game stay out.
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<string> Assemblies =
-    [
+    private static readonly FrozenSet<string> Assemblies =
+    new[]
+    {
         "UnityEngine.EntitiesModule", "Unity.Entities", "Unity.Transforms", "Unity.NetCode", "HyperRTS.Simulation", "HyperRTS.Network",
-    ];
+    }.ToFrozenSet();
 
     // IPC ports stay unique across tests, so a closing test's port is never reused.
     [NoAutoStaticsCleanup]

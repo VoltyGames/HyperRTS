@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Templates;
@@ -48,9 +49,9 @@ namespace HyperRTS.Editor.Tests.Validation;
 internal static class RuleFiresCases
 {
     [NoAutoStaticsCleanup]
-    public static readonly Dictionary<Type, RuleCase> Rows =
+    public static readonly FrozenDictionary<Type, RuleCase> Rows =
         new[] { Gameplay(), Squads(), Entities(), Units(), UnitStats(), Effects(), Scenes() }
-            .SelectMany(cases => cases).ToDictionary(brokenCase => brokenCase.Rule);
+            .SelectMany(cases => cases).ToFrozenDictionary(brokenCase => brokenCase.Rule);
 
     private static RuleCase Case<TRule>(string expected, Func<RuleFiresTests, object> build) =>
         new(typeof(TRule), expected, build);

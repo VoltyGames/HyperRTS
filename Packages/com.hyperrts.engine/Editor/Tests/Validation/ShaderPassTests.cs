@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using HyperRTS.Editor.Validation.Project;
@@ -20,13 +21,14 @@ public class ShaderPassTests
 
     // Unlit, or drawn indirectly where GI never renders them.
     [NoAutoStaticsCleanup]
-    private static readonly HashSet<string> WithoutMeta =
-    [
+    private static readonly FrozenSet<string> WithoutMeta =
+    new[]
+    {
         "HyperRTS/RowCrop",
         "HyperRTS/GroundMarker",
         "HyperRTS/HealthBar",
         "HyperRTS/Overlay",
-    ];
+    }.ToFrozenSet();
 
     private static readonly ShaderTagId LightMode = new("LightMode");
     private static readonly ShaderTagId RenderType = new("RenderType");

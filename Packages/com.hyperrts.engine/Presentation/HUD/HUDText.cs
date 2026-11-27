@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -20,7 +21,7 @@ namespace HyperRTS.Presentation.HUD
     public partial class HUDText
     {
         [NoAutoStaticsCleanup]
-        private static readonly Dictionary<string, string> English = new()
+        private static readonly FrozenDictionary<string, string> English = new Dictionary<string, string>()
         {
             ["hud.pop"] = "POP",
             ["hud.power"] = "PWR",
@@ -91,7 +92,7 @@ namespace HyperRTS.Presentation.HUD
             ["details.passengers-value"] = "{0} / {1}",
             ["details.rank"] = "Rank",
             ["details.rank-none"] = "None",
-        };
+        }.ToFrozenDictionary();
 
         [AutoStaticsCleanup]
         public static HUDText Current { get; set; } = new();

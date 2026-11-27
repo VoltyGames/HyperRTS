@@ -8,7 +8,7 @@ using UnityEngine.TestTools;
 namespace HyperRTS.Editor.Tests.Animation.Rigid;
 
 /// <summary>VAT models and their motion import for the LitTeam shader.</summary>
-public class VatImportTests
+public partial class VatImportTests
 {
     private const string VATFolder = "Assets/_VATImportTests";
     private const string VATModel = VATFolder + "/Quad.obj";
@@ -18,6 +18,9 @@ public class VatImportTests
     [TearDown]
     public void DeleteVATFolder() => AssetDatabase.DeleteAsset(VATFolder);
 
+    [GeneratedRegex("has no mesh with a UV1 texel index")]
+    private static partial Regex NoUV1Message();
+
     [Test]
     public void VATModelImportsWithFullUVsAndItsMotionUnreduced()
     {
@@ -26,7 +29,7 @@ public class VatImportTests
         File.WriteAllText(VATMotion, Triangle);
         File.WriteAllText(VATModel, Triangle);
         // An OBJ carries no UV1, which the rule reports.
-        LogAssert.Expect(LogType.Error, new Regex("has no mesh with a UV1 texel index"));
+        LogAssert.Expect(LogType.Error, NoUV1Message());
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
         var model = (ModelImporter)AssetImporter.GetAtPath(VATModel);

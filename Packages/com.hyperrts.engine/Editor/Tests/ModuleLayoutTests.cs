@@ -14,7 +14,7 @@ namespace HyperRTS.Editor.Tests;
 /// Source layout rules: namespaces follow folders, modules stay tiered, authoring files hold authoring, components
 /// declare their Add Component menu, types with statics cleanup are partial and no job turns its safety checks off.
 /// </summary>
-public class ModuleLayoutTests
+public partial class ModuleLayoutTests
 {
     // Simulation module tiers, lowest first: a module may use its own tier or lower ones, never a higher tier.
     private static readonly string[][] Tiers =
@@ -29,16 +29,22 @@ public class ModuleLayoutTests
         ["AI", "GameEntities", "MatchStart", "Commands", "Replays"],
     ];
 
-    private static readonly Regex Namespace = new(@"^namespace ([\w.]+)", RegexOptions.Multiline);
-    private static readonly Regex PartialType = new(@"\bpartial (?:class|struct)\b");
-    private static readonly Regex StaticsCleanup = new(@"^\s*\[AutoStaticsCleanup\]", RegexOptions.Multiline);
-    private static readonly Regex SafetyBypass = new(@"\bNativeDisable(?:ParallelFor|ContainerSafety)Restriction\b");
-    private static readonly Regex SimulationUsing = new(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline);
+    [GeneratedRegex(@"^namespace ([\w.]+)", RegexOptions.Multiline)]
+    private static partial Regex Namespace();
+    [GeneratedRegex(@"\bpartial (?:class|struct)\b")]
+    private static partial Regex PartialType();
+    [GeneratedRegex(@"^\s*\[AutoStaticsCleanup\]", RegexOptions.Multiline)]
+    private static partial Regex StaticsCleanup();
+    [GeneratedRegex(@"\bNativeDisable(?:ParallelFor|ContainerSafety)Restriction\b")]
+    private static partial Regex SafetyBypass();
+    [GeneratedRegex(@"^using HyperRTS\.Simulation\.(\w+)", RegexOptions.Multiline)]
+    private static partial Regex SimulationUsing();
 
     // Nested types (Baker, entry classes) sit deeper than TypeSummaries.TopLevelIndent.
-    private static readonly Regex RuntimeType = new(
+    [GeneratedRegex(
         @"^( *)(?:\w+ )*(?:struct (\w+)[^{\n]*\b(?:IComponentData|IBufferElementData|ISystem|IEnableableComponent)\b|enum (\w+))",
-        RegexOptions.Multiline);
+        RegexOptions.Multiline)]
+    private static partial Regex RuntimeType();
 
     private static string PackageRoot =>
         PackageInfo.FindForAssembly(typeof(AuthoringBehaviour).Assembly).resolvedPath;
@@ -64,7 +70,7 @@ public class ModuleLayoutTests
 
             var folder = Path.GetRelativePath(PackageRoot, Path.GetDirectoryName(path));
             var expected = "HyperRTS." + folder.Replace(Path.DirectorySeparatorChar, '.');
-            var actual = Namespace.Match(text).Groups[1].Value;
+            var actual = Namespace().Match(text).Groups[1].Value;
             if (actual != expected)
             {
                 wrong.Add($"{folder}/{Path.GetFileName(path)}: {actual}");
@@ -147,7 +153,7 @@ public class ModuleLayoutTests
         {
             var source = File.ReadAllText(path);
             var indent = TypeSummaries.TopLevelIndent(source);
-            foreach (Match match in RuntimeType.Matches(source))
+            foreach (Match match in RuntimeType().Matches(source))
             {
                 if (match.Groups[1].Length != indent)
                 {
@@ -168,8 +174,8 @@ public class ModuleLayoutTests
     public void TypesWithStaticsCleanupArePartial()
     {
         var whole = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(path => StaticsCleanup.IsMatch(File.ReadAllText(path)))
-            .Where(path => !PartialType.IsMatch(File.ReadAllText(path)))
+            .Where(path => StaticsCleanup().IsMatch(File.ReadAllText(path)))
+            .Where(path => !PartialType().IsMatch(File.ReadAllText(path)))
             .Select(path => Path.GetRelativePath(PackageRoot, path))
             .ToList();
         Assert.IsEmpty(whole, "Types with [AutoStaticsCleanup] members must be partial:\n" + string.Join("\n", whole));
@@ -180,7 +186,7 @@ public class ModuleLayoutTests
     public void JobsKeepTheirSafetyChecks()
     {
         var bypassing = Directory.EnumerateFiles(PackageRoot, "*.cs", SearchOption.AllDirectories)
-            .Where(path => SafetyBypass.IsMatch(File.ReadAllText(path)))
+            .Where(path => SafetyBypass().IsMatch(File.ReadAllText(path)))
             .Select(path => Path.GetRelativePath(PackageRoot, path))
             .ToList();
         Assert.IsEmpty(bypassing, "Jobs turn safety checks off in:\n" + string.Join("\n", bypassing));
@@ -202,7 +208,7 @@ public class ModuleLayoutTests
                 continue;
             }
 
-            foreach (Match match in SimulationUsing.Matches(File.ReadAllText(path)))
+            foreach (Match match in SimulationUsing().Matches(File.ReadAllText(path)))
             {
                 var used = match.Groups[1].Value;
                 if (used == module)

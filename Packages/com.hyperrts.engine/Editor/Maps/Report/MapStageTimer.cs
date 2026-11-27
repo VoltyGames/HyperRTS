@@ -19,9 +19,9 @@ public sealed class MapStageTimer
 
     public T Time<T>(string stage, Func<T> run)
     {
-        var watch = Stopwatch.StartNew();
+        var start = Stopwatch.GetTimestamp();
         var result = run();
-        _stages.Add(new MapStageTime { stage = stage, milliseconds = watch.ElapsedMilliseconds });
+        _stages.Add(new MapStageTime { stage = stage, milliseconds = (long)Stopwatch.GetElapsedTime(start).TotalMilliseconds });
         return result;
     }
 }

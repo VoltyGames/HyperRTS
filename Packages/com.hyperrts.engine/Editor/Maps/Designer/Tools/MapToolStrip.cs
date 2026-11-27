@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using HyperRTS.Editor.Icons;
 using HyperRTS.Presentation.HUD;
@@ -18,13 +19,13 @@ public sealed partial class MapToolStrip : VisualElement
     private const string ActiveClass = "hrts-map-tool--active";
 
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<MapToolMode, string> Glyphs = new()
+    private static readonly FrozenDictionary<MapToolMode, string> Glyphs = new Dictionary<MapToolMode, string>()
     {
         [MapToolMode.Select] = "mouse-pointer-2",
         [MapToolMode.Point] = "map-pin",
         [MapToolMode.Line] = "spline",
         [MapToolMode.Area] = "square-dashed",
-    };
+    }.ToFrozenDictionary();
 
     private readonly Dictionary<MapToolMode, ToolbarButton> _buttons = [];
     private MapToolbox _toolbox;

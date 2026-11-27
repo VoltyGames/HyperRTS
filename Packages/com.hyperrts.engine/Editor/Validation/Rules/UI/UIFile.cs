@@ -7,14 +7,18 @@ namespace HyperRTS.Editor.Validation.Rules.UI;
 using Match = System.Text.RegularExpressions.Match;
 
 /// <summary>One UXML or USS file: its comment-free text, line numbers and the asset paths its links name.</summary>
-internal sealed class UIFile
+internal sealed partial class UIFile
 {
-    private static readonly Regex XmlComment = new(@"<!--.*?-->", RegexOptions.Singleline);
-    private static readonly Regex CssComment = new(@"/\*.*?\*/", RegexOptions.Singleline);
-    private static readonly Regex Quoted = new("""
+    [GeneratedRegex(@"<!--.*?-->", RegexOptions.Singleline)]
+    private static partial Regex XmlComment();
+    [GeneratedRegex(@"/\*.*?\*/", RegexOptions.Singleline)]
+    private static partial Regex CssComment();
+    [GeneratedRegex("""
         "[^"]*"|'[^']*'|url\([^)]*\)
-        """);
-    private static readonly Regex Selector = new(@"\.(-?[_a-zA-Z][\w-]*)");
+        """)]
+    private static partial Regex Quoted();
+    [GeneratedRegex(@"\.(-?[_a-zA-Z][\w-]*)")]
+    private static partial Regex Selector();
 
     public readonly string Path;
 
@@ -26,7 +30,7 @@ internal sealed class UIFile
     public UIFile(string path, string text)
     {
         Path = path;
-        Code = Blank(path.EndsWith(".uxml") ? XmlComment : CssComment, text);
+        Code = Blank(path.EndsWith(".uxml") ? XmlComment() : CssComment(), text);
         for (var i = 0; i < Code.Length; i++)
         {
             if (Code[i] == '\n')
@@ -47,7 +51,7 @@ internal sealed class UIFile
     /// <summary>Every class a selector in this style sheet names, compound selectors included.</summary>
     public IEnumerable<string> SelectorClasses()
     {
-        foreach (Match match in Selector.Matches(Blank(Quoted, Code)))
+        foreach (Match match in Selector().Matches(Blank(Quoted(), Code)))
         {
             yield return match.Groups[1].Value;
         }
@@ -98,5 +102,8 @@ internal sealed class UIFile
     }
 
     private static string Blank(Regex pattern, string text) =>
-        pattern.Replace(text, match => Regex.Replace(match.Value, @"[^\n]", " "));
+        pattern.Replace(text, match => NotNewline().Replace(match.Value, " "));
+
+    [GeneratedRegex(@"[^\n]")]
+    private static partial Regex NotNewline();
 }

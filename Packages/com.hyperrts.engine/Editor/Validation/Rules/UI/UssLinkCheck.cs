@@ -6,14 +6,15 @@ namespace HyperRTS.Editor.Validation.Rules.UI;
 using Match = System.Text.RegularExpressions.Match;
 
 /// <summary>Reports the <c>@import</c> and <c>url()</c> links of a style sheet that name no asset.</summary>
-internal sealed class UssLinkCheck
+internal sealed partial class UssLinkCheck
 {
-    private static readonly Regex Link = new(
-        """url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|@import\s+(?:"([^"]*)"|'([^']*)')""");
+    [GeneratedRegex(
+        """url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)|@import\s+(?:"([^"]*)"|'([^']*)')""")]
+    private static partial Regex Link();
 
     public void Run(UIFile file, UIProject project, ValidationIssues issues)
     {
-        foreach (Match match in Link.Matches(file.Code))
+        foreach (Match match in Link().Matches(file.Code))
         {
             var link = UIProject.FirstGroup(match);
             var target = link.Length > 0 ? file.Resolve(link) : null;

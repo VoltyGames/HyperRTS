@@ -27,7 +27,7 @@ public sealed class TripRecord(TestWorld world)
     public float MaxLoop => Max(unit => unit.MaxLoop);
 
     /// <summary>The unit that turned most one way, where and when.</summary>
-    public Tally WorstLoop => _units.OrderByDescending(unit => unit.MaxLoop).First();
+    public Tally WorstLoop => _units.MaxBy(unit => unit.MaxLoop);
 
     public float MaxSideways => Max(unit => unit.Sideways);
     public int GiveUps => Sum(unit => unit.GiveUps);

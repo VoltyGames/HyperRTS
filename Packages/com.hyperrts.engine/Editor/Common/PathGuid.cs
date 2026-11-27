@@ -26,9 +26,7 @@ public readonly struct PathGuid
     public PathGuid(string path)
     {
         Path = path.Replace('\\', '/');
-        using var md5 = MD5.Create();
-        var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(Path));
-        Value = BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+        Value = Convert.ToHexStringLower(MD5.HashData(Encoding.UTF8.GetBytes(Path)));
     }
 
     public string Path { get; }

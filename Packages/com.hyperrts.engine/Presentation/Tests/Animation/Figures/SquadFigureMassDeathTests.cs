@@ -141,11 +141,11 @@ public class SquadFigureMassDeathTests : SquadFigureRagdollFixture
 
     private double TimedUpdate()
     {
-        var watch = Stopwatch.StartNew();
+        var start = Stopwatch.GetTimestamp();
         Update();
-        watch.Stop();
+        var elapsed = Stopwatch.GetElapsedTime(start);
         _kit.ClearCues();
-        return watch.Elapsed.TotalMilliseconds;
+        return elapsed.TotalMilliseconds;
     }
 
     // The squads not yet wiped, nearest the camera first; a squad's figures stand on its spot.

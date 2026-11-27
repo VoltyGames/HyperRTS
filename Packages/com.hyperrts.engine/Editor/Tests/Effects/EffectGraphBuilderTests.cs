@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using HyperRTS.Editor.Effects.Graph;
 using HyperRTS.Editor.Effects.Layer;
@@ -16,7 +17,7 @@ public class EffectGraphBuilderTests
 
     // A new kind fails here until it is given a facing, so no quad ships in VFX Graph's fixed world axes.
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<EffectLayerKind, string> Facing = new()
+    private static readonly FrozenDictionary<EffectLayerKind, string> Facing = new Dictionary<EffectLayerKind, string>()
     {
         [EffectLayerKind.Glow] = "FaceCameraPlane",
         [EffectLayerKind.Puff] = "FaceCameraPlane",
@@ -26,7 +27,7 @@ public class EffectGraphBuilderTests
         [EffectLayerKind.Spark] = "AlongVelocity",
         [EffectLayerKind.Debris] = null,
         [EffectLayerKind.Source] = null,
-    };
+    }.ToFrozenDictionary();
 
     [TestCase(TestBurst)]
     [TestCase(TestStream)]

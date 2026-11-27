@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using HyperRTS.Editor.Common;
 using HyperRTS.Editor.Icons;
@@ -12,7 +13,7 @@ public abstract class PlayModeWindow : EditorWindow
 {
     // Glyph names from Icons/Glyphs.uss, by foldout name.
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<string, string> Glyphs = new()
+    private static readonly FrozenDictionary<string, string> Glyphs = new Dictionary<string, string>()
     {
         ["player-group"] = "library",
         ["spawn-group"] = "plus",
@@ -21,7 +22,7 @@ public abstract class PlayModeWindow : EditorWindow
         ["world-group"] = "cloud-fog",
         ["layers-group"] = "layers",
         ["ai-group"] = "scan-eye",
-    };
+    }.ToFrozenDictionary();
 
     public void CreateGUI()
     {

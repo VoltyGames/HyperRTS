@@ -7,10 +7,11 @@ using UnityEngine;
 namespace HyperRTS.Editor.Authoring.ModelFill;
 
 /// <summary>The Wheel_L01... naming of a model's road wheels, and the axles and steering they imply.</summary>
-internal static class WheelParts
+internal static partial class WheelParts
 {
     /// <summary>The name of a road wheel, Wheel_L01 or Wheel_R02, with its side captured; sprockets and idlers don't match.</summary>
-    public static readonly Regex RoadWheelName = new(@"^Wheel_([LR])\d+$");
+    [GeneratedRegex(@"^Wheel_([LR])\d+$")]
+    public static partial Regex RoadWheelName();
 
     // Wheels of one axle, or the same wheel in a damaged model, sit within this of each other along the hull.
     private const float AxleTolerance = 0.1f;
@@ -29,7 +30,7 @@ internal static class WheelParts
     /// <summary>Each axle of the model's Wheel_L01... wheels, as its distance ahead of the hull centre, front first.</summary>
     public static List<float> Axles(LocomotionAuthoring locomotion)
     {
-        var positions = locomotion.GetComponentsInChildren<Transform>(true).Where(part => RoadWheelName.Match(part.name).Groups[1].Value == "L")
+        var positions = locomotion.GetComponentsInChildren<Transform>(true).Where(part => RoadWheelName().Match(part.name).Groups[1].Value == "L")
             .Select(part => Along(locomotion, part)).OrderByDescending(along => along);
         var axles = new List<float>();
         foreach (var along in positions)

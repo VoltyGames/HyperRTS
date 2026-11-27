@@ -10,7 +10,7 @@ using UnityEngine.TestTools;
 namespace HyperRTS.Editor.Tests.Stages;
 
 /// <summary>The queue runs stages one at a time in the order added, and a failure drops only its own source's later stages.</summary>
-public class StageQueueTests
+public partial class StageQueueTests
 {
     private readonly List<string> ran = [];
     private readonly List<string> _finished = [];
@@ -29,6 +29,9 @@ public class StageQueueTests
 
     // The first stage waits on the gate, so what is added after it queues; opening the gate drains the rest in one call.
     private void Hold() => _queue.Add("held", new TestStage("hold", ran, _ => _gate.Task));
+
+    [GeneratedRegex("boom")]
+    private static partial Regex BoomMessage();
 
     [Test]
     public void StagesRunInTheOrderAddedAcrossSources()
@@ -63,7 +66,7 @@ public class StageQueueTests
     [Test]
     public void AFailedStageDropsItsSourcesLaterStagesButNotOthers()
     {
-        LogAssert.Expect(LogType.Exception, new Regex("boom"));
+        LogAssert.Expect(LogType.Exception, BoomMessage());
         Hold();
         _queue.Add("a", new TestStage("one", ran, _ => throw new InvalidOperationException("boom")));
         _queue.Add("a", new TestStage("two", ran));

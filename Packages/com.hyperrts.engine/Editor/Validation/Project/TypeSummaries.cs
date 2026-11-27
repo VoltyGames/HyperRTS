@@ -9,13 +9,15 @@ namespace HyperRTS.Editor.Validation.Project;
 /// Finds namespace-level types without a doc summary, so a code index built from summaries stays readable.
 /// A partial type needs the summary on one of its declarations; folders named Tests are skipped.
 /// </summary>
-public static class TypeSummaries
+public static partial class TypeSummaries
 {
-    private static readonly Regex Type = new(@"^( *)(?:\w+ )*(?:class|struct|enum|interface|record) (\w+)");
-    private static readonly Regex FileScoped = new(@"^namespace [\w.]+;", RegexOptions.Multiline);
+    [GeneratedRegex(@"^( *)(?:\w+ )*(?:class|struct|enum|interface|record) (\w+)")]
+    private static partial Regex TypeDeclaration();
+    [GeneratedRegex(@"^namespace [\w.]+;", RegexOptions.Multiline)]
+    private static partial Regex FileScoped();
 
     /// <summary>The indent of a namespace-level declaration in <paramref name="source"/>: 0 under a file-scoped namespace, 4 in a block.</summary>
-    public static int TopLevelIndent(string source) => FileScoped.IsMatch(source) ? 0 : 4;
+    public static int TopLevelIndent(string source) => FileScoped().IsMatch(source) ? 0 : 4;
 
     /// <summary>"path: Type" for each undocumented type under <paramref name="root"/>, sorted.</summary>
     public static List<string> Missing(string root)
@@ -34,7 +36,7 @@ public static class TypeSummaries
             var lines = source.ReplaceLineEndings("\n").Split('\n');
             for (var i = 0; i < lines.Length; i++)
             {
-                var match = Type.Match(lines[i]);
+                var match = TypeDeclaration().Match(lines[i]);
                 if (!match.Success || match.Groups[1].Length != indent)
                 {
                     continue;

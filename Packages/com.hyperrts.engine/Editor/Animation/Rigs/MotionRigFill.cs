@@ -13,18 +13,22 @@ using UnityEngine;
 namespace HyperRTS.Editor.Animation.Rigs;
 
 /// <summary>Fills a Motion Rig's slots and the weapons' pivots from the parts the art names.</summary>
-internal sealed class MotionRigFill(MotionRigAuthoring rig)
+internal sealed partial class MotionRigFill(MotionRigAuthoring rig)
 {
     private readonly MotionRigAuthoring _rig = rig;
-    private static readonly Regex WheelName = new(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$");
+    [GeneratedRegex(@"^(Wheel_[LR]\d+|Sprocket_[LR]|Idler_[LR])$")]
+    private static partial Regex WheelName();
 
-    private static readonly Regex TrackName = new(@"^Track_([LR])$");
+    [GeneratedRegex(@"^Track_([LR])$")]
+    private static partial Regex TrackName();
 
     // Propellers turn about the aircraft's nose axis.
-    private static readonly Regex PropName = new(@"^Prop_\d\d$");
+    [GeneratedRegex(@"^Prop_\d\d$")]
+    private static partial Regex PropName();
 
     // Turret_02 and Launcher_02 aim weapon 1, for an extra weapon or interceptor on a launcher of its own.
-    private static readonly Regex NumberedName = new(@"^(Turret|Launcher)_(\d\d)$");
+    [GeneratedRegex(@"^(Turret|Launcher)_(\d\d)$")]
+    private static partial Regex NumberedName();
 
     public void Run()
     {
@@ -32,7 +36,7 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
         // A part a Machine moves, such as a launcher raised on deploying, isn't posed by the rig too.
         var parts = all.Where(part => !part.TryGetComponent<MachinePartAuthoring>(out _)).ToList();
         FillAimers(parts);
-        _rig.wheels = KeepTuned(_rig.wheels, parts.Where(part => WheelName.IsMatch(part.name)),
+        _rig.wheels = KeepTuned(_rig.wheels, parts.Where(part => WheelName().IsMatch(part.name)),
             part => new WheelSlot { part = part, radius = WheelSlot.MeshRadius(part, _rig.transform) });
         FillSteering();
         FillTracks(parts);
@@ -46,8 +50,8 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
     private void FillAimers(List<Transform> parts)
     {
         var launcherWeapon = _rig.WeaponCount > 1 ? 1 : 0;
-        var turretParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Turret");
-        var launcherParts = parts.Where(part => NumberedName.Match(part.name).Groups[1].Value == "Launcher");
+        var turretParts = parts.Where(part => NumberedName().Match(part.name).Groups[1].Value == "Turret");
+        var launcherParts = parts.Where(part => NumberedName().Match(part.name).Groups[1].Value == "Launcher");
         _rig.turrets = KeepTuned(_rig.turrets, Named(parts, "Turret").Concat(turretParts), part => new TurretSlot
         {
             part = part,
@@ -66,7 +70,7 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
     private void FillRotorsAndTrailers(List<Transform> parts)
     {
         var rotorParts = Named(parts, "Rotor_Main").Concat(Named(parts, "Rotor_Tail"))
-            .Concat(parts.Where(part => PropName.IsMatch(part.name)));
+            .Concat(parts.Where(part => PropName().IsMatch(part.name)));
         _rig.rotors = KeepTuned(_rig.rotors, rotorParts, part => new RotorSlot
         {
             part = part,
@@ -110,10 +114,10 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
     {
         foreach (var wheel in _rig.wheels)
         {
-            wheel.followsGround = WheelParts.RoadWheelName.IsMatch(wheel.part.name);
+            wheel.followsGround = WheelParts.RoadWheelName().IsMatch(wheel.part.name);
         }
 
-        _rig.tracks = parts.Where(part => TrackName.IsMatch(part.name)).Select(part => new TrackSlot
+        _rig.tracks = parts.Where(part => TrackName().IsMatch(part.name)).Select(part => new TrackSlot
         {
             part = part,
             wheels = RoadWheels(part).ToList(),
@@ -126,10 +130,10 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
 
     private IEnumerable<Transform> RoadWheels(Transform track)
     {
-        var side = TrackName.Match(track.name).Groups[1].Value;
+        var side = TrackName().Match(track.name).Groups[1].Value;
         var model = FindModel(track);
         return _rig.wheels.Select(slot => slot.part)
-            .Where(wheel => WheelParts.RoadWheelName.Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
+            .Where(wheel => WheelParts.RoadWheelName().Match(wheel.name).Groups[1].Value == side && FindModel(wheel) == model);
     }
 
     // The model under the rig that holds a part, such as the intact or the damaged one.
@@ -174,7 +178,7 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
 
     private static int NumberedWeapon(Transform part, int unnumbered)
     {
-        var match = NumberedName.Match(part.name);
+        var match = NumberedName().Match(part.name);
         return match.Success ? int.Parse(match.Groups[2].Value) - 1 : unnumbered;
     }
 
@@ -230,7 +234,7 @@ internal sealed class MotionRigFill(MotionRigAuthoring rig)
     // Metres from the trailer's pivot back to the middle of the road wheels below it, in the rig's frame.
     private float MeasureAxleDistance(Transform trailer)
     {
-        var roadWheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => WheelParts.RoadWheelName.IsMatch(child.name)).ToList();
+        var roadWheels = trailer.GetComponentsInChildren<Transform>(true).Where(child => WheelParts.RoadWheelName().IsMatch(child.name)).ToList();
         if (roadWheels.Count == 0)
         {
             throw new InvalidOperationException($"'{trailer.name}' has no road wheels to measure its axles from.");

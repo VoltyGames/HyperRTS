@@ -21,7 +21,7 @@ internal sealed class ServerMonitor : MonoBehaviour
     public const int EndedCode = 0;
     public const int TimedOutCode = 2;
 
-    private readonly Stopwatch _clock = Stopwatch.StartNew();
+    private readonly long _start = Stopwatch.GetTimestamp();
     private readonly string _started = DateTime.UtcNow.ToString("o");
     private LaunchOptions _options;
     private ServerCostSampler _sampler;
@@ -93,7 +93,7 @@ internal sealed class ServerMonitor : MonoBehaviour
             return;
         }
 
-        var now = _clock.Elapsed.TotalSeconds;
+        var now = Stopwatch.GetElapsedTime(_start).TotalSeconds;
         if (_sampler == null)
         {
             _sampler = new ServerCostSampler(world);

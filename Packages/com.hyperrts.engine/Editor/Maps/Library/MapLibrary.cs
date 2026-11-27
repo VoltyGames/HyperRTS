@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,8 +42,8 @@ public sealed class MapLibrary : IDisposable
     ];
 
     [NoAutoStaticsCleanup]
-    private static readonly Dictionary<Type, string> TypeNames =
-        Types.ToDictionary(type => type, type => MapLibraryItemAttribute.Require(type).Name);
+    private static readonly FrozenDictionary<Type, string> TypeNames =
+        Types.ToFrozenDictionary(type => type, type => MapLibraryItemAttribute.Require(type).Name);
 
     private readonly Dictionary<Type, SortedDictionary<string, Entry>> _entries = [];
 
