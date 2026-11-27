@@ -1,23 +1,32 @@
 using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Combat;
+using HyperRTS.Simulation.Common.Geometry;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Agents;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
+using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace HyperRTS.Simulation.Orders
 {
     /// <summary>
     /// Runs orders with <see cref="OrderTraits.MovesToPosition"/>: points locomotion at the goal while combat isn't
     /// engaged, and completes the order on <see cref="Arrival"/> (at the goal, against an arrived groupmate, or
-    /// stalled). A finished <see cref="OrderTraits.Loops"/> order goes to the back of the queue.
+    /// stalled), once turned to its <see cref="Order.Facing"/> if it has one. A finished <see cref="OrderTraits.Loops"/>
+    /// order goes to the back of the queue.
     /// </summary>
     [BurstCompile]
     [UpdateInGroup(typeof(OrderSystemGroup))]
     [UpdateAfter(typeof(OrderDispatchSystem))]
     public partial struct MoveOrderSystem : ISystem
     {
+        /// <summary>Radians off its ordered facing an arrived unit may be and finish the order.</summary>
+        public const float FacingTolerance = 0.05f;
+
+        // A turn a weapon keeps overriding, or a hull that can't turn, gives up after this long.
+        private const float MaxTurnSeconds = 10f;
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
@@ -27,23 +36,25 @@ namespace HyperRTS.Simulation.Orders
             {
                 Attacks = SystemAPI.GetComponentLookup<AttackTarget>(true),
                 Traits = traits,
+                DeltaTime = SystemAPI.Time.DeltaTime,
             }.ScheduleParallel();
         }
 
         [BurstCompile]
-        [WithPresent(typeof(MoveOrderState), typeof(MoveDestination), typeof(Arrival))]
+        [WithPresent(typeof(MoveOrderState), typeof(MoveDestination), typeof(Arrival), typeof(FacingGoal))]
         private partial struct MoveOrderJob : IJobEntity
         {
             [ReadOnly] public ComponentLookup<AttackTarget> Attacks;
             public OrderTraitTable Traits;
+            public float DeltaTime;
 
             private void Execute(Entity entity, ref ActiveOrder order, EnabledRefRW<ActiveOrder> busy,
-                EnabledRefRW<MoveOrderState> driving, ref MoveDestination destination,
+                ref MoveOrderState drive, EnabledRefRW<MoveOrderState> driving, ref MoveDestination destination,
                 EnabledRefRW<MoveDestination> moving, EnabledRefRW<Arrival> arrived,
-                DynamicBuffer<QueuedOrder> queue)
+                DynamicBuffer<QueuedOrder> queue, in LocalTransform transform, ref FacingGoal goal,
+                EnabledRefRW<FacingGoal> aiming)
             {
-                var type = order.Value.Type;
-                if (!Traits.Has(type, OrderTraits.MovesToPosition))
+                if (!Traits.Has(order.Value.Type, OrderTraits.MovesToPosition))
                 {
                     return;
                 }
@@ -57,22 +68,58 @@ namespace HyperRTS.Simulation.Orders
 
                 if (driving.ValueRO && arrived.ValueRO)
                 {
-                    Finish(order.Value, busy, driving, moving, queue);
+                    if (HasTurned(order.Value.Facing, ref drive, transform, ref goal, aiming))
+                    {
+                        Finish(order.Value, busy, driving, moving, queue);
+                    }
+
                     return;
                 }
 
                 // Not yet driving, or something else halted the walk: point locomotion at the goal again.
                 if (!driving.ValueRO || !moving.ValueRO)
                 {
-                    destination = new MoveDestination
-                    {
-                        Value = order.Value.Position, Group = order.Value.Group, Extent = order.Value.Extent,
-                        Backward = Traits.Has(type, OrderTraits.DrivesBackward),
-                    };
+                    destination = Goal(order.Value);
                     moving.ValueRW = true;
                     arrived.ValueRW = false;
                     driving.ValueRW = true;
+                    drive.Turned = 0f;
                 }
+            }
+
+            private readonly MoveDestination Goal(in Order order) => new()
+            {
+                Value = order.Position, Group = order.Group, Extent = order.Extent,
+                Backward = Traits.Has(order.Type, OrderTraits.DrivesBackward),
+            };
+
+            /// <summary>
+            /// True once the unit faces <paramref name="facing"/> (or has none), or has turned too long; until then
+            /// it asks movement, which clears the goal each frame, to turn it.
+            /// </summary>
+            private readonly bool HasTurned(float2 facing, ref MoveOrderState drive, in LocalTransform transform,
+                ref FacingGoal goal, EnabledRefRW<FacingGoal> aiming)
+            {
+                if (math.all(facing == 0f))
+                {
+                    return true;
+                }
+
+                var aligned = math.dot(Rotations.Facing(transform.Rotation), facing) >= math.cos(FacingTolerance);
+                if (aligned || drive.Turned >= MaxTurnSeconds)
+                {
+                    return true;
+                }
+
+                drive.Turned += DeltaTime;
+                // Still enabled here means combat aimed a weapon after last frame's movement: a target outranks a pose.
+                if (!aiming.ValueRO)
+                {
+                    goal.Direction = facing;
+                    aiming.ValueRW = true;
+                }
+
+                return false;
             }
 
             private readonly void Finish(in Order order, EnabledRefRW<ActiveOrder> busy,

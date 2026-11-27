@@ -10,6 +10,7 @@ using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Resources.Gathering;
 using HyperRTS.Simulation.Transport;
 using Unity.Entities;
+using Unity.Mathematics;
 
 namespace HyperRTS.Simulation.Commands;
 
@@ -31,6 +32,7 @@ public struct OrderResolver
     private ComponentLookup<Capturer> _capturers;
     private ComponentLookup<UnitTag> _units;
     private ComponentLookup<HomePad> _padUsers;
+    private ComponentLookup<Flight> _flights;
     private BufferLookup<LandingPad> _pads;
     private CaptureLookup _capture;
     private Boarding _boarding;
@@ -51,6 +53,7 @@ public struct OrderResolver
         _capturers = state.GetComponentLookup<Capturer>(true);
         _units = state.GetComponentLookup<UnitTag>(true);
         _padUsers = state.GetComponentLookup<HomePad>(true);
+        _flights = state.GetComponentLookup<Flight>(true);
         _pads = state.GetBufferLookup<LandingPad>(true);
         _capture = new CaptureLookup(ref state);
         _boarding = new Boarding(ref state, true);
@@ -72,6 +75,7 @@ public struct OrderResolver
         _capturers.Update(ref state);
         _units.Update(ref state);
         _padUsers.Update(ref state);
+        _flights.Update(ref state);
         _pads.Update(ref state);
         _capture.Update(ref state);
         _boarding.Update(ref state);
@@ -93,6 +97,7 @@ public struct OrderResolver
             Target = command.Target,
             Argument = command.Argument,
         };
+        order.Facing = TurnsToFacing(order.Type, unit) ? command.Facing : float2.zero;
         if (order.Type == OrderType.FireMission && order.Target != Entity.Null)
         {
             order.Position = _targets.Position(order.Target);
@@ -100,6 +105,17 @@ public struct OrderResolver
         }
 
         return order;
+    }
+
+    /// <summary>A ground move ends turned to the command's facing, by any unit but one that can't stand in the air.</summary>
+    private bool TurnsToFacing(OrderType type, Entity unit)
+    {
+        if (type is not (OrderType.Move or OrderType.AttackMove))
+        {
+            return false;
+        }
+
+        return !_flights.TryGetComponent(unit, out var flight) || flight.Hovers;
     }
 
     /// <summary>The order type a right-click on <paramref name="target"/> gives the unit.</summary>

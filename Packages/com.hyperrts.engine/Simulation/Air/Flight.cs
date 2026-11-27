@@ -20,6 +20,9 @@ public struct Flight : IComponentData
     /// <summary>0 hovers when idle; otherwise the aircraft keeps circling at this radius (jets).</summary>
     public float LoiterRadius;
 
+    /// <summary>Whether it can stand in the air and turn there, as a helicopter does.</summary>
+    public readonly bool Hovers => LoiterRadius <= 0f;
+
     /// <summary>Metres per second squared it gains speed at.</summary>
     public float Acceleration;
 

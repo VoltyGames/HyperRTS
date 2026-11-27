@@ -114,8 +114,11 @@ public struct PlayerCommand : IBufferElementData
     /// <summary>Where a <see cref="CommandType.PlaceLine"/> drag ended.</summary>
     public float3 End;
 
-    /// <summary>A <see cref="CommandType.PlaceBuilding"/>'s yaw in radians about Y.</summary>
+    /// <summary>Yaw in radians about Y: a placed building's turn, or a <see cref="Faced"/> move's end facing.</summary>
     public float Yaw;
+
+    /// <summary>A Smart, Move or AttackMove ends with its units facing along <see cref="Yaw"/>.</summary>
+    public bool Faced;
 
     public Entity Prefab;
 
@@ -123,4 +126,9 @@ public struct PlayerCommand : IBufferElementData
     public bool Queue;
 
     public int Argument;
+
+    /// <summary>The unit XZ direction a <see cref="Faced"/> Smart, Move or AttackMove ends facing; zero otherwise.</summary>
+    public readonly float2 Facing => Faced && TakesFacing ? new float2(math.sin(Yaw), math.cos(Yaw)) : float2.zero;
+
+    private readonly bool TakesFacing => Type is CommandType.Smart or CommandType.Move or CommandType.AttackMove;
 }

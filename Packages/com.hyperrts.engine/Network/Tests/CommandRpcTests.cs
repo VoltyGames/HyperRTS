@@ -23,4 +23,16 @@ public class CommandRpcTests
         Assert.AreEqual(command.Position, received.Position);
         Assert.IsTrue(received.Queue);
     }
+
+    [Test]
+    public void FacedMove_KeepsItsFacingThroughTheCommandRpc()
+    {
+        var command = new PlayerCommand { Type = CommandType.Move, Yaw = 1.2f, Faced = true };
+
+        var received = CommandRpc.From(command).ToCommand();
+
+        Assert.IsTrue(received.Faced);
+        Assert.AreEqual(1.2f, received.Yaw);
+        Assert.AreEqual(command.Facing, received.Facing);
+    }
 }

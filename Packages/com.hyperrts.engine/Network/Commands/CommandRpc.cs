@@ -17,6 +17,7 @@ public struct CommandRpc : IRpcCommand
     public float3 Position;
     public float3 End;
     public float Yaw;
+    public bool Faced;
     public Entity Target;
 
     /// <summary>A map scenery target's <c>SceneryId</c>: scenery isn't a ghost, so <see cref="Target"/> can't carry it.</summary>
@@ -39,6 +40,7 @@ public struct CommandRpc : IRpcCommand
         Position = command.Position,
         End = command.End,
         Yaw = command.Yaw,
+        Faced = command.Faced,
     };
 
     /// <summary>The plain fields back as a command; the receiver resolves entities and the prefab.</summary>
@@ -50,5 +52,6 @@ public struct CommandRpc : IRpcCommand
         Position = Position,
         End = End,
         Yaw = Yaw,
+        Faced = Faced,
     };
 }

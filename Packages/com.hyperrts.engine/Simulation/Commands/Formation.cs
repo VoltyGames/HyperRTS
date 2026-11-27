@@ -5,16 +5,17 @@ using Unity.Mathematics;
 namespace HyperRTS.Simulation.Commands;
 
 /// <summary>
-/// Box formation around a goal, facing the group's travel direction. The front-most units take the front row, each
-/// row fills left to right, and each unit gets a slot its own size.
+/// Box formation around a goal, facing an ordered direction or else the group's travel direction. The front-most units
+/// take the front row, each row fills left to right, and each unit gets a slot its own size.
 /// </summary>
 public static class Formation
 {
     /// <summary>
     /// Writes one goal per unit into <paramref name="slots"/> (same index as its position), each taking its
-    /// <paramref name="spacings"/> across (x) and along (y) the travel direction.
+    /// <paramref name="spacings"/> across (x) and along (y) the box's forward: <paramref name="facing"/>, or the
+    /// travel direction when it is zero.
     /// </summary>
-    public static void Assign(NativeArray<float3> positions, float3 goal, NativeArray<float2> spacings,
+    public static void Assign(NativeArray<float3> positions, float3 goal, float2 facing, NativeArray<float2> spacings,
         NativeArray<float3> slots)
     {
         var count = positions.Length;
@@ -24,7 +25,7 @@ public static class Formation
             return;
         }
 
-        var forward = TravelDirection(positions, goal);
+        var forward = math.any(facing != 0f) ? facing : TravelDirection(positions, goal);
         var right = new float2(forward.y, -forward.x);
 
         // About twice as wide as deep, like a battle line.

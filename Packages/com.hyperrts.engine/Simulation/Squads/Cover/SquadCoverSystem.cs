@@ -3,6 +3,7 @@ using HyperRTS.Simulation.Common;
 using HyperRTS.Simulation.Common.Infantry;
 using HyperRTS.Simulation.Common.Systems;
 using HyperRTS.Simulation.Navigation.Agents;
+using HyperRTS.Simulation.Orders;
 using HyperRTS.Simulation.Vision.Sight;
 using Unity.Burst;
 using Unity.Collections;
@@ -44,6 +45,7 @@ namespace HyperRTS.Simulation.Squads.Cover
                 InsideLookup = SystemAPI.GetComponentLookup<Inside>(true),
                 WorkLookup = SystemAPI.GetComponentLookup<SquadWork>(true),
                 Deployables = SystemAPI.GetComponentLookup<Deployable>(true),
+                Orders = SystemAPI.GetComponentLookup<ActiveOrder>(true),
             }.Schedule();
         }
 
@@ -57,6 +59,7 @@ namespace HyperRTS.Simulation.Squads.Cover
             [ReadOnly] public ComponentLookup<Inside> InsideLookup;
             [ReadOnly] public ComponentLookup<SquadWork> WorkLookup;
             [ReadOnly] public ComponentLookup<Deployable> Deployables;
+            [ReadOnly] public ComponentLookup<ActiveOrder> Orders;
 
             private void Execute(Entity squad, DynamicBuffer<SquadMember> members, in LocalTransform transform,
                 in Velocity velocity)
@@ -79,7 +82,7 @@ namespace HyperRTS.Simulation.Squads.Cover
             {
                 var near = new NativeList<int>(0, Allocator.Temp);
                 var searched = false;
-                var forward = math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
+                var forward = Forward(squad, transform);
                 var living = new SquadRoster(members).CountFreeLiving(crewing);
                 var rank = 0;
                 for (var i = 0; i < members.Length; i++)
@@ -113,6 +116,15 @@ namespace HyperRTS.Simulation.Squads.Cover
                     members[i] = member;
                     rank++;
                 }
+            }
+
+            // A squad halts before it turns to an ordered facing, so its spots face that way from the start.
+            private readonly float2 Forward(Entity squad, in LocalTransform transform)
+            {
+                var ordered = ActiveOrder.Current(Orders, squad).Facing;
+                return math.any(ordered != 0f)
+                    ? ordered
+                    : math.normalizesafe(math.rotate(transform.Rotation, math.forward()).xz);
             }
 
             /// <summary>

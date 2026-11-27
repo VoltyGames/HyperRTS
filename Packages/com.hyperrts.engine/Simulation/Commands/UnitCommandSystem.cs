@@ -190,7 +190,7 @@ namespace HyperRTS.Simulation.Commands
                 spacings[i] = SlotSpacing(movers[i]);
             }
 
-            Formation.Assign(positions, command.Position, spacings, slots);
+            Formation.Assign(positions, command.Position, command.Facing, spacings, slots);
             _lastGroup++;
             var extent = Formation.Extent(slots, command.Position);
             for (var i = 0; i < movers.Length; i++)

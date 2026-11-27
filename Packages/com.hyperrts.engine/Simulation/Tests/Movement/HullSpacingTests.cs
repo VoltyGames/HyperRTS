@@ -114,6 +114,42 @@ public class HullSpacingTests : SimulationFixture
     }
 
     [Test]
+    public void OrderedFacing_TurnsTheLineAcrossIt_AndPutsTheFrontUnitFirst()
+    {
+        using var positions = new NativeArray<float3>(
+        [
+            new float3(0f, 0f, 0f), new float3(2f, 0f, 0f), new float3(4f, 0f, 0f), new float3(6f, 0f, 0f),
+            new float3(8f, 0f, 0f),
+        ], Allocator.Temp);
+        using var spacings = new NativeArray<float2>(new float2[5], Allocator.Temp);
+        for (var i = 0; i < 5; i++)
+        {
+            spacings.AsSpan()[i] = new float2(2f, 2f);
+        }
+
+        var goal = new float3(0f, 0f, 30f);
+        var east = new float2(1f, 0f);
+        using var slots = new NativeArray<float3>(5, Allocator.Temp);
+
+        Formation.Assign(positions, goal, east, spacings, slots);
+
+        var low = slots[0].xz;
+        var high = slots[0].xz;
+        foreach (var slot in slots)
+        {
+            low = math.min(low, slot.xz);
+            high = math.max(high, slot.xz);
+        }
+
+        Assert.Greater(high.y - low.y, high.x - low.x, "the line spans across the facing");
+        for (var i = 0; i < 4; i++)
+        {
+            Assert.GreaterOrEqual(math.dot(slots[4].xz - goal.xz, east), math.dot(slots[i].xz - goal.xz, east) - 1e-4f,
+                "the unit furthest toward the facing takes the front row");
+        }
+    }
+
+    [Test]
     public void MixedRow_GivesEachUnitASlotItsOwnWidth()
     {
         using var positions = new NativeArray<float3>(
@@ -126,7 +162,7 @@ public class HullSpacingTests : SimulationFixture
         ], Allocator.Temp);
         using var slots = new NativeArray<float3>(3, Allocator.Temp);
 
-        Formation.Assign(positions, new float3(0f, 0f, 10f), spacings, slots);
+        Formation.Assign(positions, new float3(0f, 0f, 10f), float2.zero, spacings, slots);
 
         Assert.AreEqual(1f, math.distance(slots[1], slots[2]), 1e-4f, "infantry stand an infantry width apart");
         Assert.AreEqual(3f, math.distance(slots[0], slots[1]), 1e-4f, "the tank keeps half its own width");

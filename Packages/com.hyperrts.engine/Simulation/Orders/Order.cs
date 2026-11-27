@@ -54,4 +54,7 @@ public struct Order
 
     /// <summary>Metres the formation's slots span, the goal area its units may arrive in by touch.</summary>
     public float Extent;
+
+    /// <summary>Unit XZ direction the unit turns to on arrival before the order finishes; zero for none.</summary>
+    public float2 Facing;
 }
